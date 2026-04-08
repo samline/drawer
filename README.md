@@ -1,11 +1,17 @@
 # Drawer
 
-A universal drawer package for React, Vue, Svelte, vanilla JS, and browser usage.
+A universal drawer package. Built for teams who need Vaul quality and API, but require seamless integration across multiple frameworks.
 
-This repository is the home of `@samline/drawer`.
+Drawer is a package inspired by [Vaul](https://github.com/emilkowalski/vaul). The intention is to complement that work and experiment with a shared runtime for React, Vue, Svelte, vanilla JS, and browser usage.
 
-The root entry is vanilla-first. React lives in the explicit `@samline/drawer/react` adapter, matching the package surface strategy used by Notify.
-Vue and Svelte currently ship as thin wrappers over the same shared vanilla drawer host.
+## Table of Contents
+
+- [Installation](#installation)
+- [Entrypoints](#entrypoints)
+- [Quick Start](#quick-start)
+- [Choose Your Entrypoint](#choose-your-entrypoint)
+- [Documentation](#documentation)
+- [License](#license)
 
 ## Installation
 
@@ -19,109 +25,51 @@ bun add @samline/drawer
 
 ## Entrypoints
 
-| Entrypoint | Purpose |
+| Entrypoint | Use |
 | --- | --- |
-| `@samline/drawer` | Primary vanilla entry |
-| `@samline/drawer/react` | Explicit React adapter |
-| `@samline/drawer/browser` | Browser global entry that exposes the vanilla API on `window.Drawer` |
-| `@samline/drawer/vue` | Vue wrapper over the shared vanilla drawer host |
-| `@samline/drawer/svelte` | Svelte action-style wrapper over the shared vanilla drawer host |
-| `@samline/drawer/core` | Shared drawer contracts and controller primitives |
+| `@samline/drawer` | Main vanilla API and shared mounted drawer host |
+| `@samline/drawer/react` | React component adapter |
+| `@samline/drawer/browser` | Browser global entry that exposes `window.Drawer` |
+| `@samline/drawer/vue` | Vue wrapper over the shared vanilla host |
+| `@samline/drawer/svelte` | Svelte action wrapper over the shared vanilla host |
+| `@samline/drawer/core` | Shared controller contracts and state primitives |
 | `@samline/drawer/styles.css` | Shared styles export |
 
-## Current Status
-
-Drawer now ships as a shared multi-entry package with a vanilla-first root and framework-specific secondary adapters.
-
-- The root package is vanilla-first, as in Notify.
-- React remains the canonical UI implementation while adapter parity continues to expand.
-- The new `core` entry currently exposes shared contracts and a minimal controller.
-- The new root entry exposes a shared controller-based vanilla API.
-- The new `browser` entry exposes the vanilla API on `window.Drawer`.
-- Vue and Svelte entrypoints now synchronize the same shared vanilla drawer host.
-- The repo now targets Bun for package management and Vitest for automated tests.
-
-## Vanilla Usage
+## Quick Start
 
 ```ts
-import { createDrawer, getDrawer } from '@samline/drawer';
+import { createDrawer } from '@samline/drawer';
 
-createDrawer({
-	direction: 'bottom',
-	dismissible: true,
-	triggerText: 'Open drawer',
-	title: 'Drawer title',
-	description: 'Drawer description',
-	content: 'Drawer content',
+const drawer = createDrawer({
+  direction: 'bottom',
+  dismissible: true,
+  triggerText: 'Open drawer',
+  title: 'Drawer title',
+  description: 'Drawer description',
+  content: 'Drawer content',
 });
 
-const drawer = getDrawer();
-drawer?.setOpen(true);
+drawer.setOpen(true);
 ```
 
-## React Usage
+## Choose Your Entrypoint
 
-```tsx
-import { Drawer } from '@samline/drawer/react';
-
-export function Example() {
-	return (
-		<Drawer.Root>
-			<Drawer.Trigger>Open</Drawer.Trigger>
-			<Drawer.Portal>
-				<Drawer.Overlay />
-				<Drawer.Content>Content</Drawer.Content>
-			</Drawer.Portal>
-		</Drawer.Root>
-	);
-}
-```
-
-## Vue Usage
-
-```ts
-import { defineComponent, h } from 'vue';
-import { DrawerRoot } from '@samline/drawer/vue';
-
-export default defineComponent({
-	setup() {
-		return () =>
-			h(DrawerRoot, {
-				triggerText: 'Open drawer',
-				title: 'Drawer title',
-				description: 'Drawer description',
-				content: 'Drawer content',
-				direction: 'bottom',
-			});
-	},
-});
-```
-
-## Svelte Usage
-
-```svelte
-<script lang="ts">
-	import { drawer } from '@samline/drawer/svelte';
-
-	const options = {
-		triggerText: 'Open drawer',
-		title: 'Drawer title',
-		description: 'Drawer description',
-		content: 'Drawer content',
-		direction: 'bottom',
-	};
-</script>
-
-<span use:drawer={options} hidden aria-hidden="true" />
-```
+- Use `@samline/drawer` when you want a simple programmatic API and one shared mounted drawer instance.
+- Use `@samline/drawer/react` when you want the full component model with `Drawer.Root`, `Drawer.Trigger`, `Drawer.Content`, and nested drawers.
+- Use `@samline/drawer/browser` when you want to expose the root API as `window.Drawer` in a browser-only integration.
+- Use `@samline/drawer/vue` when you want a Vue wrapper that syncs props into the shared host and optionally installs `DrawerPlugin`.
+- Use `@samline/drawer/svelte` when you want a Svelte action or a programmatic `mountDrawer` helper.
+- Use `@samline/drawer/core` when you only need the controller and snapshot contracts without rendering UI.
 
 ## Documentation
+
+Use the dedicated docs when you want the full surface area or framework-specific guidance.
 
 - [docs/README.md](docs/README.md)
 - [docs/api.md](docs/api.md)
 - [docs/vanilla.md](docs/vanilla.md)
-- [docs/react.md](docs/react.md)
 - [docs/browser.md](docs/browser.md)
+- [docs/react.md](docs/react.md)
 - [docs/vue.md](docs/vue.md)
 - [docs/svelte.md](docs/svelte.md)
 

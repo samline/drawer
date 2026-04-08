@@ -83,7 +83,6 @@
     "type-check": "bunx tsc --noEmit",
     "build": "bun run type-check && bun scripts/build.mjs",
     "dev": "bun scripts/build.mjs --watch",
-    "dev:test": "bun --cwd test run dev",
     "format": "bunx prettier --write .",
     "test": "bunx vitest run tests/*.test.ts --environment node --globals",
     "test:watch": "bunx vitest tests/*.test.ts --environment node --globals"

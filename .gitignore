@@ -31,7 +31,6 @@ yarn-error.log*
 .env.production.local
 
 .turbo
-/test-results/
 
 # styles
 style.css

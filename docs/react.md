@@ -1,20 +1,14 @@
-# React Guide
+# React
 
-React remains the reference UI implementation during the migration.
+Use the React entry when you want the full component model with the original drawer composition API.
 
 ## Install
 
 ```bash
-bun add @samline/drawer
+bun add @samline/drawer react react-dom
 ```
 
-## Import
-
-```tsx
-import { Drawer } from '@samline/drawer/react';
-```
-
-## Basic Example
+## Basic Usage
 
 ```tsx
 import { Drawer } from '@samline/drawer/react';
@@ -26,8 +20,8 @@ export function Example() {
       <Drawer.Portal>
         <Drawer.Overlay />
         <Drawer.Content>
-          <Drawer.Title>Title</Drawer.Title>
-          <Drawer.Description>Description</Drawer.Description>
+          <Drawer.Title>Filters</Drawer.Title>
+          <Drawer.Description>Adjust the visible results.</Drawer.Description>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
@@ -35,8 +29,71 @@ export function Example() {
 }
 ```
 
+## Complete Example
+
+```tsx
+import { useState } from 'react';
+import { Drawer } from '@samline/drawer/react';
+
+export function FiltersDrawer() {
+  const [open, setOpen] = useState(false);
+  const [snapPoint, setSnapPoint] = useState<string | number | null>('155px');
+
+  return (
+    <Drawer.Root
+      open={open}
+      onOpenChange={setOpen}
+      snapPoints={['155px', '500px', 1]}
+      activeSnapPoint={snapPoint}
+      setActiveSnapPoint={setSnapPoint}
+      shouldScaleBackground
+      onRelease={(_, nextOpen) => {
+        console.log('drawer open after release:', nextOpen);
+      }}
+    >
+      <Drawer.Trigger>Open filters</Drawer.Trigger>
+      <Drawer.Portal>
+        <Drawer.Overlay />
+        <Drawer.Content>
+          <Drawer.Handle />
+          <Drawer.Title>Filters</Drawer.Title>
+          <Drawer.Description>Adjust the visible results.</Drawer.Description>
+          <button type="button" onClick={() => setSnapPoint(1)}>
+            Expand
+          </button>
+          <Drawer.NestedRoot>
+            <Drawer.Trigger>Open nested drawer</Drawer.Trigger>
+            <Drawer.Portal>
+              <Drawer.Overlay />
+              <Drawer.Content>
+                <Drawer.Title>Nested drawer</Drawer.Title>
+                <Drawer.Description>Secondary content.</Drawer.Description>
+              </Drawer.Content>
+            </Drawer.Portal>
+          </Drawer.NestedRoot>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+```
+
+## Customization
+
+`Drawer.Root` supports the shared drawer options plus React-specific hooks into the interaction lifecycle:
+
+- `onOpenChange`
+- `onDrag`
+- `onRelease`
+- `onClose`
+- `container`
+- `onAnimationEnd`
+- `setActiveSnapPoint`
+
+Use `handleOnly` together with `Drawer.Handle` when drag should start only from the handle.
+
 ## Notes
 
-- The package root is reserved for the vanilla-first API.
-- The React adapter is the canonical behavior target for all future framework adapters.
-- Existing drawer behaviors are preserved here first, then replicated elsewhere.
+- `Drawer.NestedRoot` must be rendered inside another drawer.
+- The React adapter is the canonical component implementation and the best choice when you need multiple independent drawers.
+- Use the root package only when you prefer the shared mounted-host API over direct component composition.
