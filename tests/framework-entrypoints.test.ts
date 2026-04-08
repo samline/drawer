@@ -93,4 +93,36 @@ describe('framework entrypoints', () => {
     expect(vueEntry.getDrawer('wrapper-parent')?.getSnapshot().state.isOpen).toBe(true);
     expect(svelteEntry.getDrawer('wrapper-child')?.getSnapshot().state.isOpen).toBe(true);
   });
+
+  it('keeps snap point state and release callbacks aligned across wrappers', async () => {
+    const vueEntry = await import('../src/vue/index');
+    const svelteEntry = await import('../src/svelte/index');
+
+    const vueRelease = () => {};
+    const svelteRelease = () => {};
+
+    vueEntry.createDrawer({
+      id: 'wrapper-snap-vue',
+      snapPoints: ['120px', '320px', 1],
+      activeSnapPoint: '120px',
+      onReleaseChange: vueRelease,
+    });
+    svelteEntry.mountDrawer({
+      id: 'wrapper-snap-svelte',
+      snapPoints: ['100px', '280px', 1],
+      activeSnapPoint: '100px',
+      onReleaseChange: svelteRelease,
+    });
+
+    expect(vueEntry.getDrawer('wrapper-snap-vue')?.getSnapshot().state.activeSnapPoint).toBe('120px');
+    expect(svelteEntry.getDrawer('wrapper-snap-svelte')?.getSnapshot().state.activeSnapPoint).toBe('100px');
+    expect(vueEntry.getDrawer('wrapper-snap-vue')?.options.onReleaseChange).toBe(vueRelease);
+    expect(svelteEntry.getDrawer('wrapper-snap-svelte')?.options.onReleaseChange).toBe(svelteRelease);
+
+    vueEntry.getDrawer('wrapper-snap-vue')?.setActiveSnapPoint(1);
+    svelteEntry.updateDrawer('wrapper-snap-svelte', { activeSnapPoint: '280px' });
+
+    expect(vueEntry.getDrawer('wrapper-snap-vue')?.getSnapshot().state.activeSnapPoint).toBe(1);
+    expect(svelteEntry.getDrawer('wrapper-snap-svelte')?.getSnapshot().state.activeSnapPoint).toBe('280px');
+  });
 });

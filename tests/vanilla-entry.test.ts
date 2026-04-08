@@ -123,6 +123,25 @@ describe('vanilla root entry', () => {
     expect(getDrawer('helper-drawer')?.getSnapshot().state.modal).toBe(false);
   });
 
+  it('keeps snap point state observable through the vanilla controller', () => {
+    const onReleaseChange = vi.fn();
+    const drawer = createDrawer({
+      id: 'snap-vanilla',
+      snapPoints: ['120px', '320px', 1],
+      activeSnapPoint: '120px',
+      onReleaseChange,
+    });
+
+    expect(drawer.getSnapshot().state.activeSnapPoint).toBe('120px');
+    expect(drawer.options.onReleaseChange).toBe(onReleaseChange);
+
+    drawer.setActiveSnapPoint('320px');
+    expect(getDrawer('snap-vanilla')?.getSnapshot().state.activeSnapPoint).toBe('320px');
+
+    updateDrawer('snap-vanilla', { activeSnapPoint: 1 });
+    expect(getDrawer('snap-vanilla')?.getSnapshot().state.activeSnapPoint).toBe(1);
+  });
+
   it('tracks parent-child relationships and coordinates nested drawers outside React', () => {
     createDrawer({ id: 'parent', direction: 'bottom' });
     createDrawer({ id: 'child', parentId: 'parent', open: true, direction: 'right' });

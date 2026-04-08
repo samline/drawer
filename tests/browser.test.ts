@@ -50,6 +50,28 @@ describe('browser entry', () => {
     expect(browserEntry.Drawer.getChildDrawers('browser-a').map((drawer) => drawer.id)).toEqual(['browser-child']);
   });
 
+  it('keeps snap point state and release callbacks observable through the browser namespace', async () => {
+    const browserEntry = await import('../src/browser/index');
+    const onReleaseChange = vi.fn();
+
+    browserEntry.Drawer.destroyDrawers();
+    browserEntry.Drawer.createDrawer({
+      id: 'browser-snap',
+      snapPoints: ['120px', '320px', 1],
+      activeSnapPoint: '120px',
+      onReleaseChange,
+    });
+
+    expect(browserEntry.Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe('120px');
+    expect(browserEntry.Drawer.getDrawer('browser-snap')?.options.onReleaseChange).toBe(onReleaseChange);
+
+    browserEntry.Drawer.getDrawer('browser-snap')?.setActiveSnapPoint('320px');
+    expect(browserEntry.Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe('320px');
+
+    browserEntry.Drawer.updateDrawer('browser-snap', { activeSnapPoint: 1 });
+    expect(browserEntry.Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe(1);
+  });
+
   it('opens from a real trigger element and mounts a host when DOM is available', async () => {
     vi.resetModules();
 

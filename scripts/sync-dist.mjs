@@ -247,9 +247,12 @@ function verifyBrowserGlobalBundle() {
     title: 'Smoke test',
     description: 'Browser bundle verification',
     content: 'Drawer body',
+    snapPoints: ['120px', '320px', 1],
+    activeSnapPoint: '120px',
   });
 
   drawer.setOpen(true);
+  drawer.setActiveSnapPoint('320px');
 
   const styleElement = sandbox.document.querySelector(`style[${injectedStyleAttribute}]`);
   const mountedHost = sandbox.document.querySelector('[data-drawer-vanilla-root="cdn-smoke"]');
@@ -260,6 +263,10 @@ function verifyBrowserGlobalBundle() {
 
   if (!mountedHost) {
     throw new Error('Browser global bundle did not mount a drawer host');
+  }
+
+  if (sandbox.window.Drawer.getDrawer('cdn-smoke')?.getSnapshot().state.activeSnapPoint !== '320px') {
+    throw new Error('Browser global bundle did not preserve snap point state');
   }
 
   sandbox.window.Drawer.destroyDrawers();
