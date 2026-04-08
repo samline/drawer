@@ -8,8 +8,10 @@ import {
   createDrawerController,
   destroyDrawer,
   destroyDrawers,
+  getChildDrawers,
   getDrawer,
   getDrawers,
+  getParentDrawer,
   openDrawer,
   toggleDrawer,
   updateDrawer,
@@ -19,6 +21,7 @@ import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core';
 
 const drawerProps = {
   id: String,
+  parentId: String,
   open: Boolean,
   defaultOpen: Boolean,
   onOpenChange: Function as PropType<(open: boolean) => void>,
@@ -83,6 +86,7 @@ export const DrawerRoot = defineComponent({
     const sync = () => {
       const options = cleanOptions({
         id: props.id,
+        parentId: props.parentId,
         open: props.open,
         defaultOpen: props.defaultOpen,
         onOpenChange: props.onOpenChange,
@@ -155,6 +159,8 @@ export const DrawerPlugin: Plugin = {
   install(app) {
     app.component('DrawerRoot', DrawerRoot);
     app.config.globalProperties.$drawer = {
+      getParentDrawer,
+      getChildDrawers,
       closeDrawer,
       configureDrawer,
       createDrawer,
@@ -168,6 +174,8 @@ export const DrawerPlugin: Plugin = {
       updateDrawer,
     };
     app.provide('drawer:api', {
+      getParentDrawer,
+      getChildDrawers,
       closeDrawer,
       configureDrawer,
       createDrawer,
@@ -184,6 +192,8 @@ export const DrawerPlugin: Plugin = {
 };
 
 export {
+  getParentDrawer,
+  getChildDrawers,
   closeDrawer,
   configureDrawer,
   createDrawer,

@@ -6,8 +6,10 @@ import {
   createDrawer,
   destroyDrawer,
   destroyDrawers,
+  getChildDrawers,
   getDrawer,
   getDrawers,
+  getParentDrawer,
   openDrawer,
   toggleDrawer,
   updateDrawer,
@@ -119,5 +121,32 @@ describe('vanilla root entry', () => {
     updateDrawer('helper-drawer', { direction: 'left', modal: false });
     expect(getDrawer('helper-drawer')?.getSnapshot().state.direction).toBe('left');
     expect(getDrawer('helper-drawer')?.getSnapshot().state.modal).toBe(false);
+  });
+
+  it('tracks parent-child relationships and coordinates nested drawers outside React', () => {
+    createDrawer({ id: 'parent', direction: 'bottom' });
+    createDrawer({ id: 'child', parentId: 'parent', open: true, direction: 'right' });
+
+    expect(getParentDrawer('child')?.id).toBe('parent');
+    expect(getChildDrawers('parent').map((drawer) => drawer.id)).toEqual(['child']);
+    expect(getDrawer('child')?.options.nested).toBe(true);
+    expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(true);
+
+    closeDrawer('parent');
+
+    expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(false);
+    expect(getDrawer('child')?.getSnapshot().state.isOpen).toBe(false);
+  });
+
+  it('destroys child drawers recursively when destroying a parent', () => {
+    createDrawer({ id: 'parent' });
+    createDrawer({ id: 'child-a', parentId: 'parent' });
+    createDrawer({ id: 'child-b', parentId: 'parent' });
+
+    destroyDrawer('parent');
+
+    expect(getDrawer('parent')).toBeNull();
+    expect(getDrawer('child-a')).toBeNull();
+    expect(getDrawer('child-b')).toBeNull();
   });
 });

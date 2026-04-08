@@ -8,6 +8,8 @@ describe('browser entry', () => {
     expect(browserEntry.Drawer.closeDrawer).toBeTypeOf('function');
     expect(browserEntry.Drawer.toggleDrawer).toBeTypeOf('function');
     expect(browserEntry.Drawer.updateDrawer).toBeTypeOf('function');
+    expect(browserEntry.Drawer.getParentDrawer).toBeTypeOf('function');
+    expect(browserEntry.Drawer.getChildDrawers).toBeTypeOf('function');
     expect(browserEntry.Drawer.createDrawer).toBeTypeOf('function');
     expect(browserEntry.Drawer.getDrawer).toBeTypeOf('function');
     expect(browserEntry.Drawer.getDrawers).toBeTypeOf('function');
@@ -38,9 +40,12 @@ describe('browser entry', () => {
     browserEntry.Drawer.openDrawer('browser-a');
     browserEntry.Drawer.updateDrawer('browser-b', { modal: false });
     browserEntry.Drawer.toggleDrawer('browser-b');
+    browserEntry.Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-a', open: true });
 
     expect(browserEntry.Drawer.getDrawer('browser-a')?.getSnapshot().state.isOpen).toBe(true);
     expect(browserEntry.Drawer.getDrawer('browser-b')?.getSnapshot().state.modal).toBe(false);
     expect(browserEntry.Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen).toBe(true);
+    expect(browserEntry.Drawer.getParentDrawer('browser-child')?.id).toBe('browser-a');
+    expect(browserEntry.Drawer.getChildDrawers('browser-a').map((drawer) => drawer.id)).toEqual(['browser-child']);
   });
 });

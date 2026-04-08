@@ -6,6 +6,7 @@ export type CommonDrawerId = string;
 
 export interface CommonDrawerOptions {
   id?: CommonDrawerId;
+  parentId?: CommonDrawerId;
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;

@@ -35,6 +35,12 @@ interface DrawerRuntimeInstance {
 
 const drawerInstances = new Map<CommonDrawerId, DrawerRuntimeInstance>();
 
+function getChildDrawerIds(parentId: CommonDrawerId) {
+  return Array.from(drawerInstances.entries())
+    .filter(([, runtime]) => runtime.options.parentId === parentId)
+    .map(([id]) => id);
+}
+
 function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
@@ -97,6 +103,20 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   runtime.options.onOpenChange?.(open);
 
   if (!open) {
+    getChildDrawerIds(runtime.id).forEach((childId) => {
+      const childRuntime = drawerInstances.get(childId);
+      if (!childRuntime) {
+        return;
+      }
+
+      const childWasOpen = childRuntime.controller.getSnapshot().state.isOpen;
+      childRuntime.controller.setOpen(false);
+      if (childWasOpen) {
+        notifyOpenStateChange(childRuntime, false);
+      }
+      renderVanillaDrawer(childId);
+    });
+
     runtime.options.onClose?.();
   }
 
@@ -237,6 +257,10 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
   const previousOpen = existing?.controller.getSnapshot().state.isOpen;
   const nextOptions = { ...existing?.options, ...options, id };
 
+  if (nextOptions.parentId) {
+    nextOptions.nested = true;
+  }
+
   if (!existing) {
     drawerInstances.set(id, {
       id,
@@ -258,6 +282,15 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
 
   renderVanillaDrawer(id);
 
+  if (nextOptions.parentId && nextOptions.open) {
+    const parentRuntime = drawerInstances.get(nextOptions.parentId);
+    if (parentRuntime && !parentRuntime.controller.getSnapshot().state.isOpen) {
+      parentRuntime.controller.setOpen(true);
+      notifyOpenStateChange(parentRuntime, true);
+      renderVanillaDrawer(parentRuntime.id);
+    }
+  }
+
   return buildVanillaController(id);
 }
 
@@ -277,6 +310,17 @@ export function getDrawer(id?: CommonDrawerId | null) {
 
 export function getDrawers() {
   return Object.fromEntries(Array.from(drawerInstances.keys(), (id) => [id, buildVanillaController(id)]));
+}
+
+export function getParentDrawer(id?: CommonDrawerId | null) {
+  const drawer = getDrawer(id);
+  const parentId = drawer?.options.parentId;
+  return parentId ? getDrawer(parentId) : null;
+}
+
+export function getChildDrawers(id?: CommonDrawerId | null) {
+  const drawerId = normalizeDrawerId(id);
+  return getChildDrawerIds(drawerId).map((childId) => buildVanillaController(childId));
 }
 
 export function updateDrawer(idOrOptions?: CommonDrawerId | VanillaDrawerOptions | null, options: VanillaDrawerOptions = {}) {
@@ -309,6 +353,10 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   if (!runtime) {
     return;
   }
+
+  getChildDrawerIds(drawerId).forEach((childId) => {
+    destroyDrawer(childId);
+  });
 
   cleanupRuntimeTrigger(runtime);
   runtime.root?.unmount();

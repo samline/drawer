@@ -5,8 +5,10 @@ import {
   createDrawerController,
   destroyDrawer,
   destroyDrawers,
+  getChildDrawers,
   getDrawer,
   getDrawers,
+  getParentDrawer,
   openDrawer,
   toggleDrawer,
   updateDrawer,
@@ -57,6 +59,8 @@ export function mountDrawer(options?: SvelteDrawerOptions): VanillaDrawerControl
 }
 
 export {
+  getParentDrawer,
+  getChildDrawers,
   closeDrawer,
   configureDrawer,
   createDrawer,

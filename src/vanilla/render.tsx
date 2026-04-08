@@ -21,7 +21,7 @@ function toReactDrawerProps(
   open: boolean,
   onOpenChange: NonNullable<DialogProps['onOpenChange']>,
 ): DialogProps {
-  const { id: _id, onDragChange, onReleaseChange, ...drawerOptions } = options;
+  const { id: _id, parentId: _parentId, onDragChange, onReleaseChange, ...drawerOptions } = options;
 
   const baseProps = {
     ...drawerOptions,

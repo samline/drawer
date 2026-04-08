@@ -12,6 +12,8 @@ describe('framework entrypoints', () => {
 
     expect(vueEntry.DrawerRoot).toBeTruthy();
     expect(vueEntry.DrawerPlugin).toBeTruthy();
+    expect(vueEntry.getParentDrawer).toBeTypeOf('function');
+    expect(vueEntry.getChildDrawers).toBeTypeOf('function');
     expect(vueEntry.openDrawer).toBeTypeOf('function');
     expect(vueEntry.closeDrawer).toBeTypeOf('function');
     expect(vueEntry.toggleDrawer).toBeTypeOf('function');
@@ -29,6 +31,8 @@ describe('framework entrypoints', () => {
     expect(svelteEntry.drawer).toBeTypeOf('function');
     expect(svelteEntry.DrawerRoot).toBe(svelteEntry.drawer);
     expect(svelteEntry.mountDrawer).toBeTypeOf('function');
+    expect(svelteEntry.getParentDrawer).toBeTypeOf('function');
+    expect(svelteEntry.getChildDrawers).toBeTypeOf('function');
     expect(svelteEntry.openDrawer).toBeTypeOf('function');
     expect(svelteEntry.closeDrawer).toBeTypeOf('function');
     expect(svelteEntry.toggleDrawer).toBeTypeOf('function');
@@ -47,13 +51,15 @@ describe('framework entrypoints', () => {
     const onReleaseChange = () => {};
 
     vueEntry.createDrawer({ id: 'vue-drawer', direction: 'left', onDragChange, onReleaseChange });
-    svelteEntry.mountDrawer({ id: 'svelte-drawer', direction: 'right', onDragChange, onReleaseChange });
+    svelteEntry.mountDrawer({ id: 'svelte-drawer', direction: 'right', onDragChange, onReleaseChange, parentId: 'vue-drawer' });
 
     expect(vueEntry.getDrawer('vue-drawer')?.getSnapshot().state.direction).toBe('left');
     expect(svelteEntry.getDrawer('svelte-drawer')?.getSnapshot().state.direction).toBe('right');
     expect(svelteEntry.mountDrawer({ id: 'svelte-mounted', direction: 'bottom' })?.id).toBe('svelte-mounted');
     expect(vueEntry.getDrawer('vue-drawer')?.options.onDragChange).toBe(onDragChange);
     expect(svelteEntry.getDrawer('svelte-drawer')?.options.onReleaseChange).toBe(onReleaseChange);
+    expect(svelteEntry.getParentDrawer('svelte-drawer')?.id).toBe('vue-drawer');
+    expect(vueEntry.getChildDrawers('vue-drawer').map((drawer) => drawer.id)).toEqual(['svelte-drawer']);
 
     vueEntry.openDrawer('vue-drawer');
     svelteEntry.toggleDrawer('svelte-drawer');
