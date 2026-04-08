@@ -33,12 +33,14 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.0/dist/style.css">
+<script src="https://unpkg.com/@samline/drawer@2.0.0/dist/browser/index.js"></script>
+
 <div data-drawer-wrapper>
   <main>App shell</main>
 </div>
+
 <button id="open-settings" type="button">Settings</button>
 
-<script src="https://unpkg.com/@samline/drawer@2.0.0/dist/browser/index.js"></script>
 <script>
   const trigger = document.getElementById('open-settings')
 
