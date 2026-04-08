@@ -1,6 +1,6 @@
 # React
 
-Use the React entry when you want the full component model with the original drawer composition API.
+Use the React entry when you want the full component model with the original drawer composition API and the shared imperative helpers.
 
 ## Install
 
@@ -11,7 +11,7 @@ bun add @samline/drawer react react-dom
 ## Basic Usage
 
 ```tsx
-import { Drawer } from '@samline/drawer/react';
+import { Drawer, openDrawer } from '@samline/drawer/react';
 
 export function Example() {
   return (
@@ -27,6 +27,8 @@ export function Example() {
     </Drawer.Root>
   );
 }
+
+openDrawer();
 ```
 
 ## Complete Example
@@ -96,4 +98,5 @@ Use `handleOnly` together with `Drawer.Handle` when drag should start only from 
 
 - `Drawer.NestedRoot` must be rendered inside another drawer.
 - The React adapter is the canonical component implementation and the best choice when you need multiple independent drawers.
-- Use the root package only when you prefer the shared mounted-host API over direct component composition.
+- The React entry also re-exports `createDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `updateDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `destroyDrawer`, `destroyDrawers`, and `createDrawerController`.
+- Use the root package only when you prefer the shared mounted-runtime API over direct component composition.

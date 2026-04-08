@@ -6,11 +6,11 @@
 
 | Entry point | Purpose |
 | --- | --- |
-| `@samline/drawer` | Main vanilla API and shared mounted host |
+| `@samline/drawer` | Main vanilla API and shared runtime registry |
 | `@samline/drawer/react` | React component adapter |
-| `@samline/drawer/browser` | Browser global entry that exposes `window.Drawer` |
-| `@samline/drawer/vue` | Vue wrapper over the shared vanilla host |
-| `@samline/drawer/svelte` | Svelte action wrapper over the shared vanilla host |
+| `@samline/drawer/browser` | Browser global entry for CDN or plain HTML usage |
+| `@samline/drawer/vue` | Vue wrapper over the shared runtime |
+| `@samline/drawer/svelte` | Svelte action wrapper over the shared runtime |
 | `@samline/drawer/core` | Shared controller contracts and state primitives |
 | `@samline/drawer/styles.css` | Shared styles export |
 
@@ -19,14 +19,22 @@
 The package is split into three layers:
 
 1. Shared controller state in `@samline/drawer/core`.
-2. A root vanilla entry that mounts one shared drawer host.
-3. Framework adapters that either render the full component model directly or synchronize the shared host.
+2. A root vanilla entry that manages named runtime instances.
+3. Framework adapters that either render the full component model directly or synchronize that runtime.
 
-### Shared host behavior
+### Shared runtime behavior
 
-The root entry keeps its state in module scope. Calling `createDrawer()` or `configureDrawer()` updates the same mounted drawer instance instead of creating independent drawers.
+The root entry keeps its state in module scope, but it no longer limits you to one drawer. Calling `createDrawer()` or `configureDrawer()` without an `id` targets the default instance. Passing `id` creates or updates a specific named instance.
 
-Browser, Vue, and Svelte integrations all target that same shared host.
+Browser, Vue, Svelte, and the React imperative exports all target that same shared runtime.
+
+### Hierarchy behavior
+
+Use `parentId` when one drawer should behave as a child of another runtime instance.
+
+- Closing a parent closes its registered children.
+- Destroying a parent recursively destroys its children.
+- `getParentDrawer()` and `getChildDrawers()` let every adapter query the same relationship graph.
 
 ### Renderable values
 
@@ -61,6 +69,8 @@ These options define the shared drawer state and are accepted by the root API an
 | --- | --- | --- |
 | `open` | `boolean` | Controlled open state |
 | `defaultOpen` | `boolean` | Initial open state when mounting |
+| `id` | `string` | Named runtime instance id. Defaults to `default` |
+| `parentId` | `string` | Parent runtime instance id used for nested relationships |
 | `dismissible` | `boolean` | Whether escape, overlay press, and drag-close can dismiss the drawer |
 | `modal` | `boolean` | Whether outside interaction is blocked |
 | `nested` | `boolean` | Marks a drawer as nested inside another drawer |
@@ -80,6 +90,11 @@ These options define the shared drawer state and are accepted by the root API an
 | `preventScrollRestoration` | `boolean` | Prevent the browser from restoring scroll position |
 | `noBodyStyles` | `boolean` | Disable drawer-managed body styles |
 | `autoFocus` | `boolean` | Autofocus the drawer content when opened |
+| `onOpenChange` | `(open: boolean) => void` | Called when the shared runtime open state changes |
+| `onClose` | `() => void` | Called after a drawer closes |
+| `onAnimationEnd` | `(open: boolean) => void` | Called after the open or close transition duration |
+| `onDragChange` | `(percentageDragged: number) => void` | Called while drag progress changes |
+| `onReleaseChange` | `(open: boolean) => void` | Called after release resolves to open or closed |
 
 ### `createDrawerController(options?)`
 
@@ -116,8 +131,16 @@ The root entry exports:
 
 - `createDrawer(options?)`
 - `configureDrawer(options?)`
-- `getDrawer()`
-- `destroyDrawer()`
+- `getDrawer(id?)`
+- `getDrawers()`
+- `getParentDrawer(id?)`
+- `getChildDrawers(id?)`
+- `updateDrawer(idOrOptions?, options?)`
+- `openDrawer(id?)`
+- `closeDrawer(id?)`
+- `toggleDrawer(id?)`
+- `destroyDrawer(id?)`
+- `destroyDrawers()`
 - `createDrawerController(options?)`
 
 ### Vanilla options
@@ -126,7 +149,7 @@ The root entry accepts the shared options plus these rendering options:
 
 | Option | Type | Purpose |
 | --- | --- | --- |
-| `mountElement` | `HTMLElement | null` | Mount the shared host into a specific container |
+| `mountElement` | `HTMLElement | null` | Mount the drawer host into a specific container |
 | `triggerElement` | `HTMLElement | null` | Attach an external click trigger |
 | `triggerText` | `string` | Render a built-in trigger button |
 | `title` | `VanillaRenderable` | Drawer title content |
@@ -137,12 +160,13 @@ The root entry accepts the shared options plus these rendering options:
 
 ### `createDrawer(options?)`
 
-Creates or updates the shared mounted drawer host and returns a controller with DOM-aware helpers.
+Creates or updates a named runtime instance and returns a controller with DOM-aware helpers.
 
 ```ts
 import { createDrawer } from '@samline/drawer';
 
 const drawer = createDrawer({
+  id: 'filters',
   triggerText: 'Open filters',
   title: 'Filters',
   description: 'Refine the result set',
@@ -156,26 +180,35 @@ drawer.update({ activeSnapPoint: '420px' });
 
 The returned controller includes the shared controller methods plus:
 
+- `id` — runtime instance id.
 - `element` — current host element when mounted.
 - `options` — latest merged options passed to the root entry.
-- `update(options?)` — merge new options into the shared host and rerender.
-- `destroy()` — alias for `destroyDrawer()`.
+- `update(options?)` — merge new options into the same instance and rerender.
+- `destroy()` — alias for `destroyDrawer(id)`.
 
 ### `configureDrawer(options?)`
 
 Alias of `createDrawer()`. Use whichever name reads better in your codebase.
 
-### `getDrawer()`
+### `getDrawer(id?)`
 
-Returns the current mounted controller or `null` if the shared host has not been created yet.
+Returns the controller for the requested instance or `null` if it has not been created yet.
 
-### `destroyDrawer()`
+### Runtime helpers
 
-Unmounts the shared host, removes the generated mount element when Drawer created it, and clears the module-level controller state.
+Use these helpers when you want to work imperatively without holding onto the controller reference:
+
+- `getDrawers()` returns every live instance keyed by id.
+- `getParentDrawer(id?)` returns the parent controller for the selected instance.
+- `getChildDrawers(id?)` returns child controllers for the selected instance.
+- `updateDrawer(idOrOptions?, options?)` updates an instance by id, or accepts a full options object.
+- `openDrawer(id?)`, `closeDrawer(id?)`, and `toggleDrawer(id?)` mutate open state directly.
+- `destroyDrawer(id?)` tears down one instance.
+- `destroyDrawers()` tears down every live instance.
 
 ## React API
 
-The React entry exports the full component model through `Drawer`:
+The React entry exports the full component model through `Drawer` and also re-exports the shared imperative runtime helpers:
 
 - `Drawer.Root`
 - `Drawer.NestedRoot`
@@ -187,6 +220,18 @@ The React entry exports the full component model through `Drawer`:
 - `Drawer.Close`
 - `Drawer.Title`
 - `Drawer.Description`
+- `createDrawer`
+- `getDrawer`
+- `getDrawers`
+- `getParentDrawer`
+- `getChildDrawers`
+- `updateDrawer`
+- `openDrawer`
+- `closeDrawer`
+- `toggleDrawer`
+- `destroyDrawer`
+- `destroyDrawers`
+- `createDrawerController`
 
 ### `Drawer.Root`
 
@@ -235,14 +280,24 @@ The Vue entry exports:
 - `DrawerRoot`
 - `DrawerPlugin`
 - `createDrawer`
-- `destroyDrawer`
+- `configureDrawer`
 - `getDrawer`
+- `getDrawers`
+- `getParentDrawer`
+- `getChildDrawers`
+- `updateDrawer`
+- `openDrawer`
+- `closeDrawer`
+- `toggleDrawer`
+- `destroyDrawer`
+- `destroyDrawers`
+- `createDrawerController`
 
-`DrawerRoot` mirrors the vanilla options as Vue props and synchronizes them into the shared host on mount and on prop changes.
+`DrawerRoot` mirrors the vanilla options as Vue props and synchronizes them into the shared runtime on mount and on prop changes.
 
 `DrawerPlugin` registers `DrawerRoot`, exposes `$drawer` on `app.config.globalProperties`, and provides `drawer:api` for dependency injection.
 
-Unmounting `DrawerRoot` destroys the shared host.
+Unmounting `DrawerRoot` destroys the specific runtime instance selected by `id`.
 
 ## Svelte API
 
@@ -252,10 +307,20 @@ The Svelte entry exports:
 - `DrawerRoot`
 - `mountDrawer`
 - `createDrawer`
-- `destroyDrawer`
+- `configureDrawer`
 - `getDrawer`
+- `getDrawers`
+- `getParentDrawer`
+- `getChildDrawers`
+- `updateDrawer`
+- `openDrawer`
+- `closeDrawer`
+- `toggleDrawer`
+- `destroyDrawer`
+- `destroyDrawers`
+- `createDrawerController`
 
-`drawer` is a Svelte action that marks the host node, synchronizes options into the shared host, and destroys the host when the action is torn down.
+`drawer` is a Svelte action that marks the host node, synchronizes options into the shared runtime, and destroys the selected instance when the action is torn down.
 
 `mountDrawer(options?)` is the imperative helper when you want the same behavior without attaching an action in markup.
 
@@ -265,20 +330,27 @@ The browser entry exposes `window.Drawer` with this shape:
 
 ```ts
 window.Drawer = {
+  getParentDrawer,
+  getChildDrawers,
+  openDrawer,
+  closeDrawer,
+  toggleDrawer,
+  updateDrawer,
   createDrawer,
   configureDrawer,
   getDrawer,
+  getDrawers,
   destroyDrawer,
+  destroyDrawers,
   createDrawerController,
 }
 ```
 
-Importing `@samline/drawer/browser` only registers that namespace. It does not auto-mount a drawer until you call one of the root methods.
+Loading `dist/browser/index.js` in a browser attaches that namespace. It does not auto-mount a drawer until you call one of the root methods.
 
 ```html
-<script type="module">
-  import '@samline/drawer/browser';
-
+<script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
+<script>
   const drawer = window.Drawer.createDrawer({
     triggerText: 'Open drawer',
     title: 'Drawer title',
@@ -292,6 +364,6 @@ Importing `@samline/drawer/browser` only registers that namespace. It does not a
 ## Constraints and Caveats
 
 - The root, browser, Vue, and Svelte entries currently render through the React adapter internally, even though their call sites stay framework-agnostic.
-- The shared mounted host is a singleton per module. Reconfiguring it in one place affects every wrapper using that same module instance.
-- Vue and Svelte wrappers destroy the shared host when they unmount, so they should be treated as ownership points for the mounted drawer.
+- Named instances share one runtime registry per module instance. Reusing the same `id` from different wrappers targets the same drawer on purpose.
+- Vue and Svelte wrappers destroy the selected runtime instance when they unmount, so they should be treated as ownership points for that `id`.
 - Use `@samline/drawer/react` when you need multiple drawers with independent component trees or nested drawer composition.

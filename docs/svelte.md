@@ -1,6 +1,6 @@
 # Svelte
 
-Use the Svelte entry when you want a Svelte action or an imperative `mountDrawer()` helper over the shared mounted host.
+Use the Svelte entry when you want a Svelte action or an imperative `mountDrawer()` helper over the shared runtime.
 
 ## Install
 
@@ -53,16 +53,18 @@ bun add @samline/drawer svelte
 
 ## Common Patterns
 
-- Use the `drawer` action when the Svelte component should own the shared drawer lifecycle.
-- Use `mountDrawer()` when you want to mount or refresh the shared host imperatively.
+- Pass `id` when the Svelte component should own a specific runtime instance.
+- Pass `parentId` when the action should behave as a child drawer.
+- Use the `drawer` action when the Svelte component should own the selected drawer lifecycle.
+- Use `mountDrawer()` when you want to mount or refresh the same instance imperatively.
 - Use `getDrawer()` to read the current controller and open or reconfigure it from event handlers.
 
 ## Lifecycle and Cleanup
 
-- The action calls `createDrawer()` immediately and updates the shared host when its value changes.
-- Destroying the action calls `destroyDrawer()`, which tears down the shared host.
+- The action calls `createDrawer()` immediately and updates the selected runtime instance when its value changes.
+- Destroying the action calls `destroyDrawer(id)`, which tears down that instance.
 
 ## Current Limits
 
 - The Svelte entry does not render a separate Svelte-native drawer implementation.
-- As with Vue and the browser entry, it targets the same module-level shared host used by the root package.
+- As with Vue and the browser entry, it targets the same module-level shared runtime used by the root package.

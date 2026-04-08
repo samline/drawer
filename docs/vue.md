@@ -1,6 +1,6 @@
 # Vue
 
-Use the Vue entry when you want Vue-friendly props and optional plugin installation while still targeting the shared mounted host.
+Use the Vue entry when you want Vue-friendly props and optional plugin installation while still targeting the shared runtime.
 
 ## Install
 
@@ -59,16 +59,18 @@ createApp(App).use(DrawerPlugin).mount('#app');
 
 ## Common Patterns
 
-- Render `DrawerRoot` once near the part of the app that owns the shared drawer.
+- Pass `id` when the Vue wrapper should own a specific runtime instance.
+- Pass `parentId` when the wrapper should behave as a child of another drawer instance.
+- Render `DrawerRoot` once near the part of the app that owns the selected drawer id.
 - Install `DrawerPlugin` if you want `DrawerRoot` registered globally and access to `$drawer` or the `drawer:api` injection key.
-- Update props reactively to reconfigure the same shared host.
+- Update props reactively to reconfigure the same runtime instance.
 
 ## Lifecycle and Cleanup
 
-- `DrawerRoot` synchronizes props into the shared host on mount and on prop updates.
-- Unmounting `DrawerRoot` calls `destroyDrawer()`, so it should be treated as the owner of the mounted drawer instance.
+- `DrawerRoot` synchronizes props into the shared runtime on mount and on prop updates.
+- Unmounting `DrawerRoot` calls `destroyDrawer(id)`, so it should be treated as the owner of the selected runtime instance.
 
 ## Current Limits
 
 - Vue does not render an independent native drawer tree. It drives the shared mounted host from the root entry.
-- Because the host is shared, mounting multiple Vue wrappers against the same module instance will overwrite one another's configuration.
+- Reusing the same `id` from multiple Vue wrappers intentionally targets the same instance, so ownership should stay clear at the app level.

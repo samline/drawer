@@ -6,8 +6,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "style.css"
+    "dist"
   ],
   "exports": {
     ".": {
@@ -39,9 +38,9 @@
       },
       "require": {
         "types": "./dist/browser/index.d.ts",
-        "default": "./dist/browser/index.js"
+        "default": "./dist/browser/index.cjs"
       },
-      "default": "./dist/browser/index.js"
+      "default": "./dist/browser/index.mjs"
     },
     "./vue": {
       "import": {
@@ -76,8 +75,9 @@
       },
       "default": "./dist/core/index.js"
     },
-    "./styles.css": "./style.css",
-    "./style.css": "./style.css"
+    "./styles.css": "./dist/style.css",
+    "./style.css": "./dist/style.css",
+    "./dist/style.css": "./dist/style.css"
   },
   "scripts": {
     "type-check": "bunx tsc --noEmit",
@@ -112,6 +112,7 @@
     "@types/react": "18.2.55",
     "@types/react-dom": "18.2.18",
     "bunchee": "6.3.3",
+    "esbuild": "0.27.4",
     "eslint": "^7.32.0",
     "prettier": "^2.5.1",
     "react": "^18.2.0",

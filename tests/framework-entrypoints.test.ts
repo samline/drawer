@@ -7,6 +7,19 @@ describe('framework entrypoints', () => {
     destroyDrawers();
   });
 
+  it('exposes the shared imperative surface from the React entry', async () => {
+    const reactEntry = await import('../src/react/index');
+
+    expect(reactEntry.openDrawer).toBeTypeOf('function');
+    expect(reactEntry.closeDrawer).toBeTypeOf('function');
+    expect(reactEntry.toggleDrawer).toBeTypeOf('function');
+    expect(reactEntry.updateDrawer).toBeTypeOf('function');
+    expect(reactEntry.getParentDrawer).toBeTypeOf('function');
+    expect(reactEntry.getChildDrawers).toBeTypeOf('function');
+    expect(reactEntry.createDrawer).toBeTypeOf('function');
+    expect(reactEntry.getDrawer).toBeTypeOf('function');
+  });
+
   it('exposes a Vue wrapper surface', async () => {
     const vueEntry = await import('../src/vue/index');
 

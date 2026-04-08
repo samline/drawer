@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Drawer as ReactDrawer, type DialogProps } from '../react';
+import { Drawer as ReactDrawer, type DialogProps } from '../react/components';
 import type { CommonDrawerOptions } from '../core';
 
 export type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined;

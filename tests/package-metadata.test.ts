@@ -18,7 +18,10 @@ describe('package metadata', () => {
       './vue': expect.any(Object),
       './svelte': expect.any(Object),
       './core': expect.any(Object),
-      './styles.css': './style.css',
+      './styles.css': './dist/style.css',
+      './style.css': './dist/style.css',
     });
+
+    expect(packageJson.files).toEqual(['dist']);
   });
 });

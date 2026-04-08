@@ -1,6 +1,6 @@
 # Vanilla JS
 
-Use the root entry when you want one shared mounted drawer with a programmatic API.
+Use the root entry when you want a programmatic API with named instances and shared runtime helpers.
 
 ## Install
 
@@ -14,6 +14,7 @@ bun add @samline/drawer
 import { createDrawer } from '@samline/drawer';
 
 const drawer = createDrawer({
+  id: 'filters',
   triggerText: 'Open drawer',
   title: 'Drawer title',
   description: 'Drawer description',
@@ -43,6 +44,7 @@ filters.innerHTML = `
 `;
 
 const drawer = createDrawer({
+  id: 'filters',
   direction: 'bottom',
   triggerText: 'Open filters',
   title: 'Filters',
@@ -67,10 +69,32 @@ document.querySelector('[data-expand-drawer]')?.addEventListener('click', () => 
 
 ## Common Patterns
 
+- Pass `id` when you need more than the default runtime instance.
+- Pass `parentId` when this drawer should follow another drawer's lifecycle.
 - Pass `triggerText` to render a built-in button.
 - Pass `triggerElement` to attach an existing element as the external trigger.
 - Pass `mountElement` when the host should live inside a specific DOM subtree.
-- Use `update()` when you want to merge new options into the same shared host.
+- Use `update()` or `updateDrawer()` when you want to merge new options into the same instance.
+
+## Runtime Helpers
+
+```ts
+import {
+  closeDrawer,
+  createDrawer,
+  getChildDrawers,
+  getDrawers,
+  openDrawer,
+} from '@samline/drawer';
+
+createDrawer({ id: 'account', title: 'Account', content: 'Primary drawer' });
+createDrawer({ id: 'security', parentId: 'account', title: 'Security', content: 'Nested drawer' });
+
+openDrawer('account');
+console.log(Object.keys(getDrawers()));
+console.log(getChildDrawers('account').map((drawer) => drawer.id));
+closeDrawer('account');
+```
 
 ## Lifecycle and Cleanup
 
@@ -84,10 +108,9 @@ getDrawer()?.setOpen(true);
 destroyDrawer();
 ```
 
-`destroyDrawer()` unmounts the shared host and clears the stored options.
+`destroyDrawer()` tears down the selected instance. Use `destroyDrawers()` when you want to clear the entire runtime registry.
 
 ## Current Limits
 
-- The root entry manages a single shared drawer instance per module.
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
 - The current root renderer uses the React adapter internally while keeping the public API framework-agnostic.

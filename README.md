@@ -25,20 +25,20 @@ bun add @samline/drawer
 
 ## Entrypoints
 
-| Entrypoint | Use |
-| --- | --- |
-| `@samline/drawer` | Main vanilla API and shared mounted drawer host |
-| `@samline/drawer/react` | React component adapter |
-| `@samline/drawer/browser` | Browser global entry that exposes `window.Drawer` |
-| `@samline/drawer/vue` | Vue wrapper over the shared vanilla host |
-| `@samline/drawer/svelte` | Svelte action wrapper over the shared vanilla host |
-| `@samline/drawer/core` | Shared controller contracts and state primitives |
-| `@samline/drawer/styles.css` | Shared styles export |
+| Entrypoint                   | Use                                                             |
+| ---------------------------- | --------------------------------------------------------------- |
+| `@samline/drawer`            | Main vanilla API and shared drawer runtime with named instances |
+| `@samline/drawer/react`      | React component adapter                                         |
+| `@samline/drawer/browser`    | Browser global entry for CDN or plain HTML usage                |
+| `@samline/drawer/vue`        | Vue wrapper over the shared runtime                             |
+| `@samline/drawer/svelte`     | Svelte action wrapper over the shared runtime                   |
+| `@samline/drawer/core`       | Shared controller contracts and state primitives                |
+| `@samline/drawer/styles.css` | Shared styles export                                            |
 
 ## Quick Start
 
 ```ts
-import { createDrawer } from '@samline/drawer';
+import { createDrawer } from '@samline/drawer'
 
 const drawer = createDrawer({
   direction: 'bottom',
@@ -46,19 +46,19 @@ const drawer = createDrawer({
   triggerText: 'Open drawer',
   title: 'Drawer title',
   description: 'Drawer description',
-  content: 'Drawer content',
-});
+  content: 'Drawer content'
+})
 
-drawer.setOpen(true);
+drawer.setOpen(true)
 ```
 
 ## Choose Your Entrypoint
 
-- Use `@samline/drawer` when you want a simple programmatic API and one shared mounted drawer instance.
-- Use `@samline/drawer/react` when you want the full component model with `Drawer.Root`, `Drawer.Trigger`, `Drawer.Content`, and nested drawers.
-- Use `@samline/drawer/browser` when you want to expose the root API as `window.Drawer` in a browser-only integration.
-- Use `@samline/drawer/vue` when you want a Vue wrapper that syncs props into the shared host and optionally installs `DrawerPlugin`.
-- Use `@samline/drawer/svelte` when you want a Svelte action or a programmatic `mountDrawer` helper.
+- Use `@samline/drawer` when you want a simple programmatic API with named instances, imperative helpers, and parent-child coordination.
+- Use `@samline/drawer/react` when you want the full component model with `Drawer.Root`, `Drawer.Trigger`, `Drawer.Content`, nested drawers, and the same imperative helpers.
+- Use `@samline/drawer/browser` when you want a browser global API for CDN, embeds, or plain HTML usage.
+- Use `@samline/drawer/vue` when you want a Vue wrapper that syncs props into the shared runtime and optionally installs `DrawerPlugin`.
+- Use `@samline/drawer/svelte` when you want a Svelte action or a programmatic `mountDrawer` helper over the shared runtime.
 - Use `@samline/drawer/core` when you only need the controller and snapshot contracts without rendering UI.
 
 ## Documentation
@@ -73,7 +73,12 @@ Use the dedicated docs when you want the full surface area or framework-specific
 - [docs/vue.md](docs/vue.md)
 - [docs/svelte.md](docs/svelte.md)
 
+## CDN
+
+Drawer ships a browser bundle for CDN and plain HTML usage through `dist/browser/index.js`.
+
+That build attaches `window.Drawer` and can be used without a bundler.
+
 ## License
 
 MIT
-

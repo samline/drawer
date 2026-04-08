@@ -19,6 +19,13 @@ This package exposes one shared drawer runtime across multiple entrypoints. Star
 
 ## Shared Runtime Notes
 
-- The root package manages one module-level drawer host, so repeated calls to `createDrawer()` or `configureDrawer()` reconfigure the same instance.
-- The browser, Vue, and Svelte entries all drive that same shared host rather than creating independent runtimes.
+- The root package manages named drawer instances. Omitting `id` targets the default instance.
+- The browser, Vue, Svelte, and React imperative exports all target that same shared runtime rather than separate registries.
+- Use `parentId` to relate drawers and query that graph with `getParentDrawer()` and `getChildDrawers()`.
 - The `core` entry does not render anything. It only exposes shared controller contracts and state snapshots.
+
+## Current Limits
+
+- React remains the canonical declarative implementation.
+- Vue, Svelte, browser, and vanilla still route rendering through the React host.
+- Some advanced nested, drag, and release coordination is still React-first internally.

@@ -1,73 +1,70 @@
-# Browser
+# Browser / CDN
 
-Use the browser entry when you want the root API on `window.Drawer` without importing modules throughout your app.
+Use the browser entry when you want a browser-facing global API from a CDN or plain HTML page.
 
-## Install
-
-```bash
-bun add @samline/drawer
-```
-
-## Basic Usage
-
-```html
-<script type="module">
-  import '@samline/drawer/browser';
-
-  const drawer = window.Drawer.createDrawer({
-    triggerText: 'Open drawer',
-    title: 'Drawer title',
-    content: 'Drawer content'
-  });
-
-  drawer.setOpen(true);
-</script>
-```
+The browser bundle is designed for environments without a bundler and without `script type="module"`.
 
 ## What It Exposes
 
-The browser entry assigns this API to `window.Drawer`:
+Loading the browser bundle attaches `window.Drawer` with this API:
 
+- `getParentDrawer`
+- `getChildDrawers`
+- `openDrawer`
+- `closeDrawer`
+- `toggleDrawer`
+- `updateDrawer`
 - `createDrawer`
 - `configureDrawer`
 - `getDrawer`
+- `getDrawers`
 - `destroyDrawer`
+- `destroyDrawers`
 - `createDrawerController`
 
 ## Complete Example
 
 ```html
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
+<script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
+```
+
+## Complete Example
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
 <button id="open-settings" type="button">Settings</button>
 
-<script type="module">
-  import '@samline/drawer/browser';
-
-  const trigger = document.getElementById('open-settings');
+<script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
+<script>
+  const trigger = document.getElementById('open-settings')
 
   window.Drawer.createDrawer({
+    id: 'settings',
     triggerElement: trigger,
     title: 'Settings',
     description: 'Control your workspace preferences.',
-    content: () => {
-      const wrapper = document.createElement('div');
-      wrapper.textContent = 'Drawer content rendered from the browser entry.';
-      return wrapper;
+    content: function () {
+      const wrapper = document.createElement('div')
+      wrapper.textContent = 'Drawer content rendered from the browser entry.'
+      return wrapper
     },
     direction: 'right'
-  });
-  
-  window.Drawer.getDrawer()?.subscribe((snapshot) => {
-    console.log('open:', snapshot.state.isOpen);
-  });
+  })
+
+  window.Drawer.getDrawer('settings')?.subscribe(function (snapshot) {
+    console.log('open:', snapshot.state.isOpen)
+  })
 </script>
 ```
 
 ## When to Use It
 
-- Use it for browser-only integrations or demos where a global namespace is simpler than repeated imports.
-- Use the root package instead if you already control the module graph and do not need `window.Drawer`.
+- Use it when you need a browser global API.
+- Use it for plain HTML pages, embeds, CMS integrations, or demos where a CDN script is simpler than a bundler.
+- Use the root package instead if you already control the module graph and do not need a browser global.
 
 ## Notes
 
-- Importing `@samline/drawer/browser` does not auto-mount a drawer. The namespace is registered immediately, but the shared host is only created after calling `createDrawer()` or `configureDrawer()`.
-- The browser entry drives the same shared mounted host as the root package.
+- The browser bundle targets the same shared runtime registry as the root package.
+- Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
