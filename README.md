@@ -73,12 +73,6 @@ Use the dedicated docs when you want the full surface area or framework-specific
 - [docs/vue.md](docs/vue.md)
 - [docs/svelte.md](docs/svelte.md)
 
-## CDN
-
-Drawer ships a browser bundle for CDN and plain HTML usage through `dist/browser/index.js`.
-
-That build attaches `window.Drawer` and can be used without a bundler.
-
 ## License
 
 MIT

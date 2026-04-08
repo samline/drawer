@@ -3,6 +3,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 
 import { build } from 'esbuild';
+import { parseHTML } from 'linkedom';
 
 const [, , sourceRoot, targetRoot] = process.argv;
 
@@ -134,23 +135,103 @@ function assertNoExternalReact(filePath) {
 
 function verifyBrowserGlobalBundle() {
   const code = readFileSync(path.join(targetDist, 'browser', 'index.js'), 'utf8');
-  const windowObject = { window: null };
+  const { window } = parseHTML('<!doctype html><html><head></head><body><button id="trigger">Open</button></body></html>');
+  const trigger = window.document.getElementById('trigger');
+  const timerHandles = new Set();
+  const nativeSetTimeout = globalThis.setTimeout;
+  const nativeClearTimeout = globalThis.clearTimeout;
 
-  windowObject.window = windowObject;
+  const sandboxSetTimeout = (callback, delay = 0, ...args) => {
+    const handle = nativeSetTimeout(() => {
+      timerHandles.delete(handle);
+      callback(...args);
+    }, delay);
+
+    timerHandles.add(handle);
+    return handle;
+  };
+
+  const sandboxClearTimeout = (handle) => {
+    timerHandles.delete(handle);
+    nativeClearTimeout(handle);
+  };
+
+  if (!trigger) {
+    throw new Error('Failed to create trigger element for browser bundle verification');
+  }
+
+  window.window = window;
+  window.self = window;
+  window.global = window;
+  window.globalThis = window;
+  window.location = new URL('https://example.com/');
+  window.history = {
+    state: null,
+    pushState() {},
+    replaceState() {},
+    back() {},
+    forward() {},
+    go() {},
+  };
+  window.console = console;
+  window.setTimeout = sandboxSetTimeout;
+  window.clearTimeout = sandboxClearTimeout;
+  window.queueMicrotask = queueMicrotask;
+  window.requestAnimationFrame = (callback) => sandboxSetTimeout(() => callback(Date.now()), 16);
+  window.cancelAnimationFrame = (handle) => sandboxClearTimeout(handle);
+  window.matchMedia = () => ({
+    matches: false,
+    media: '',
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() { return false; },
+  });
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  window.MutationObserver = class {
+    observe() {}
+    disconnect() {}
+    takeRecords() { return []; }
+  };
+  window.getComputedStyle = () => ({
+    getPropertyValue() {
+      return '';
+    },
+    overflow: 'visible',
+  });
 
   const sandbox = {
-    window: windowObject,
-    self: windowObject,
-    global: windowObject,
-    globalThis: windowObject,
-    document: undefined,
-    navigator: undefined,
+    window,
+    self: window,
+    global: window,
+    globalThis: window,
+    document: window.document,
+    navigator: window.navigator,
+    location: window.location,
+    history: window.history,
+    HTMLElement: window.HTMLElement,
+    Element: window.Element,
+    Node: window.Node,
+    Text: window.Text,
+    Event: window.Event,
+    CustomEvent: window.CustomEvent,
+    MouseEvent: window.MouseEvent,
+    MutationObserver: window.MutationObserver,
+    ResizeObserver: window.ResizeObserver,
     console,
-    setTimeout,
-    clearTimeout,
+    setTimeout: sandboxSetTimeout,
+    clearTimeout: sandboxClearTimeout,
     queueMicrotask,
-    requestAnimationFrame: undefined,
-    cancelAnimationFrame: undefined,
+    requestAnimationFrame: window.requestAnimationFrame,
+    cancelAnimationFrame: window.cancelAnimationFrame,
+    getComputedStyle: window.getComputedStyle,
+    matchMedia: window.matchMedia,
   };
 
   vm.createContext(sandbox);
@@ -159,6 +240,31 @@ function verifyBrowserGlobalBundle() {
   if (!sandbox.window.Drawer || typeof sandbox.window.Drawer.createDrawer !== 'function') {
     throw new Error('Browser global bundle did not attach window.Drawer');
   }
+
+  const drawer = sandbox.window.Drawer.createDrawer({
+    id: 'cdn-smoke',
+    triggerElement: trigger,
+    title: 'Smoke test',
+    description: 'Browser bundle verification',
+    content: 'Drawer body',
+  });
+
+  drawer.setOpen(true);
+
+  const styleElement = sandbox.document.querySelector(`style[${injectedStyleAttribute}]`);
+  const mountedHost = sandbox.document.querySelector('[data-drawer-vanilla-root="cdn-smoke"]');
+
+  if (!styleElement) {
+    throw new Error('Browser global bundle did not inject runtime styles');
+  }
+
+  if (!mountedHost) {
+    throw new Error('Browser global bundle did not mount a drawer host');
+  }
+
+  sandbox.window.Drawer.destroyDrawers();
+  timerHandles.forEach((handle) => nativeClearTimeout(handle));
+  timerHandles.clear();
 }
 
 function verifyBundles() {
@@ -180,3 +286,4 @@ function verifyBundles() {
 
 await buildRuntimeBundles();
 verifyBundles();
+process.exit(0);

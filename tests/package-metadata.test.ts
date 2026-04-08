@@ -14,7 +14,17 @@ describe('package metadata', () => {
     expect(packageJson.exports).toMatchObject({
       '.': expect.any(Object),
       './react': expect.any(Object),
-      './browser': expect.any(Object),
+      './browser': {
+        import: {
+          types: './dist/browser/index.d.mts',
+          default: './dist/browser/index.mjs',
+        },
+        require: {
+          types: './dist/browser/index.d.ts',
+          default: './dist/browser/index.cjs',
+        },
+        default: './dist/browser/index.mjs',
+      },
       './vue': expect.any(Object),
       './svelte': expect.any(Object),
       './core': expect.any(Object),
