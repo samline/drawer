@@ -5,9 +5,8 @@ import {
   type CommonDrawerSnapshot,
 } from '../core';
 import { TRANSITIONS } from '../constants';
-import { NESTED_DISPLACEMENT } from '../constants';
 import { set } from '../helpers';
-import { getNestedDragTransform, getNestedDrawerTransform } from './transforms';
+import { getParentNestedVisualState } from './nested';
 import type { VanillaDrawerOptions, VanillaRenderable } from '../vanilla/render';
 import { destroyVanillaHost, renderVanillaHost, type VanillaHostState } from '../vanilla/host';
 
@@ -155,38 +154,16 @@ function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?:
     .map((childId) => drawerInstances.get(childId))
     .filter((runtime): runtime is DrawerRuntimeInstance => Boolean(runtime?.controller.getSnapshot().state.isOpen));
 
-  if (typeof percentageDragged === 'number' && openChildren.length > 0) {
-    const { transform } = getNestedDragTransform({
-      direction: parentDirection,
-      viewportSize: getViewportSizeForDirection(parentDirection),
-      displacement: NESTED_DISPLACEMENT,
-      percentageDragged,
-    });
-
-    set(
-      parentElement,
-      {
-        transform,
-        transition: 'none',
-      },
-      true,
-    );
-    return;
-  }
-
-  const { transform } = getNestedDrawerTransform({
+  const visualState = getParentNestedVisualState({
     direction: parentDirection,
-    isOpen: openChildren.length > 0,
     viewportSize: getViewportSizeForDirection(parentDirection),
-    displacement: NESTED_DISPLACEMENT,
+    hasOpenChild: openChildren.length > 0,
+    percentageDragged,
   });
 
   set(
     parentElement,
-    {
-      transform,
-      transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
-    },
+    visualState,
     true,
   );
 }

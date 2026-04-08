@@ -3,6 +3,7 @@ import { set, isVertical } from './helpers';
 import { TRANSITIONS, VELOCITY_THRESHOLD } from './constants';
 import { useControllableState } from './use-controllable-state';
 import { DrawerDirection, DrawerSnapPoint } from './types';
+import { getSnapPointReleaseAction } from './runtime/release';
 import {
   getActiveSnapPointIndex,
   getClosestSnapPoint,
@@ -144,14 +145,7 @@ export function useSnapPoints({
     dismissible: boolean;
   }) {
     if (fadeFromIndex === undefined) return;
-
-    const currentPosition =
-      direction === 'bottom' || direction === 'right'
-        ? (activeSnapPointOffset ?? 0) - draggedDistance
-        : (activeSnapPointOffset ?? 0) + draggedDistance;
     const isOverlaySnapPoint = activeSnapPointIndex === fadeFromIndex - 1;
-    const isFirst = activeSnapPointIndex === 0;
-    const hasDraggedUp = draggedDistance > 0;
 
     if (isOverlaySnapPoint) {
       set(overlayRef.current, {
@@ -159,43 +153,30 @@ export function useSnapPoints({
       });
     }
 
-    if (!snapToSequentialPoint && velocity > 2 && !hasDraggedUp) {
-      if (dismissible) closeDrawer();
-      else snapToPoint(snapPointsOffset[0]); // snap to initial point
-      return;
-    }
-
-    if (!snapToSequentialPoint && velocity > 2 && hasDraggedUp && snapPointsOffset && snapPoints) {
-      snapToPoint(snapPointsOffset[snapPoints.length - 1] as number);
-      return;
-    }
-
-    // Find the closest snap point to the current position
-    const closestSnapPoint = getClosestSnapPoint({ snapPointsOffset, currentPosition });
-
     const dim = isVertical(direction) ? window.innerHeight : window.innerWidth;
-    if (velocity > VELOCITY_THRESHOLD && Math.abs(draggedDistance) < dim * 0.4) {
-      const dragDirection = hasDraggedUp ? 1 : -1; // 1 = up, -1 = down
+    const releaseAction = getSnapPointReleaseAction({
+      fadeFromIndex,
+      direction,
+      activeSnapPointOffset,
+      activeSnapPointIndex,
+      snapPointsOffset,
+      snapPointsCount: snapPoints?.length ?? 0,
+      draggedDistance,
+      velocity,
+      dismissible,
+      snapToSequentialPoint,
+      velocityThreshold: VELOCITY_THRESHOLD,
+      viewportSize: dim,
+    });
 
-      // Don't do anything if we swipe upwards while being on the last snap point
-      if (dragDirection > 0 && isLastSnapPoint && snapPoints) {
-        snapToPoint(snapPointsOffset[snapPoints.length - 1]);
-        return;
-      }
-
-      if (isFirst && dragDirection < 0 && dismissible) {
-        closeDrawer();
-      }
-
-      if (activeSnapPointIndex === null) return;
-
-      snapToPoint(snapPointsOffset[activeSnapPointIndex + dragDirection]);
+    if (releaseAction.type === 'close') {
+      closeDrawer();
       return;
     }
 
-    if (closestSnapPoint === undefined) return;
-
-    snapToPoint(closestSnapPoint);
+    if (releaseAction.type === 'snap') {
+      snapToPoint(releaseAction.targetOffset);
+    }
   }
 
   function onDrag({ draggedDistance }: { draggedDistance: number }) {
