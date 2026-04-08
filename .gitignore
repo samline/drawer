@@ -33,4 +33,4 @@ yarn-error.log*
 .turbo
 
 # styles
-style.css
+!src/style.css
