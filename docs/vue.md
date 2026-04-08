@@ -19,6 +19,7 @@ export default defineComponent({
     return () =>
       h(DrawerRoot, {
         triggerText: 'Open drawer',
+        showHandle: true,
         title: 'Drawer title',
         description: 'Drawer description',
         content: 'Drawer content',
@@ -45,6 +46,7 @@ const App = defineComponent({
     return () =>
       h(DrawerRoot, {
         triggerText: 'Open filters',
+        showHandle: true,
         title: 'Filters',
         description: 'Adjust the visible results.',
         content: 'Drawer content',
@@ -61,9 +63,12 @@ createApp(App).use(DrawerPlugin).mount('#app');
 
 - Pass `id` when the Vue wrapper should own a specific runtime instance.
 - Pass `parentId` when the wrapper should behave as a child of another drawer instance.
+- Pass `showHandle` when the shared host should render the built-in handle.
 - Render `DrawerRoot` once near the part of the app that owns the selected drawer id.
 - Install `DrawerPlugin` if you want `DrawerRoot` registered globally and access to `$drawer` or the `drawer:api` injection key.
 - Update props reactively to reconfigure the same runtime instance.
+
+If `handleOnly` is enabled, the shared host renders the built-in handle automatically.
 
 ## Lifecycle and Cleanup
 

@@ -9,6 +9,8 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   mountElement?: HTMLElement | null;
   triggerElement?: HTMLElement | null;
   triggerText?: string;
+  showHandle?: boolean;
+  handleClassName?: string;
   title?: VanillaRenderable;
   description?: VanillaRenderable;
   content?: VanillaRenderable;
@@ -20,6 +22,8 @@ function toReactDrawerProps(
   options: CommonDrawerOptions,
   open: boolean,
   onOpenChange: NonNullable<DialogProps['onOpenChange']>,
+  internalOnDragChange?: (percentageDragged: number) => void,
+  internalOnReleaseChange?: (open: boolean) => void,
 ): DialogProps {
   const { id: _id, parentId: _parentId, onDragChange, onReleaseChange, ...drawerOptions } = options;
 
@@ -27,8 +31,20 @@ function toReactDrawerProps(
     ...drawerOptions,
     open,
     onOpenChange,
-    onDrag: onDragChange ? (_event: React.PointerEvent<HTMLDivElement>, percentageDragged: number) => onDragChange(percentageDragged) : undefined,
-    onRelease: onReleaseChange ? (_event: React.PointerEvent<HTMLDivElement>, nextOpen: boolean) => onReleaseChange(nextOpen) : undefined,
+    onDrag:
+      onDragChange || internalOnDragChange
+        ? (_event: React.PointerEvent<HTMLDivElement>, percentageDragged: number) => {
+            internalOnDragChange?.(percentageDragged);
+            onDragChange?.(percentageDragged);
+          }
+        : undefined,
+    onRelease:
+      onReleaseChange || internalOnReleaseChange
+        ? (_event: React.PointerEvent<HTMLDivElement>, nextOpen: boolean) => {
+            internalOnReleaseChange?.(nextOpen);
+            onReleaseChange?.(nextOpen);
+          }
+        : undefined,
   };
 
   if (drawerOptions.snapPoints) {
@@ -83,15 +99,21 @@ export function VanillaDrawerRenderer({
   options,
   open,
   onOpenChange,
+  onDragChange,
+  onReleaseChange,
 }: {
   options: VanillaDrawerOptions;
   open: boolean;
   onOpenChange: NonNullable<DialogProps['onOpenChange']>;
+  onDragChange?: (percentageDragged: number) => void;
+  onReleaseChange?: (open: boolean) => void;
 }) {
   const {
     mountElement: _mountElement,
     triggerElement: _triggerElement,
     triggerText,
+    showHandle,
+    handleClassName,
     title,
     description,
     content,
@@ -100,7 +122,8 @@ export function VanillaDrawerRenderer({
     ...drawerOptions
   } = options;
 
-  const rootProps = toReactDrawerProps(drawerOptions, open, onOpenChange);
+  const rootProps = toReactDrawerProps(drawerOptions, open, onOpenChange, onDragChange, onReleaseChange);
+  const shouldRenderHandle = Boolean(drawerOptions.handleOnly || showHandle);
 
   return (
     <ReactDrawer.Root {...rootProps}>
@@ -114,6 +137,7 @@ export function VanillaDrawerRenderer({
       <ReactDrawer.Portal>
         <ReactDrawer.Overlay className={overlayClassName} />
         <ReactDrawer.Content className={contentClassName}>
+          {shouldRenderHandle ? <ReactDrawer.Handle className={handleClassName} /> : null}
           {title != null ? (
             <ReactDrawer.Title>
               <VanillaNode value={title} />

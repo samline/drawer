@@ -1,6 +1,6 @@
 {
   "name": "@samline/drawer",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "A universal drawer package for React, Vue, Svelte, vanilla JS, and browser usage.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

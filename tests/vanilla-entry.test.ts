@@ -48,12 +48,16 @@ describe('vanilla root entry', () => {
   it('stores vanilla-only render options on the shared controller', () => {
     const drawer = createDrawer({
       triggerText: 'Open drawer',
+      showHandle: true,
+      handleClassName: 'drawer-handle',
       title: 'Drawer title',
       description: 'Drawer description',
       content: 'Drawer content',
     });
 
     expect(drawer.options.triggerText).toBe('Open drawer');
+    expect(drawer.options.showHandle).toBe(true);
+    expect(drawer.options.handleClassName).toBe('drawer-handle');
     expect(drawer.options.title).toBe('Drawer title');
     expect(drawer.options.description).toBe('Drawer description');
     expect(drawer.options.content).toBe('Drawer content');

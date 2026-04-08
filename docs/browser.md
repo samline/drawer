@@ -42,6 +42,7 @@ Loading the browser bundle attaches `window.Drawer` with this API:
   window.Drawer.createDrawer({
     id: 'settings',
     triggerElement: trigger,
+    showHandle: true,
     title: 'Settings',
     description: 'Control your workspace preferences.',
     content: function () {
@@ -68,3 +69,4 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 
 - The browser bundle targets the same shared runtime registry as the root package.
 - Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
+- Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.

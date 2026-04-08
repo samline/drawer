@@ -16,6 +16,7 @@ bun add @samline/drawer svelte
 
   const options = {
     triggerText: 'Open drawer',
+    showHandle: true,
     title: 'Drawer title',
     description: 'Drawer description',
     content: 'Drawer content',
@@ -34,6 +35,7 @@ bun add @samline/drawer svelte
 
   const options = {
     triggerText: 'Open filters',
+    showHandle: true,
     title: 'Filters',
     description: 'Adjust the visible results.',
     content: 'Drawer content',
@@ -55,9 +57,12 @@ bun add @samline/drawer svelte
 
 - Pass `id` when the Svelte component should own a specific runtime instance.
 - Pass `parentId` when the action should behave as a child drawer.
+- Pass `showHandle` when the shared host should render the built-in handle.
 - Use the `drawer` action when the Svelte component should own the selected drawer lifecycle.
 - Use `mountDrawer()` when you want to mount or refresh the same instance imperatively.
 - Use `getDrawer()` to read the current controller and open or reconfigure it from event handlers.
+
+If `handleOnly` is enabled, the shared host renders the built-in handle automatically.
 
 ## Lifecycle and Cleanup
 

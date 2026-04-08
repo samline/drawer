@@ -16,6 +16,7 @@ import { createDrawer } from '@samline/drawer';
 const drawer = createDrawer({
   id: 'filters',
   triggerText: 'Open drawer',
+  showHandle: true,
   title: 'Drawer title',
   description: 'Drawer description',
   content: 'Drawer content',
@@ -47,6 +48,7 @@ const drawer = createDrawer({
   id: 'filters',
   direction: 'bottom',
   triggerText: 'Open filters',
+  showHandle: true,
   title: 'Filters',
   description: 'Adjust the visible results.',
   content: filters,
@@ -72,8 +74,10 @@ document.querySelector('[data-expand-drawer]')?.addEventListener('click', () => 
 - Pass `id` when you need more than the default runtime instance.
 - Pass `parentId` when this drawer should follow another drawer's lifecycle.
 - Pass `triggerText` to render a built-in button.
+- Pass `showHandle` to render the built-in handle in the mounted host.
 - Pass `triggerElement` to attach an existing element as the external trigger.
 - Pass `mountElement` when the host should live inside a specific DOM subtree.
+- If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance.
 - Use `update()` or `updateDrawer()` when you want to merge new options into the same instance.
 
 ## Runtime Helpers

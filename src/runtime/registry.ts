@@ -5,6 +5,9 @@ import {
   type CommonDrawerSnapshot,
 } from '../core';
 import { TRANSITIONS } from '../constants';
+import { NESTED_DISPLACEMENT } from '../constants';
+import { set } from '../helpers';
+import { getNestedDragTransform, getNestedDrawerTransform } from './transforms';
 import type { VanillaDrawerOptions, VanillaRenderable } from '../vanilla/render';
 import { destroyVanillaHost, renderVanillaHost, type VanillaHostState } from '../vanilla/host';
 
@@ -85,6 +88,10 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   runtime.options.onOpenChange?.(open);
 
+  if (runtime.options.parentId) {
+    syncParentNestedTransform(runtime.options.parentId);
+  }
+
   if (!open) {
     getChildDrawerIds(runtime.id).forEach((childId) => {
       const childRuntime = drawerInstances.get(childId);
@@ -106,6 +113,82 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   setTimeout(() => {
     runtime.options.onAnimationEnd?.(open);
   }, TRANSITIONS.DURATION * 1000);
+}
+
+function canUseDOM() {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
+
+function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
+  if (!runtime.element) {
+    return null;
+  }
+
+  return runtime.element.querySelector('[data-vaul-drawer]') as HTMLElement | null;
+}
+
+function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions['direction']>) {
+  if (!canUseDOM()) {
+    return 0;
+  }
+
+  return direction === 'top' || direction === 'bottom' ? window.innerHeight : window.innerWidth;
+}
+
+function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?: number) {
+  if (!canUseDOM()) {
+    return;
+  }
+
+  const parentRuntime = drawerInstances.get(parentId);
+  if (!parentRuntime) {
+    return;
+  }
+
+  const parentDirection = parentRuntime.options.direction ?? 'bottom';
+  const parentElement = getRuntimeDrawerElement(parentRuntime);
+  if (!parentElement) {
+    return;
+  }
+
+  const openChildren = getChildDrawerIds(parentId)
+    .map((childId) => drawerInstances.get(childId))
+    .filter((runtime): runtime is DrawerRuntimeInstance => Boolean(runtime?.controller.getSnapshot().state.isOpen));
+
+  if (typeof percentageDragged === 'number' && openChildren.length > 0) {
+    const { transform } = getNestedDragTransform({
+      direction: parentDirection,
+      viewportSize: getViewportSizeForDirection(parentDirection),
+      displacement: NESTED_DISPLACEMENT,
+      percentageDragged,
+    });
+
+    set(
+      parentElement,
+      {
+        transform,
+        transition: 'none',
+      },
+      true,
+    );
+    return;
+  }
+
+  const { transform } = getNestedDrawerTransform({
+    direction: parentDirection,
+    isOpen: openChildren.length > 0,
+    viewportSize: getViewportSizeForDirection(parentDirection),
+    displacement: NESTED_DISPLACEMENT,
+  });
+
+  set(
+    parentElement,
+    {
+      transform,
+      transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
+    },
+    true,
+  );
 }
 
 function renderVanillaDrawer(id: CommonDrawerId) {
@@ -133,6 +216,16 @@ function renderVanillaDrawer(id: CommonDrawerId) {
 
       renderVanillaDrawer(id);
     },
+    onDragChange: runtime.options.parentId
+      ? (percentageDragged: number) => {
+          syncParentNestedTransform(runtime.options.parentId as CommonDrawerId, percentageDragged);
+        }
+      : undefined,
+    onReleaseChange: runtime.options.parentId
+      ? () => {
+          syncParentNestedTransform(runtime.options.parentId as CommonDrawerId);
+        }
+      : undefined,
   });
 
   if (!nextHost) return null;
@@ -258,6 +351,7 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
 
   if (nextOptions.parentId && nextOptions.open) {
     openAncestorChain(nextOptions.parentId);
+    syncParentNestedTransform(nextOptions.parentId);
   }
 
   return buildVanillaController(id);
@@ -323,6 +417,8 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
     return;
   }
 
+  const parentId = runtime.options.parentId;
+
   getChildDrawerIds(drawerId).forEach((childId) => {
     destroyDrawer(childId);
   });
@@ -338,6 +434,10 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   runtime.ownsElement = nextHost.ownsElement;
   runtime.options = { id: drawerId };
   drawerInstances.delete(drawerId);
+
+  if (parentId) {
+    syncParentNestedTransform(parentId);
+  }
 }
 
 export function destroyDrawers() {

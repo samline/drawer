@@ -48,12 +48,16 @@ export function renderVanillaHost({
   options,
   open,
   onOpenChange,
+  onDragChange,
+  onReleaseChange,
 }: {
   host: VanillaHostState;
   id: string;
   options: VanillaDrawerOptions;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDragChange?: (percentageDragged: number) => void;
+  onReleaseChange?: (open: boolean) => void;
 }) {
   const nextContainer = resolveVanillaContainer(host, id, options.mountElement);
   if (!nextContainer?.container) {
@@ -85,6 +89,8 @@ export function renderVanillaHost({
       options,
       open,
       onOpenChange,
+      onDragChange,
+      onReleaseChange,
     }),
   );
 

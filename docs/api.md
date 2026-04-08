@@ -152,6 +152,8 @@ The root entry accepts the shared options plus these rendering options:
 | `mountElement` | `HTMLElement | null` | Mount the drawer host into a specific container |
 | `triggerElement` | `HTMLElement | null` | Attach an external click trigger |
 | `triggerText` | `string` | Render a built-in trigger button |
+| `showHandle` | `boolean` | Render the built-in drawer handle in non-React entries |
+| `handleClassName` | `string` | Extra class for the built-in non-React handle |
 | `title` | `VanillaRenderable` | Drawer title content |
 | `description` | `VanillaRenderable` | Drawer description content |
 | `content` | `VanillaRenderable` | Main drawer body content |
@@ -168,6 +170,7 @@ import { createDrawer } from '@samline/drawer';
 const drawer = createDrawer({
   id: 'filters',
   triggerText: 'Open filters',
+  showHandle: true,
   title: 'Filters',
   description: 'Refine the result set',
   content: 'Drawer body',
@@ -295,6 +298,8 @@ The Vue entry exports:
 
 `DrawerRoot` mirrors the vanilla options as Vue props and synchronizes them into the shared runtime on mount and on prop changes.
 
+Pass `showHandle` when the built-in shared host should render the default handle. If `handleOnly` is enabled, the built-in handle is rendered automatically so the drawer remains draggable from a visible affordance.
+
 `DrawerPlugin` registers `DrawerRoot`, exposes `$drawer` on `app.config.globalProperties`, and provides `drawer:api` for dependency injection.
 
 Unmounting `DrawerRoot` destroys the specific runtime instance selected by `id`.
@@ -321,6 +326,8 @@ The Svelte entry exports:
 - `createDrawerController`
 
 `drawer` is a Svelte action that marks the host node, synchronizes options into the shared runtime, and destroys the selected instance when the action is torn down.
+
+Use `showHandle` when the shared host should render the built-in handle. As with the root and Vue entries, enabling `handleOnly` also renders that handle automatically.
 
 `mountDrawer(options?)` is the imperative helper when you want the same behavior without attaching an action in markup.
 
@@ -353,6 +360,7 @@ Loading `dist/browser/index.js` in a browser attaches that namespace. It does no
 <script>
   const drawer = window.Drawer.createDrawer({
     triggerText: 'Open drawer',
+    showHandle: true,
     title: 'Drawer title',
     content: 'Drawer content'
   });

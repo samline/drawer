@@ -1,6 +1,64 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseHTML } from 'linkedom';
 
+function installDomGlobals(window: ReturnType<typeof parseHTML>['window']) {
+  vi.stubGlobal('window', window);
+  vi.stubGlobal('document', window.document);
+  vi.stubGlobal('navigator', window.navigator);
+  vi.stubGlobal('HTMLElement', window.HTMLElement);
+  vi.stubGlobal('Element', window.Element);
+  vi.stubGlobal('Node', window.Node);
+  vi.stubGlobal('Text', window.Text);
+  vi.stubGlobal('Event', window.Event);
+  vi.stubGlobal('CustomEvent', window.CustomEvent);
+  vi.stubGlobal('MouseEvent', window.MouseEvent);
+  vi.stubGlobal('MutationObserver', class {
+    observe() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  });
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+  vi.stubGlobal('getComputedStyle', () => ({
+    getPropertyValue() {
+      return '';
+    },
+    overflow: 'visible',
+    transform: 'matrix(1, 0, 0, 1, 0, 0)',
+  }));
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    media: '',
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() {
+      return false;
+    },
+  }));
+
+  window.requestAnimationFrame = ((callback: FrameRequestCallback) => setTimeout(() => callback(Date.now()), 16)) as typeof window.requestAnimationFrame;
+  window.cancelAnimationFrame = ((handle: number) => clearTimeout(handle)) as typeof window.cancelAnimationFrame;
+  window.location = new URL('https://example.com/') as never;
+  window.history = {
+    state: null,
+    pushState() {},
+    replaceState() {},
+    back() {},
+    forward() {},
+    go() {},
+  } as never;
+  window.innerWidth = 400;
+  window.innerHeight = 800;
+}
+
 describe('browser entry', () => {
   it('can be imported without a window object', async () => {
     const browserEntry = await import('../src/browser/index');
@@ -72,6 +130,20 @@ describe('browser entry', () => {
     expect(browserEntry.Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe(1);
   });
 
+  it('stores non-React handle options through the browser namespace', async () => {
+    const browserEntry = await import('../src/browser/index');
+
+    browserEntry.Drawer.destroyDrawers();
+    browserEntry.Drawer.createDrawer({
+      id: 'browser-handle-options',
+      showHandle: true,
+      handleClassName: 'browser-handle',
+    });
+
+    expect(browserEntry.Drawer.getDrawer('browser-handle-options')?.options.showHandle).toBe(true);
+    expect(browserEntry.Drawer.getDrawer('browser-handle-options')?.options.handleClassName).toBe('browser-handle');
+  });
+
   it('opens from a real trigger element and mounts a host when DOM is available', async () => {
     vi.resetModules();
 
@@ -82,58 +154,7 @@ describe('browser entry', () => {
       throw new Error('Missing trigger element for browser DOM test');
     }
 
-    vi.stubGlobal('window', window);
-    vi.stubGlobal('document', window.document);
-    vi.stubGlobal('navigator', window.navigator);
-    vi.stubGlobal('HTMLElement', window.HTMLElement);
-    vi.stubGlobal('Element', window.Element);
-    vi.stubGlobal('Node', window.Node);
-    vi.stubGlobal('Text', window.Text);
-    vi.stubGlobal('Event', window.Event);
-    vi.stubGlobal('CustomEvent', window.CustomEvent);
-    vi.stubGlobal('MouseEvent', window.MouseEvent);
-    vi.stubGlobal('MutationObserver', class {
-      observe() {}
-      disconnect() {}
-      takeRecords() {
-        return [];
-      }
-    });
-    vi.stubGlobal('ResizeObserver', class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    });
-    vi.stubGlobal('getComputedStyle', () => ({
-      getPropertyValue() {
-        return '';
-      },
-      overflow: 'visible',
-    }));
-    vi.stubGlobal('matchMedia', () => ({
-      matches: false,
-      media: '',
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent() {
-        return false;
-      },
-    }));
-
-    window.requestAnimationFrame = ((callback: FrameRequestCallback) => setTimeout(() => callback(Date.now()), 16)) as typeof window.requestAnimationFrame;
-    window.cancelAnimationFrame = ((handle: number) => clearTimeout(handle)) as typeof window.cancelAnimationFrame;
-    window.location = new URL('https://example.com/') as never;
-    window.history = {
-      state: null,
-      pushState() {},
-      replaceState() {},
-      back() {},
-      forward() {},
-      go() {},
-    } as never;
+    installDomGlobals(window);
 
     try {
       const browserEntry = await import('../src/browser/index');
@@ -142,6 +163,8 @@ describe('browser entry', () => {
       browserEntry.Drawer.createDrawer({
         id: 'browser-dom',
         triggerElement: trigger,
+        showHandle: true,
+        handleClassName: 'browser-dom-handle',
         title: 'DOM drawer',
         content: 'Body',
       });
@@ -151,24 +174,38 @@ describe('browser entry', () => {
 
       expect(browserEntry.Drawer.getDrawer('browser-dom')?.getSnapshot().state.isOpen).toBe(true);
       expect(window.document.querySelector('[data-drawer-vanilla-root="browser-dom"]')).not.toBeNull();
+  expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.showHandle).toBe(true);
+  expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.handleClassName).toBe('browser-dom-handle');
 
       browserEntry.Drawer.destroyDrawers();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 20));
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
   it('opens every ancestor in a deep nested browser chain', async () => {
-    const browserEntry = await import('../src/browser/index');
+    vi.resetModules();
 
-    browserEntry.Drawer.destroyDrawers();
-    browserEntry.Drawer.createDrawer({ id: 'browser-grandparent', open: false });
-    browserEntry.Drawer.createDrawer({ id: 'browser-parent', parentId: 'browser-grandparent', open: false });
-    browserEntry.Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-parent', open: true });
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
 
-    expect(browserEntry.Drawer.getDrawer('browser-grandparent')?.getSnapshot().state.isOpen).toBe(true);
-    expect(browserEntry.Drawer.getDrawer('browser-parent')?.getSnapshot().state.isOpen).toBe(true);
-    expect(browserEntry.Drawer.getDrawer('browser-child')?.getSnapshot().state.isOpen).toBe(true);
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      browserEntry.Drawer.createDrawer({ id: 'browser-grandparent', open: false });
+      browserEntry.Drawer.createDrawer({ id: 'browser-parent', parentId: 'browser-grandparent', open: false });
+      browserEntry.Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-parent', open: true });
+
+      expect(browserEntry.Drawer.getDrawer('browser-grandparent')?.getSnapshot().state.isOpen).toBe(true);
+      expect(browserEntry.Drawer.getDrawer('browser-parent')?.getSnapshot().state.isOpen).toBe(true);
+      expect(browserEntry.Drawer.getDrawer('browser-child')?.getSnapshot().state.isOpen).toBe(true);
+
+      browserEntry.Drawer.destroyDrawers();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

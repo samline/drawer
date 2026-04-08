@@ -125,4 +125,25 @@ describe('framework entrypoints', () => {
     expect(vueEntry.getDrawer('wrapper-snap-vue')?.getSnapshot().state.activeSnapPoint).toBe(1);
     expect(svelteEntry.getDrawer('wrapper-snap-svelte')?.getSnapshot().state.activeSnapPoint).toBe('280px');
   });
+
+  it('propagates non-React handle options through Vue and Svelte wrappers', async () => {
+    const vueEntry = await import('../src/vue/index');
+    const svelteEntry = await import('../src/svelte/index');
+
+    vueEntry.createDrawer({
+      id: 'wrapper-handle-vue',
+      showHandle: true,
+      handleClassName: 'vue-handle',
+    });
+    svelteEntry.mountDrawer({
+      id: 'wrapper-handle-svelte',
+      showHandle: true,
+      handleClassName: 'svelte-handle',
+    });
+
+    expect(vueEntry.getDrawer('wrapper-handle-vue')?.options.showHandle).toBe(true);
+    expect(vueEntry.getDrawer('wrapper-handle-vue')?.options.handleClassName).toBe('vue-handle');
+    expect(svelteEntry.getDrawer('wrapper-handle-svelte')?.options.showHandle).toBe(true);
+    expect(svelteEntry.getDrawer('wrapper-handle-svelte')?.options.handleClassName).toBe('svelte-handle');
+  });
 });
