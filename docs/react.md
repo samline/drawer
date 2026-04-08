@@ -94,6 +94,24 @@ export function FiltersDrawer() {
 
 Use `handleOnly` together with `Drawer.Handle` when drag should start only from the handle.
 
+## Component Surface
+
+- `Drawer.Trigger` opens the drawer.
+- `Drawer.Portal` portals overlay and content.
+- `Drawer.Overlay` renders the backdrop.
+- `Drawer.Content` renders the draggable surface.
+- `Drawer.Handle` renders the handle and accepts `preventCycle` when clicking the handle should not advance snap points.
+- `Drawer.Close` closes the drawer.
+- `Drawer.Title` and `Drawer.Description` provide accessible labeling.
+- `Drawer.NestedRoot` creates a nested drawer that coordinates transforms with its parent.
+
+## Interaction Details
+
+- `onDrag(event, percentageDragged)` and `onRelease(event, nextOpen)` are the React equivalents of the mounted-runtime callbacks `onDragChange` and `onReleaseChange`.
+- `Drawer.Handle` cycles to the next snap point on click or tap. A long press cancels that cycle so dragging can begin. Set `preventCycle` when the handle should only drag.
+- Add `data-drawer-no-drag` to a descendant inside `Drawer.Content` when that element should keep pointer gestures instead of starting a drawer drag.
+- When `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the page shell element that should scale behind the drawer.
+
 ## Notes
 
 - `Drawer.NestedRoot` must be rendered inside another drawer.

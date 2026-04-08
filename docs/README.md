@@ -1,6 +1,6 @@
 # Documentation
 
-This package exposes one shared drawer runtime across multiple entrypoints. Start here if you want the overview, then jump into the guide for the adapter you plan to ship.
+This is the full reference for the package. The root README stays intentionally short; use this directory for integration details, lifecycle rules, runtime attributes, and framework-specific guidance.
 
 ## Guides
 
@@ -23,6 +23,13 @@ This package exposes one shared drawer runtime across multiple entrypoints. Star
 - The browser, Vue, Svelte, and React imperative exports all target that same shared runtime rather than separate registries.
 - Use `parentId` to relate drawers and query that graph with `getParentDrawer()` and `getChildDrawers()`.
 - The `core` entry does not render anything. It only exposes shared controller contracts and state snapshots.
+
+## Operational Checklist
+
+- Add `data-drawer-wrapper` to the page shell when `shouldScaleBackground` is enabled.
+- Add `data-drawer-no-drag` to interactive descendants that should not start a drawer drag.
+- Treat `id` as an ownership boundary. Reusing the same `id` intentionally targets the same runtime instance.
+- Use `parentId` only when child lifecycle should follow the parent.
 
 ## Integration Notes
 

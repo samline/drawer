@@ -16,6 +16,8 @@ import { DrawerRoot } from '@samline/drawer/vue';
 
 export default defineComponent({
   setup() {
+    document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '');
+
     return () =>
       h(DrawerRoot, {
         triggerText: 'Open drawer',
@@ -69,6 +71,10 @@ createApp(App).use(DrawerPlugin).mount('#app');
 - Update props reactively to reconfigure the same runtime instance.
 
 If `handleOnly` is enabled, the shared host renders the built-in handle automatically.
+
+If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale behind the drawer.
+
+If custom content includes controls that should keep their own pointer gestures, add `data-drawer-no-drag` to those elements.
 
 ## Lifecycle and Cleanup
 

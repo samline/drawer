@@ -14,6 +14,10 @@ bun add @samline/drawer svelte
 <script lang="ts">
   import { drawer } from '@samline/drawer/svelte';
 
+  if (typeof document !== 'undefined') {
+    document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '');
+  }
+
   const options = {
     triggerText: 'Open drawer',
     showHandle: true,
@@ -63,6 +67,10 @@ bun add @samline/drawer svelte
 - Use `getDrawer()` to read the current controller and open or reconfigure it from event handlers.
 
 If `handleOnly` is enabled, the shared host renders the built-in handle automatically.
+
+If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale behind the drawer.
+
+If custom content includes controls that should keep their own pointer gestures, add `data-drawer-no-drag` to those elements.
 
 ## Lifecycle and Cleanup
 

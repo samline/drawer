@@ -13,6 +13,8 @@ bun add @samline/drawer
 ```ts
 import { createDrawer } from '@samline/drawer';
 
+document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '');
+
 const drawer = createDrawer({
   id: 'filters',
   triggerText: 'Open drawer',
@@ -80,6 +82,10 @@ document.querySelector('[data-expand-drawer]')?.addEventListener('click', () => 
 - If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance.
 - Use `update()` or `updateDrawer()` when you want to merge new options into the same instance.
 
+If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale behind the drawer.
+
+If a child node inside your rendered content should not start a drag gesture, add `data-drawer-no-drag` to that element.
+
 ## Runtime Helpers
 
 ```ts
@@ -118,3 +124,4 @@ destroyDrawer();
 
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
 - The root entry exposes the mounted shared host through a programmatic API instead of framework-specific component composition.
+- Reusing the same `id` updates the same runtime instance. It does not create a second drawer.

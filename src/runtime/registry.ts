@@ -123,7 +123,7 @@ function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
     return null;
   }
 
-  return runtime.element.querySelector('[data-vaul-drawer]') as HTMLElement | null;
+  return runtime.element.querySelector('[data-drawer]') as HTMLElement | null;
 }
 
 function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions['direction']>) {

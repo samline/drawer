@@ -174,8 +174,8 @@ describe('browser entry', () => {
 
       expect(browserEntry.Drawer.getDrawer('browser-dom')?.getSnapshot().state.isOpen).toBe(true);
       expect(window.document.querySelector('[data-drawer-vanilla-root="browser-dom"]')).not.toBeNull();
-  expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.showHandle).toBe(true);
-  expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.handleClassName).toBe('browser-dom-handle');
+        expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.showHandle).toBe(true);
+        expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.handleClassName).toBe('browser-dom-handle');
 
       browserEntry.Drawer.destroyDrawers();
       await new Promise((resolve) => setTimeout(resolve, 20));

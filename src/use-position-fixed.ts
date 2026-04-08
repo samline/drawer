@@ -6,10 +6,7 @@ let previousBodyPosition: Record<string, string> | null = null;
 /**
  * This hook is necessary to prevent buggy behavior on iOS devices (need to test on Android).
  * I won't get into too much detail about what bugs it solves, but so far I've found that setting the body to `position: fixed` is the most reliable way to prevent those bugs.
- * Issues that this hook solves:
- * https://github.com/emilkowalski/vaul/issues/435
- * https://github.com/emilkowalski/vaul/issues/433
- * And more that I discovered, but were just not reported.
+ * It prevents several Safari viewport and toolbar edge cases that otherwise shift the page while the drawer is open.
  */
 
 export function usePositionFixed({
@@ -116,7 +113,7 @@ export function usePositionFixed({
       if (typeof document === 'undefined') return;
 
       // Another drawer is opened, safe to ignore the execution
-      const hasDrawerOpened = !!document.querySelector('[data-vaul-drawer]');
+      const hasDrawerOpened = !!document.querySelector('[data-drawer]');
       if (hasDrawerOpened) return;
 
       restorePositionSetting();

@@ -343,7 +343,7 @@ export function Root({
     const result = getDragPermission({
       targetTagName: (el as HTMLElement).tagName,
       hasNoDragAttribute:
-        (el as HTMLElement).hasAttribute('data-vaul-no-drag') || Boolean((el as HTMLElement).closest('[data-vaul-no-drag]')),
+        (el as HTMLElement).hasAttribute('data-drawer-no-drag') || Boolean((el as HTMLElement).closest('[data-drawer-no-drag]')),
       direction,
       timeSinceOpenMs: openTime.current ? date.getTime() - openTime.current.getTime() : null,
       swipeAmount,
@@ -383,7 +383,7 @@ export function Root({
 
       // We need to capture last time when drag with scroll was triggered and have a timeout between
       const absDraggedDistance = Math.abs(draggedDistance);
-      const wrapper = document.querySelector('[data-vaul-drawer-wrapper]');
+      const wrapper = document.querySelector('[data-drawer-wrapper]');
       const drawerDimension =
         direction === 'bottom' || direction === 'top' ? drawerHeightRef.current : drawerWidthRef.current;
 
@@ -535,7 +535,7 @@ export function Root({
 
   function resetDrawer() {
     if (!drawerRef.current) return;
-    const wrapper = document.querySelector('[data-vaul-drawer-wrapper]');
+    const wrapper = document.querySelector('[data-drawer-wrapper]');
     const currentSwipeAmount = getTranslate(drawerRef.current, direction);
 
     set(drawerRef.current, {
@@ -796,10 +796,10 @@ export const Overlay = React.forwardRef<HTMLDivElement, React.ComponentPropsWith
       <DialogPrimitive.Overlay
         onMouseUp={onMouseUp}
         ref={composedRef}
-        data-vaul-overlay=""
-        data-vaul-snap-points={isOpen && hasSnapPoints ? 'true' : 'false'}
-        data-vaul-snap-points-overlay={isOpen && shouldFade ? 'true' : 'false'}
-        data-vaul-animate={shouldAnimate?.current ? 'true' : 'false'}
+        data-drawer-overlay=""
+        data-drawer-snap-points={isOpen && hasSnapPoints ? 'true' : 'false'}
+        data-drawer-snap-points-overlay={isOpen && shouldFade ? 'true' : 'false'}
+        data-drawer-animate={shouldAnimate?.current ? 'true' : 'false'}
         {...rest}
       />
     );
@@ -856,12 +856,12 @@ export const Content = React.forwardRef<HTMLDivElement, ContentProps>(function (
 
   return (
     <DialogPrimitive.Content
-      data-vaul-drawer-direction={direction}
-      data-vaul-drawer=""
-      data-vaul-delayed-snap-points={delayedSnapPoints ? 'true' : 'false'}
-      data-vaul-snap-points={isOpen && hasSnapPoints ? 'true' : 'false'}
-      data-vaul-custom-container={container ? 'true' : 'false'}
-      data-vaul-animate={shouldAnimate?.current ? 'true' : 'false'}
+      data-drawer-direction={direction}
+      data-drawer=""
+      data-drawer-delayed-snap-points={delayedSnapPoints ? 'true' : 'false'}
+      data-drawer-snap-points={isOpen && hasSnapPoints ? 'true' : 'false'}
+      data-drawer-custom-container={container ? 'true' : 'false'}
+      data-drawer-animate={shouldAnimate?.current ? 'true' : 'false'}
       {...rest}
       ref={composedRef}
       style={
@@ -1043,13 +1043,13 @@ export const Handle = React.forwardRef<HTMLDivElement, HandleProps>(function (
       }}
       // onPointerUp is already handled by the content component
       ref={ref}
-      data-vaul-drawer-visible={isOpen ? 'true' : 'false'}
-      data-vaul-handle=""
+      data-drawer-visible={isOpen ? 'true' : 'false'}
+      data-drawer-handle=""
       aria-hidden="true"
       {...rest}
     >
       {/* Expand handle's hit area beyond what's visible to ensure a 44x44 tap target for touch devices */}
-      <span data-vaul-handle-hitarea="" aria-hidden="true">
+      <span data-drawer-handle-hitarea="" aria-hidden="true">
         {children}
       </span>
     </div>

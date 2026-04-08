@@ -22,7 +22,7 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 - `destroyDrawers`
 - `createDrawerController`
 
-## Complete Example
+## Quick Include
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
@@ -33,6 +33,9 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
+<div data-drawer-wrapper>
+  <main>App shell</main>
+</div>
 <button id="open-settings" type="button">Settings</button>
 
 <script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
@@ -70,4 +73,7 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 - The browser bundle targets the same shared runtime registry as the root package.
 - Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
+- Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
+- Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
 - Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.
+- Reusing the same `id` updates the existing runtime instance bound to that browser namespace.

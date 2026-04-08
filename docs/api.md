@@ -28,6 +28,8 @@ The root entry keeps its state in module scope, but it no longer limits you to o
 
 Browser, Vue, Svelte, and the React imperative exports all target that same shared runtime.
 
+The public DOM contract for runtime-managed attributes uses the `data-drawer-*` prefix.
+
 ### Hierarchy behavior
 
 Use `parentId` when one drawer should behave as a child of another runtime instance.
@@ -80,21 +82,34 @@ These options define the shared drawer state and are accepted by the root API an
 | `activeSnapPoint` | `number | string | null` | Controlled active snap point |
 | `closeThreshold` | `number` | Drag threshold used to decide dismissal |
 | `scrollLockTimeout` | `number` | Delay before drag resumes after scrolling inside content |
-| `shouldScaleBackground` | `boolean` | Whether the background scales when the drawer opens |
+| `shouldScaleBackground` | `boolean` | Whether the background scales when the drawer opens. Add `data-drawer-wrapper` to the page shell element that should scale |
 | `setBackgroundColorOnScale` | `boolean` | Whether body background color is adjusted during scale |
-| `handleOnly` | `boolean` | Restrict dragging to `Drawer.Handle` |
+| `handleOnly` | `boolean` | Restrict dragging to the handle. In mounted entries a built-in handle is rendered automatically so the drag affordance stays visible |
 | `fixed` | `boolean` | Keep the drawer fixed instead of repositioning it |
 | `disablePreventScroll` | `boolean` | Disable drawer-managed document scroll locking |
-| `repositionInputs` | `boolean` | Reposition inputs when the keyboard is visible |
-| `snapToSequentialPoint` | `boolean` | Prevent skipping snap points on high-velocity swipes |
+| `repositionInputs` | `boolean` | Reposition inputs when the keyboard is visible instead of relying on native scroll-into-view behavior |
+| `snapToSequentialPoint` | `boolean` | Prevent skipping snap points on high-velocity swipes. Useful when each snap point represents a distinct state |
 | `preventScrollRestoration` | `boolean` | Prevent the browser from restoring scroll position |
 | `noBodyStyles` | `boolean` | Disable drawer-managed body styles |
 | `autoFocus` | `boolean` | Autofocus the drawer content when opened |
 | `onOpenChange` | `(open: boolean) => void` | Called when the shared runtime open state changes |
 | `onClose` | `() => void` | Called after a drawer closes |
 | `onAnimationEnd` | `(open: boolean) => void` | Called after the open or close transition duration |
-| `onDragChange` | `(percentageDragged: number) => void` | Called while drag progress changes |
-| `onReleaseChange` | `(open: boolean) => void` | Called after release resolves to open or closed |
+| `onDragChange` | `(percentageDragged: number) => void` | Mounted-runtime callback fired while drag progress changes |
+| `onReleaseChange` | `(open: boolean) => void` | Mounted-runtime callback fired after release resolves to open or closed |
+
+### Interaction attributes
+
+Two DOM attributes are part of the runtime contract when you customize behavior outside the exported API:
+
+- `data-drawer-wrapper` marks the app shell element that should scale when `shouldScaleBackground` is enabled.
+- `data-drawer-no-drag` prevents drag initiation from a descendant element inside the drawer content. Use it on controls that should keep pointer gestures for themselves.
+
+### Interaction notes
+
+- `dismissible={false}` blocks escape, overlay press, and drag-close. With snap points enabled it also prevents the release logic from dismissing the drawer past the smallest snap point.
+- `snapToSequentialPoint={true}` disables velocity-based skipping so the drawer moves one snap point at a time.
+- `fixed` and `repositionInputs` matter most on mobile keyboards. `fixed` prefers changing drawer height; `repositionInputs` lets the drawer actively keep focused controls visible.
 
 ### `createDrawerController(options?)`
 
@@ -209,6 +224,12 @@ Use these helpers when you want to work imperatively without holding onto the co
 - `destroyDrawer(id?)` tears down one instance.
 - `destroyDrawers()` tears down every live instance.
 
+### Choosing ids
+
+- Omit `id` only when one default drawer is enough for the current module instance.
+- Use explicit ids for anything long-lived, nested, or shared across event handlers.
+- Reusing an id is an update operation, not a second mount.
+
 ## React API
 
 The React entry exports the full component model through `Drawer` and also re-exports the shared imperative runtime helpers:
@@ -248,7 +269,24 @@ The React entry exports the full component model through `Drawer` and also re-ex
 - `container`
 - `onAnimationEnd`
 
+Use the React callbacks when you are composing the drawer directly with JSX:
+
+- `onDrag(event, percentageDragged)` is the React equivalent of `onDragChange`.
+- `onRelease(event, open)` is the React equivalent of `onReleaseChange`.
+- `setActiveSnapPoint` is only needed for controlled snap-point state in React.
+
 Use it when you want direct React composition instead of the mounted shared host API.
+
+### React component surface
+
+- `Drawer.Trigger` opens the drawer through the Radix trigger contract.
+- `Drawer.Portal` portals overlay and content.
+- `Drawer.Overlay` renders the dismiss layer.
+- `Drawer.Content` renders the interactive drawer surface.
+- `Drawer.Handle` renders the drag handle. A click or tap cycles snap points, a long press cancels that cycle so drag can begin, and `preventCycle` disables cycling entirely.
+- `Drawer.Close` closes the drawer through Radix.
+- `Drawer.Title` and `Drawer.Description` provide accessible labeling for the content region.
+- `Drawer.NestedRoot` coordinates nested drag transforms with the parent drawer.
 
 ### `Drawer.NestedRoot`
 
@@ -356,6 +394,9 @@ window.Drawer = {
 Loading `dist/browser/index.js` in a browser attaches that namespace. It does not auto-mount a drawer until you call one of the root methods.
 
 ```html
+<div data-drawer-wrapper>
+  <main>App shell</main>
+</div>
 <script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
 <script>
   const drawer = window.Drawer.createDrawer({
@@ -375,3 +416,4 @@ Loading `dist/browser/index.js` in a browser attaches that namespace. It does no
 - Named instances share one runtime registry per module instance. Reusing the same `id` from different wrappers targets the same drawer on purpose.
 - Vue and Svelte wrappers destroy the selected runtime instance when they unmount, so they should be treated as ownership points for that `id`.
 - The integration surface still differs by entrypoint: React composes the drawer with JSX, while root/browser/Vue/Svelte configure the mounted shared host through options.
+- This project documents only the current `data-drawer-*` contract. It does not expose legacy alias attributes.

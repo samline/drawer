@@ -17,9 +17,7 @@ export function useScaleBackground() {
   React.useEffect(() => {
     if (isOpen && shouldScaleBackground) {
       if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
-      const wrapper =
-        (document.querySelector('[data-vaul-drawer-wrapper]') as HTMLElement) ||
-        (document.querySelector('[vaul-drawer-wrapper]') as HTMLElement);
+      const wrapper = document.querySelector('[data-drawer-wrapper]') as HTMLElement | null;
 
       if (!wrapper) return;
 

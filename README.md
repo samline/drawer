@@ -4,15 +4,6 @@ A universal drawer package with one shared interaction runtime across React, Vue
 
 Drawer is inspired by [Vaul](https://github.com/emilkowalski/vaul). The package keeps the original drawer interaction model while making the same user-facing behavior available through different integration styles.
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Entrypoints](#entrypoints)
-- [Quick Start](#quick-start)
-- [Choose Your Entrypoint](#choose-your-entrypoint)
-- [Documentation](#documentation)
-- [License](#license)
-
 ## Installation
 
 ```bash
@@ -22,18 +13,6 @@ npm install @samline/drawer
 ```bash
 bun add @samline/drawer
 ```
-
-## Entrypoints
-
-| Entrypoint                   | Use                                                             |
-| ---------------------------- | --------------------------------------------------------------- |
-| `@samline/drawer`            | Main vanilla API and shared drawer runtime with named instances |
-| `@samline/drawer/react`      | React component adapter                                         |
-| `@samline/drawer/browser`    | Browser global entry for CDN or plain HTML usage                |
-| `@samline/drawer/vue`        | Vue wrapper over the shared runtime                             |
-| `@samline/drawer/svelte`     | Svelte action wrapper over the shared runtime                   |
-| `@samline/drawer/core`       | Shared controller contracts and state primitives                |
-| `@samline/drawer/styles.css` | Shared styles export                                            |
 
 ## Quick Start
 
@@ -53,20 +32,19 @@ const drawer = createDrawer({
 drawer.setOpen(true)
 ```
 
-## Choose Your Entrypoint
+## Entrypoints
 
-- Use `@samline/drawer` when you want a programmatic mounted-host API with named instances, imperative helpers, and parent-child coordination.
-- Use `@samline/drawer/react` when you want direct JSX composition with `Drawer.Root`, `Drawer.Trigger`, `Drawer.Content`, nested drawers, and the same shared interaction behavior.
-- Use `@samline/drawer/browser` when you want the same mounted-host behavior through a browser global API for CDN, embeds, or plain HTML usage.
-- Use `@samline/drawer/vue` when you want Vue props and lifecycle around that same mounted-host runtime, plus optional `DrawerPlugin` installation.
-- Use `@samline/drawer/svelte` when you want a Svelte action or `mountDrawer()` helper over that same mounted-host runtime.
-- Use `@samline/drawer/core` when you only need the controller and snapshot contracts without rendering UI.
+- `@samline/drawer`: vanilla API and shared runtime helpers
+- `@samline/drawer/react`: React component API
+- `@samline/drawer/browser`: browser global for CDN or plain HTML
+- `@samline/drawer/vue`: Vue wrapper over the shared runtime
+- `@samline/drawer/svelte`: Svelte action and helpers
+- `@samline/drawer/core`: controller and snapshot contracts only
+- `@samline/drawer/styles.css`: shared styles
 
-All public entrypoints target the same user-facing drawer behavior for shared options. The difference between them is how you integrate the drawer into your app, not the resulting UX.
+## Full Docs
 
-## Documentation
-
-Use the dedicated docs when you want the full surface area or framework-specific guidance.
+Use docs/ when you want the full API surface, lifecycle notes, runtime attributes, and framework-specific guidance.
 
 - [docs/README.md](docs/README.md)
 - [docs/api.md](docs/api.md)
@@ -75,6 +53,13 @@ Use the dedicated docs when you want the full surface area or framework-specific
 - [docs/react.md](docs/react.md)
 - [docs/vue.md](docs/vue.md)
 - [docs/svelte.md](docs/svelte.md)
+
+## Notes
+
+- All entrypoints target the same user-facing drawer behavior for shared options.
+- When `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale.
+- When a child control should not start dragging, add `data-drawer-no-drag` to that element.
+- The public DOM contract uses `data-drawer-*` attributes.
 
 ## License
 
