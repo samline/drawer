@@ -1,7 +1,7 @@
 {
-  "name": "vaul",
+  "name": "@samline/drawer",
   "version": "1.1.2",
-  "description": "Drawer component for React.",
+  "description": "A universal drawer package for React, Vue, Svelte, vanilla JS, and browser usage.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -10,59 +10,140 @@
     "style.css"
   ],
   "exports": {
-    "import": {
-      "types": "./dist/index.d.mts",
-      "default": "./dist/index.mjs"
-    },
-    "require": {
-      "types": "./dist/index.d.ts",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
       "default": "./dist/index.js"
-    }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.mts",
+        "default": "./dist/react/index.mjs"
+      },
+      "require": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "default": "./dist/react/index.js"
+    },
+    "./browser": {
+      "import": {
+        "types": "./dist/browser/index.d.mts",
+        "default": "./dist/browser/index.mjs"
+      },
+      "require": {
+        "types": "./dist/browser/index.d.ts",
+        "default": "./dist/browser/index.js"
+      },
+      "default": "./dist/browser/index.js"
+    },
+    "./vue": {
+      "import": {
+        "types": "./dist/vue/index.d.mts",
+        "default": "./dist/vue/index.mjs"
+      },
+      "require": {
+        "types": "./dist/vue/index.d.ts",
+        "default": "./dist/vue/index.js"
+      },
+      "default": "./dist/vue/index.js"
+    },
+    "./svelte": {
+      "import": {
+        "types": "./dist/svelte/index.d.mts",
+        "default": "./dist/svelte/index.mjs"
+      },
+      "require": {
+        "types": "./dist/svelte/index.d.ts",
+        "default": "./dist/svelte/index.js"
+      },
+      "default": "./dist/svelte/index.js"
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.mts",
+        "default": "./dist/core/index.mjs"
+      },
+      "require": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "default": "./dist/core/index.js"
+    },
+    "./styles.css": "./style.css",
+    "./style.css": "./style.css"
   },
   "scripts": {
-    "type-check": "tsc --noEmit",
-    "build": "pnpm type-check && bunchee && pnpm copy-assets",
-    "copy-assets": "cp -r ./src/style.css ./style.css",
-    "dev": "bunchee --watch",
-    "dev:test": "turbo run dev --filter=test...",
-    "format": "prettier --write .",
-    "test": "playwright test"
+    "type-check": "bunx tsc --noEmit",
+    "build": "bun run type-check && bun scripts/build.mjs",
+    "dev": "bun scripts/build.mjs --watch",
+    "dev:test": "bun --cwd test run dev",
+    "format": "bunx prettier --write .",
+    "test": "bunx vitest run tests/*.test.ts --environment node --globals",
+    "test:watch": "bunx vitest tests/*.test.ts --environment node --globals"
   },
   "keywords": [
     "react",
+    "vue",
+    "svelte",
     "drawer",
+    "browser",
+    "vanilla-js",
     "dialog",
     "modal"
   ],
-  "author": "Emil Kowalski <e@emilkowal.ski>",
+  "author": "Samuel Olvera (samline)",
   "license": "MIT",
-  "homepage": "https://vaul.emilkowal.ski/",
+  "homepage": "https://github.com/samline/drawer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/emilkowalski/vaul.git"
+    "url": "git+https://github.com/samline/drawer.git"
   },
   "bugs": {
-    "url": "https://github.com/emilkowalski/vaul/issues"
+    "url": "https://github.com/samline/drawer/issues"
   },
   "devDependencies": {
-    "@playwright/test": "^1.37.1",
-    "@radix-ui/react-dialog": "^1.0.4",
     "@types/node": "20.5.7",
     "@types/react": "18.2.55",
     "@types/react-dom": "18.2.18",
-    "bunchee": "^5.1.5",
+    "bunchee": "6.3.3",
     "eslint": "^7.32.0",
     "prettier": "^2.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "turbo": "1.6",
-    "typescript": "5.2.2"
+    "scheduler": "^0.23.0",
+    "svelte": "^5.38.6",
+    "typescript": "5.2.2",
+    "vitest": "^2.1.8",
+    "vue": "^3.5.22"
   },
   "peerDependencies": {
     "react": "^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc",
-    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc"
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc",
+    "svelte": "^4.2.0 || ^5.0.0",
+    "vue": "^3.4.0 || ^3.5.0"
   },
-  "packageManager": "pnpm@8.8.0",
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    }
+  },
+  "packageManager": "bun@1.1.29",
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.1"
   }

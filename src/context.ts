@@ -1,7 +1,10 @@
 import React from 'react';
-import { DrawerDirection } from './types';
+import { createDrawerController, type CommonDrawerController, type CommonDrawerSnapshot } from './core';
+import { DrawerDirection, DrawerSnapPoint } from './types';
 
 interface DrawerContextValue {
+  controller: CommonDrawerController;
+  runtimeSnapshot: CommonDrawerSnapshot;
   drawerRef: React.RefObject<HTMLDivElement>;
   overlayRef: React.RefObject<HTMLDivElement>;
   onPress: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -15,12 +18,12 @@ interface DrawerContextValue {
   isDragging: boolean;
   keyboardIsOpen: React.MutableRefObject<boolean>;
   snapPointsOffset: number[] | null;
-  snapPoints?: (number | string)[] | null;
+  snapPoints?: DrawerSnapPoint[] | null;
   activeSnapPointIndex?: number | null;
   modal: boolean;
   shouldFade: boolean;
-  activeSnapPoint?: number | string | null;
-  setActiveSnapPoint: (o: number | string | null) => void;
+  activeSnapPoint?: DrawerSnapPoint | null;
+  setActiveSnapPoint: (o: DrawerSnapPoint | null) => void;
   closeDrawer: () => void;
   openProp?: boolean;
   onOpenChange?: (o: boolean) => void;
@@ -34,7 +37,11 @@ interface DrawerContextValue {
   shouldAnimate?: React.RefObject<boolean>;
 }
 
+const defaultController = createDrawerController();
+
 export const DrawerContext = React.createContext<DrawerContextValue>({
+  controller: defaultController,
+  runtimeSnapshot: defaultController.getSnapshot(),
   drawerRef: { current: null },
   overlayRef: { current: null },
   onPress: () => {},

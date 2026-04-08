@@ -1,5 +1,5 @@
 import React from 'react';
-import { isSafari } from './browser';
+import { isSafari } from './browser-utils';
 
 let previousBodyPosition: Record<string, string> | null = null;
 
