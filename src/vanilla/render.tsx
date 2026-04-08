@@ -21,17 +21,21 @@ function toReactDrawerProps(
   open: boolean,
   onOpenChange: NonNullable<DialogProps['onOpenChange']>,
 ): DialogProps {
+  const { id: _id, onDragChange, onReleaseChange, ...drawerOptions } = options;
+
   const baseProps = {
-    ...options,
+    ...drawerOptions,
     open,
     onOpenChange,
+    onDrag: onDragChange ? (_event: React.PointerEvent<HTMLDivElement>, percentageDragged: number) => onDragChange(percentageDragged) : undefined,
+    onRelease: onReleaseChange ? (_event: React.PointerEvent<HTMLDivElement>, nextOpen: boolean) => onReleaseChange(nextOpen) : undefined,
   };
 
-  if (options.snapPoints) {
+  if (drawerOptions.snapPoints) {
     return {
       ...baseProps,
-      snapPoints: options.snapPoints,
-      fadeFromIndex: options.fadeFromIndex ?? options.snapPoints.length - 1,
+      snapPoints: drawerOptions.snapPoints,
+      fadeFromIndex: drawerOptions.fadeFromIndex ?? drawerOptions.snapPoints.length - 1,
     };
   }
 

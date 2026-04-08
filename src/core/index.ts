@@ -2,9 +2,17 @@ export type CommonDrawerDirection = 'top' | 'bottom' | 'left' | 'right';
 
 export type CommonDrawerSnapPoint = number | string;
 
+export type CommonDrawerId = string;
+
 export interface CommonDrawerOptions {
+  id?: CommonDrawerId;
   open?: boolean;
   defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+  onAnimationEnd?: (open: boolean) => void;
+  onDragChange?: (percentageDragged: number) => void;
+  onReleaseChange?: (open: boolean) => void;
   dismissible?: boolean;
   modal?: boolean;
   nested?: boolean;

@@ -4,182 +4,333 @@ import { createRoot, type Root } from 'react-dom/client';
 import {
   createDrawerController,
   type CommonDrawerController,
+  type CommonDrawerId,
   type CommonDrawerOptions,
   type CommonDrawerSnapshot,
   type CommonDrawerDirection,
   type CommonDrawerSnapPoint,
 } from './core';
+import { TRANSITIONS } from './constants';
 import { VanillaDrawerRenderer, type VanillaDrawerOptions, type VanillaRenderable } from './vanilla/render';
 
+const DEFAULT_DRAWER_ID = 'default';
+
 export interface VanillaDrawerController extends CommonDrawerController {
+  id: CommonDrawerId;
   element: HTMLElement | null;
   options: VanillaDrawerOptions;
   update: (options?: VanillaDrawerOptions) => VanillaDrawerController;
   destroy: () => void;
 }
 
-let vanillaDrawerRoot: Root | null = null;
-let vanillaDrawerElement: HTMLElement | null = null;
-let vanillaDrawerController: CommonDrawerController | null = null;
-let vanillaDrawerOptions: VanillaDrawerOptions = {};
-let cleanupTriggerElement: (() => void) | null = null;
+interface DrawerRuntimeInstance {
+  id: CommonDrawerId;
+  root: Root | null;
+  element: HTMLElement | null;
+  ownsElement: boolean;
+  controller: CommonDrawerController;
+  options: VanillaDrawerOptions;
+  cleanupTriggerElement: (() => void) | null;
+}
+
+const drawerInstances = new Map<CommonDrawerId, DrawerRuntimeInstance>();
 
 function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
 
-function getVanillaContainer() {
+function normalizeDrawerId(id?: CommonDrawerId | null) {
+  return id ?? DEFAULT_DRAWER_ID;
+}
+
+function getVanillaContainer(runtime: DrawerRuntimeInstance) {
   if (!canUseDOM()) return null;
 
-  if (vanillaDrawerOptions.mountElement) {
-    return vanillaDrawerOptions.mountElement;
+  if (runtime.options.mountElement) {
+    return {
+      container: runtime.options.mountElement,
+      ownsElement: false,
+    };
   }
 
-  if (vanillaDrawerElement?.isConnected) {
-    return vanillaDrawerElement;
-  }
-
-  const existing = document.querySelector<HTMLElement>('[data-drawer-vanilla-root]');
-  if (existing) {
-    vanillaDrawerElement = existing;
-    return existing;
+  if (runtime.element?.isConnected) {
+    return {
+      container: runtime.element,
+      ownsElement: runtime.ownsElement,
+    };
   }
 
   const element = document.createElement('div');
-  element.dataset.drawerVanillaRoot = '';
+  element.dataset.drawerVanillaRoot = runtime.id;
   document.body.appendChild(element);
-  vanillaDrawerElement = element;
-  return element;
+  return {
+    container: element,
+    ownsElement: true,
+  };
 }
 
-function bindTriggerElement() {
-  cleanupTriggerElement?.();
-  cleanupTriggerElement = null;
+function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
+  runtime.cleanupTriggerElement?.();
+  runtime.cleanupTriggerElement = null;
+}
 
-  if (!vanillaDrawerController || !vanillaDrawerOptions.triggerElement) {
+function bindTriggerElement(runtime: DrawerRuntimeInstance) {
+  cleanupRuntimeTrigger(runtime);
+
+  if (!runtime.options.triggerElement) {
     return;
   }
 
-  const triggerElement = vanillaDrawerOptions.triggerElement;
+  const triggerElement = runtime.options.triggerElement;
   const handleClick = () => {
-    vanillaDrawerController?.setOpen(true);
-    renderVanillaDrawer();
+    runtime.controller.setOpen(true);
+    renderVanillaDrawer(runtime.id);
   };
 
   triggerElement.addEventListener('click', handleClick);
-  cleanupTriggerElement = () => {
+  runtime.cleanupTriggerElement = () => {
     triggerElement.removeEventListener('click', handleClick);
   };
 }
 
-function renderVanillaDrawer() {
-  if (!vanillaDrawerController) return null;
+function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
+  runtime.options.onOpenChange?.(open);
 
-  const container = getVanillaContainer();
-  if (!container) return null;
-
-  if (vanillaDrawerElement !== container) {
-    vanillaDrawerRoot?.unmount();
-    vanillaDrawerRoot = null;
-    vanillaDrawerElement = container;
+  if (!open) {
+    runtime.options.onClose?.();
   }
 
-  if (!vanillaDrawerRoot) {
-    vanillaDrawerRoot = createRoot(container);
+  setTimeout(() => {
+    runtime.options.onAnimationEnd?.(open);
+  }, TRANSITIONS.DURATION * 1000);
+}
+
+function renderVanillaDrawer(id: CommonDrawerId) {
+  const runtime = drawerInstances.get(id);
+  if (!runtime) return null;
+
+  const nextContainer = getVanillaContainer(runtime);
+  if (!nextContainer?.container) return null;
+
+  if (runtime.element !== nextContainer.container) {
+    runtime.root?.unmount();
+
+    if (runtime.ownsElement && runtime.element?.parentNode) {
+      runtime.element.parentNode.removeChild(runtime.element);
+    }
+
+    runtime.root = null;
+    runtime.element = nextContainer.container;
+    runtime.ownsElement = nextContainer.ownsElement;
   }
 
-  const snapshot = vanillaDrawerController.getSnapshot();
+  if (!runtime.root) {
+    runtime.root = createRoot(nextContainer.container);
+  }
 
-  vanillaDrawerRoot.render(
+  const snapshot = runtime.controller.getSnapshot();
+
+  runtime.root.render(
     React.createElement(VanillaDrawerRenderer, {
-      options: vanillaDrawerOptions,
+      options: runtime.options,
       open: snapshot.state.isOpen,
       onOpenChange: (open: boolean) => {
-        vanillaDrawerController?.setOpen(open);
-        renderVanillaDrawer();
+        const previousOpen = runtime.controller.getSnapshot().state.isOpen;
+        runtime.controller.setOpen(open);
+
+        if (previousOpen !== open) {
+          notifyOpenStateChange(runtime, open);
+        }
+
+        renderVanillaDrawer(id);
       },
     }),
   );
 
-  bindTriggerElement();
-  return container;
+  bindTriggerElement(runtime);
+  return nextContainer.container;
 }
 
-function buildVanillaController(controller: CommonDrawerController): VanillaDrawerController {
+function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
   return {
-    getSnapshot: controller.getSnapshot,
-    subscribe: controller.subscribe,
+    get id() {
+      return id;
+    },
+    getSnapshot() {
+      const runtime = drawerInstances.get(id);
+      if (!runtime) {
+        return createDrawerController({ id }).getSnapshot();
+      }
+
+      return runtime.controller.getSnapshot();
+    },
+    subscribe(listener) {
+      const runtime = drawerInstances.get(id);
+      if (!runtime) {
+        listener(createDrawerController({ id }).getSnapshot());
+        return () => {};
+      }
+
+      return runtime.controller.subscribe(listener);
+    },
     setOpen(open) {
-      const snapshot = controller.setOpen(open);
-      renderVanillaDrawer();
+      const runtime = drawerInstances.get(id);
+      if (!runtime) {
+        return createDrawer({ id, open }).getSnapshot();
+      }
+
+      const previousOpen = runtime.controller.getSnapshot().state.isOpen;
+      const snapshot = runtime.controller.setOpen(open);
+
+      if (previousOpen !== open) {
+        notifyOpenStateChange(runtime, open);
+      }
+
+      renderVanillaDrawer(id);
       return snapshot;
     },
     setActiveSnapPoint(snapPoint) {
-      const snapshot = controller.setActiveSnapPoint(snapPoint);
-      renderVanillaDrawer();
+      const runtime = drawerInstances.get(id);
+      if (!runtime) {
+        return createDrawer({ id, activeSnapPoint: snapPoint }).getSnapshot();
+      }
+
+      const snapshot = runtime.controller.setActiveSnapPoint(snapPoint);
+      renderVanillaDrawer(id);
       return snapshot;
     },
     patch(options) {
-      const snapshot = controller.patch(options);
-      renderVanillaDrawer();
+      const runtime = drawerInstances.get(id);
+      if (!runtime) {
+        return createDrawer({ ...options, id }).getSnapshot();
+      }
+
+      const previousOpen = runtime.controller.getSnapshot().state.isOpen;
+      runtime.options = { ...runtime.options, ...options, id };
+      const snapshot = runtime.controller.patch(runtime.options);
+
+      if (typeof runtime.options.open === 'boolean' && previousOpen !== snapshot.state.isOpen) {
+        notifyOpenStateChange(runtime, snapshot.state.isOpen);
+      }
+
+      renderVanillaDrawer(id);
       return snapshot;
     },
-    element: vanillaDrawerElement,
-    options: vanillaDrawerOptions,
+    get element() {
+      return drawerInstances.get(id)?.element ?? null;
+    },
+    get options() {
+      return drawerInstances.get(id)?.options ?? { id };
+    },
     update(options: VanillaDrawerOptions = {}) {
-      vanillaDrawerOptions = { ...vanillaDrawerOptions, ...options };
-      controller.patch(vanillaDrawerOptions);
-      renderVanillaDrawer();
-      return buildVanillaController(controller);
+      return createDrawer({ ...options, id });
     },
     destroy() {
-      destroyDrawer();
+      destroyDrawer(id);
     },
   };
 }
 
 export function createDrawer(options: VanillaDrawerOptions = {}) {
-  vanillaDrawerOptions = { ...vanillaDrawerOptions, ...options };
+  const id = normalizeDrawerId(options.id);
+  const existing = drawerInstances.get(id);
+  const previousOpen = existing?.controller.getSnapshot().state.isOpen;
+  const nextOptions = { ...existing?.options, ...options, id };
 
-  if (!vanillaDrawerController) {
-    vanillaDrawerController = createDrawerController(vanillaDrawerOptions);
+  if (!existing) {
+    drawerInstances.set(id, {
+      id,
+      root: null,
+      element: null,
+      ownsElement: false,
+      controller: createDrawerController(nextOptions),
+      options: nextOptions,
+      cleanupTriggerElement: null,
+    });
   } else {
-    vanillaDrawerController.patch(vanillaDrawerOptions);
+    existing.options = nextOptions;
+    const snapshot = existing.controller.patch(nextOptions);
+
+    if (typeof nextOptions.open === 'boolean' && previousOpen !== snapshot.state.isOpen) {
+      notifyOpenStateChange(existing, snapshot.state.isOpen);
+    }
   }
 
-  renderVanillaDrawer();
+  renderVanillaDrawer(id);
 
-  return buildVanillaController(vanillaDrawerController);
+  return buildVanillaController(id);
 }
 
 export function configureDrawer(options: VanillaDrawerOptions = {}) {
   return createDrawer(options);
 }
 
-export function getDrawer() {
-  if (!vanillaDrawerController) {
+export function getDrawer(id?: CommonDrawerId | null) {
+  const drawerId = normalizeDrawerId(id);
+
+  if (!drawerInstances.has(drawerId)) {
     return null;
   }
 
-  return buildVanillaController(vanillaDrawerController);
+  return buildVanillaController(drawerId);
 }
 
-export function destroyDrawer() {
-  cleanupTriggerElement?.();
-  cleanupTriggerElement = null;
-  vanillaDrawerRoot?.unmount();
-  vanillaDrawerRoot = null;
+export function getDrawers() {
+  return Object.fromEntries(Array.from(drawerInstances.keys(), (id) => [id, buildVanillaController(id)]));
+}
 
-  if (vanillaDrawerElement && !vanillaDrawerOptions.mountElement && vanillaDrawerElement.parentNode) {
-    vanillaDrawerElement.parentNode.removeChild(vanillaDrawerElement);
+export function updateDrawer(idOrOptions?: CommonDrawerId | VanillaDrawerOptions | null, options: VanillaDrawerOptions = {}) {
+  if (typeof idOrOptions === 'object' && idOrOptions !== null) {
+    return createDrawer(idOrOptions);
   }
 
-  vanillaDrawerElement = null;
-  vanillaDrawerController = null;
-  vanillaDrawerOptions = {};
+  const drawerId = normalizeDrawerId(idOrOptions as CommonDrawerId | null | undefined);
+  return createDrawer({ ...options, id: drawerId });
+}
+
+export function openDrawer(id?: CommonDrawerId | null) {
+  return createDrawer({ id: normalizeDrawerId(id), open: true });
+}
+
+export function closeDrawer(id?: CommonDrawerId | null) {
+  return createDrawer({ id: normalizeDrawerId(id), open: false });
+}
+
+export function toggleDrawer(id?: CommonDrawerId | null) {
+  const drawerId = normalizeDrawerId(id);
+  const current = getDrawer(drawerId);
+  const nextOpen = !current?.getSnapshot().state.isOpen;
+  return createDrawer({ id: drawerId, open: nextOpen });
+}
+
+export function destroyDrawer(id?: CommonDrawerId | null) {
+  const drawerId = normalizeDrawerId(id);
+  const runtime = drawerInstances.get(drawerId);
+  if (!runtime) {
+    return;
+  }
+
+  cleanupRuntimeTrigger(runtime);
+  runtime.root?.unmount();
+  runtime.root = null;
+
+  if (runtime.ownsElement && runtime.element?.parentNode) {
+    runtime.element.parentNode.removeChild(runtime.element);
+  }
+
+  runtime.element = null;
+  runtime.options = { id: drawerId };
+  drawerInstances.delete(drawerId);
+}
+
+export function destroyDrawers() {
+  Array.from(drawerInstances.keys()).forEach((id) => {
+    destroyDrawer(id);
+  });
 }
 
 export type {
+  CommonDrawerId,
   CommonDrawerController,
   CommonDrawerDirection,
   CommonDrawerOptions,

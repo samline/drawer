@@ -1,13 +1,31 @@
 import { defineComponent, h, onBeforeUnmount, onMounted, watch } from 'vue';
 import type { PropType, Plugin } from 'vue';
 
-import { createDrawer, destroyDrawer, getDrawer } from '../index';
+import {
+  closeDrawer,
+  configureDrawer,
+  createDrawer,
+  createDrawerController,
+  destroyDrawer,
+  destroyDrawers,
+  getDrawer,
+  getDrawers,
+  openDrawer,
+  toggleDrawer,
+  updateDrawer,
+} from '../index';
 import type { VanillaDrawerController, VanillaDrawerOptions, VanillaRenderable } from '../index';
 import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core';
 
 const drawerProps = {
+  id: String,
   open: Boolean,
   defaultOpen: Boolean,
+  onOpenChange: Function as PropType<(open: boolean) => void>,
+  onClose: Function as PropType<() => void>,
+  onAnimationEnd: Function as PropType<(open: boolean) => void>,
+  onDragChange: Function as PropType<(percentageDragged: number) => void>,
+  onReleaseChange: Function as PropType<(open: boolean) => void>,
   dismissible: Boolean,
   modal: Boolean,
   nested: Boolean,
@@ -51,16 +69,27 @@ function syncDrawer(options?: VanillaDrawerOptions) {
   createDrawer(options ?? {});
 }
 
+function getDrawerInstanceId(options: { id?: string } | undefined) {
+  return typeof options?.id === 'string' ? options.id : 'default';
+}
+
 export const DrawerRoot = defineComponent({
   name: 'DrawerRoot',
   props: drawerProps,
   setup(props) {
     let mounted = false;
+    let currentDrawerId = 'default';
 
     const sync = () => {
       const options = cleanOptions({
+        id: props.id,
         open: props.open,
         defaultOpen: props.defaultOpen,
+        onOpenChange: props.onOpenChange,
+        onClose: props.onClose,
+        onAnimationEnd: props.onAnimationEnd,
+        onDragChange: props.onDragChange,
+        onReleaseChange: props.onReleaseChange,
         dismissible: props.dismissible,
         modal: props.modal,
         nested: props.nested,
@@ -88,7 +117,14 @@ export const DrawerRoot = defineComponent({
         contentClassName: props.contentClassName,
       });
 
+      const nextDrawerId = getDrawerInstanceId(options);
+
+      if (currentDrawerId && currentDrawerId !== nextDrawerId) {
+        destroyDrawer(currentDrawerId);
+      }
+
       syncDrawer(options);
+      currentDrawerId = nextDrawerId;
     };
 
     onMounted(() => {
@@ -106,8 +142,9 @@ export const DrawerRoot = defineComponent({
     );
 
     onBeforeUnmount(() => {
-      destroyDrawer();
+      destroyDrawer(currentDrawerId);
       mounted = false;
+      currentDrawerId = 'default';
     });
 
     return () => h('span', { 'data-drawer-vue-root': '', hidden: true, 'aria-hidden': 'true' });
@@ -118,13 +155,45 @@ export const DrawerPlugin: Plugin = {
   install(app) {
     app.component('DrawerRoot', DrawerRoot);
     app.config.globalProperties.$drawer = {
+      closeDrawer,
+      configureDrawer,
       createDrawer,
+      createDrawerController,
       destroyDrawer,
+      destroyDrawers,
       getDrawer,
+      getDrawers,
+      openDrawer,
+      toggleDrawer,
+      updateDrawer,
     };
-    app.provide('drawer:api', { createDrawer, destroyDrawer, getDrawer });
+    app.provide('drawer:api', {
+      closeDrawer,
+      configureDrawer,
+      createDrawer,
+      createDrawerController,
+      destroyDrawer,
+      destroyDrawers,
+      getDrawer,
+      getDrawers,
+      openDrawer,
+      toggleDrawer,
+      updateDrawer,
+    });
   },
 };
 
-export { createDrawer, destroyDrawer, getDrawer };
+export {
+  closeDrawer,
+  configureDrawer,
+  createDrawer,
+  createDrawerController,
+  destroyDrawer,
+  destroyDrawers,
+  getDrawer,
+  getDrawers,
+  openDrawer,
+  toggleDrawer,
+  updateDrawer,
+};
 export type { VanillaDrawerController, VanillaDrawerOptions };
