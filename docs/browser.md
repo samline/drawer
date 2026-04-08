@@ -25,20 +25,20 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
-<script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.0/dist/style.css">
+<script src="https://unpkg.com/@samline/drawer@2.0.0/dist/browser/index.js"></script>
 ```
 
 ## Complete Example
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer/dist/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.0/dist/style.css">
 <div data-drawer-wrapper>
   <main>App shell</main>
 </div>
 <button id="open-settings" type="button">Settings</button>
 
-<script src="https://unpkg.com/@samline/drawer/dist/browser/index.js"></script>
+<script src="https://unpkg.com/@samline/drawer@2.0.0/dist/browser/index.js"></script>
 <script>
   const trigger = document.getElementById('open-settings')
 
