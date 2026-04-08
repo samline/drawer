@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { parseHTML } from 'linkedom';
 
 describe('browser entry', () => {
   it('can be imported without a window object', async () => {
@@ -47,5 +48,105 @@ describe('browser entry', () => {
     expect(browserEntry.Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen).toBe(true);
     expect(browserEntry.Drawer.getParentDrawer('browser-child')?.id).toBe('browser-a');
     expect(browserEntry.Drawer.getChildDrawers('browser-a').map((drawer) => drawer.id)).toEqual(['browser-child']);
+  });
+
+  it('opens from a real trigger element and mounts a host when DOM is available', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body><button id="trigger">Open</button></body></html>');
+    const trigger = window.document.getElementById('trigger') as HTMLElement | null;
+
+    if (!trigger) {
+      throw new Error('Missing trigger element for browser DOM test');
+    }
+
+    vi.stubGlobal('window', window);
+    vi.stubGlobal('document', window.document);
+    vi.stubGlobal('navigator', window.navigator);
+    vi.stubGlobal('HTMLElement', window.HTMLElement);
+    vi.stubGlobal('Element', window.Element);
+    vi.stubGlobal('Node', window.Node);
+    vi.stubGlobal('Text', window.Text);
+    vi.stubGlobal('Event', window.Event);
+    vi.stubGlobal('CustomEvent', window.CustomEvent);
+    vi.stubGlobal('MouseEvent', window.MouseEvent);
+    vi.stubGlobal('MutationObserver', class {
+      observe() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    });
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue() {
+        return '';
+      },
+      overflow: 'visible',
+    }));
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      media: '',
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent() {
+        return false;
+      },
+    }));
+
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => setTimeout(() => callback(Date.now()), 16)) as typeof window.requestAnimationFrame;
+    window.cancelAnimationFrame = ((handle: number) => clearTimeout(handle)) as typeof window.cancelAnimationFrame;
+    window.location = new URL('https://example.com/') as never;
+    window.history = {
+      state: null,
+      pushState() {},
+      replaceState() {},
+      back() {},
+      forward() {},
+      go() {},
+    } as never;
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      browserEntry.Drawer.createDrawer({
+        id: 'browser-dom',
+        triggerElement: trigger,
+        title: 'DOM drawer',
+        content: 'Body',
+      });
+
+      trigger.dispatchEvent(new window.Event('click'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(browserEntry.Drawer.getDrawer('browser-dom')?.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.querySelector('[data-drawer-vanilla-root="browser-dom"]')).not.toBeNull();
+
+      browserEntry.Drawer.destroyDrawers();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('opens every ancestor in a deep nested browser chain', async () => {
+    const browserEntry = await import('../src/browser/index');
+
+    browserEntry.Drawer.destroyDrawers();
+    browserEntry.Drawer.createDrawer({ id: 'browser-grandparent', open: false });
+    browserEntry.Drawer.createDrawer({ id: 'browser-parent', parentId: 'browser-grandparent', open: false });
+    browserEntry.Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-parent', open: true });
+
+    expect(browserEntry.Drawer.getDrawer('browser-grandparent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(browserEntry.Drawer.getDrawer('browser-parent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(browserEntry.Drawer.getDrawer('browser-child')?.getSnapshot().state.isOpen).toBe(true);
   });
 });

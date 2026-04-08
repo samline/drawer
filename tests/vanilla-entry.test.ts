@@ -149,4 +149,14 @@ describe('vanilla root entry', () => {
     expect(getDrawer('child-a')).toBeNull();
     expect(getDrawer('child-b')).toBeNull();
   });
+
+  it('opens the full ancestor chain when a deep nested drawer opens', () => {
+    createDrawer({ id: 'grandparent', open: false });
+    createDrawer({ id: 'parent', parentId: 'grandparent', open: false });
+    createDrawer({ id: 'child', parentId: 'parent', open: true });
+
+    expect(getDrawer('grandparent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(getDrawer('child')?.getSnapshot().state.isOpen).toBe(true);
+  });
 });

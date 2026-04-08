@@ -36,6 +36,24 @@ function getChildDrawerIds(parentId: CommonDrawerId) {
     .map(([id]) => id);
 }
 
+function openAncestorChain(parentId: CommonDrawerId) {
+  const parentRuntime = drawerInstances.get(parentId);
+  if (!parentRuntime) {
+    return;
+  }
+
+  const nextParentId = parentRuntime.options.parentId;
+  if (nextParentId) {
+    openAncestorChain(nextParentId);
+  }
+
+  if (!parentRuntime.controller.getSnapshot().state.isOpen) {
+    parentRuntime.controller.setOpen(true);
+    notifyOpenStateChange(parentRuntime, true);
+    renderVanillaDrawer(parentRuntime.id);
+  }
+}
+
 function normalizeDrawerId(id?: CommonDrawerId | null) {
   return id ?? DEFAULT_DRAWER_ID;
 }
@@ -239,12 +257,7 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
   renderVanillaDrawer(id);
 
   if (nextOptions.parentId && nextOptions.open) {
-    const parentRuntime = drawerInstances.get(nextOptions.parentId);
-    if (parentRuntime && !parentRuntime.controller.getSnapshot().state.isOpen) {
-      parentRuntime.controller.setOpen(true);
-      notifyOpenStateChange(parentRuntime, true);
-      renderVanillaDrawer(parentRuntime.id);
-    }
+    openAncestorChain(nextOptions.parentId);
   }
 
   return buildVanillaController(id);

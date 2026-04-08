@@ -80,4 +80,17 @@ describe('framework entrypoints', () => {
     expect(vueEntry.getDrawer('vue-drawer')?.getSnapshot().state.isOpen).toBe(true);
     expect(svelteEntry.getDrawer('svelte-drawer')?.getSnapshot().state.isOpen).toBe(true);
   });
+
+  it('opens the full ancestor chain across wrappers', async () => {
+    const vueEntry = await import('../src/vue/index');
+    const svelteEntry = await import('../src/svelte/index');
+
+    vueEntry.createDrawer({ id: 'wrapper-grandparent', open: false });
+    vueEntry.createDrawer({ id: 'wrapper-parent', parentId: 'wrapper-grandparent', open: false });
+    svelteEntry.mountDrawer({ id: 'wrapper-child', parentId: 'wrapper-parent', open: true });
+
+    expect(vueEntry.getDrawer('wrapper-grandparent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(vueEntry.getDrawer('wrapper-parent')?.getSnapshot().state.isOpen).toBe(true);
+    expect(svelteEntry.getDrawer('wrapper-child')?.getSnapshot().state.isOpen).toBe(true);
+  });
 });
