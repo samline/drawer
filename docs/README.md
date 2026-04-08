@@ -24,8 +24,8 @@ This package exposes one shared drawer runtime across multiple entrypoints. Star
 - Use `parentId` to relate drawers and query that graph with `getParentDrawer()` and `getChildDrawers()`.
 - The `core` entry does not render anything. It only exposes shared controller contracts and state snapshots.
 
-## Current Limits
+## Integration Notes
 
-- React remains the canonical declarative implementation.
-- Vue, Svelte, browser, and vanilla still route rendering through the React host.
-- Some advanced nested, drag, and release coordination is still React-first internally.
+- React gives you direct component composition.
+- Vanilla, browser, Vue, and Svelte configure the same drawer behavior through the mounted shared host.
+- Outside React, `title`, `description`, and `content` use framework-agnostic render values instead of framework-native component trees.

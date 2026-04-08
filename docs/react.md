@@ -97,6 +97,6 @@ Use `handleOnly` together with `Drawer.Handle` when drag should start only from 
 ## Notes
 
 - `Drawer.NestedRoot` must be rendered inside another drawer.
-- The React adapter is the canonical component implementation and the best choice when you need multiple independent drawers.
+- Use the React entry when you want direct component composition and React-native control over the drawer tree.
 - The React entry also re-exports `createDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `updateDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `destroyDrawer`, `destroyDrawers`, and `createDrawerController`.
 - Use the root package only when you prefer the shared mounted-runtime API over direct component composition.

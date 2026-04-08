@@ -69,7 +69,7 @@ If `handleOnly` is enabled, the shared host renders the built-in handle automati
 - The action calls `createDrawer()` immediately and updates the selected runtime instance when its value changes.
 - Destroying the action calls `destroyDrawer(id)`, which tears down that instance.
 
-## Current Limits
+## Integration Notes
 
-- The Svelte entry does not render a separate Svelte-native drawer implementation.
-- As with Vue and the browser entry, it targets the same module-level shared runtime used by the root package.
+- The Svelte entry drives the shared mounted host through an action or `mountDrawer()` helper instead of rendering a separate Svelte-native drawer tree.
+- As with Vue and the browser entry, it targets the same shared runtime used by the root package.

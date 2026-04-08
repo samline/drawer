@@ -42,6 +42,42 @@ export function getReleaseAction({
   return 'reset' as const;
 }
 
+export function getDismissibleReleaseResult({
+  direction,
+  distMoved,
+  velocity,
+  velocityThreshold,
+  swipeAmount,
+  drawerDimension,
+  closeThreshold,
+  focusVelocityThreshold,
+}: {
+  direction: CommonDrawerDirection;
+  distMoved: number;
+  velocity: number;
+  velocityThreshold: number;
+  swipeAmount: number;
+  drawerDimension: number;
+  closeThreshold: number;
+  focusVelocityThreshold?: number;
+}) {
+  const action = getReleaseAction({
+    direction,
+    distMoved,
+    velocity,
+    velocityThreshold,
+    swipeAmount,
+    drawerDimension,
+    closeThreshold,
+  });
+
+  return {
+    action,
+    shouldPreventFocus: shouldPreventFocusOnRelease(velocity, focusVelocityThreshold),
+    nextOpen: action !== 'close',
+  };
+}
+
 export function getSnapPointReleaseAction({
   fadeFromIndex,
   direction,

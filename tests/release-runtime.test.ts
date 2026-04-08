@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getReleaseAction, shouldPreventFocusOnRelease } from '../src/runtime/release';
+import { getDismissibleReleaseResult, getReleaseAction, shouldPreventFocusOnRelease } from '../src/runtime/release';
 
 describe('release runtime helpers', () => {
   it('marks high-velocity releases to prevent focus', () => {
@@ -48,5 +48,39 @@ describe('release runtime helpers', () => {
         closeThreshold: 0.25,
       }),
     ).toBe('reset');
+  });
+
+  it('returns the combined dismissible release result', () => {
+    expect(
+      getDismissibleReleaseResult({
+        direction: 'bottom',
+        distMoved: -50,
+        velocity: 0.6,
+        velocityThreshold: 0.4,
+        swipeAmount: 70,
+        drawerDimension: 200,
+        closeThreshold: 0.25,
+      }),
+    ).toEqual({
+      action: 'close',
+      shouldPreventFocus: true,
+      nextOpen: false,
+    });
+
+    expect(
+      getDismissibleReleaseResult({
+        direction: 'left',
+        distMoved: -20,
+        velocity: 0.01,
+        velocityThreshold: 0.4,
+        swipeAmount: 20,
+        drawerDimension: 200,
+        closeThreshold: 0.25,
+      }),
+    ).toEqual({
+      action: 'reset',
+      shouldPreventFocus: false,
+      nextOpen: true,
+    });
   });
 });

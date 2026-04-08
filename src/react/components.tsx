@@ -29,7 +29,7 @@ import {
   getDraggedDistance,
   isDraggingTowardExpandedState,
 } from '../runtime/drag';
-import { getReleaseAction, shouldPreventFocusOnRelease } from '../runtime/release';
+import { getDismissibleReleaseResult } from '../runtime/release';
 import {
   getAxisAwareTranslate,
   getBackgroundDragState,
@@ -594,15 +594,6 @@ export function Root({
     const distMoved = pointerStart.current - (isVertical(direction) ? event.pageY : event.pageX);
     const velocity = Math.abs(distMoved) / timeTaken;
 
-    if (shouldPreventFocusOnRelease(velocity)) {
-      // `justReleased` is needed to prevent the drawer from focusing on an input when the drag ends, as it's not the intent most of the time.
-      setJustReleased(true);
-
-      setTimeout(() => {
-        setJustReleased(false);
-      }, 200);
-    }
-
     if (snapPoints) {
       const directionMultiplier = direction === 'bottom' || direction === 'right' ? 1 : -1;
       onReleaseSnapPoints({
@@ -618,18 +609,26 @@ export function Root({
     const visibleDrawerHeight = Math.min(drawerRef.current.getBoundingClientRect().height ?? 0, window.innerHeight);
     const visibleDrawerWidth = Math.min(drawerRef.current.getBoundingClientRect().width ?? 0, window.innerWidth);
 
-    const isHorizontalSwipe = direction === 'left' || direction === 'right';
-    const releaseAction = getReleaseAction({
+    const releaseResult = getDismissibleReleaseResult({
       direction,
       distMoved,
       velocity,
       velocityThreshold: VELOCITY_THRESHOLD,
       swipeAmount,
-      drawerDimension: isHorizontalSwipe ? visibleDrawerWidth : visibleDrawerHeight,
+      drawerDimension: direction === 'left' || direction === 'right' ? visibleDrawerWidth : visibleDrawerHeight,
       closeThreshold,
     });
 
-    if (releaseAction === 'close') {
+    if (releaseResult.shouldPreventFocus) {
+      // `justReleased` is needed to prevent the drawer from focusing on an input when the drag ends, as it's not the intent most of the time.
+      setJustReleased(true);
+
+      setTimeout(() => {
+        setJustReleased(false);
+      }, 200);
+    }
+
+    if (releaseResult.action === 'close') {
       closeDrawer();
       onReleaseProp?.(event, false);
       return;

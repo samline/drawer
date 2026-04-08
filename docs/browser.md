@@ -70,3 +70,4 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 - The browser bundle targets the same shared runtime registry as the root package.
 - Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
+- Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.

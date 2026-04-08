@@ -114,7 +114,7 @@ destroyDrawer();
 
 `destroyDrawer()` tears down the selected instance. Use `destroyDrawers()` when you want to clear the entire runtime registry.
 
-## Current Limits
+## Integration Notes
 
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
-- The current root renderer uses the React adapter internally while keeping the public API framework-agnostic.
+- The root entry exposes the mounted shared host through a programmatic API instead of framework-specific component composition.

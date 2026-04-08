@@ -248,7 +248,7 @@ The React entry exports the full component model through `Drawer` and also re-ex
 - `container`
 - `onAnimationEnd`
 
-Use it when you want the original component composition model instead of the mounted shared host.
+Use it when you want direct React composition instead of the mounted shared host API.
 
 ### `Drawer.NestedRoot`
 
@@ -371,7 +371,7 @@ Loading `dist/browser/index.js` in a browser attaches that namespace. It does no
 
 ## Constraints and Caveats
 
-- The root, browser, Vue, and Svelte entries currently render through the React adapter internally, even though their call sites stay framework-agnostic.
+- All shared options target the same drawer behavior across root, browser, Vue, Svelte, and the React component entry.
 - Named instances share one runtime registry per module instance. Reusing the same `id` from different wrappers targets the same drawer on purpose.
 - Vue and Svelte wrappers destroy the selected runtime instance when they unmount, so they should be treated as ownership points for that `id`.
-- Use `@samline/drawer/react` when you need multiple drawers with independent component trees or nested drawer composition.
+- The integration surface still differs by entrypoint: React composes the drawer with JSX, while root/browser/Vue/Svelte configure the mounted shared host through options.

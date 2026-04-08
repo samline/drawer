@@ -75,7 +75,7 @@ If `handleOnly` is enabled, the shared host renders the built-in handle automati
 - `DrawerRoot` synchronizes props into the shared runtime on mount and on prop updates.
 - Unmounting `DrawerRoot` calls `destroyDrawer(id)`, so it should be treated as the owner of the selected runtime instance.
 
-## Current Limits
+## Integration Notes
 
-- Vue does not render an independent native drawer tree. It drives the shared mounted host from the root entry.
+- Vue drives the shared mounted host through props instead of rendering a separate Vue-native drawer tree.
 - Reusing the same `id` from multiple Vue wrappers intentionally targets the same instance, so ownership should stay clear at the app level.
