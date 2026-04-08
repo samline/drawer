@@ -12,6 +12,56 @@ export interface DragPermissionResult {
   updatePreventedAt: boolean;
 }
 
+export interface DragTargetMetadata {
+  targetTagName: string;
+  hasNoDragAttribute: boolean;
+  ancestors: DragScrollableAncestor[];
+}
+
+interface ElementLike {
+  tagName?: string;
+  scrollHeight: number;
+  clientHeight: number;
+  scrollTop: number;
+  getAttribute(name: string): string | null;
+  hasAttribute(name: string): boolean;
+  closest(selector: string): ElementLike | null;
+  parentElement: ElementLike | null;
+}
+
+function isElementLike(target: EventTarget | null): target is ElementLike {
+  return Boolean(
+    target &&
+      typeof (target as ElementLike).getAttribute === 'function' &&
+      typeof (target as ElementLike).hasAttribute === 'function' &&
+      typeof (target as ElementLike).closest === 'function',
+  );
+}
+
+export function getDragTargetMetadata(target: EventTarget | null): DragTargetMetadata {
+  const targetElement = isElementLike(target) ? target : null;
+  const ancestors: DragScrollableAncestor[] = [];
+  let element: ElementLike | null = targetElement;
+
+  while (element) {
+    ancestors.push({
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      scrollTop: element.scrollTop,
+      role: element.getAttribute('role'),
+    });
+
+    element = element.parentElement;
+  }
+
+  return {
+    targetTagName: targetElement?.tagName ?? '',
+    hasNoDragAttribute:
+      targetElement?.hasAttribute('data-drawer-no-drag') || Boolean(targetElement?.closest('[data-drawer-no-drag]')),
+    ancestors,
+  };
+}
+
 export function getDragPermission({
   targetTagName,
   hasNoDragAttribute,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { parseHTML } from 'linkedom';
 
-import { getDragPermission } from '../src/runtime/drag-policy';
+import { getDragPermission, getDragTargetMetadata } from '../src/runtime/drag-policy';
 
 describe('drag policy runtime helpers', () => {
   it('blocks select elements and no-drag targets', () => {
@@ -116,5 +117,29 @@ describe('drag policy runtime helpers', () => {
         ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 0, role: 'dialog' }],
       }),
     ).toEqual({ allow: true, updatePreventedAt: false });
+  });
+
+  it('normalizes non-Element targets without throwing', () => {
+    const { window } = parseHTML('<!doctype html><html><body><div></div></body></html>');
+
+    expect(() => getDragTargetMetadata(window.document)).not.toThrow();
+    expect(getDragTargetMetadata(window.document)).toEqual({
+      targetTagName: '',
+      hasNoDragAttribute: false,
+      ancestors: [],
+    });
+  });
+
+  it('detects no-drag metadata from the target or its ancestors', () => {
+    const { window } = parseHTML(
+      '<!doctype html><html><body><div data-drawer-no-drag=""><button id="trigger">Open</button></div></body></html>',
+    );
+    const target = window.document.getElementById('trigger');
+
+    expect(getDragTargetMetadata(target)).toMatchObject({
+      targetTagName: 'BUTTON',
+      hasNoDragAttribute: true,
+    });
+    expect(getDragTargetMetadata(target).ancestors.length).toBeGreaterThan(0);
   });
 });

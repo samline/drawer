@@ -41,7 +41,7 @@ import {
 import { getSwipeIntent } from '../runtime/pointer';
 import { getViewportDrivenDrawerLayout } from '../runtime/viewport';
 import { getNextHandleState } from '../runtime/handle';
-import { getDragPermission, type DragScrollableAncestor } from '../runtime/drag-policy';
+import { getDragPermission, getDragTargetMetadata } from '../runtime/drag-policy';
 
 export interface WithFadeFromProps {
   /**
@@ -298,6 +298,23 @@ export function Root({
     autoFocus,
   });
 
+  React.useEffect(() => {
+    if (!isOpen || !modal || autoFocus || typeof document === 'undefined') {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (!(activeElement instanceof HTMLElement)) {
+      return;
+    }
+
+    if (drawerRef.current?.contains(activeElement) || activeElement.closest('[data-drawer]')) {
+      return;
+    }
+
+    activeElement.blur();
+  }, [autoFocus, isOpen, modal]);
+
   function getScale() {
     return (window.innerWidth - WINDOW_TOP_OFFSET) / window.innerWidth;
   }
@@ -322,28 +339,13 @@ export function Root({
   }
 
   function shouldDrag(el: EventTarget, isDraggingInDirection: boolean) {
-    let element = el as HTMLElement;
     const swipeAmount = drawerRef.current ? getTranslate(drawerRef.current, direction) : null;
     const date = new Date();
-    const ancestors: DragScrollableAncestor[] = [];
-
-    // Keep climbing up the DOM tree as long as there's a parent
-    while (element) {
-      ancestors.push({
-        scrollHeight: element.scrollHeight,
-        clientHeight: element.clientHeight,
-        scrollTop: element.scrollTop,
-        role: element.getAttribute('role'),
-      });
-
-      // Move up to the parent element
-      element = element.parentNode as HTMLElement;
-    }
+    const { targetTagName, hasNoDragAttribute, ancestors } = getDragTargetMetadata(el);
 
     const result = getDragPermission({
-      targetTagName: (el as HTMLElement).tagName,
-      hasNoDragAttribute:
-        (el as HTMLElement).hasAttribute('data-drawer-no-drag') || Boolean((el as HTMLElement).closest('[data-drawer-no-drag]')),
+      targetTagName,
+      hasNoDragAttribute,
       direction,
       timeSinceOpenMs: openTime.current ? date.getTime() - openTime.current.getTime() : null,
       swipeAmount,
