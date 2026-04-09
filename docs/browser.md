@@ -25,15 +25,15 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
 <script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
 ```
 
 ## Complete Example
 
 ```html
-  <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css">
-  <script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper>
   <main>App shell</main>
@@ -69,78 +69,95 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 If you want the browser entry to look like a polished bottom-sheet demo, keep the drawer imperative and style the host yourself.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
 <script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
 
+<div data-drawer-wrapper>
+  <button id="open-drawer" class="drawer-demo-trigger" type="button">Open Drawer</button>
+</div>
+
 <style>
-  body {
-    margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f8fafc;
-    color: #111827;
-  }
-
-  .page-shell {
-    min-height: 100vh;
-    padding: 24px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  }
-
-  .drawer-demo-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 40px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 9999px;
-    background: #ffffff;
-    color: #111827;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-    cursor: pointer;
-  }
-
   .drawer-demo-overlay {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
   }
 
   .drawer-demo-content {
-    position: fixed;
-    left: 0;
-    right: 0;
+    background: #f3f4f6;
+    border-radius: 20px 20px 0 0;
     bottom: 0;
-    height: fit-content;
-    margin-top: 6rem;
     display: flex;
     flex-direction: column;
-    border-radius: 10px 10px 0 0;
-    background: #e5e7eb;
+    height: fit-content;
+    left: 0;
+    margin-top: 6rem;
     outline: none;
+    position: fixed;
+    right: 0;
+    z-index: 100;
+  }
+
+  .drawer-custom-handle {
+    margin: 12px auto;
+    height: 8px;
+    width: 48px;
+    border-radius: 9999px;
+    background-color: #ec4899;
+    cursor: pointer;
   }
 
   .drawer-demo-panel {
-    flex: 1;
-    padding: 16px;
-    border-radius: 10px 10px 0 0;
     background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    flex: 1;
+    padding: 40px 20px;
+  }
+
+  .drawer-inner-container {
+    max-width: 28rem;
+    margin: 0 auto;
+  }
+
+  .drawer-title {
+    margin: 0 0 16px;
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #111827;
+  }
+
+  .drawer-description {
+    margin: 0 0 16px;
+    color: #4b5563;
+    font-size: 16px;
+    line-height: 28px;
+  }
+
+  .drawer-text {
+    margin: 0 0 8px;
+    color: #374151;
   }
 
   .drawer-demo-footer {
-    margin-top: auto;
-    padding: 16px;
-    border-top: 1px solid #e5e7eb;
     background: #f3f4f6;
+    border-top: 1px solid #e5e7eb;
+    margin-top: auto;
+    padding: 20px;
   }
 
   .drawer-demo-links {
     display: flex;
-    justify-content: flex-end;
-    gap: 24px;
-    max-width: 28rem;
-    margin: 0 auto;
     font-size: 12px;
+    gap: 24px;
+    justify-content: flex-end;
+    margin: 0 auto;
+    max-width: 28rem;
   }
 
   .drawer-demo-links a {
@@ -149,54 +166,49 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
   }
 </style>
 
-<div class="page-shell" data-drawer-wrapper>
-  <button id="open-drawer" class="drawer-demo-trigger" type="button">Open Drawer</button>
-</div>
-
 <script>
   const trigger = document.getElementById('open-drawer')
 
   window.Drawer.createDrawer({
-    id: 'styled-sheet',
+    id: 'controlled-drawer',
     triggerElement: trigger,
     direction: 'bottom',
-    shouldScaleBackground: true,
-    showHandle: true,
-    overlayClassName: 'drawer-demo-overlay fixed inset-0',
+    showHandle: false,
+    handleOnly: true,
+    overlayClassName: 'drawer-demo-overlay',
     contentClassName: 'drawer-demo-content',
-    handleClassName: 'mt-4',
-    ariaLabelledBy: 'styled-sheet-title',
-    ariaDescribedBy: 'styled-sheet-description',
+    handleClassName: 'drawer-custom-handle',
+    ariaLabelledBy: 'title',
+    ariaDescribedBy: 'description',
     content: function () {
       const wrapper = document.createElement('div')
       wrapper.innerHTML = `
-        <div class="drawer-demo-panel">
-          <div class="mx-auto mb-8 h-1.5 w-12 rounded-full bg-gray-300"></div>
-          <div style="max-width: 28rem; margin: 0 auto;">
-            <h2 id="styled-sheet-title" style="margin: 0 0 16px; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #111827;">
-              A controlled drawer.
-            </h2>
-            <p id="styled-sheet-description" style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 28px;">
-              This mirrors the Vaul demo structure using the browser entry and plain HTML instead of React components.
-            </p>
-            <p style="margin: 0 0 8px; color: #374151;">
-              Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
-            </p>
-            <p style="margin: 0 0 8px; color: #374151;">
-              The drawer can still react to external controls through <code>triggerElement</code>, <code>openDrawer</code>,
-              and <code>updateDrawer</code>.
-            </p>
-          </div>
+      <div class="drawer-demo-panel">
+        <div class="drawer-inner-container">
+          <h2 id="title" class="drawer-title">
+            A controlled drawer.
+          </h2>
+          <p id="description" class="drawer-description">
+            This mirrors the drawer demo structure using the browser entry and plain HTML instead of React components.
+          </p>
+          <p class="drawer-text">
+            Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
+          </p>
+          <p class="drawer-text">
+            The drawer can still react to external controls through <code>triggerElement</code>, <code>openDrawer</code>,
+            and <code>updateDrawer</code>.
+          </p>
         </div>
-        <div class="drawer-demo-footer">
-          <div class="drawer-demo-links">
-            <a href="https://github.com/samline/drawer" target="_blank" rel="noreferrer">GitHub</a>
-            <a href="https://github.com/samline/drawer/issues" target="_blank" rel="noreferrer">Issues</a>
-          </div>
+      </div>
+      <div class="drawer-demo-footer">
+        <div class="drawer-demo-links">
+          <a href="https://github.com/samline/drawer" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/samline/drawer/issues" target="_blank" rel="noreferrer">Issues</a>
         </div>
-      `
+      </div>
+    `
       return wrapper
-    },
+    }
   })
 </script>
 ```
