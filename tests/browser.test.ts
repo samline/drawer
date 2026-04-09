@@ -192,6 +192,72 @@ describe('browser entry', () => {
     }
   });
 
+  it('blurs the focused built-in trigger before a modal vanilla drawer opens without autoFocus', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+
+    const originalFocus = window.HTMLElement.prototype.focus;
+    const originalBlur = window.HTMLElement.prototype.blur;
+    let activeElement = window.document.body as HTMLElement;
+
+    Object.defineProperty(window.document, 'activeElement', {
+      configurable: true,
+      get() {
+        return activeElement;
+      },
+    });
+
+    window.HTMLElement.prototype.focus = function () {
+      activeElement = this;
+    };
+
+    window.HTMLElement.prototype.blur = function () {
+      if (activeElement === this) {
+        activeElement = window.document.body as HTMLElement;
+      }
+    };
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+
+      const drawer = browserEntry.Drawer.createDrawer({
+        id: 'browser-focus-release',
+        triggerText: 'Open drawer',
+        title: 'Focus release',
+        content: 'Drawer body',
+        autoFocus: false,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const trigger = window.document.querySelector('[data-drawer-vanilla-trigger]') as HTMLElement | null;
+
+      if (!trigger) {
+        throw new Error('Missing built-in trigger element for focus test');
+      }
+
+      trigger.focus();
+      expect(window.document.activeElement).toBe(trigger);
+
+      drawer.setOpen(true);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(browserEntry.Drawer.getDrawer('browser-focus-release')?.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      browserEntry.Drawer.destroyDrawers();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      window.HTMLElement.prototype.focus = originalFocus;
+      window.HTMLElement.prototype.blur = originalBlur;
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('rebinds trigger listeners when the same browser id is updated with a new trigger element', async () => {
     vi.resetModules();
 

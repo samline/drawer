@@ -50,6 +50,7 @@ function openAncestorChain(parentId: CommonDrawerId) {
   }
 
   if (!parentRuntime.controller.getSnapshot().state.isOpen) {
+    releaseHiddenFocusBeforeOpen(parentRuntime.options);
     parentRuntime.controller.setOpen(true);
     notifyOpenStateChange(parentRuntime, true);
     renderVanillaDrawer(parentRuntime.id);
@@ -74,6 +75,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 
   const triggerElement = runtime.options.triggerElement;
   const handleClick = () => {
+    releaseHiddenFocusBeforeOpen(runtime.options);
     runtime.controller.setOpen(true);
     renderVanillaDrawer(runtime.id);
   };
@@ -116,6 +118,19 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
 
 function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
+
+function releaseHiddenFocusBeforeOpen(options: VanillaDrawerOptions) {
+  if (!canUseDOM() || options.modal === false || options.autoFocus) {
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  if (!(activeElement instanceof HTMLElement) || activeElement === document.body) {
+    return;
+  }
+
+  activeElement.blur();
 }
 
 function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
@@ -185,6 +200,11 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     open: snapshot.state.isOpen,
     onOpenChange: (open: boolean) => {
       const previousOpen = runtime.controller.getSnapshot().state.isOpen;
+
+      if (open) {
+        releaseHiddenFocusBeforeOpen(runtime.options);
+      }
+
       runtime.controller.setOpen(open);
 
       if (previousOpen !== open) {
@@ -241,6 +261,10 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
       const runtime = drawerInstances.get(id);
       if (!runtime) {
         return createDrawer({ id, open }).getSnapshot();
+      }
+
+      if (open) {
+        releaseHiddenFocusBeforeOpen(runtime.options);
       }
 
       const previousOpen = runtime.controller.getSnapshot().state.isOpen;
@@ -322,6 +346,10 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
     if (typeof nextOptions.open === 'boolean' && previousOpen !== snapshot.state.isOpen) {
       notifyOpenStateChange(existing, snapshot.state.isOpen);
     }
+  }
+
+  if (nextOptions.open && !previousOpen) {
+    releaseHiddenFocusBeforeOpen(nextOptions);
   }
 
   renderVanillaDrawer(id);

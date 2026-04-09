@@ -43,6 +43,8 @@ import { getViewportDrivenDrawerLayout } from '../runtime/viewport';
 import { getNextHandleState } from '../runtime/handle';
 import { getDragPermission, getDragTargetMetadata } from '../runtime/drag-policy';
 
+const useSafeLayoutEffect = typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect;
+
 export interface WithFadeFromProps {
   /**
    * Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up.
@@ -313,7 +315,7 @@ export function Root({
     autoFocus,
   });
 
-  React.useEffect(() => {
+  useSafeLayoutEffect(() => {
     if (!isOpen || !modal || autoFocus || typeof document === 'undefined') {
       return;
     }

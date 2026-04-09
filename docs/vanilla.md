@@ -11,6 +11,7 @@ bun add @samline/drawer
 ## Basic Usage
 
 ```ts
+import '@samline/drawer/styles.css';
 import { createDrawer } from '@samline/drawer';
 
 document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '');
@@ -30,6 +31,7 @@ drawer.setOpen(true);
 ## Complete Example
 
 ```ts
+import '@samline/drawer/styles.css';
 import { createDrawer } from '@samline/drawer';
 
 const filters = document.createElement('div');

@@ -17,6 +17,7 @@ bun add @samline/drawer
 ## Quick Start
 
 ```ts
+import '@samline/drawer/styles.css'
 import { createDrawer } from '@samline/drawer'
 
 const drawer = createDrawer({
