@@ -1,6 +1,6 @@
 // This code comes from https://github.com/adobe/react-spectrum/blob/main/packages/%40react-aria/overlays/src/usePreventScroll.ts
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { isIOS } from './browser-utils';
 
 const KEYBOARD_BUFFER = 24;
@@ -56,9 +56,25 @@ const nonTextInputTypes = new Set([
   'reset',
 ]);
 
-// The number of active usePreventScroll calls. Used to determine whether to revert back to the original page style/scroll position
-let preventScrollCount = 0;
-let restore: () => void;
+const activePreventScrollLocks = new Set<symbol>();
+let activePreventScrollRestore: (() => void) | null = null;
+
+function acquirePreventScrollLock(lockId: symbol) {
+  activePreventScrollLocks.add(lockId);
+
+  if (activePreventScrollLocks.size === 1 && isIOS()) {
+    activePreventScrollRestore = preventScrollMobileSafari();
+  }
+}
+
+function releasePreventScrollLock(lockId: symbol) {
+  activePreventScrollLocks.delete(lockId);
+
+  if (activePreventScrollLocks.size === 0) {
+    activePreventScrollRestore?.();
+    activePreventScrollRestore = null;
+  }
+}
 
 /**
  * Prevents scrolling on the document body on mount, and
@@ -67,24 +83,21 @@ let restore: () => void;
  */
 export function usePreventScroll(options: PreventScrollOptions = {}) {
   let { isDisabled } = options;
+  const lockIdRef = useRef<symbol>();
+
+  if (!lockIdRef.current) {
+    lockIdRef.current = Symbol('drawer-prevent-scroll-lock');
+  }
 
   useIsomorphicLayoutEffect(() => {
     if (isDisabled) {
       return;
     }
 
-    preventScrollCount++;
-    if (preventScrollCount === 1) {
-      if (isIOS()) {
-        restore = preventScrollMobileSafari();
-      }
-    }
+    acquirePreventScrollLock(lockIdRef.current as symbol);
 
     return () => {
-      preventScrollCount--;
-      if (preventScrollCount === 0) {
-        restore?.();
-      }
+      releasePreventScrollLock(lockIdRef.current as symbol);
     };
   }, [isDisabled]);
 }

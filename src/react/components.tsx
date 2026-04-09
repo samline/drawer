@@ -186,6 +186,12 @@ export function Root({
   container,
   autoFocus = false,
 }: DialogProps) {
+  const animationEndTimeoutRef = React.useRef<number | null>(null);
+  const nonModalPointerEventsRafRef = React.useRef<number | null>(null);
+  const shouldAnimateRafRef = React.useRef<number | null>(null);
+  const snapPointsResetTimeoutRef = React.useRef<number | null>(null);
+  const justReleasedTimeoutRef = React.useRef<number | null>(null);
+  const touchEndHandlerRef = React.useRef<(() => void) | null>(null);
   const [isOpen = false, setIsOpen] = useControllableState({
     defaultProp: defaultOpen,
     prop: openProp,
@@ -196,14 +202,23 @@ export function Root({
         restorePositionSetting();
       }
 
-      setTimeout(() => {
+      if (animationEndTimeoutRef.current !== null) {
+        window.clearTimeout(animationEndTimeoutRef.current);
+      }
+
+      animationEndTimeoutRef.current = window.setTimeout(() => {
         onAnimationEnd?.(o);
       }, TRANSITIONS.DURATION * 1000);
 
       if (o && !modal) {
         if (typeof window !== 'undefined') {
-          window.requestAnimationFrame(() => {
+          if (nonModalPointerEventsRafRef.current !== null) {
+            window.cancelAnimationFrame(nonModalPointerEventsRafRef.current);
+          }
+
+          nonModalPointerEventsRafRef.current = window.requestAnimationFrame(() => {
             document.body.style.pointerEvents = 'auto';
+            nonModalPointerEventsRafRef.current = null;
           });
         }
       }
@@ -330,7 +345,17 @@ export function Root({
 
     // iOS doesn't trigger mouseUp after scrolling so we need to listen to touched in order to disallow dragging
     if (isIOS()) {
-      window.addEventListener('touchend', () => (isAllowedToDrag.current = false), { once: true });
+      if (touchEndHandlerRef.current) {
+        window.removeEventListener('touchend', touchEndHandlerRef.current);
+      }
+
+      const handleTouchEnd = () => {
+        isAllowedToDrag.current = false;
+        touchEndHandlerRef.current = null;
+      };
+
+      touchEndHandlerRef.current = handleTouchEnd;
+      window.addEventListener('touchend', handleTouchEnd, { once: true });
     }
     // Ensure we maintain correct pointer capture even when going outside of the drawer
     (event.target as HTMLElement).setPointerCapture(event.pointerId);
@@ -472,9 +497,16 @@ export function Root({
   }
 
   React.useEffect(() => {
-    window.requestAnimationFrame(() => {
+    shouldAnimateRafRef.current = window.requestAnimationFrame(() => {
       shouldAnimate.current = true;
     });
+
+    return () => {
+      if (shouldAnimateRafRef.current !== null) {
+        window.cancelAnimationFrame(shouldAnimateRafRef.current);
+        shouldAnimateRafRef.current = null;
+      }
+    };
   }, []);
 
   React.useEffect(() => {
@@ -528,10 +560,15 @@ export function Root({
       setIsOpen(false);
     }
 
-    setTimeout(() => {
+    if (snapPointsResetTimeoutRef.current !== null) {
+      window.clearTimeout(snapPointsResetTimeoutRef.current);
+    }
+
+    snapPointsResetTimeoutRef.current = window.setTimeout(() => {
       if (snapPoints) {
         setActiveSnapPoint(snapPoints[0]);
       }
+      snapPointsResetTimeoutRef.current = null;
     }, TRANSITIONS.DURATION * 1000); // seconds to ms
   }
 
@@ -625,8 +662,13 @@ export function Root({
       // `justReleased` is needed to prevent the drawer from focusing on an input when the drag ends, as it's not the intent most of the time.
       setJustReleased(true);
 
-      setTimeout(() => {
+      if (justReleasedTimeoutRef.current !== null) {
+        window.clearTimeout(justReleasedTimeoutRef.current);
+      }
+
+      justReleasedTimeoutRef.current = window.setTimeout(() => {
         setJustReleased(false);
+        justReleasedTimeoutRef.current = null;
       }, 200);
     }
 
@@ -717,11 +759,52 @@ export function Root({
   }
 
   React.useEffect(() => {
+    return () => {
+      if (animationEndTimeoutRef.current !== null) {
+        window.clearTimeout(animationEndTimeoutRef.current);
+      }
+
+      if (nonModalPointerEventsRafRef.current !== null) {
+        window.cancelAnimationFrame(nonModalPointerEventsRafRef.current);
+      }
+
+      if (snapPointsResetTimeoutRef.current !== null) {
+        window.clearTimeout(snapPointsResetTimeoutRef.current);
+      }
+
+      if (justReleasedTimeoutRef.current !== null) {
+        window.clearTimeout(justReleasedTimeoutRef.current);
+      }
+
+      if (nestedOpenChangeTimer.current) {
+        window.clearTimeout(nestedOpenChangeTimer.current);
+      }
+
+      if (touchEndHandlerRef.current) {
+        window.removeEventListener('touchend', touchEndHandlerRef.current);
+        touchEndHandlerRef.current = null;
+      }
+    };
+  }, []);
+
+  React.useEffect(() => {
     if (!modal) {
       // Need to do this manually unfortunately
-      window.requestAnimationFrame(() => {
+      if (nonModalPointerEventsRafRef.current !== null) {
+        window.cancelAnimationFrame(nonModalPointerEventsRafRef.current);
+      }
+
+      nonModalPointerEventsRafRef.current = window.requestAnimationFrame(() => {
         document.body.style.pointerEvents = 'auto';
+        nonModalPointerEventsRafRef.current = null;
       });
+
+      return () => {
+        if (nonModalPointerEventsRafRef.current !== null) {
+          window.cancelAnimationFrame(nonModalPointerEventsRafRef.current);
+          nonModalPointerEventsRafRef.current = null;
+        }
+      };
     }
   }, [modal]);
 
@@ -839,16 +922,25 @@ export const Content = React.forwardRef<HTMLDivElement, ContentProps>(function (
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const lastKnownPointerEventRef = React.useRef<React.PointerEvent<HTMLDivElement> | null>(null);
   const wasBeyondThePointRef = React.useRef(false);
+  const delayedSnapPointsRafRef = React.useRef<number | null>(null);
   const hasSnapPoints = snapPoints && snapPoints.length > 0;
   useScaleBackground();
 
   React.useEffect(() => {
     if (hasSnapPoints) {
-      window.requestAnimationFrame(() => {
+      delayedSnapPointsRafRef.current = window.requestAnimationFrame(() => {
         setDelayedSnapPoints(true);
+        delayedSnapPointsRafRef.current = null;
       });
     }
-  }, []);
+
+    return () => {
+      if (delayedSnapPointsRafRef.current !== null) {
+        window.cancelAnimationFrame(delayedSnapPointsRafRef.current);
+        delayedSnapPointsRafRef.current = null;
+      }
+    };
+  }, [hasSnapPoints]);
 
   function handleOnPointerUp(event: React.PointerEvent<HTMLDivElement> | null) {
     pointerStartRef.current = null;
@@ -980,6 +1072,7 @@ export const Handle = React.forwardRef<HTMLDivElement, HandleProps>(function (
   } = useDrawerContext();
 
   const closeTimeoutIdRef = React.useRef<number | null>(null);
+  const cycleTimeoutIdRef = React.useRef<number | null>(null);
   const shouldCancelInteractionRef = React.useRef(false);
 
   function handleStartCycle() {
@@ -988,7 +1081,7 @@ export const Handle = React.forwardRef<HTMLDivElement, HandleProps>(function (
       handleCancelInteraction();
       return;
     }
-    window.setTimeout(() => {
+    cycleTimeoutIdRef.current = window.setTimeout(() => {
       handleCycleSnapPoints();
     }, DOUBLE_TAP_TIMEOUT);
   }
@@ -1028,9 +1121,21 @@ export const Handle = React.forwardRef<HTMLDivElement, HandleProps>(function (
   function handleCancelInteraction() {
     if (closeTimeoutIdRef.current) {
       window.clearTimeout(closeTimeoutIdRef.current);
+      closeTimeoutIdRef.current = null;
+    }
+
+    if (cycleTimeoutIdRef.current) {
+      window.clearTimeout(cycleTimeoutIdRef.current);
+      cycleTimeoutIdRef.current = null;
     }
     shouldCancelInteractionRef.current = false;
   }
+
+  React.useEffect(() => {
+    return () => {
+      handleCancelInteraction();
+    };
+  }, []);
 
   return (
     <div

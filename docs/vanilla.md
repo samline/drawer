@@ -124,6 +124,8 @@ destroyDrawer();
 
 `destroyDrawer()` tears down the selected instance. Use `destroyDrawers()` when you want to clear the entire runtime registry.
 
+Treat the vanilla API as an owned lifecycle. If an app creates drawers dynamically, swaps ids, or rebuilds sections of the page over time, the matching runtime instance should be destroyed explicitly so the shared registry can release it.
+
 ## Integration Notes
 
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.

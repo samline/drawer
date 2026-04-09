@@ -80,6 +80,7 @@ If the Svelte wrapper should not render any top-level title or description, pass
 
 - The action calls `createDrawer()` immediately and updates the selected runtime instance when its value changes.
 - Destroying the action calls `destroyDrawer(id)`, which tears down that instance.
+- Updating the action to a different `id` destroys the previously owned runtime instance before creating the next one.
 
 ## Integration Notes
 

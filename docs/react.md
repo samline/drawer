@@ -118,3 +118,7 @@ Use `handleOnly` together with `Drawer.Handle` when drag should start only from 
 - Use the React entry when you want direct component composition and React-native control over the drawer tree.
 - The React entry also re-exports `createDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `updateDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `destroyDrawer`, `destroyDrawers`, and `createDrawerController`.
 - Use the root package only when you prefer the shared mounted-runtime API over direct component composition.
+
+## Cleanup Guidance
+
+Unmounting the React component tree cleans up the React-owned drawer lifecycle. If you also use the imperative helpers re-exported from the React entry, those helpers still target the shared runtime registry from the root package and follow the same explicit `destroyDrawer(id)` and `destroyDrawers()` cleanup rules as the vanilla API.

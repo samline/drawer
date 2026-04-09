@@ -25,15 +25,15 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.5/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@2.0.5/dist/browser/index.js"></script>
 ```
 
 ## Complete Example
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.5/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@2.0.5/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper>
   <main>App shell</main>
@@ -69,8 +69,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 If you want the browser entry to look like a polished bottom-sheet demo, keep the drawer imperative and style the host yourself.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.4/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.5/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@2.0.5/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper>
   <button id="open-drawer" class="drawer-demo-trigger" type="button">Open Drawer</button>
@@ -235,8 +235,31 @@ If the browser drawer is something like a gallery or a fully custom surface with
 
 - The browser bundle targets the same shared runtime registry as the root package.
 - Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
+- Treat each browser drawer id as an owned runtime instance. If your page removes that flow, swaps to a new id, or rebuilds the integration dynamically, call `destroyDrawer(id)` or `destroyDrawers()` so the shared registry can release the instance.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
 - Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
 - Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
 - Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.
 - Reusing the same `id` updates the existing runtime instance bound to that browser namespace.
+
+## Cleanup Guidance
+
+When browser usage is long-lived, the most important lifecycle rule is that `createDrawer()` is not fire-and-forget. The browser entry stores runtime instances in a shared registry until you destroy them.
+
+```html
+<script>
+  const drawer = window.Drawer.createDrawer({
+    id: 'settings',
+    title: 'Settings',
+    content: 'Drawer content'
+  })
+
+  drawer.setOpen(true)
+
+  window.addEventListener('beforeunload', function () {
+    window.Drawer.destroyDrawer('settings')
+  })
+</script>
+```
+
+Use `destroyDrawer(id)` when a specific integration is being replaced. Use `destroyDrawers()` when the whole page shell is being torn down or rebuilt.

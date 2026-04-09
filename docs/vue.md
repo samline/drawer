@@ -84,6 +84,7 @@ If the Vue wrapper should not render any top-level title or description, pass `a
 
 - `DrawerRoot` synchronizes props into the shared runtime on mount and on prop updates.
 - Unmounting `DrawerRoot` calls `destroyDrawer(id)`, so it should be treated as the owner of the selected runtime instance.
+- Changing the `id` prop transfers ownership to the new runtime instance and destroys the previous one.
 
 ## Integration Notes
 

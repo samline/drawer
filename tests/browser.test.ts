@@ -182,12 +182,129 @@ describe('browser entry', () => {
 
       expect(browserEntry.Drawer.getDrawer('browser-dom')?.getSnapshot().state.isOpen).toBe(true);
       expect(window.document.querySelector('[data-drawer-vanilla-root="browser-dom"]')).not.toBeNull();
-        expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.showHandle).toBe(true);
-        expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.handleClassName).toBe('browser-dom-handle');
+      expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.showHandle).toBe(true);
+      expect(browserEntry.Drawer.getDrawer('browser-dom')?.options.handleClassName).toBe('browser-dom-handle');
 
       browserEntry.Drawer.destroyDrawers();
       await new Promise((resolve) => setTimeout(resolve, 20));
     } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('rebinds trigger listeners when the same browser id is updated with a new trigger element', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML(
+      '<!doctype html><html><head></head><body><button id="trigger-a">A</button><button id="trigger-b">B</button></body></html>',
+    );
+    installDomGlobals(window);
+
+    const triggerA = window.document.getElementById('trigger-a') as HTMLElement | null;
+    const triggerB = window.document.getElementById('trigger-b') as HTMLElement | null;
+
+    if (!triggerA || !triggerB) {
+      throw new Error('Missing trigger elements for trigger rebinding test');
+    }
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      browserEntry.Drawer.createDrawer({
+        id: 'browser-trigger-rebind',
+        triggerElement: triggerA,
+        title: 'Trigger rebind',
+        content: 'Body',
+      });
+
+      browserEntry.Drawer.closeDrawer('browser-trigger-rebind');
+      browserEntry.Drawer.updateDrawer('browser-trigger-rebind', { triggerElement: triggerB });
+
+      triggerA.dispatchEvent(new window.Event('click'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(browserEntry.Drawer.getDrawer('browser-trigger-rebind')?.getSnapshot().state.isOpen).toBe(false);
+
+      triggerB.dispatchEvent(new window.Event('click'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(browserEntry.Drawer.getDrawer('browser-trigger-rebind')?.getSnapshot().state.isOpen).toBe(true);
+
+      browserEntry.Drawer.destroyDrawers();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('balances trigger click listeners across repeated browser create, update, and destroy cycles', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+
+    const originalAddEventListener = window.HTMLElement.prototype.addEventListener;
+    const originalRemoveEventListener = window.HTMLElement.prototype.removeEventListener;
+    let clickAddCount = 0;
+    let clickRemoveCount = 0;
+
+    window.HTMLElement.prototype.addEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.triggerBalance === 'true') {
+        clickAddCount += 1;
+      }
+
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+
+    window.HTMLElement.prototype.removeEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | EventListenerOptions,
+    ) {
+      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.triggerBalance === 'true') {
+        clickRemoveCount += 1;
+      }
+
+      return originalRemoveEventListener.call(this, type, listener, options);
+    };
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+
+      for (let index = 0; index < 20; index += 1) {
+        const triggerA = window.document.createElement('button');
+        const triggerB = window.document.createElement('button');
+
+        triggerA.dataset.triggerBalance = 'true';
+        triggerB.dataset.triggerBalance = 'true';
+
+        window.document.body.appendChild(triggerA);
+        window.document.body.appendChild(triggerB);
+
+        browserEntry.Drawer.createDrawer({
+          id: `browser-balance-${index}`,
+          triggerElement: triggerA,
+          title: `Balance ${index}`,
+          content: `Body ${index}`,
+        });
+
+        browserEntry.Drawer.updateDrawer(`browser-balance-${index}`, {
+          triggerElement: triggerB,
+        });
+
+        browserEntry.Drawer.destroyDrawer(`browser-balance-${index}`);
+      }
+
+      expect(clickAddCount).toBe(40);
+      expect(clickRemoveCount).toBe(clickAddCount);
+      expect(Object.keys(browserEntry.Drawer.getDrawers())).toHaveLength(0);
+    } finally {
+      window.HTMLElement.prototype.addEventListener = originalAddEventListener;
+      window.HTMLElement.prototype.removeEventListener = originalRemoveEventListener;
       vi.unstubAllGlobals();
     }
   });
@@ -254,6 +371,44 @@ describe('browser entry', () => {
 
       browserEntry.Drawer.destroyDrawers();
       await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('leaves no browser runtime instances after repeated create and destroy cycles', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+
+      for (let index = 0; index < 25; index += 1) {
+        const trigger = window.document.createElement('button');
+        trigger.id = `trigger-${index}`;
+        window.document.body.appendChild(trigger);
+
+        browserEntry.Drawer.createDrawer({
+          id: `browser-cycle-${index}`,
+          triggerElement: trigger,
+          title: `Browser drawer ${index}`,
+          content: `Body ${index}`,
+          showHandle: index % 2 === 0,
+        });
+
+        trigger.dispatchEvent(new window.Event('click'));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        browserEntry.Drawer.destroyDrawer(`browser-cycle-${index}`);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      expect(Object.keys(browserEntry.Drawer.getDrawers())).toHaveLength(0);
+      expect(window.document.querySelector('[data-drawer-vanilla-root]')).toBeNull();
     } finally {
       vi.unstubAllGlobals();
     }

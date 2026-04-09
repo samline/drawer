@@ -2,6 +2,15 @@ import React from 'react';
 import { isSafari } from './browser-utils';
 
 let previousBodyPosition: Record<string, string> | null = null;
+const activeBodyPositionLocks = new Set<symbol>();
+let bodyPositionTimeoutId: number | null = null;
+
+function clearBodyPositionTimeout() {
+  if (bodyPositionTimeoutId !== null) {
+    window.clearTimeout(bodyPositionTimeoutId);
+    bodyPositionTimeoutId = null;
+  }
+}
 
 /**
  * This hook is necessary to prevent buggy behavior on iOS devices (need to test on Android).
@@ -26,10 +35,22 @@ export function usePositionFixed({
 }) {
   const [activeUrl, setActiveUrl] = React.useState(() => (typeof window !== 'undefined' ? window.location.href : ''));
   const scrollPos = React.useRef(0);
+  const lockIdRef = React.useRef<symbol>();
+
+  if (!lockIdRef.current) {
+    lockIdRef.current = Symbol('drawer-body-position-lock');
+  }
 
   const setPositionFixed = React.useCallback(() => {
     // All browsers on iOS will return true here.
     if (!isSafari()) return;
+
+    const lockId = lockIdRef.current as symbol;
+    if (activeBodyPositionLocks.has(lockId)) {
+      return;
+    }
+
+    activeBodyPositionLocks.add(lockId);
 
     // If previousBodyPosition is already set, don't set it again.
     if (previousBodyPosition === null && isOpen && !noBodyStyles) {
@@ -52,7 +73,8 @@ export function usePositionFixed({
         height: 'auto',
       });
 
-      window.setTimeout(
+      clearBodyPositionTimeout();
+      bodyPositionTimeoutId = window.setTimeout(
         () =>
           window.requestAnimationFrame(() => {
             // Attempt to check if the bottom bar appeared due to the position change
@@ -65,13 +87,22 @@ export function usePositionFixed({
         300,
       );
     }
-  }, [isOpen]);
+  }, [isOpen, noBodyStyles]);
 
   const restorePositionSetting = React.useCallback(() => {
     // All browsers on iOS will return true here.
     if (!isSafari()) return;
 
+    const lockId = lockIdRef.current as symbol;
+    activeBodyPositionLocks.delete(lockId);
+
+    if (activeBodyPositionLocks.size > 0) {
+      return;
+    }
+
     if (previousBodyPosition !== null && !noBodyStyles) {
+      clearBodyPositionTimeout();
+
       // Convert the position from "px" to Int
       const y = -parseInt(document.body.style.top, 10);
       const x = -parseInt(document.body.style.left, 10);
@@ -90,7 +121,7 @@ export function usePositionFixed({
 
       previousBodyPosition = null;
     }
-  }, [activeUrl]);
+  }, [activeUrl, noBodyStyles, setActiveUrl]);
 
   React.useEffect(() => {
     function onScroll() {

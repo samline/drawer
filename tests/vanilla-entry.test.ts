@@ -183,6 +183,25 @@ describe('vanilla root entry', () => {
     expect(getDrawer('child-b')).toBeNull();
   });
 
+  it('leaves the runtime registry empty after repeated create and destroy cycles', () => {
+    for (let index = 0; index < 50; index += 1) {
+      const id = `cycle-${index}`;
+
+      createDrawer({
+        id,
+        direction: index % 2 === 0 ? 'bottom' : 'right',
+        title: `Drawer ${index}`,
+        content: `Content ${index}`,
+      });
+
+      openDrawer(id);
+      closeDrawer(id);
+      destroyDrawer(id);
+    }
+
+    expect(Object.keys(getDrawers())).toHaveLength(0);
+  });
+
   it('opens the full ancestor chain when a deep nested drawer opens', () => {
     createDrawer({ id: 'grandparent', open: false });
     createDrawer({ id: 'parent', parentId: 'grandparent', open: false });

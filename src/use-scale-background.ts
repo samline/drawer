@@ -10,13 +10,25 @@ export function useScaleBackground() {
   const timeoutIdRef = React.useRef<number | null>(null);
   const initialBackgroundColor = useMemo(() => document.body.style.backgroundColor, []);
 
+  React.useEffect(() => {
+    return () => {
+      if (timeoutIdRef.current !== null) {
+        window.clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+    };
+  }, []);
+
   function getScale() {
     return (window.innerWidth - WINDOW_TOP_OFFSET) / window.innerWidth;
   }
 
   React.useEffect(() => {
     if (isOpen && shouldScaleBackground) {
-      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+      if (timeoutIdRef.current !== null) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
       const wrapper = document.querySelector('[data-drawer-wrapper]') as HTMLElement | null;
 
       if (!wrapper) return;
@@ -51,6 +63,7 @@ export function useScaleBackground() {
           } else {
             document.body.style.removeProperty('background');
           }
+          timeoutIdRef.current = null;
         }, TRANSITIONS.DURATION * 1000);
       };
     }
