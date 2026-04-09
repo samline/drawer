@@ -29,12 +29,14 @@ interface ElementLike {
   parentElement: ElementLike | null;
 }
 
-function isElementLike(target: EventTarget | null): target is ElementLike {
+function isElementLike(target: unknown): target is ElementLike {
+  const element = target as Partial<ElementLike> | null;
+
   return Boolean(
-    target &&
-      typeof (target as ElementLike).getAttribute === 'function' &&
-      typeof (target as ElementLike).hasAttribute === 'function' &&
-      typeof (target as ElementLike).closest === 'function',
+    element &&
+      typeof element.getAttribute === 'function' &&
+      typeof element.hasAttribute === 'function' &&
+      typeof element.closest === 'function',
   );
 }
 
