@@ -25,15 +25,15 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.2/dist/style.css">
-<script src="https://unpkg.com/@samline/drawer@2.0.2/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.3/dist/style.css">
+<script src="https://unpkg.com/@samline/drawer@2.0.3/dist/browser/index.js"></script>
 ```
 
 ## Complete Example
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.2/dist/style.css">
-<script src="https://unpkg.com/@samline/drawer@2.0.2/dist/browser/index.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.3/dist/style.css">
+  <script src="https://unpkg.com/@samline/drawer@2.0.3/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper>
   <main>App shell</main>
@@ -69,8 +69,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 If you want the browser entry to look like a polished bottom-sheet demo, keep the drawer imperative and style the host yourself.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.2/dist/style.css">
-<script src="https://unpkg.com/@samline/drawer@2.0.2/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.3/dist/style.css">
+<script src="https://unpkg.com/@samline/drawer@2.0.3/dist/browser/index.js"></script>
 
 <style>
   body {

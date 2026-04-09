@@ -402,7 +402,7 @@ Loading `dist/browser/index.js` in a browser attaches that namespace. It does no
 <div data-drawer-wrapper>
   <main>App shell</main>
 </div>
-<script src="https://unpkg.com/@samline/drawer@2.0.2/dist/browser/index.js"></script>
+<script src="https://unpkg.com/@samline/drawer@2.0.3/dist/browser/index.js"></script>
 <script>
   const drawer = window.Drawer.createDrawer({
     triggerText: 'Open drawer',
