@@ -86,6 +86,8 @@ If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shel
 
 If a child node inside your rendered content should not start a drag gesture, add `data-drawer-no-drag` to that element.
 
+Use `title` and `description` when a simple heading block above the body content is enough. If your drawer body defines its own card, panel, or header layout, render that heading block inside `content` so it stays inside the same visual shell.
+
 ## Runtime Helpers
 
 ```ts
@@ -123,5 +125,6 @@ destroyDrawer();
 ## Integration Notes
 
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
+- `title` and `description` are rendered before `content` as direct children of the drawer content root.
 - The root entry exposes the mounted shared host through a programmatic API instead of framework-specific component composition.
 - Reusing the same `id` updates the same runtime instance. It does not create a second drawer.

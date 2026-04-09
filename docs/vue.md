@@ -76,6 +76,8 @@ If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shel
 
 If custom content includes controls that should keep their own pointer gestures, add `data-drawer-no-drag` to those elements.
 
+Use `title` and `description` when the wrapper should render a simple accessible heading block above the body. If the visible panel needs its own internal header layout, include that header inside `content` instead.
+
 ## Lifecycle and Cleanup
 
 - `DrawerRoot` synchronizes props into the shared runtime on mount and on prop updates.
@@ -84,4 +86,5 @@ If custom content includes controls that should keep their own pointer gestures,
 ## Integration Notes
 
 - Vue drives the shared mounted host through props instead of rendering a separate Vue-native drawer tree.
+- `title` and `description` are rendered before `content` by the shared mounted host.
 - Reusing the same `id` from multiple Vue wrappers intentionally targets the same instance, so ownership should stay clear at the app level.

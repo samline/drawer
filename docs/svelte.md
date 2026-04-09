@@ -72,6 +72,8 @@ If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shel
 
 If custom content includes controls that should keep their own pointer gestures, add `data-drawer-no-drag` to those elements.
 
+Use `title` and `description` when you want the shared host to render a simple heading block above the body content. If the drawer needs a custom internal header or panel shell, render that heading block inside `content` instead.
+
 ## Lifecycle and Cleanup
 
 - The action calls `createDrawer()` immediately and updates the selected runtime instance when its value changes.
@@ -80,4 +82,5 @@ If custom content includes controls that should keep their own pointer gestures,
 ## Integration Notes
 
 - The Svelte entry drives the shared mounted host through an action or `mountDrawer()` helper instead of rendering a separate Svelte-native drawer tree.
+- `title` and `description` are rendered before `content` by the shared mounted host.
 - As with Vue and the browser entry, it targets the same shared runtime used by the root package.

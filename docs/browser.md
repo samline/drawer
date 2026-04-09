@@ -165,15 +165,18 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
     overlayClassName: 'drawer-demo-overlay fixed inset-0',
     contentClassName: 'drawer-demo-content',
     handleClassName: 'mt-4',
-    title: 'A controlled drawer.',
-    description:
-      'This example uses the browser entry and plain HTML to build a polished bottom sheet without any framework wrapper.',
     content: function () {
       const wrapper = document.createElement('div')
       wrapper.innerHTML = `
         <div class="drawer-demo-panel">
           <div class="mx-auto mb-8 h-1.5 w-12 rounded-full bg-gray-300"></div>
           <div style="max-width: 28rem; margin: 0 auto;">
+            <h2 style="margin: 0 0 16px; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #111827;">
+              A controlled drawer.
+            </h2>
+            <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 28px;">
+              This mirrors the Vaul demo structure using the browser entry and plain HTML instead of React components.
+            </p>
             <p style="margin: 0 0 8px; color: #374151;">
               Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
             </p>
@@ -202,6 +205,7 @@ Key points for this style:
 - Use `direction: 'bottom'` for a sheet that slides up from the bottom.
 - Use `showHandle: true` so the browser host renders the built-in handle.
 - Use `overlayClassName` and `contentClassName` to match the demo layout.
+- Put the visible heading and supporting copy inside `content` when you need exact control over the internal panel layout.
 - Add `data-drawer-wrapper` to the page shell when you enable `shouldScaleBackground`.
 
 ## When to Use It

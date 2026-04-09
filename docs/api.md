@@ -169,8 +169,8 @@ The root entry accepts the shared options plus these rendering options:
 | `triggerText` | `string` | Render a built-in trigger button |
 | `showHandle` | `boolean` | Render the built-in drawer handle in non-React entries |
 | `handleClassName` | `string` | Extra class for the built-in non-React handle |
-| `title` | `VanillaRenderable` | Drawer title content |
-| `description` | `VanillaRenderable` | Drawer description content |
+| `title` | `VanillaRenderable` | Drawer title content rendered as a direct child of the drawer content root |
+| `description` | `VanillaRenderable` | Drawer description content rendered as a direct child of the drawer content root |
 | `content` | `VanillaRenderable` | Main drawer body content |
 | `overlayClassName` | `string` | Extra class for the overlay |
 | `contentClassName` | `string` | Extra class for the content root |
@@ -203,6 +203,8 @@ The returned controller includes the shared controller methods plus:
 - `options` — latest merged options passed to the root entry.
 - `update(options?)` — merge new options into the same instance and rerender.
 - `destroy()` — alias for `destroyDrawer(id)`.
+
+If you need the title and description inside a custom inner shell, render them as part of `content` instead of using the top-level `title` and `description` options.
 
 ### `configureDrawer(options?)`
 
