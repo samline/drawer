@@ -60,6 +60,14 @@ function installDomGlobals(window: ReturnType<typeof parseHTML>['window']) {
   window.innerHeight = 800;
 }
 
+function collectConsoleMessages(spies: Array<ReturnType<typeof vi.spyOn>>) {
+  return spies
+    .flatMap((spy) => spy.mock.calls)
+    .flat()
+    .map((entry) => String(entry))
+    .join('\n');
+}
+
 describe('browser entry', () => {
   it('can be imported without a window object', async () => {
     const browserEntry = await import('../src/browser/index');
@@ -242,6 +250,50 @@ describe('browser entry', () => {
     expect(content.props['aria-labelledby']).toBeUndefined();
     expect(content.props['aria-describedby']).toBeUndefined();
     expect(wrapperChildren).toHaveLength(1);
+  });
+
+  it('does not emit Radix accessibility warnings when custom content provides labelled nodes', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      browserEntry.Drawer.createDrawer({
+        id: 'browser-custom-a11y',
+        open: true,
+        ariaLabelledBy: 'styled-sheet-title',
+        ariaDescribedBy: 'styled-sheet-description',
+        content() {
+          const wrapper = window.document.createElement('div');
+          wrapper.innerHTML = [
+            '<h2 id="styled-sheet-title">A controlled drawer.</h2>',
+            '<p id="styled-sheet-description">Accessible custom content.</p>',
+          ].join('');
+          return wrapper;
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const messages = collectConsoleMessages([errorSpy, warnSpy]);
+
+      expect(messages).not.toContain('DialogContent requires a DialogTitle');
+      expect(messages).not.toContain('Missing `Description`');
+
+      browserEntry.Drawer.destroyDrawers();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      errorSpy.mockRestore();
+      warnSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('opens every ancestor in a deep nested browser chain', async () => {

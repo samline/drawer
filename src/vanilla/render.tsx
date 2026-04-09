@@ -35,6 +35,8 @@ const VISUALLY_HIDDEN_STYLE: React.CSSProperties = {
   border: 0,
 };
 
+const useSafeLayoutEffect = typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect;
+
 function toReactDrawerProps(
   options: CommonDrawerOptions,
   open: boolean,
@@ -82,7 +84,7 @@ function toReactDrawerProps(
 function VanillaNode({ value, dataAttribute }: { value?: VanillaRenderable; dataAttribute?: string }) {
   const ref = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useSafeLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
 
