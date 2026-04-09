@@ -81,12 +81,20 @@ function toReactDrawerProps(
   };
 }
 
-function VanillaNode({ value, dataAttribute }: { value?: VanillaRenderable; dataAttribute?: string }) {
+function VanillaNode({
+  value,
+  dataAttribute,
+}: {
+  value?: VanillaRenderable;
+  dataAttribute?: string;
+}) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useSafeLayoutEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     element.innerHTML = '';
 
@@ -112,6 +120,22 @@ function VanillaNode({ value, dataAttribute }: { value?: VanillaRenderable; data
   }
 
   return <div {...(dataAttribute ? { [dataAttribute]: '' } : {})} ref={ref} />;
+}
+
+function readAccessibleTextFromRoot(root: HTMLElement | null, elementId?: string) {
+  if (!root || !elementId) {
+    return undefined;
+  }
+
+  const elements = Array.from(root.querySelectorAll('[id]'));
+  for (const element of elements) {
+    if (element instanceof HTMLElement && element.id === elementId) {
+      const value = element.textContent?.trim();
+      return value ? value : undefined;
+    }
+  }
+
+  return root.id === elementId ? root.textContent?.trim() || undefined : undefined;
 }
 
 export function VanillaDrawerRenderer({
@@ -149,6 +173,40 @@ export function VanillaDrawerRenderer({
   const rootProps = toReactDrawerProps(drawerOptions, open, onOpenChange, onDragChange, onReleaseChange);
   const shouldRenderHandle = Boolean(drawerOptions.handleOnly || showHandle);
   const shouldRenderVanillaContent = title != null || description != null || content != null;
+  const resolvedContent = React.useMemo(() => {
+    if (content instanceof HTMLElement) {
+      return {
+        value: content,
+        proxyTitle: title == null ? readAccessibleTextFromRoot(content, ariaLabelledBy) : undefined,
+        proxyDescription: description == null ? readAccessibleTextFromRoot(content, ariaDescribedBy) : undefined,
+      };
+    }
+
+    if (typeof content === 'function') {
+      const result = content();
+      return {
+        value: result,
+        proxyTitle:
+          title == null && result instanceof HTMLElement ? readAccessibleTextFromRoot(result, ariaLabelledBy) : undefined,
+        proxyDescription:
+          description == null && result instanceof HTMLElement
+            ? readAccessibleTextFromRoot(result, ariaDescribedBy)
+            : undefined,
+      };
+    }
+
+    return {
+      value: content,
+      proxyTitle: undefined,
+      proxyDescription: undefined,
+    };
+  }, [ariaDescribedBy, ariaLabelledBy, content, description, title]);
+
+  const proxyTitle = resolvedContent.proxyTitle ?? (title == null ? ariaLabel : undefined);
+  const proxyDescription = resolvedContent.proxyDescription;
+  const contentAriaLabel = title == null && !proxyTitle ? ariaLabel : undefined;
+  const contentAriaLabelledBy = title == null && !proxyTitle ? ariaLabelledBy : undefined;
+  const contentAriaDescribedBy = description == null && !proxyDescription ? ariaDescribedBy : undefined;
 
   return (
     <ReactDrawer.Root {...rootProps}>
@@ -163,24 +221,30 @@ export function VanillaDrawerRenderer({
         <ReactDrawer.Overlay className={overlayClassName} />
         <ReactDrawer.Content
           className={contentClassName}
-          aria-label={title == null ? ariaLabel : undefined}
-          aria-labelledby={title == null ? ariaLabelledBy : undefined}
-          aria-describedby={description == null ? ariaDescribedBy : undefined}
+          aria-label={contentAriaLabel}
+          aria-labelledby={contentAriaLabelledBy}
+          aria-describedby={contentAriaDescribedBy}
         >
           {shouldRenderHandle ? <ReactDrawer.Handle className={handleClassName} /> : null}
           {shouldRenderVanillaContent ? (
             <div data-drawer-vanilla-node="">
+              {proxyTitle ? <ReactDrawer.Title style={VISUALLY_HIDDEN_STYLE}>{proxyTitle}</ReactDrawer.Title> : null}
               {title != null ? (
                 <ReactDrawer.Title style={titleVisuallyHidden ? VISUALLY_HIDDEN_STYLE : undefined}>
                   <VanillaNode value={title} />
                 </ReactDrawer.Title>
+              ) : null}
+              {proxyDescription ? (
+                <ReactDrawer.Description style={VISUALLY_HIDDEN_STYLE}>{proxyDescription}</ReactDrawer.Description>
               ) : null}
               {description != null ? (
                 <ReactDrawer.Description style={descriptionVisuallyHidden ? VISUALLY_HIDDEN_STYLE : undefined}>
                   <VanillaNode value={description} />
                 </ReactDrawer.Description>
               ) : null}
-              <VanillaNode value={content} dataAttribute="data-drawer-vanilla-body" />
+              <div data-drawer-vanilla-body="">
+                <VanillaNode value={resolvedContent.value} />
+              </div>
             </div>
           ) : null}
         </ReactDrawer.Content>
