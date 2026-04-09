@@ -78,6 +78,8 @@ If custom content includes controls that should keep their own pointer gestures,
 
 Use `title` and `description` when the wrapper should render a simple accessible heading block above the body. If the visible panel needs its own internal header layout, include that header inside `content` instead.
 
+If the Vue wrapper should not render any top-level title or description, pass `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the description comes from an element inside custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
 ## Lifecycle and Cleanup
 
 - `DrawerRoot` synchronizes props into the shared runtime on mount and on prop updates.
@@ -86,5 +88,5 @@ Use `title` and `description` when the wrapper should render a simple accessible
 ## Integration Notes
 
 - Vue drives the shared mounted host through props instead of rendering a separate Vue-native drawer tree.
-- `title` and `description` are rendered before `content` by the shared mounted host.
+- `title` and `description` are rendered before `content` inside the shared vanilla content wrapper used by the mounted host.
 - Reusing the same `id` from multiple Vue wrappers intentionally targets the same instance, so ownership should stay clear at the app level.

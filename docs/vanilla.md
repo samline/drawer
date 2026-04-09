@@ -88,6 +88,8 @@ If a child node inside your rendered content should not start a drag gesture, ad
 
 Use `title` and `description` when a simple heading block above the body content is enough. If your drawer body defines its own card, panel, or header layout, render that heading block inside `content` so it stays inside the same visual shell.
 
+If the surface should not render any top-level title or description at all, provide `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the accessible description should come from an element inside your custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
 ## Runtime Helpers
 
 ```ts
@@ -125,6 +127,7 @@ destroyDrawer();
 ## Integration Notes
 
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
-- `title` and `description` are rendered before `content` as direct children of the drawer content root.
+- Use `ariaLabel` or `ariaLabelledBy` for drawers like galleries or custom shells that should not render a top-level title node.
+- `title` and `description` are rendered before `content` inside the shared vanilla content wrapper.
 - The root entry exposes the mounted shared host through a programmatic API instead of framework-specific component composition.
 - Reusing the same `id` updates the same runtime instance. It does not create a second drawer.

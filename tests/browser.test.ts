@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseHTML } from 'linkedom';
+import { VanillaDrawerRenderer } from '../src/vanilla/render';
 
 function installDomGlobals(window: ReturnType<typeof parseHTML>['window']) {
   vi.stubGlobal('window', window);
@@ -182,6 +183,65 @@ describe('browser entry', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('can keep title and description accessible while hiding them visually', () => {
+    const tree = VanillaDrawerRenderer({
+      options: {
+        title: 'Screen reader title',
+        titleVisuallyHidden: true,
+        description: 'Screen reader description',
+        descriptionVisuallyHidden: true,
+        content: 'Visible body',
+      },
+      open: true,
+      onOpenChange() {},
+    });
+
+    const rootChildren = Array.isArray(tree.props.children) ? tree.props.children : [tree.props.children];
+    const portal = rootChildren[rootChildren.length - 1];
+    const portalChildren = Array.isArray(portal.props.children) ? portal.props.children : [portal.props.children];
+    const content = portalChildren[1];
+    const contentChildren = Array.isArray(content.props.children) ? content.props.children : [content.props.children];
+    const vanillaWrapper = contentChildren[1];
+    const wrapperChildren = (Array.isArray(vanillaWrapper.props.children)
+      ? vanillaWrapper.props.children
+      : [vanillaWrapper.props.children]).filter(Boolean);
+    const title = wrapperChildren[0];
+    const description = wrapperChildren[1];
+    const body = wrapperChildren[2];
+
+    expect(vanillaWrapper.props['data-drawer-vanilla-node']).toBe('');
+    expect(title.props.style.position).toBe('absolute');
+    expect(description.props.style.position).toBe('absolute');
+    expect(body.props.dataAttribute).toBe('data-drawer-vanilla-body');
+    expect(body.props.value).toBe('Visible body');
+  });
+
+  it('supports aria-label without title and opts out of description when omitted', () => {
+    const tree = VanillaDrawerRenderer({
+      options: {
+        ariaLabel: 'Gallery',
+        content: 'Visible gallery body',
+      },
+      open: true,
+      onOpenChange() {},
+    });
+
+    const rootChildren = Array.isArray(tree.props.children) ? tree.props.children : [tree.props.children];
+    const portal = rootChildren[rootChildren.length - 1];
+    const portalChildren = Array.isArray(portal.props.children) ? portal.props.children : [portal.props.children];
+    const content = portalChildren[1];
+    const contentChildren = Array.isArray(content.props.children) ? content.props.children : [content.props.children];
+    const vanillaWrapper = contentChildren[1];
+    const wrapperChildren = (Array.isArray(vanillaWrapper.props.children)
+      ? vanillaWrapper.props.children
+      : [vanillaWrapper.props.children]).filter(Boolean);
+
+    expect(content.props['aria-label']).toBe('Gallery');
+    expect(content.props['aria-labelledby']).toBeUndefined();
+    expect(content.props['aria-describedby']).toBeUndefined();
+    expect(wrapperChildren).toHaveLength(1);
   });
 
   it('opens every ancestor in a deep nested browser chain', async () => {

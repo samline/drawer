@@ -11,12 +11,29 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   triggerText?: string;
   showHandle?: boolean;
   handleClassName?: string;
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
   title?: VanillaRenderable;
+  titleVisuallyHidden?: boolean;
   description?: VanillaRenderable;
+  descriptionVisuallyHidden?: boolean;
   content?: VanillaRenderable;
   overlayClassName?: string;
   contentClassName?: string;
 }
+
+const VISUALLY_HIDDEN_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
 
 function toReactDrawerProps(
   options: CommonDrawerOptions,
@@ -62,7 +79,7 @@ function toReactDrawerProps(
   };
 }
 
-function VanillaNode({ value }: { value?: VanillaRenderable }) {
+function VanillaNode({ value, dataAttribute }: { value?: VanillaRenderable; dataAttribute?: string }) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -92,7 +109,7 @@ function VanillaNode({ value }: { value?: VanillaRenderable }) {
     return null;
   }
 
-  return <div data-drawer-vanilla-node="" ref={ref} />;
+  return <div {...(dataAttribute ? { [dataAttribute]: '' } : {})} ref={ref} />;
 }
 
 export function VanillaDrawerRenderer({
@@ -114,8 +131,13 @@ export function VanillaDrawerRenderer({
     triggerText,
     showHandle,
     handleClassName,
+    ariaLabel,
+    ariaLabelledBy,
+    ariaDescribedBy,
     title,
+    titleVisuallyHidden,
     description,
+    descriptionVisuallyHidden,
     content,
     overlayClassName,
     contentClassName,
@@ -124,6 +146,7 @@ export function VanillaDrawerRenderer({
 
   const rootProps = toReactDrawerProps(drawerOptions, open, onOpenChange, onDragChange, onReleaseChange);
   const shouldRenderHandle = Boolean(drawerOptions.handleOnly || showHandle);
+  const shouldRenderVanillaContent = title != null || description != null || content != null;
 
   return (
     <ReactDrawer.Root {...rootProps}>
@@ -136,19 +159,28 @@ export function VanillaDrawerRenderer({
       ) : null}
       <ReactDrawer.Portal>
         <ReactDrawer.Overlay className={overlayClassName} />
-        <ReactDrawer.Content className={contentClassName}>
+        <ReactDrawer.Content
+          className={contentClassName}
+          aria-label={title == null ? ariaLabel : undefined}
+          aria-labelledby={title == null ? ariaLabelledBy : undefined}
+          aria-describedby={description == null ? ariaDescribedBy : undefined}
+        >
           {shouldRenderHandle ? <ReactDrawer.Handle className={handleClassName} /> : null}
-          {title != null ? (
-            <ReactDrawer.Title>
-              <VanillaNode value={title} />
-            </ReactDrawer.Title>
+          {shouldRenderVanillaContent ? (
+            <div data-drawer-vanilla-node="">
+              {title != null ? (
+                <ReactDrawer.Title style={titleVisuallyHidden ? VISUALLY_HIDDEN_STYLE : undefined}>
+                  <VanillaNode value={title} />
+                </ReactDrawer.Title>
+              ) : null}
+              {description != null ? (
+                <ReactDrawer.Description style={descriptionVisuallyHidden ? VISUALLY_HIDDEN_STYLE : undefined}>
+                  <VanillaNode value={description} />
+                </ReactDrawer.Description>
+              ) : null}
+              <VanillaNode value={content} dataAttribute="data-drawer-vanilla-body" />
+            </div>
           ) : null}
-          {description != null ? (
-            <ReactDrawer.Description>
-              <VanillaNode value={description} />
-            </ReactDrawer.Description>
-          ) : null}
-          <VanillaNode value={content} />
         </ReactDrawer.Content>
       </ReactDrawer.Portal>
     </ReactDrawer.Root>

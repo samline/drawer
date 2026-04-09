@@ -165,16 +165,18 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
     overlayClassName: 'drawer-demo-overlay fixed inset-0',
     contentClassName: 'drawer-demo-content',
     handleClassName: 'mt-4',
+    ariaLabelledBy: 'styled-sheet-title',
+    ariaDescribedBy: 'styled-sheet-description',
     content: function () {
       const wrapper = document.createElement('div')
       wrapper.innerHTML = `
         <div class="drawer-demo-panel">
           <div class="mx-auto mb-8 h-1.5 w-12 rounded-full bg-gray-300"></div>
           <div style="max-width: 28rem; margin: 0 auto;">
-            <h2 style="margin: 0 0 16px; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #111827;">
+            <h2 id="styled-sheet-title" style="margin: 0 0 16px; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #111827;">
               A controlled drawer.
             </h2>
-            <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 28px;">
+            <p id="styled-sheet-description" style="margin: 0 0 16px; color: #4b5563; font-size: 16px; line-height: 28px;">
               This mirrors the Vaul demo structure using the browser entry and plain HTML instead of React components.
             </p>
             <p style="margin: 0 0 8px; color: #374151;">
@@ -206,7 +208,10 @@ Key points for this style:
 - Use `showHandle: true` so the browser host renders the built-in handle.
 - Use `overlayClassName` and `contentClassName` to match the demo layout.
 - Put the visible heading and supporting copy inside `content` when you need exact control over the internal panel layout.
+- Use `ariaLabelledBy` and `ariaDescribedBy` when the accessible heading and description come from elements inside your custom content.
 - Add `data-drawer-wrapper` to the page shell when you enable `shouldScaleBackground`.
+
+If the browser drawer is something like a gallery or a fully custom surface with no top-level heading block, use `ariaLabel` instead of `title`. When no description is provided, the browser host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
 
 ## When to Use It
 

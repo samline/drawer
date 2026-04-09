@@ -24,8 +24,7 @@ const drawer = createDrawer({
   dismissible: true,
   triggerText: 'Open drawer',
   showHandle: true,
-  title: 'Drawer title',
-  description: 'Drawer description',
+  ariaLabel: 'Filters drawer',
   content: 'Drawer content'
 })
 

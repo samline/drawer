@@ -74,6 +74,8 @@ If custom content includes controls that should keep their own pointer gestures,
 
 Use `title` and `description` when you want the shared host to render a simple heading block above the body content. If the drawer needs a custom internal header or panel shell, render that heading block inside `content` instead.
 
+If the Svelte wrapper should not render any top-level title or description, pass `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the description comes from an element inside custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
 ## Lifecycle and Cleanup
 
 - The action calls `createDrawer()` immediately and updates the selected runtime instance when its value changes.
@@ -82,5 +84,5 @@ Use `title` and `description` when you want the shared host to render a simple h
 ## Integration Notes
 
 - The Svelte entry drives the shared mounted host through an action or `mountDrawer()` helper instead of rendering a separate Svelte-native drawer tree.
-- `title` and `description` are rendered before `content` by the shared mounted host.
+- `title` and `description` are rendered before `content` inside the shared vanilla content wrapper used by the mounted host.
 - As with Vue and the browser entry, it targets the same shared runtime used by the root package.

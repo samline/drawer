@@ -50,16 +50,26 @@ describe('vanilla root entry', () => {
       triggerText: 'Open drawer',
       showHandle: true,
       handleClassName: 'drawer-handle',
+      ariaLabel: 'Drawer label',
+      ariaLabelledBy: 'drawer-title-id',
+      ariaDescribedBy: 'drawer-description-id',
       title: 'Drawer title',
+      titleVisuallyHidden: true,
       description: 'Drawer description',
+      descriptionVisuallyHidden: true,
       content: 'Drawer content',
     });
 
     expect(drawer.options.triggerText).toBe('Open drawer');
     expect(drawer.options.showHandle).toBe(true);
     expect(drawer.options.handleClassName).toBe('drawer-handle');
+    expect(drawer.options.ariaLabel).toBe('Drawer label');
+    expect(drawer.options.ariaLabelledBy).toBe('drawer-title-id');
+    expect(drawer.options.ariaDescribedBy).toBe('drawer-description-id');
     expect(drawer.options.title).toBe('Drawer title');
+    expect(drawer.options.titleVisuallyHidden).toBe(true);
     expect(drawer.options.description).toBe('Drawer description');
+    expect(drawer.options.descriptionVisuallyHidden).toBe(true);
     expect(drawer.options.content).toBe('Drawer content');
   });
 
