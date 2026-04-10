@@ -11,10 +11,10 @@ bun add @samline/drawer
 ## Basic Usage
 
 ```ts
-import '@samline/drawer/styles.css';
-import { createDrawer } from '@samline/drawer';
+import '@samline/drawer/styles.css'
+import { createDrawer } from '@samline/drawer'
 
-document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '');
+document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '')
 
 const drawer = createDrawer({
   id: 'filters',
@@ -22,10 +22,10 @@ const drawer = createDrawer({
   showHandle: true,
   title: 'Drawer title',
   description: 'Drawer description',
-  content: 'Drawer content',
-});
+  content: 'Drawer content'
+})
 
-drawer.setOpen(true);
+drawer.setOpen(true)
 ```
 
 That basic example proves the runtime, but it does not ship a finished bottom-sheet theme. `triggerText` renders a built-in button inside the mounted host, and when `mountElement` is omitted that host is appended to `document.body`. That is why the trigger can appear at the end of the page while the drawer state changes in the DOM but the surface still looks mostly unstyled.
@@ -42,188 +42,154 @@ If you want the vanilla entry to look like a polished drawer demo, keep the runt
 ```
 
 ```css
-.drawer-demo-trigger {
-  border: 0;
-  border-radius: 9999px;
-  background: #111827;
-  color: #ffffff;
-  cursor: pointer;
-  font: inherit;
-  padding: 12px 18px;
-}
-
 .drawer-demo-overlay {
-  position: fixed;
-  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
   z-index: 100;
-  background: rgba(15, 23, 42, 0.68);
-}
-
-.drawer-demo-content {
   position: fixed;
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 101;
-  display: flex;
-  flex-direction: column;
-  background: #e5e7eb;
-  border-radius: 24px 24px 0 0;
-  min-height: 320px;
-  max-height: calc(100vh - 24px);
-  outline: none;
 }
 
-.drawer-demo-handle {
+.drawer-demo-content {
+  background: #f3f4f6;
+  border-radius: 40px 40px 0 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  left: 0;
+  margin-top: 6rem;
+  outline: none;
+  position: fixed;
+  right: 0;
+  z-index: 100;
+}
+
+.drawer-custom-handle {
   margin: 12px auto;
-  height: 6px;
+  height: 8px;
   width: 48px;
   border-radius: 9999px;
-  background: #0f172a;
-  opacity: 0.2;
+  background-color: #ec4899;
+  cursor: pointer;
 }
 
 .drawer-demo-panel {
-  flex: 1;
-  border-radius: 24px 24px 0 0;
   background: #ffffff;
-  padding: 32px 20px 24px;
-  overflow: auto;
+  border-radius: 40px 40px 0 0;
+  flex: 1;
+  padding: 40px 20px;
 }
 
-.drawer-demo-inner {
-  margin: 0 auto;
+.drawer-inner-container {
   max-width: 28rem;
+  margin: 0 auto;
 }
 
-.drawer-demo-title {
-  margin: 0 0 12px;
-  color: #111827;
-  font-size: 1.875rem;
+.drawer-title {
+  margin: 0 0 16px;
+  font-size: 30px;
+  line-height: 36px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  color: #111827;
 }
 
-.drawer-demo-description {
-  margin: 0 0 20px;
+.drawer-description {
+  margin: 0 0 16px;
   color: #4b5563;
-  line-height: 1.7;
+  font-size: 16px;
+  line-height: 28px;
 }
 
-.drawer-demo-field {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
-  color: #111827;
-  font-weight: 600;
-}
-
-.drawer-demo-field select,
-.drawer-demo-field input {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  background: #f9fafb;
-  color: #111827;
-  font: inherit;
-  padding: 12px 14px;
+.drawer-text {
+  margin: 0 0 8px;
+  color: #374151;
 }
 
 .drawer-demo-footer {
-  border-top: 1px solid #d1d5db;
-  background: #e5e7eb;
+  background: #f3f4f6;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
   padding: 20px;
 }
 
-.drawer-demo-actions {
+.drawer-demo-links {
   display: flex;
+  font-size: 12px;
+  gap: 24px;
   justify-content: flex-end;
-  gap: 12px;
   margin: 0 auto;
   max-width: 28rem;
 }
 
-.drawer-demo-actions button {
-  border: 0;
-  border-radius: 9999px;
-  cursor: pointer;
-  font: inherit;
-  padding: 10px 16px;
-}
-
-.drawer-demo-secondary {
-  background: #cbd5e1;
-  color: #0f172a;
-}
-
-.drawer-demo-primary {
-  background: #111827;
-  color: #ffffff;
+.drawer-demo-links a {
+  color: #4b5563;
+  text-decoration: none;
 }
 ```
 
 ```ts
-import '@samline/drawer/styles.css';
-import { createDrawer } from '@samline/drawer';
+import '@samline/drawer/styles.css'
+import { createDrawer } from '@samline/drawer'
 
-const trigger = document.getElementById('open-filters');
+const trigger = document.getElementById('open-filters')
 
 if (!(trigger instanceof HTMLElement)) {
-  throw new Error('Missing #open-filters trigger element.');
+  throw new Error('Missing #open-filters trigger element.')
 }
 
-const panel = document.createElement('div');
-panel.innerHTML = `
-  <div class="drawer-demo-panel">
-    <div class="drawer-demo-inner">
-      <h2 id="filters-title" class="drawer-demo-title">Filters</h2>
-      <p id="filters-description" class="drawer-demo-description">
-        Adjust the visible results without leaving the current screen.
-      </p>
-      <label class="drawer-demo-field">
-        Category
-        <select data-drawer-no-drag>
-          <option>All</option>
-          <option>Open</option>
-          <option>Closed</option>
-        </select>
-      </label>
-      <label class="drawer-demo-field">
-        Search
-        <input data-drawer-no-drag type="text" placeholder="Filter by keyword" />
-      </label>
-    </div>
-  </div>
-  <div class="drawer-demo-footer">
-    <div class="drawer-demo-actions">
-      <button class="drawer-demo-secondary" data-close-drawer type="button">Cancel</button>
-      <button class="drawer-demo-primary" data-close-drawer type="button">Apply</button>
-    </div>
-  </div>
-`;
-
 const drawer = createDrawer({
-  id: 'filters',
-  direction: 'bottom',
+  id: 'controlled-drawer',
   triggerElement: trigger,
+  direction: 'bottom',
   showHandle: true,
-  handleClassName: 'drawer-demo-handle',
+  handleOnly: true,
   overlayClassName: 'drawer-demo-overlay',
   contentClassName: 'drawer-demo-content',
-  ariaLabelledBy: 'filters-title',
-  ariaDescribedBy: 'filters-description',
-  content: panel,
-  shouldScaleBackground: true,
-});
+  handleClassName: 'drawer-custom-handle',
+  ariaLabelledBy: 'title',
+  ariaDescribedBy: 'description',
+  content: function () {
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = `
+          <div class="drawer-demo-panel">
+            <div class="drawer-inner-container">
+              <h2 id="title" class="drawer-title">
+                A controlled drawer.
+              </h2>
+              <p id="description" class="drawer-description">
+                This mirrors the drawer demo structure using the browser entry and plain HTML instead of React components.
+              </p>
+              <p class="drawer-text">
+                Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
+              </p>
+              <p class="drawer-text">
+                The drawer can still react to external controls through <code>triggerElement</code>, <code>openDrawer</code>,
+                and <code>updateDrawer</code>.
+              </p>
+            </div>
+          </div>
+          <div class="drawer-demo-footer">
+            <div class="drawer-demo-links">
+              <a href="https://github.com/samline/drawer" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="https://github.com/samline/drawer/issues" target="_blank" rel="noreferrer">Issues</a>
+            </div>
+          </div>
+        `
+    return wrapper
+  }
+})
 
 drawer.subscribe((snapshot) => {
-  console.log(snapshot.state.isOpen, snapshot.state.activeSnapPoint);
-});
+  console.log(snapshot.state.isOpen, snapshot.state.activeSnapPoint)
+})
 
 panel.querySelector('[data-close-drawer]')?.addEventListener('click', () => {
-  drawer.setOpen(false);
-});
+  drawer.setOpen(false)
+})
 ```
 
 If you later add `snapPoints` to a vanilla drawer, make sure the drawer shell is tall enough to reach those positions. Snap point offsets are measured from the viewport size, not from the content's natural height, so a short panel can end up fully off-screen while the overlay still opens.
@@ -251,33 +217,27 @@ If the surface should not render any top-level title or description at all, prov
 ## Runtime Helpers
 
 ```ts
-import {
-  closeDrawer,
-  createDrawer,
-  getChildDrawers,
-  getDrawers,
-  openDrawer,
-} from '@samline/drawer';
+import { closeDrawer, createDrawer, getChildDrawers, getDrawers, openDrawer } from '@samline/drawer'
 
-createDrawer({ id: 'account', title: 'Account', content: 'Primary drawer' });
-createDrawer({ id: 'security', parentId: 'account', title: 'Security', content: 'Nested drawer' });
+createDrawer({ id: 'account', title: 'Account', content: 'Primary drawer' })
+createDrawer({ id: 'security', parentId: 'account', title: 'Security', content: 'Nested drawer' })
 
-openDrawer('account');
-console.log(Object.keys(getDrawers()));
-console.log(getChildDrawers('account').map((drawer) => drawer.id));
-closeDrawer('account');
+openDrawer('account')
+console.log(Object.keys(getDrawers()))
+console.log(getChildDrawers('account').map((drawer) => drawer.id))
+closeDrawer('account')
 ```
 
 ## Lifecycle and Cleanup
 
 ```ts
-import { createDrawer, destroyDrawer, getDrawer } from '@samline/drawer';
+import { createDrawer, destroyDrawer, getDrawer } from '@samline/drawer'
 
-createDrawer({ title: 'Draft', content: 'Unsaved changes' });
+createDrawer({ title: 'Draft', content: 'Unsaved changes' })
 
-getDrawer()?.setOpen(true);
+getDrawer()?.setOpen(true)
 
-destroyDrawer();
+destroyDrawer()
 ```
 
 `destroyDrawer()` tears down the selected instance. Use `destroyDrawers()` when you want to clear the entire runtime registry.
