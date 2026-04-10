@@ -321,15 +321,21 @@ export function Root({
     }
 
     const activeElement = document.activeElement;
-    if (!(activeElement instanceof HTMLElement)) {
+    if (!activeElement || activeElement === document.body) {
       return;
     }
 
-    if (drawerRef.current?.contains(activeElement) || activeElement.closest('[data-drawer]')) {
+    const activeElementNode = activeElement as Element & { blur?: () => void };
+
+    if (drawerRef.current?.contains(activeElementNode) || activeElementNode.closest?.('[data-drawer]')) {
       return;
     }
 
-    activeElement.blur();
+    if (typeof activeElementNode.blur !== 'function') {
+      return;
+    }
+
+    activeElementNode.blur();
   }, [autoFocus, isOpen, modal]);
 
   function getScale() {

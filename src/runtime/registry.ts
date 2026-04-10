@@ -126,11 +126,11 @@ function releaseHiddenFocusBeforeOpen(options: VanillaDrawerOptions) {
   }
 
   const activeElement = document.activeElement;
-  if (!(activeElement instanceof HTMLElement) || activeElement === document.body) {
+  if (!activeElement || activeElement === document.body || typeof (activeElement as HTMLElement).blur !== 'function') {
     return;
   }
 
-  activeElement.blur();
+  (activeElement as HTMLElement).blur();
 }
 
 function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
