@@ -16,19 +16,18 @@ import { createDrawer } from '@samline/drawer'
 
 document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '')
 
-const drawer = createDrawer({
+createDrawer({
   id: 'filters',
   triggerText: 'Open drawer',
   showHandle: true,
+  direction: 'bottom',
   title: 'Drawer title',
   description: 'Drawer description',
   content: 'Drawer content'
 })
-
-drawer.setOpen(true)
 ```
 
-That basic example proves the runtime, but it does not ship a finished bottom-sheet theme. `triggerText` renders a built-in button inside the mounted host, and when `mountElement` is omitted that host is appended to `document.body`. That is why the trigger can appear at the end of the page while the drawer state changes in the DOM but the surface still looks mostly unstyled.
+That basic example proves the runtime, but it does not ship a finished bottom-sheet theme. `triggerText` renders a built-in button inside the mounted host, and when `mountElement` is omitted that host is appended to `document.body`. That is why the trigger can appear at the end of the page while the surface still looks mostly unstyled.
 
 If you want the vanilla entry to look like a polished drawer demo, keep the runtime API and add your own shell styles with `triggerElement`, `overlayClassName`, and `contentClassName`.
 
@@ -37,11 +36,22 @@ If you want the vanilla entry to look like a polished drawer demo, keep the runt
 ```html
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
-  <button id="open-filters" class="drawer-demo-trigger" type="button">Open filters</button>
+  <button id="open-drawer" class="drawer-demo-trigger" type="button">Open drawer</button>
 </div>
 ```
 
 ```css
+.drawer-demo-trigger {
+  appearance: none;
+  background: #111827;
+  border: 0;
+  border-radius: 9999px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 12px 18px;
+}
+
 .drawer-demo-overlay {
   background: rgba(0, 0, 0, 0.8);
   z-index: 100;
@@ -135,17 +145,16 @@ If you want the vanilla entry to look like a polished drawer demo, keep the runt
 import '@samline/drawer/styles.css'
 import { createDrawer } from '@samline/drawer'
 
-const trigger = document.getElementById('open-filters')
+const trigger = document.getElementById('open-drawer')
 
 if (!(trigger instanceof HTMLElement)) {
-  throw new Error('Missing #open-filters trigger element.')
+  throw new Error('Missing #open-drawer trigger element.')
 }
 
 const drawer = createDrawer({
   id: 'controlled-drawer',
   triggerElement: trigger,
   direction: 'bottom',
-  showHandle: true,
   handleOnly: true,
   overlayClassName: 'drawer-demo-overlay',
   contentClassName: 'drawer-demo-content',
@@ -161,14 +170,13 @@ const drawer = createDrawer({
                 A controlled drawer.
               </h2>
               <p id="description" class="drawer-description">
-                This mirrors the drawer demo structure using the browser entry and plain HTML instead of React components.
+                This mirrors the same bottom-sheet demo across every framework adapter.
               </p>
               <p class="drawer-text">
-                Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
+                Use the same overlay, panel, and handle styles so the drawer looks identical no matter which adapter mounts it.
               </p>
               <p class="drawer-text">
-                The drawer can still react to external controls through <code>triggerElement</code>, <code>openDrawer</code>,
-                and <code>updateDrawer</code>.
+                Only the integration syntax changes. The visible result, copy, and layout stay the same.
               </p>
             </div>
           </div>
@@ -185,10 +193,6 @@ const drawer = createDrawer({
 
 drawer.subscribe((snapshot) => {
   console.log(snapshot.state.isOpen, snapshot.state.activeSnapPoint)
-})
-
-panel.querySelector('[data-close-drawer]')?.addEventListener('click', () => {
-  drawer.setOpen(false)
 })
 ```
 

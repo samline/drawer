@@ -29,40 +29,30 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 <script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
 ```
 
-## Complete Example
+## Basic Usage
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
 <script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
 
-<div data-drawer-wrapper>
+<div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
 </div>
 
-<button id="open-settings" type="button">Settings</button>
-
 <script>
-  const trigger = document.getElementById('open-settings')
-
   window.Drawer.createDrawer({
-    id: 'settings',
-    triggerElement: trigger,
+    id: 'filters',
+    triggerText: 'Open drawer',
     showHandle: true,
-    title: 'Settings',
-    description: 'Control your workspace preferences.',
-    content: function () {
-      const wrapper = document.createElement('div')
-      wrapper.textContent = 'Drawer content rendered from the browser entry.'
-      return wrapper
-    },
-    direction: 'right'
-  })
-
-  window.Drawer.getDrawer('settings')?.subscribe(function (snapshot) {
-    console.log('open:', snapshot.state.isOpen)
+    direction: 'bottom',
+    title: 'Drawer title',
+    description: 'Drawer description',
+    content: 'Drawer content'
   })
 </script>
 ```
+
+That is the same basic drawer used across the other entrypoints. The browser bundle just reaches it through `window.Drawer`.
 
 ## Styled Bottom Sheet Example
 
@@ -72,11 +62,23 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
 <script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
 
-<div data-drawer-wrapper>
-  <button id="open-drawer" class="drawer-demo-trigger" type="button">Open Drawer</button>
+<div data-drawer-wrapper id="app-shell">
+  <main>App shell</main>
+  <button id="open-drawer" class="drawer-demo-trigger" type="button">Open drawer</button>
 </div>
 
 <style>
+  .drawer-demo-trigger {
+    appearance: none;
+    background: #111827;
+    border: 0;
+    border-radius: 9999px;
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    padding: 12px 18px;
+  }
+
   .drawer-demo-overlay {
     background: rgba(0, 0, 0, 0.8);
     z-index: 100;
@@ -89,7 +91,7 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
 
   .drawer-demo-content {
     background: #f3f4f6;
-    border-radius: 20px 20px 0 0;
+    border-radius: 40px 40px 0 0;
     bottom: 0;
     display: flex;
     flex-direction: column;
@@ -113,7 +115,7 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
 
   .drawer-demo-panel {
     background: #ffffff;
-    border-radius: 20px 20px 0 0;
+    border-radius: 40px 40px 0 0;
     flex: 1;
     padding: 40px 20px;
   }
@@ -173,7 +175,6 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
     id: 'controlled-drawer',
     triggerElement: trigger,
     direction: 'bottom',
-    showHandle: false,
     handleOnly: true,
     overlayClassName: 'drawer-demo-overlay',
     contentClassName: 'drawer-demo-content',
@@ -189,14 +190,13 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
             A controlled drawer.
           </h2>
           <p id="description" class="drawer-description">
-            This mirrors the drawer demo structure using the browser entry and plain HTML instead of React components.
+            This mirrors the same bottom-sheet demo across every framework adapter.
           </p>
           <p class="drawer-text">
-            Use the browser API to keep the drawer state imperative while still controlling the visual shell yourself.
+            Use the same overlay, panel, and handle styles so the drawer looks identical no matter which adapter mounts it.
           </p>
           <p class="drawer-text">
-            The drawer can still react to external controls through <code>triggerElement</code>, <code>openDrawer</code>,
-            and <code>updateDrawer</code>.
+            Only the integration syntax changes. The visible result, copy, and layout stay the same.
           </p>
         </div>
       </div>
@@ -217,7 +217,7 @@ Key points for this style:
 
 - Use `triggerElement` if you want a real button outside the drawer to open it.
 - Use `direction: 'bottom'` for a sheet that slides up from the bottom.
-- Use `showHandle: true` so the browser host renders the built-in handle.
+- Use `handleOnly: true` when you want the built-in handle rendered automatically and dragging restricted to that affordance.
 - Use `overlayClassName` and `contentClassName` to match the demo layout.
 - Put the visible heading and supporting copy inside `content` when you need exact control over the internal panel layout.
 - Use `ariaLabelledBy` and `ariaDescribedBy` when the accessible heading and description come from elements inside your custom content.

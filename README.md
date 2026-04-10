@@ -2,7 +2,7 @@
 
 A universal drawer package with one shared interaction runtime across React, Vue, Svelte, vanilla JS, and browser/CDN usage.
 
-Drawer is inspired by [Vaul](https://github.com/emilkowalski/vaul). The package keeps the original drawer interaction model while making the same user-facing behavior available through different integration styles.
+Drawer is inspired by [Vaul](https://github.com/emilkowalski/vaul) [Docs](https://vaul.emilkowal.ski). The package keeps the original drawer interaction model while making the same user-facing behavior available through different integration styles.
 
 ## Installation
 
