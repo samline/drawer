@@ -32,6 +32,8 @@ const drawer = createDrawer({
 drawer.setOpen(true)
 ```
 
+That quick start renders the built-in trigger inside the vanilla host. If you do not pass `mountElement`, that host is appended to `document.body`. The shared stylesheet provides runtime behavior and the built-in handle, not a finished bottom-sheet theme, so use `triggerElement`, `overlayClassName`, and `contentClassName` when you want a fully styled visible shell. See [docs/vanilla.md](docs/vanilla.md) for the complete styled example.
+
 ## Entrypoints
 
 - `@samline/drawer`: vanilla API and shared runtime helpers
