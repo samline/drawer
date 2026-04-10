@@ -50,7 +50,7 @@ function openAncestorChain(parentId: CommonDrawerId) {
   }
 
   if (!parentRuntime.controller.getSnapshot().state.isOpen) {
-    releaseHiddenFocusBeforeOpen(parentRuntime.options);
+    releaseHiddenFocusBeforeOpen(parentRuntime.options, getRuntimeDrawerElement(parentRuntime));
     parentRuntime.controller.setOpen(true);
     notifyOpenStateChange(parentRuntime, true);
     renderVanillaDrawer(parentRuntime.id);
@@ -69,20 +69,44 @@ function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
 function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   cleanupRuntimeTrigger(runtime);
 
+  const drawerElement = getRuntimeDrawerElement(runtime);
+  const builtInTriggerElement = getRuntimeTriggerElement(runtime);
+  const cleanups: Array<() => void> = [];
+
+  if (builtInTriggerElement) {
+    const handleBuiltInTriggerClick = () => {
+      releaseHiddenFocusBeforeOpen(runtime.options, drawerElement);
+    };
+
+    builtInTriggerElement.addEventListener('click', handleBuiltInTriggerClick);
+    cleanups.push(() => {
+      builtInTriggerElement.removeEventListener('click', handleBuiltInTriggerClick);
+    });
+  }
+
   if (!runtime.options.triggerElement) {
+    runtime.cleanupTriggerElement = cleanups.length
+      ? () => {
+          cleanups.forEach((cleanup) => cleanup());
+        }
+      : null;
     return;
   }
 
   const triggerElement = runtime.options.triggerElement;
   const handleClick = () => {
-    releaseHiddenFocusBeforeOpen(runtime.options);
+    releaseHiddenFocusBeforeOpen(runtime.options, drawerElement);
     runtime.controller.setOpen(true);
     renderVanillaDrawer(runtime.id);
   };
 
   triggerElement.addEventListener('click', handleClick);
-  runtime.cleanupTriggerElement = () => {
+  cleanups.push(() => {
     triggerElement.removeEventListener('click', handleClick);
+  });
+
+  runtime.cleanupTriggerElement = () => {
+    cleanups.forEach((cleanup) => cleanup());
   };
 }
 
@@ -120,17 +144,41 @@ function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
 
-function releaseHiddenFocusBeforeOpen(options: VanillaDrawerOptions) {
+function isElementInsideDrawer(element: Element | null) {
+  let currentElement = element;
+
+  while (currentElement) {
+    if (currentElement instanceof HTMLElement && currentElement.hasAttribute('data-drawer')) {
+      return true;
+    }
+
+    currentElement = currentElement.parentElement;
+  }
+
+  return false;
+}
+
+function releaseHiddenFocusBeforeOpen(options: VanillaDrawerOptions, drawerElement?: HTMLElement | null) {
   if (!canUseDOM() || options.modal === false || options.autoFocus) {
     return;
   }
 
   const activeElement = document.activeElement;
-  if (!activeElement || activeElement === document.body || typeof (activeElement as HTMLElement).blur !== 'function') {
+  if (!activeElement || activeElement === document.body) {
     return;
   }
 
-  (activeElement as HTMLElement).blur();
+  const activeElementNode = activeElement as Element & { blur?: () => void };
+
+  if (drawerElement?.contains(activeElementNode) || isElementInsideDrawer(activeElementNode)) {
+    return;
+  }
+
+  if (typeof activeElementNode.blur !== 'function') {
+    return;
+  }
+
+  activeElementNode.blur();
 }
 
 function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
@@ -139,6 +187,14 @@ function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
   }
 
   return runtime.element.querySelector('[data-drawer]') as HTMLElement | null;
+}
+
+function getRuntimeTriggerElement(runtime: DrawerRuntimeInstance) {
+  if (!runtime.element) {
+    return null;
+  }
+
+  return runtime.element.querySelector('[data-drawer-vanilla-trigger]') as HTMLElement | null;
 }
 
 function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions['direction']>) {
@@ -202,7 +258,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
       const previousOpen = runtime.controller.getSnapshot().state.isOpen;
 
       if (open) {
-        releaseHiddenFocusBeforeOpen(runtime.options);
+        releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime));
       }
 
       runtime.controller.setOpen(open);
@@ -264,7 +320,7 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
       }
 
       if (open) {
-        releaseHiddenFocusBeforeOpen(runtime.options);
+        releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime));
       }
 
       const previousOpen = runtime.controller.getSnapshot().state.isOpen;
@@ -349,7 +405,7 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
   }
 
   if (nextOptions.open && !previousOpen) {
-    releaseHiddenFocusBeforeOpen(nextOptions);
+    releaseHiddenFocusBeforeOpen(nextOptions, existing ? getRuntimeDrawerElement(existing) : null);
   }
 
   renderVanillaDrawer(id);

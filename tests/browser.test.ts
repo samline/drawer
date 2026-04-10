@@ -258,6 +258,65 @@ describe('browser entry', () => {
     }
   });
 
+  it('binds and cleans up a native click listener for the built-in trigger', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+
+    const originalAddEventListener = window.HTMLElement.prototype.addEventListener;
+    const originalRemoveEventListener = window.HTMLElement.prototype.removeEventListener;
+    let clickAddCount = 0;
+    let clickRemoveCount = 0;
+
+    window.HTMLElement.prototype.addEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.drawerVanillaTrigger === '') {
+        clickAddCount += 1;
+      }
+
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+
+    window.HTMLElement.prototype.removeEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | EventListenerOptions,
+    ) {
+      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.drawerVanillaTrigger === '') {
+        clickRemoveCount += 1;
+      }
+
+      return originalRemoveEventListener.call(this, type, listener, options);
+    };
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      browserEntry.Drawer.createDrawer({
+        id: 'browser-built-in-trigger-listener',
+        triggerText: 'Open drawer',
+        title: 'Built-in trigger listener',
+        content: 'Drawer body',
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(clickAddCount).toBeGreaterThan(0);
+
+      browserEntry.Drawer.destroyDrawers();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      window.HTMLElement.prototype.addEventListener = originalAddEventListener;
+      window.HTMLElement.prototype.removeEventListener = originalRemoveEventListener;
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('rebinds trigger listeners when the same browser id is updated with a new trigger element', async () => {
     vi.resetModules();
 
