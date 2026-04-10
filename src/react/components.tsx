@@ -250,6 +250,29 @@ export function Root({
   const drawerWidthRef = React.useRef(drawerRef.current?.getBoundingClientRect().width || 0);
   const initialDrawerHeight = React.useRef(0);
 
+  const releaseHiddenFocusBeforeOpen = React.useCallback(() => {
+    if (!modal || autoFocus || typeof document === 'undefined') {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (!activeElement || activeElement === document.body) {
+      return;
+    }
+
+    const activeElementNode = activeElement as Element & { blur?: () => void };
+
+    if (drawerRef.current?.contains(activeElementNode) || activeElementNode.closest?.('[data-drawer]')) {
+      return;
+    }
+
+    if (typeof activeElementNode.blur !== 'function') {
+      return;
+    }
+
+    activeElementNode.blur();
+  }, [autoFocus, modal]);
+
   const onSnapPointChange = React.useCallback((activeSnapPointIndex: number) => {
     // Change openTime ref when we reach the last snap point to prevent dragging for 500ms incase it's scrollable.
     if (snapPoints && activeSnapPointIndex === snapPointsOffset.length - 1) openTime.current = new Date();
@@ -316,27 +339,12 @@ export function Root({
   });
 
   useSafeLayoutEffect(() => {
-    if (!isOpen || !modal || autoFocus || typeof document === 'undefined') {
+    if (!isOpen) {
       return;
     }
 
-    const activeElement = document.activeElement;
-    if (!activeElement || activeElement === document.body) {
-      return;
-    }
-
-    const activeElementNode = activeElement as Element & { blur?: () => void };
-
-    if (drawerRef.current?.contains(activeElementNode) || activeElementNode.closest?.('[data-drawer]')) {
-      return;
-    }
-
-    if (typeof activeElementNode.blur !== 'function') {
-      return;
-    }
-
-    activeElementNode.blur();
-  }, [autoFocus, isOpen, modal]);
+    releaseHiddenFocusBeforeOpen();
+  }, [isOpen, releaseHiddenFocusBeforeOpen]);
 
   function getScale() {
     return (window.innerWidth - WINDOW_TOP_OFFSET) / window.innerWidth;
@@ -822,6 +830,7 @@ export function Root({
       onOpenChange={(open) => {
         if (!dismissible && !open) return;
         if (open) {
+          releaseHiddenFocusBeforeOpen();
           setHasBeenOpened(true);
         } else {
           closeDrawer(true);

@@ -122,6 +122,10 @@ function getVanillaTrigger(window: ReturnType<typeof parseHTML>['window']) {
   return trigger;
 }
 
+function dispatchClick(window: ReturnType<typeof parseHTML>['window'], element: HTMLElement) {
+  element.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true }));
+}
+
 describe('focus accessibility across entrypoints', () => {
   beforeEach(() => {
     destroyDrawers();
@@ -208,6 +212,86 @@ describe('focus accessibility across entrypoints', () => {
     }
   });
 
+  it('releases focus before built-in trigger open in the vanilla root entry', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+    const restoreFocusTracking = installFocusTracking(window);
+
+    try {
+      const vanillaEntry = await import('../src');
+
+      vanillaEntry.destroyDrawers();
+      const drawer = vanillaEntry.createDrawer({
+        id: 'vanilla-trigger-focus',
+        triggerText: 'Open drawer',
+        title: 'Vanilla trigger focus',
+        content: 'Drawer body',
+        autoFocus: false,
+      });
+
+      await flushTimers();
+
+      const trigger = getVanillaTrigger(window);
+      trigger.focus();
+
+      expect(window.document.activeElement).toBe(trigger);
+
+      dispatchClick(window, trigger);
+      await flushTimers();
+
+      expect(drawer.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      vanillaEntry.destroyDrawers();
+      await flushTimers();
+    } finally {
+      restoreFocusTracking();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('releases focus before built-in trigger open in the browser entry', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+    const restoreFocusTracking = installFocusTracking(window);
+
+    try {
+      const browserEntry = await import('../src/browser/index');
+
+      browserEntry.Drawer.destroyDrawers();
+      const drawer = browserEntry.Drawer.createDrawer({
+        id: 'browser-trigger-focus',
+        triggerText: 'Open drawer',
+        title: 'Browser trigger focus',
+        content: 'Drawer body',
+        autoFocus: false,
+      });
+
+      await flushTimers();
+
+      const trigger = getVanillaTrigger(window);
+      trigger.focus();
+
+      expect(window.document.activeElement).toBe(trigger);
+
+      dispatchClick(window, trigger);
+      await flushTimers();
+
+      expect(drawer.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      browserEntry.Drawer.destroyDrawers();
+      await flushTimers();
+    } finally {
+      restoreFocusTracking();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('releases focus before programmatic open in the Vue entry', async () => {
     vi.resetModules();
 
@@ -236,6 +320,44 @@ describe('focus accessibility across entrypoints', () => {
       await flushTimers();
 
       expect(vueEntry.getDrawer('vue-focus')?.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      vueEntry.destroyDrawers();
+      await flushTimers();
+    } finally {
+      restoreFocusTracking();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('releases focus before built-in trigger open in the Vue entry', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+    const restoreFocusTracking = installFocusTracking(window);
+
+    try {
+      const vueEntry = await import('../src/vue/index');
+
+      const drawer = vueEntry.createDrawer({
+        id: 'vue-trigger-focus',
+        triggerText: 'Open drawer',
+        title: 'Vue trigger focus',
+        content: 'Drawer body',
+        autoFocus: false,
+      });
+      await flushTimers();
+
+      const trigger = getVanillaTrigger(window);
+      trigger.focus();
+
+      expect(window.document.activeElement).toBe(trigger);
+
+      dispatchClick(window, trigger);
+      await flushTimers();
+
+      expect(drawer.getSnapshot().state.isOpen).toBe(true);
       expect(window.document.activeElement).not.toBe(trigger);
 
       vueEntry.destroyDrawers();
@@ -285,6 +407,48 @@ describe('focus accessibility across entrypoints', () => {
       await flushTimers();
 
       expect(svelteEntry.getDrawer('svelte-focus')?.getSnapshot().state.isOpen).toBe(true);
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      action.destroy();
+      await flushTimers();
+    } finally {
+      restoreFocusTracking();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('releases focus before built-in trigger open in the Svelte entry', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
+    installDomGlobals(window);
+    const restoreFocusTracking = installFocusTracking(window);
+
+    try {
+      const svelteEntry = await import('../src/svelte/index');
+      const node = window.document.createElement('span');
+      window.document.body.appendChild(node);
+
+      const action = svelteEntry.drawer(node, {
+        id: 'svelte-trigger-focus',
+        open: false,
+        autoFocus: false,
+        triggerText: 'Open drawer',
+        title: 'Svelte trigger focus',
+        content: 'Drawer body',
+      });
+
+      await flushTimers();
+
+      const trigger = getVanillaTrigger(window);
+      trigger.focus();
+
+      expect(window.document.activeElement).toBe(trigger);
+
+      dispatchClick(window, trigger);
+      await flushTimers();
+
+      expect(svelteEntry.getDrawer('svelte-trigger-focus')?.getSnapshot().state.isOpen).toBe(true);
       expect(window.document.activeElement).not.toBe(trigger);
 
       action.destroy();
@@ -358,6 +522,85 @@ describe('focus accessibility across entrypoints', () => {
       renderDrawer(true);
       await flushTimers();
 
+      expect(window.document.activeElement).not.toBe(trigger);
+
+      root.unmount();
+      await flushTimers();
+    } finally {
+      restoreFocusTracking();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('releases focus before trigger-driven open in the React entry', async () => {
+    vi.resetModules();
+
+    const { window } = parseHTML('<!doctype html><html><head></head><body><div id="app"></div></body></html>');
+    installDomGlobals(window);
+    const restoreFocusTracking = installFocusTracking(window);
+    const host = window.document.getElementById('app');
+
+    if (!host) {
+      throw new Error('Missing React host container');
+    }
+
+    try {
+      const React = await import('react');
+      const { createRoot } = await import('react-dom/client');
+      const reactEntry = await import('../src/react/index');
+      const root = createRoot(host);
+      const openStates: boolean[] = [];
+
+      function TestDrawer() {
+        const [open, setOpen] = React.useState(false);
+
+        return React.createElement(
+          reactEntry.Drawer.Root,
+          {
+            open,
+            onOpenChange: (nextOpen: boolean) => {
+              openStates.push(nextOpen);
+              setOpen(nextOpen);
+            },
+            modal: true,
+            autoFocus: false,
+          },
+          React.createElement(
+            reactEntry.Drawer.Trigger,
+            { asChild: true },
+            React.createElement('button', { id: 'react-trigger-click', type: 'button' }, 'Open drawer'),
+          ),
+          React.createElement(
+            reactEntry.Drawer.Portal,
+            null,
+            React.createElement(reactEntry.Drawer.Overlay, null),
+            React.createElement(
+              reactEntry.Drawer.Content,
+              null,
+              React.createElement(reactEntry.Drawer.Title, null, 'React trigger focus'),
+              React.createElement(reactEntry.Drawer.Description, null, 'Drawer body'),
+            ),
+          ),
+        );
+      }
+
+      root.render(React.createElement(TestDrawer));
+
+      await flushTimers();
+
+      const trigger = window.document.getElementById('react-trigger-click') as HTMLElement | null;
+
+      if (!trigger) {
+        throw new Error('Missing React trigger button for click test');
+      }
+
+      trigger.focus();
+      expect(window.document.activeElement).toBe(trigger);
+
+      dispatchClick(window, trigger);
+      await flushTimers();
+
+      expect(openStates).toContain(true);
       expect(window.document.activeElement).not.toBe(trigger);
 
       root.unmount();
