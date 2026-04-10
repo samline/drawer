@@ -258,61 +258,85 @@ describe('browser entry', () => {
     }
   });
 
-  it('binds and cleans up a native click listener for the built-in trigger', async () => {
+  it('prevents built-in trigger focus on mouse down when modal focus release is required', async () => {
     vi.resetModules();
 
     const { window } = parseHTML('<!doctype html><html><head></head><body></body></html>');
     installDomGlobals(window);
 
-    const originalAddEventListener = window.HTMLElement.prototype.addEventListener;
-    const originalRemoveEventListener = window.HTMLElement.prototype.removeEventListener;
-    let clickAddCount = 0;
-    let clickRemoveCount = 0;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window.document, 'activeElement');
+    const originalFocus = window.HTMLElement.prototype.focus;
+    const originalBlur = window.HTMLElement.prototype.blur;
+    let activeElement = window.document.body as HTMLElement;
 
-    window.HTMLElement.prototype.addEventListener = function (
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: boolean | AddEventListenerOptions,
-    ) {
-      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.drawerVanillaTrigger === '') {
-        clickAddCount += 1;
-      }
+    Object.defineProperty(window.document, 'activeElement', {
+      configurable: true,
+      get() {
+        return activeElement;
+      },
+    });
 
-      return originalAddEventListener.call(this, type, listener, options);
+    window.HTMLElement.prototype.focus = function () {
+      activeElement = this;
     };
 
-    window.HTMLElement.prototype.removeEventListener = function (
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: boolean | EventListenerOptions,
-    ) {
-      if (type === 'click' && this instanceof window.HTMLElement && this.dataset.drawerVanillaTrigger === '') {
-        clickRemoveCount += 1;
+    window.HTMLElement.prototype.blur = function () {
+      if (activeElement === this) {
+        activeElement = window.document.body as HTMLElement;
       }
-
-      return originalRemoveEventListener.call(this, type, listener, options);
     };
 
     try {
       const browserEntry = await import('../src/browser/index');
 
       browserEntry.Drawer.destroyDrawers();
-      browserEntry.Drawer.createDrawer({
+      const drawer = browserEntry.Drawer.createDrawer({
         id: 'browser-built-in-trigger-listener',
         triggerText: 'Open drawer',
         title: 'Built-in trigger listener',
         content: 'Drawer body',
+        autoFocus: false,
       });
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(clickAddCount).toBeGreaterThan(0);
+      const trigger = window.document.querySelector('[data-drawer-vanilla-trigger]') as HTMLElement | null;
+
+      if (!trigger) {
+        throw new Error('Missing built-in trigger element for mouse down test');
+      }
+
+      const mouseDown = new window.Event('mousedown', { bubbles: true, cancelable: true });
+      const mouseDownDispatched = trigger.dispatchEvent(mouseDown);
+
+      expect(mouseDownDispatched).toBe(false);
+      expect(mouseDown.defaultPrevented).toBe(true);
+
+      for (let index = 0; index < 3; index += 1) {
+        trigger.focus();
+        expect(window.document.activeElement).toBe(trigger);
+
+        const nextMouseDown = new window.Event('mousedown', { bubbles: true, cancelable: true });
+        trigger.dispatchEvent(nextMouseDown);
+        trigger.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(window.document.activeElement).not.toBe(trigger);
+      }
+
+      expect(drawer.getSnapshot().state.isOpen).toBe(true);
 
       browserEntry.Drawer.destroyDrawers();
       await new Promise((resolve) => setTimeout(resolve, 20));
     } finally {
-      window.HTMLElement.prototype.addEventListener = originalAddEventListener;
-      window.HTMLElement.prototype.removeEventListener = originalRemoveEventListener;
+      if (originalDescriptor) {
+        Object.defineProperty(window.document, 'activeElement', originalDescriptor);
+      } else {
+        delete (window.document as Document & { activeElement?: Element | null }).activeElement;
+      }
+
+      window.HTMLElement.prototype.focus = originalFocus;
+      window.HTMLElement.prototype.blur = originalBlur;
       vi.unstubAllGlobals();
     }
   });

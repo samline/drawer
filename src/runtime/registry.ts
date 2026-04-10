@@ -70,19 +70,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   cleanupRuntimeTrigger(runtime);
 
   const drawerElement = getRuntimeDrawerElement(runtime);
-  const builtInTriggerElement = getRuntimeTriggerElement(runtime);
   const cleanups: Array<() => void> = [];
-
-  if (builtInTriggerElement) {
-    const handleBuiltInTriggerClick = () => {
-      releaseHiddenFocusBeforeOpen(runtime.options, drawerElement);
-    };
-
-    builtInTriggerElement.addEventListener('click', handleBuiltInTriggerClick);
-    cleanups.push(() => {
-      builtInTriggerElement.removeEventListener('click', handleBuiltInTriggerClick);
-    });
-  }
 
   if (!runtime.options.triggerElement) {
     runtime.cleanupTriggerElement = cleanups.length
@@ -189,14 +177,6 @@ function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
   return runtime.element.querySelector('[data-drawer]') as HTMLElement | null;
 }
 
-function getRuntimeTriggerElement(runtime: DrawerRuntimeInstance) {
-  if (!runtime.element) {
-    return null;
-  }
-
-  return runtime.element.querySelector('[data-drawer-vanilla-trigger]') as HTMLElement | null;
-}
-
 function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions['direction']>) {
   if (!canUseDOM()) {
     return 0;
@@ -254,12 +234,14 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     id: runtime.id,
     options: runtime.options,
     open: snapshot.state.isOpen,
+    onBuiltInTriggerMouseDown: () => {
+      releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime));
+    },
+    onBuiltInTriggerClick: () => {
+      releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime));
+    },
     onOpenChange: (open: boolean) => {
       const previousOpen = runtime.controller.getSnapshot().state.isOpen;
-
-      if (open) {
-        releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime));
-      }
 
       runtime.controller.setOpen(open);
 

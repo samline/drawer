@@ -47,6 +47,8 @@ export function renderVanillaHost({
   id,
   options,
   open,
+  onBuiltInTriggerMouseDown,
+  onBuiltInTriggerClick,
   onOpenChange,
   onDragChange,
   onReleaseChange,
@@ -55,6 +57,8 @@ export function renderVanillaHost({
   id: string;
   options: VanillaDrawerOptions;
   open: boolean;
+  onBuiltInTriggerMouseDown?: () => void;
+  onBuiltInTriggerClick?: () => void;
   onOpenChange: (open: boolean) => void;
   onDragChange?: (percentageDragged: number) => void;
   onReleaseChange?: (open: boolean) => void;
@@ -88,6 +92,8 @@ export function renderVanillaHost({
     React.createElement(VanillaDrawerRenderer, {
       options,
       open,
+      onBuiltInTriggerMouseDown,
+      onBuiltInTriggerClick,
       onOpenChange,
       onDragChange,
       onReleaseChange,

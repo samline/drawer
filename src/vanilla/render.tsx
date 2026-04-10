@@ -141,12 +141,16 @@ function readAccessibleTextFromRoot(root: HTMLElement | null, elementId?: string
 export function VanillaDrawerRenderer({
   options,
   open,
+  onBuiltInTriggerMouseDown,
+  onBuiltInTriggerClick,
   onOpenChange,
   onDragChange,
   onReleaseChange,
 }: {
   options: VanillaDrawerOptions;
   open: boolean;
+  onBuiltInTriggerMouseDown?: () => void;
+  onBuiltInTriggerClick?: () => void;
   onOpenChange: NonNullable<DialogProps['onOpenChange']>;
   onDragChange?: (percentageDragged: number) => void;
   onReleaseChange?: (open: boolean) => void;
@@ -207,12 +211,27 @@ export function VanillaDrawerRenderer({
   const contentAriaLabel = title == null && !proxyTitle ? ariaLabel : undefined;
   const contentAriaLabelledBy = title == null && !proxyTitle ? ariaLabelledBy : undefined;
   const contentAriaDescribedBy = description == null && !proxyDescription ? ariaDescribedBy : undefined;
+  const shouldPreventBuiltInTriggerFocus = drawerOptions.modal !== false && !drawerOptions.autoFocus;
 
   return (
     <ReactDrawer.Root {...rootProps}>
       {triggerText ? (
         <ReactDrawer.Trigger asChild>
-          <button type="button" data-drawer-vanilla-trigger="">
+          <button
+            type="button"
+            data-drawer-vanilla-trigger=""
+            onMouseDown={(event) => {
+              if (!shouldPreventBuiltInTriggerFocus) {
+                return;
+              }
+
+              event.preventDefault();
+              onBuiltInTriggerMouseDown?.();
+            }}
+            onClick={() => {
+              onBuiltInTriggerClick?.();
+            }}
+          >
             {triggerText}
           </button>
         </ReactDrawer.Trigger>
