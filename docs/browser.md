@@ -58,6 +58,8 @@ That is the same basic drawer used across the other entrypoints. The browser bun
 
 If you want the browser entry to look like a polished bottom-sheet demo, keep the drawer imperative and style the host yourself.
 
+In the styled example below, `showHandle` is omitted on purpose. The browser mounted host already renders the built-in handle when `handleOnly` is `true`, so adding `showHandle: true` there would be redundant. Keep `showHandle` for cases where you want the handle visible without restricting drag to the handle only.
+
 ```html
 <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
 <script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
@@ -218,6 +220,7 @@ Key points for this style:
 - Use `triggerElement` if you want a real button outside the drawer to open it.
 - Use `direction: 'bottom'` for a sheet that slides up from the bottom.
 - Use `handleOnly: true` when you want the built-in handle rendered automatically and dragging restricted to that affordance.
+- Use `showHandle: true` when you want the built-in handle visible but still want drag gestures to start from the full drawer surface.
 - Use `overlayClassName` and `contentClassName` to match the demo layout.
 - Put the visible heading and supporting copy inside `content` when you need exact control over the internal panel layout.
 - Use `ariaLabelledBy` and `ariaDescribedBy` when the accessible heading and description come from elements inside your custom content.

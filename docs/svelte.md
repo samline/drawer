@@ -30,6 +30,8 @@ bun add @samline/drawer svelte
 
 That is the same basic drawer used across the other entrypoints. If you want the polished bottom-sheet demo, keep the visual shell below unchanged and only swap the framework syntax.
 
+In the styled example below, `showHandle` is omitted on purpose. The Svelte action forwards to the mounted host, and that host already renders the built-in handle when `handleOnly` is `true`, so adding `showHandle: true` there would be redundant. Keep `showHandle` for cases where you want the handle visible without restricting drag to the handle only.
+
 ## Styled Bottom Sheet Example
 
 ```svelte
@@ -244,6 +246,7 @@ That example matches the same overlay, panel, handle, copy, and footer structure
 - Pass `triggerText` when the shared host should render the built-in button for you.
 - Pass `triggerElement` when you want an external button and the same custom shell used in the styled example above.
 - Pass `showHandle` when the shared host should render the built-in handle.
+- `showHandle` is optional when `handleOnly` is enabled. `handleOnly` already renders the built-in handle and also restricts dragging to that handle.
 - Use the `drawer` action when the Svelte component should own the selected drawer lifecycle.
 - Use `mountDrawer()` when you want to mount or refresh the same instance imperatively.
 - Use `getDrawer()` to read the current controller and open or reconfigure it from event handlers.

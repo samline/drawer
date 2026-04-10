@@ -31,6 +31,8 @@ That basic example proves the runtime, but it does not ship a finished bottom-sh
 
 If you want the vanilla entry to look like a polished drawer demo, keep the runtime API and add your own shell styles with `triggerElement`, `overlayClassName`, and `contentClassName`.
 
+In the styled example below, `showHandle` is omitted on purpose. The mounted host already renders the built-in handle when `handleOnly` is `true`, so adding `showHandle: true` there would be redundant. Keep `showHandle` for cases where you want the handle visible without restricting drag to the handle only.
+
 ## Styled Complete Example
 
 ```html
@@ -204,6 +206,7 @@ If you later add `snapPoints` to a vanilla drawer, make sure the drawer shell is
 - Pass `parentId` when this drawer should follow another drawer's lifecycle.
 - Pass `triggerText` to render a built-in button inside the mounted host.
 - Pass `showHandle` to render the built-in handle in the mounted host.
+- `showHandle` is optional when `handleOnly` is enabled. `handleOnly` already renders the built-in handle and also restricts dragging to that handle.
 - Pass `triggerElement` when the trigger should stay in your own DOM tree.
 - Pass `mountElement` when the host should live inside a specific DOM subtree instead of being appended to `document.body`.
 - Pass `overlayClassName`, `contentClassName`, and `handleClassName` when you want a visible shell instead of only the shared runtime styles.

@@ -34,6 +34,8 @@ export function Example() {
 
 That is the same basic drawer used across the other entrypoints. If you want the polished bottom-sheet demo, keep the visual shell below unchanged and only swap the framework syntax.
 
+React is the exception here: there is no `showHandle` prop on `Drawer.Root`. Render `<Drawer.Handle />` yourself, and add `handleOnly` only when drag should start from that handle instead of from the full drawer surface.
+
 ## Styled Bottom Sheet Example
 
 ```css

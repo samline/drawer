@@ -30,6 +30,8 @@ import { DrawerRoot } from '@samline/drawer/vue'
 
 That is the same basic drawer used across the other entrypoints. If you want the polished bottom-sheet demo, keep the visual shell below unchanged and only swap the framework syntax.
 
+In the styled example below, `showHandle` is omitted on purpose. `DrawerRoot` forwards to the mounted host, and that host already renders the built-in handle when `handleOnly` is `true`, so adding `:show-handle="true"` there would be redundant. Keep `showHandle` for cases where you want the handle visible without restricting drag to the handle only.
+
 ## Styled Bottom Sheet Example
 
 ```vue
@@ -239,6 +241,7 @@ onMounted(() => {
 - Pass `triggerText` when the shared host should render the built-in button for you.
 - Pass `triggerElement` when you want an external button and the same custom shell used in the styled example above.
 - Pass `showHandle` when the shared host should render the built-in handle.
+- `showHandle` is optional when `handleOnly` is enabled. `handleOnly` already renders the built-in handle and also restricts dragging to that handle.
 - Render `DrawerRoot` once near the part of the app that owns the selected drawer id.
 - Install `DrawerPlugin` if you want `DrawerRoot` registered globally and access to `$drawer` or the `drawer:api` injection key.
 - Update props reactively to reconfigure the same runtime instance.
