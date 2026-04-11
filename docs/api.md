@@ -84,7 +84,7 @@ These options define the shared drawer state and are accepted by the root API an
 | `scrollLockTimeout` | `number` | Delay before drag resumes after scrolling inside content |
 | `shouldScaleBackground` | `boolean` | Whether the background scales when the drawer opens. Add `data-drawer-wrapper` to the page shell element that should scale |
 | `setBackgroundColorOnScale` | `boolean` | Whether body background color is adjusted during scale |
-| `handleOnly` | `boolean` | Restrict dragging to the handle. In mounted entries a built-in handle is rendered automatically so the drag affordance stays visible |
+| `handleOnly` | `boolean` | Restrict dragging to the handle. In the mounted-host entries this also renders the built-in handle automatically, so `showHandle` is redundant there unless you want full-surface dragging instead |
 | `fixed` | `boolean` | Keep the drawer fixed instead of repositioning it |
 | `disablePreventScroll` | `boolean` | Disable drawer-managed document scroll locking |
 | `repositionInputs` | `boolean` | Reposition inputs when the keyboard is visible instead of relying on native scroll-into-view behavior |
@@ -167,7 +167,7 @@ The root entry accepts the shared options plus these rendering options:
 | `mountElement` | `HTMLElement | null` | Mount the drawer host into a specific container |
 | `triggerElement` | `HTMLElement | null` | Attach an external click trigger |
 | `triggerText` | `string` | Render a built-in trigger button |
-| `showHandle` | `boolean` | Render the built-in drawer handle in non-React entries |
+| `showHandle` | `boolean` | Render the built-in drawer handle in the mounted-host entries when you want it visible without restricting drag to the handle |
 | `handleClassName` | `string` | Extra class for the built-in non-React handle |
 | `ariaLabel` | `string` | Accessible dialog name to use when you do not render a top-level drawer title |
 | `ariaLabelledBy` | `string` | Custom accessible label reference when the dialog name comes from an element inside custom content |
@@ -208,6 +208,8 @@ The returned controller includes the shared controller methods plus:
 - `destroy()` — alias for `destroyDrawer(id)`.
 
 If you need the visible title and description inside a custom inner shell, render them as part of `content` and point `ariaLabelledBy` or `ariaDescribedBy` at elements inside that custom content. If the drawer should have no top-level title node at all, provide `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name.
+
+Use `showHandle` when the handle should be visible but drag gestures can still begin from the full drawer surface. Use `handleOnly` when the handle should be visible and dragging should start only from that handle. In the mounted-host entries, `handleOnly` already renders the built-in handle, so adding `showHandle: true` at the same time is redundant.
 
 ### `configureDrawer(options?)`
 
@@ -280,6 +282,8 @@ Use the React callbacks when you are composing the drawer directly with JSX:
 - `onRelease(event, open)` is the React equivalent of `onReleaseChange`.
 - `setActiveSnapPoint` is only needed for controlled snap-point state in React.
 
+React does not expose a `showHandle` prop on `Drawer.Root`. Render `Drawer.Handle` yourself when you want the handle visible, and use `handleOnly` only when drag should start from that handle instead of from the full drawer surface.
+
 Use it when you want direct React composition instead of the mounted shared host API.
 
 ### React component surface
@@ -341,7 +345,7 @@ The Vue entry exports:
 
 `DrawerRoot` mirrors the vanilla options as Vue props and synchronizes them into the shared runtime on mount and on prop changes.
 
-Pass `showHandle` when the built-in shared host should render the default handle. If `handleOnly` is enabled, the built-in handle is rendered automatically so the drawer remains draggable from a visible affordance.
+Pass `showHandle` when the built-in shared host should render the default handle while still allowing drag to start from the full drawer surface. If `handleOnly` is enabled, the built-in handle is rendered automatically, so adding `showHandle` as well is redundant.
 
 `DrawerPlugin` registers `DrawerRoot`, exposes `$drawer` on `app.config.globalProperties`, and provides `drawer:api` for dependency injection.
 
@@ -370,7 +374,7 @@ The Svelte entry exports:
 
 `drawer` is a Svelte action that marks the host node, synchronizes options into the shared runtime, and destroys the selected instance when the action is torn down.
 
-Use `showHandle` when the shared host should render the built-in handle. As with the root and Vue entries, enabling `handleOnly` also renders that handle automatically.
+Use `showHandle` when the shared host should render the built-in handle while still allowing drag to start from the full drawer surface. As with the root and Vue entries, enabling `handleOnly` also renders that handle automatically, so adding both at once is redundant.
 
 `mountDrawer(options?)` is the imperative helper when you want the same behavior without attaching an action in markup.
 
@@ -397,6 +401,8 @@ window.Drawer = {
 ```
 
 Loading `dist/browser/index.js` in a browser attaches that namespace. It does not auto-mount a drawer until you call one of the root methods.
+
+As with the root, Vue, and Svelte mounted-host entries, `showHandle` is for a visible handle without restricting drag to the handle. If you enable `handleOnly`, the built-in handle is already rendered automatically.
 
 ```html
 <div data-drawer-wrapper>
