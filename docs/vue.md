@@ -41,16 +41,19 @@ import { ref } from 'vue'
 import { DrawerRoot } from '@samline/drawer/vue'
 
 const trigger = ref<HTMLButtonElement | null>(null)
+const drawerId = 'controlled-drawer'
+const titleId = `${drawerId}-title`
+const descriptionId = `${drawerId}-description`
 
 function createStyledContent() {
   const wrapper = document.createElement('div')
   wrapper.innerHTML = `
     <div class="drawer-demo-panel">
       <div class="drawer-inner-container">
-        <h2 id="title" class="drawer-title">
+        <h2 id="${titleId}" class="drawer-title">
           A controlled drawer.
         </h2>
-        <p id="description" class="drawer-description">
+        <p id="${descriptionId}" class="drawer-description">
           This mirrors the same bottom-sheet demo across every framework adapter.
         </p>
         <p class="drawer-text">
@@ -79,15 +82,15 @@ function createStyledContent() {
   </div>
 
   <DrawerRoot
-    id="controlled-drawer"
+    :id="drawerId"
     :trigger-element="trigger"
     direction="bottom"
     :handle-only="true"
     overlay-class-name="drawer-demo-overlay"
     content-class-name="drawer-demo-content"
     handle-class-name="drawer-custom-handle"
-    aria-labelled-by="title"
-    aria-described-by="description"
+    :aria-labelled-by="titleId"
+    :aria-described-by="descriptionId"
     :content="createStyledContent"
   />
 </template>
@@ -256,6 +259,8 @@ If custom content includes controls that should keep their own pointer gestures,
 Use `title` and `description` when the wrapper should render a simple accessible heading block above the body. If the visible panel needs its own internal header layout, include that header inside `content` instead.
 
 If the Vue wrapper should not render any top-level title or description, pass `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the description comes from an element inside custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
+When you point those props at custom content, make the referenced ids unique per drawer instance. Deriving them from the drawer `id` is the safest default.
 
 ## Lifecycle and Cleanup
 

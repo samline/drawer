@@ -40,16 +40,19 @@ In the styled example below, `showHandle` is omitted on purpose. The Svelte acti
   import { drawer } from '@samline/drawer/svelte'
 
   let trigger: HTMLButtonElement | null = null
+  const drawerId = 'controlled-drawer'
+  const titleId = `${drawerId}-title`
+  const descriptionId = `${drawerId}-description`
 
   function createStyledContent() {
     const wrapper = document.createElement('div')
     wrapper.innerHTML = `
       <div class="drawer-demo-panel">
         <div class="drawer-inner-container">
-          <h2 id="title" class="drawer-title">
+          <h2 id="${titleId}" class="drawer-title">
             A controlled drawer.
           </h2>
-          <p id="description" class="drawer-description">
+          <p id="${descriptionId}" class="drawer-description">
             This mirrors the same bottom-sheet demo across every framework adapter.
           </p>
           <p class="drawer-text">
@@ -71,15 +74,15 @@ In the styled example below, `showHandle` is omitted on purpose. The Svelte acti
   }
 
   $: options = {
-    id: 'controlled-drawer',
+    id: drawerId,
     triggerElement: trigger,
     direction: 'bottom',
     handleOnly: true,
     overlayClassName: 'drawer-demo-overlay',
     contentClassName: 'drawer-demo-content',
     handleClassName: 'drawer-custom-handle',
-    ariaLabelledBy: 'title',
-    ariaDescribedBy: 'description',
+    ariaLabelledBy: titleId,
+    ariaDescribedBy: descriptionId,
     content: createStyledContent
   }
 </script>
@@ -261,6 +264,8 @@ If custom content includes controls that should keep their own pointer gestures,
 Use `title` and `description` when you want the shared host to render a simple heading block above the body content. If the drawer needs a custom internal header or panel shell, render that heading block inside `content` instead.
 
 If the Svelte wrapper should not render any top-level title or description, pass `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the description comes from an element inside custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
+When you point those props at custom content, make the referenced ids unique per drawer instance. Deriving them from the drawer `id` is the safest default.
 
 ## Lifecycle and Cleanup
 

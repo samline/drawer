@@ -148,30 +148,33 @@ import '@samline/drawer/styles.css'
 import { createDrawer } from '@samline/drawer'
 
 const trigger = document.getElementById('open-drawer')
+const drawerId = 'controlled-drawer'
+const titleId = `${drawerId}-title`
+const descriptionId = `${drawerId}-description`
 
 if (!(trigger instanceof HTMLElement)) {
   throw new Error('Missing #open-drawer trigger element.')
 }
 
 const drawer = createDrawer({
-  id: 'controlled-drawer',
+  id: drawerId,
   triggerElement: trigger,
   direction: 'bottom',
   handleOnly: true,
   overlayClassName: 'drawer-demo-overlay',
   contentClassName: 'drawer-demo-content',
   handleClassName: 'drawer-custom-handle',
-  ariaLabelledBy: 'title',
-  ariaDescribedBy: 'description',
+  ariaLabelledBy: titleId,
+  ariaDescribedBy: descriptionId,
   content: function () {
     const wrapper = document.createElement('div')
     wrapper.innerHTML = `
           <div class="drawer-demo-panel">
             <div class="drawer-inner-container">
-              <h2 id="title" class="drawer-title">
+              <h2 id="${titleId}" class="drawer-title">
                 A controlled drawer.
               </h2>
-              <p id="description" class="drawer-description">
+              <p id="${descriptionId}" class="drawer-description">
                 This mirrors the same bottom-sheet demo across every framework adapter.
               </p>
               <p class="drawer-text">
@@ -220,6 +223,8 @@ If a child node inside your rendered content should not start a drag gesture, ad
 Use `title` and `description` when a simple heading block above the body content is enough. If your drawer body defines its own card, panel, or header layout, render that heading block inside `content` so it stays inside the same visual shell.
 
 If the surface should not render any top-level title or description at all, provide `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name. Use `ariaDescribedBy` when the accessible description should come from an element inside your custom content. When description is omitted, the mounted host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
+When you point `ariaLabelledBy` or `ariaDescribedBy` at custom content, make those ids unique per drawer instance. A good default is to derive them from the drawer `id`, as in the example above.
 
 ## Runtime Helpers
 

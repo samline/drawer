@@ -144,6 +144,10 @@ import '@samline/drawer/styles.css'
 import { Drawer } from '@samline/drawer/react'
 
 export function StyledDrawerExample() {
+  const drawerId = 'controlled-drawer'
+  const titleId = `${drawerId}-title`
+  const descriptionId = `${drawerId}-description`
+
   return (
     <div data-drawer-wrapper='' id='app-shell'>
       <main>App shell</main>
@@ -155,14 +159,14 @@ export function StyledDrawerExample() {
         </Drawer.Trigger>
         <Drawer.Portal>
           <Drawer.Overlay className='drawer-demo-overlay' />
-          <Drawer.Content className='drawer-demo-content' aria-labelledby='title' aria-describedby='description'>
+          <Drawer.Content className='drawer-demo-content' aria-labelledby={titleId} aria-describedby={descriptionId}>
             <Drawer.Handle className='drawer-custom-handle' />
             <div className='drawer-demo-panel'>
               <div className='drawer-inner-container'>
-                <Drawer.Title className='drawer-title' id='title'>
+                <Drawer.Title className='drawer-title' id={titleId}>
                   A controlled drawer.
                 </Drawer.Title>
-                <Drawer.Description className='drawer-description' id='description'>
+                <Drawer.Description className='drawer-description' id={descriptionId}>
                   This mirrors the same bottom-sheet demo across every framework adapter.
                 </Drawer.Description>
                 <p className='drawer-text'>

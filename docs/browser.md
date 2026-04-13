@@ -172,26 +172,29 @@ In the styled example below, `showHandle` is omitted on purpose. The browser mou
 
 <script>
   const trigger = document.getElementById('open-drawer')
+  const drawerId = 'controlled-drawer'
+  const titleId = `${drawerId}-title`
+  const descriptionId = `${drawerId}-description`
 
   window.Drawer.createDrawer({
-    id: 'controlled-drawer',
+    id: drawerId,
     triggerElement: trigger,
     direction: 'bottom',
     handleOnly: true,
     overlayClassName: 'drawer-demo-overlay',
     contentClassName: 'drawer-demo-content',
     handleClassName: 'drawer-custom-handle',
-    ariaLabelledBy: 'title',
-    ariaDescribedBy: 'description',
+    ariaLabelledBy: titleId,
+    ariaDescribedBy: descriptionId,
     content: function () {
       const wrapper = document.createElement('div')
       wrapper.innerHTML = `
       <div class="drawer-demo-panel">
         <div class="drawer-inner-container">
-          <h2 id="title" class="drawer-title">
+          <h2 id="${titleId}" class="drawer-title">
             A controlled drawer.
           </h2>
-          <p id="description" class="drawer-description">
+          <p id="${descriptionId}" class="drawer-description">
             This mirrors the same bottom-sheet demo across every framework adapter.
           </p>
           <p class="drawer-text">
@@ -227,6 +230,8 @@ Key points for this style:
 - Add `data-drawer-wrapper` to the page shell when you enable `shouldScaleBackground`.
 
 If the browser drawer is something like a gallery or a fully custom surface with no top-level heading block, use `ariaLabel` instead of `title`. When no description is provided, the browser host opts out of `aria-describedby` automatically unless you pass `ariaDescribedBy` yourself.
+
+When you point `ariaLabelledBy` or `ariaDescribedBy` at elements inside custom content, make those ids unique per drawer instance. Deriving them from the drawer `id` keeps multiple browser drawers on the same page safe.
 
 ## When to Use It
 

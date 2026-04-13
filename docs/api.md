@@ -209,6 +209,8 @@ The returned controller includes the shared controller methods plus:
 
 If you need the visible title and description inside a custom inner shell, render them as part of `content` and point `ariaLabelledBy` or `ariaDescribedBy` at elements inside that custom content. If the drawer should have no top-level title node at all, provide `ariaLabel` or `ariaLabelledBy` so the dialog still has an accessible name.
 
+When you pass `ariaLabelledBy` or `ariaDescribedBy`, those ids must match elements rendered inside `content` and should stay unique for each mounted drawer instance. Derive them from the drawer `id` or another stable unique source instead of reusing bare `title` and `description` ids across the page.
+
 Use `showHandle` when the handle should be visible but drag gestures can still begin from the full drawer surface. Use `handleOnly` when the handle should be visible and dragging should start only from that handle. In the mounted-host entries, `handleOnly` already renders the built-in handle, so adding `showHandle: true` at the same time is redundant.
 
 ### `configureDrawer(options?)`
