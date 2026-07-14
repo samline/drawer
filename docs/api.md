@@ -410,7 +410,7 @@ As with the root, Vue, and Svelte mounted-host entries, `showHandle` is for a vi
 <div data-drawer-wrapper>
   <main>App shell</main>
 </div>
-<script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/browser/index.js"></script>
 <script>
   const drawer = window.Drawer.createDrawer({
     triggerText: 'Open drawer',

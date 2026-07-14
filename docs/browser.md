@@ -25,15 +25,15 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/browser/index.js"></script>
 ```
 
 ## Basic Usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
@@ -61,8 +61,8 @@ If you want the browser entry to look like a polished bottom-sheet demo, keep th
 In the styled example below, `showHandle` is omitted on purpose. The browser mounted host already renders the built-in handle when `handleOnly` is `true`, so adding `showHandle: true` there would be redundant. Keep `showHandle` for cases where you want the handle visible without restricting drag to the handle only.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@2.0.8/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@2.0.8/dist/browser/index.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta/dist/browser/index.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>

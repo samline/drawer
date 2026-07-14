@@ -1,6 +1,6 @@
 {
   "name": "@samline/drawer",
-  "version": "3.0.0",
+  "version": "3.0.0-beta",
   "description": "A universal drawer package for vanilla JS and direct browser usage.",
   "type": "module",
   "license": "MIT",
