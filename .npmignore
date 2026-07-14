@@ -1,0 +1,39 @@
+# Source & tests
+src/
+test/
+
+# Build configs
+tsconfig.json
+tsconfig.*.json
+tsup.config.ts
+vitest.config.ts
+rollup.config.js
+vite.config.ts
+
+# Docs & examples
+docs/
+example/
+
+# Tooling & lockfiles
+.github/
+bun.lock
+bun.lockb
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+skills-lock.json
+
+# Coverage & build artifacts
+coverage/
+
+# Editor / OS junk
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# AI agent instructions (versionados en git, NO en el tarball npm)
+AGENTS.md
+.agents/
