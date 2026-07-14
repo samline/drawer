@@ -13,7 +13,6 @@ describe('package metadata', () => {
   it('publishes the expected multi-entry surface', () => {
     expect(packageJson.exports).toMatchObject({
       '.': expect.any(Object),
-      './react': expect.any(Object),
       './browser': {
         import: {
           types: './dist/browser/index.d.mts',
@@ -25,8 +24,6 @@ describe('package metadata', () => {
         },
         default: './dist/browser/index.mjs',
       },
-      './vue': expect.any(Object),
-      './svelte': expect.any(Object),
       './core': expect.any(Object),
       './styles.css': './dist/style.css',
       './style.css': './dist/style.css',

@@ -209,7 +209,7 @@ function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?:
     direction: parentDirection,
     viewportSize: getViewportSizeForDirection(parentDirection),
     hasOpenChild: openChildren.length > 0,
-    percentageDragged,
+    ...(percentageDragged !== undefined ? { percentageDragged } : {})
   });
 
   set(
@@ -251,16 +251,16 @@ function renderVanillaDrawer(id: CommonDrawerId) {
 
       renderVanillaDrawer(id);
     },
-    onDragChange: runtime.options.parentId
-      ? (percentageDragged: number) => {
-          syncParentNestedTransform(runtime.options.parentId as CommonDrawerId, percentageDragged);
+    ...(runtime.options.parentId
+      ? {
+          onDragChange: (percentageDragged: number) => {
+            syncParentNestedTransform(runtime.options.parentId as CommonDrawerId, percentageDragged)
+          },
+          onReleaseChange: () => {
+            syncParentNestedTransform(runtime.options.parentId as CommonDrawerId)
+          }
         }
-      : undefined,
-    onReleaseChange: runtime.options.parentId
-      ? () => {
-          syncParentNestedTransform(runtime.options.parentId as CommonDrawerId);
-        }
-      : undefined,
+      : {})
   });
 
   if (!nextHost) return null;

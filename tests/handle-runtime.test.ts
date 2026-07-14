@@ -22,7 +22,6 @@ describe('handle runtime helpers', () => {
         isDragging: false,
         preventCycle: false,
         shouldCancelInteraction: false,
-        snapPoints: undefined,
         activeSnapPoint: null,
         dismissible: false,
       }),

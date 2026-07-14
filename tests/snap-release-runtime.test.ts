@@ -101,7 +101,6 @@ describe('snap release runtime helpers', () => {
   it('returns noop when snap release inputs are incomplete', () => {
     expect(
       getSnapPointReleaseAction({
-        fadeFromIndex: undefined,
         direction: 'bottom',
         activeSnapPointOffset: null,
         activeSnapPointIndex: null,

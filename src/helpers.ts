@@ -1,4 +1,4 @@
-import { AnyFunction, DrawerDirection } from './types';
+import type { AnyFunction, DrawerDirection } from './types';
 
 interface Style {
   [key: string]: string;

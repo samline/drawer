@@ -131,9 +131,16 @@ export function getSnapPointPercentageDragged({
 
   const targetSnapPointIndex = isOverlaySnapPoint ? activeSnapPointIndex + 1 : activeSnapPointIndex - 1;
 
-  const snapPointDistance = isOverlaySnapPoint
-    ? snapPointsOffset[targetSnapPointIndex] - snapPointsOffset[targetSnapPointIndex - 1]
-    : snapPointsOffset[targetSnapPointIndex + 1] - snapPointsOffset[targetSnapPointIndex];
+  const snapPointsOffsetCurrent = snapPointsOffset[targetSnapPointIndex];
+  const snapPointsOffsetNext = isOverlaySnapPoint
+    ? snapPointsOffset[targetSnapPointIndex - 1]
+    : snapPointsOffset[targetSnapPointIndex + 1];
+
+  if (snapPointsOffsetCurrent === undefined || snapPointsOffsetNext === undefined) {
+    return null;
+  }
+
+  const snapPointDistance = snapPointsOffsetCurrent - snapPointsOffsetNext;
 
   const percentageDragged = absDraggedDistance / Math.abs(snapPointDistance);
 

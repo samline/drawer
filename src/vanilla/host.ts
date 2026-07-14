@@ -1,0 +1,126 @@
+// Vanilla host: manages the mount target element for a drawer instance
+// without React. The host is a small container `<div data-drawer-vanilla-root>`
+// appended to `document.body` (or a caller-provided `mountElement`) that
+// holds the rendered dialog DOM and the trigger button when one is needed.
+//
+// In the React build this file was `host.tsx` and used `createRoot` from
+// `react-dom/client`. The vanilla build renders the dialog directly with
+// `vanilla/render.ts` and a simple mount element — no virtual DOM, no
+// framework runtime, no peer dependency.
+
+import type { VanillaDrawerOptions } from './render'
+import { mountVanillaDrawer } from './render'
+
+export interface VanillaHostState {
+  root: HTMLElement | null
+  element: HTMLElement | null
+  ownsElement: boolean
+}
+
+function canUseDOM() {
+  return typeof window !== 'undefined' && typeof document !== 'undefined'
+}
+
+/**
+ * Resolve the container element for a drawer host. Reuses the existing
+ * element when it's still connected; otherwise creates a fresh `<div>`
+ * owned by this host and appends it to `document.body`. When the caller
+ * passes a `mountElement` we always use it and don't own the lifetime.
+ */
+function resolveVanillaContainer(
+  state: VanillaHostState,
+  id: string,
+  mountElement?: HTMLElement | null
+): { container: HTMLElement; ownsElement: boolean } | null {
+  if (!canUseDOM()) return null
+
+  if (mountElement) {
+    return { container: mountElement, ownsElement: false }
+  }
+
+  if (state.element?.isConnected) {
+    return { container: state.element, ownsElement: state.ownsElement }
+  }
+
+  const element = document.createElement('div')
+  element.dataset.drawerVanillaRoot = id
+  document.body.appendChild(element)
+  return { container: element, ownsElement: true }
+}
+
+/**
+ * Render the vanilla dialog for `id` into the resolved container.
+ * Returns the updated host state plus the resolved container, or `null`
+ * if no DOM is available (e.g. server-side import).
+ */
+export function renderVanillaHost({
+  host,
+  id,
+  options,
+  open,
+  onBuiltInTriggerMouseDown,
+  onBuiltInTriggerClick,
+  onOpenChange,
+  onDragChange,
+  onReleaseChange
+}: {
+  host: VanillaHostState
+  id: string
+  options: VanillaDrawerOptions
+  open: boolean
+  onBuiltInTriggerMouseDown?: () => void
+  onBuiltInTriggerClick?: () => void
+  onOpenChange: (open: boolean) => void
+  onDragChange?: (percentageDragged: number) => void
+  onReleaseChange?: (open: boolean) => void
+}): { root: HTMLElement | null; element: HTMLElement | null; ownsElement: boolean; container: HTMLElement } | null {
+  const nextContainer = resolveVanillaContainer(host, id, options.mountElement)
+  if (!nextContainer) return null
+
+  let nextRoot = host.root
+  let nextElement = host.element
+  let nextOwnsElement = host.ownsElement
+
+  if (nextElement !== nextContainer.container) {
+    if (nextOwnsElement && nextElement?.parentNode) {
+      nextElement.parentNode.removeChild(nextElement)
+    }
+    nextRoot = null
+    nextElement = nextContainer.container
+    nextOwnsElement = nextContainer.ownsElement
+  }
+
+  if (!nextRoot) {
+    nextRoot = nextContainer.container
+  }
+
+  mountVanillaDrawer({
+    host: nextContainer.container,
+    id,
+    options,
+    open,
+    onOpenChange,
+    ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
+    ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
+    ...(onDragChange !== undefined ? { onDragChange } : {}),
+    ...(onReleaseChange !== undefined ? { onReleaseChange } : {})
+  })
+
+  return {
+    root: nextRoot,
+    element: nextElement,
+    ownsElement: nextOwnsElement,
+    container: nextContainer.container
+  }
+}
+
+/**
+ * Tear down the vanilla host: remove the container if we own it.
+ * Idempotent — calling on a host without an element is a no-op.
+ */
+export function destroyVanillaHost(host: VanillaHostState): VanillaHostState {
+  if (host.ownsElement && host.element?.parentNode) {
+    host.element.parentNode.removeChild(host.element)
+  }
+  return { root: null, element: null, ownsElement: false }
+}

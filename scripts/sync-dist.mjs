@@ -22,7 +22,13 @@ cpSync(sourceDist, targetDist, { recursive: true });
 copyFileSync(sourceStyles, targetStyles);
 
 const injectedStyleAttribute = 'data-drawer-runtime-styles';
-const reactImportPattern = /^\s*(?:import\s+(?:.+\s+from\s+)?['"]react(?:-dom(?:\/client)?)?['"]|(?:var|const|let)\s+.+\s*=\s*require\(['"]react(?:-dom(?:\/client)?)?['"]\))/m;
+const forbiddenFrameworkPatterns = [
+  /from\s+['"]react['"]/,
+  /from\s+['"]react-dom(?:\/client)?['"]/,
+  /from\s+['"]@radix-ui\/react-dialog['"]/,
+  /from\s+['"]vue['"]/,
+  /from\s+['"]svelte['"]/,
+];
 
 function toText(outputFile) {
   return new TextDecoder().decode(outputFile.contents);
@@ -36,7 +42,7 @@ function createStyleInjector(cssText) {
   return `(() => {\n  if (typeof document === 'undefined') return;\n  if (document.querySelector('style[${injectedStyleAttribute}]')) return;\n  const style = document.createElement('style');\n  style.setAttribute('${injectedStyleAttribute}', '');\n  style.textContent = ${JSON.stringify(cssText)};\n  (document.head || document.documentElement).appendChild(style);\n})();\n`;
 }
 
-async function bundleEntry({ entryPoint, outfile, format, external = [], globalName }) {
+async function bundleEntry({ entryPoint, outfile, format, external = [], globalName, cssSource }) {
   const result = await build({
     entryPoints: [entryPoint],
     outfile,
@@ -49,7 +55,6 @@ async function bundleEntry({ entryPoint, outfile, format, external = [], globalN
     target: ['es2020'],
     legalComments: 'none',
     logLevel: 'silent',
-    jsx: 'transform',
     sourcemap: false,
   });
 
@@ -59,11 +64,22 @@ async function bundleEntry({ entryPoint, outfile, format, external = [], globalN
     throw new Error(`Missing JS output for ${outfile}`);
   }
 
-  const cssOutput = result.outputFiles.find((file) => file.path.endsWith('.css'));
-  const cssText = cssOutput ? toText(cssOutput) : '';
-  const code = `${createStyleInjector(cssText)}${toText(jsOutput)}`;
+  // `cssSource` is the path to the post-bundled CSS file (`dist/style.css`).
+  // The vanilla build is purely DOM — no React, Vue, or Svelte — so the
+  // only stylesheet is the shared runtime stylesheet that ships with the
+  // package. The injector prepends a tiny bootstrap that mounts the
+  // stylesheet into the page if the consumer did not already include it.
+  let cssText = ''
+  if (cssSource) {
+    try {
+      cssText = readFileSync(cssSource, 'utf8')
+    } catch {
+      cssText = ''
+    }
+  }
+  const code = `${createStyleInjector(cssText)}${toText(jsOutput)}`
 
-  writeFileSync(outfile, code);
+  writeFileSync(outfile, code)
 }
 
 async function buildRuntimeBundles() {
@@ -80,41 +96,17 @@ async function buildRuntimeBundles() {
   });
 
   await bundleEntry({
-    entryPoint: path.join(sourceSrc, 'svelte', 'index.ts'),
-    outfile: path.join(targetDist, 'svelte', 'index.mjs'),
-    format: 'esm',
-  });
-
-  await bundleEntry({
-    entryPoint: path.join(sourceSrc, 'svelte', 'index.ts'),
-    outfile: path.join(targetDist, 'svelte', 'index.js'),
-    format: 'cjs',
-  });
-
-  await bundleEntry({
-    entryPoint: path.join(sourceSrc, 'vue', 'index.ts'),
-    outfile: path.join(targetDist, 'vue', 'index.mjs'),
-    format: 'esm',
-    external: ['vue'],
-  });
-
-  await bundleEntry({
-    entryPoint: path.join(sourceSrc, 'vue', 'index.ts'),
-    outfile: path.join(targetDist, 'vue', 'index.js'),
-    format: 'cjs',
-    external: ['vue'],
-  });
-
-  await bundleEntry({
     entryPoint: path.join(sourceSrc, 'browser', 'index.ts'),
     outfile: path.join(targetDist, 'browser', 'index.mjs'),
     format: 'esm',
+    cssSource: path.join(targetDist, 'style.css'),
   });
 
   await bundleEntry({
     entryPoint: path.join(sourceSrc, 'browser', 'index.ts'),
     outfile: path.join(targetDist, 'browser', 'index.cjs'),
     format: 'cjs',
+    cssSource: path.join(targetDist, 'style.css'),
   });
 
   await bundleEntry({
@@ -122,14 +114,17 @@ async function buildRuntimeBundles() {
     outfile: path.join(targetDist, 'browser', 'index.js'),
     format: 'iife',
     globalName: '__samlineDrawerBrowser',
+    cssSource: path.join(targetDist, 'style.css'),
   });
 }
 
-function assertNoExternalReact(filePath) {
+function assertNoForbiddenFrameworkImport(filePath) {
   const contents = readFileSync(filePath, 'utf8');
 
-  if (reactImportPattern.test(contents)) {
-    throw new Error(`Found external React import in ${filePath}`);
+  for (const pattern of forbiddenFrameworkPatterns) {
+    if (pattern.test(contents)) {
+      throw new Error(`Found forbidden framework import in ${filePath}: ${pattern}`);
+    }
   }
 }
 
@@ -275,19 +270,15 @@ function verifyBrowserGlobalBundle() {
 }
 
 function verifyBundles() {
-  const noReactFiles = [
+  const noFrameworkFiles = [
     path.join(targetDist, 'index.js'),
     path.join(targetDist, 'index.mjs'),
-    path.join(targetDist, 'svelte', 'index.js'),
-    path.join(targetDist, 'svelte', 'index.mjs'),
-    path.join(targetDist, 'vue', 'index.js'),
-    path.join(targetDist, 'vue', 'index.mjs'),
     path.join(targetDist, 'browser', 'index.cjs'),
     path.join(targetDist, 'browser', 'index.mjs'),
     path.join(targetDist, 'browser', 'index.js'),
   ];
 
-  noReactFiles.forEach(assertNoExternalReact);
+  noFrameworkFiles.forEach(assertNoForbiddenFrameworkImport);
   verifyBrowserGlobalBundle();
 }
 
