@@ -1,69 +1,55 @@
 {
   "name": "@samline/drawer",
-  "version": "3.0.0-beta.2",
-  "description": "A universal drawer package for vanilla JS and direct browser usage.",
+  "version": "3.0.0-beta.3",
+  "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/samline/drawer",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "homepage": "https://samline.github.io/drawer",
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "default": "./dist/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./browser": {
-      "import": {
-        "types": "./dist/browser/index.d.mts",
-        "default": "./dist/browser/index.mjs"
-      },
-      "require": {
-        "types": "./dist/browser/index.d.ts",
-        "default": "./dist/browser/index.cjs"
-      },
-      "default": "./dist/browser/index.mjs"
-    },
-    "./core": {
-      "import": {
-        "types": "./dist/core/index.d.mts",
-        "default": "./dist/core/index.mjs"
-      },
-      "require": {
-        "types": "./dist/core/index.d.ts",
-        "default": "./dist/core/index.js"
-      },
-      "default": "./dist/core/index.js"
+      "types": "./dist/browser/global.d.ts",
+      "default": "./dist/browser/global.global.js"
     },
     "./styles.css": "./dist/style.css",
-    "./style.css": "./dist/style.css",
-    "./dist/style.css": "./dist/style.css"
+    "./style.css": "./dist/style.css"
   },
   "scripts": {
     "clean": "rm -rf dist coverage",
-    "build": "bun run type-check && bun scripts/build.mjs",
-    "dev": "bun scripts/build.mjs --watch",
-    "format": "bunx prettier --write .",
-    "test": "bunx vitest run tests/*.test.ts --environment node --globals",
-    "test:watch": "bunx vitest tests/*.test.ts --environment node --globals",
-    "type-check": "bunx tsc --noEmit"
+    "build": "tsup --config tsup.config.ts",
+    "dev": "tsup --config tsup.config.ts --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run clean && npm run build && npm run typecheck && npm test"
   },
   "keywords": [
     "drawer",
     "browser",
     "vanilla-js",
     "dialog",
-    "modal"
+    "modal",
+    "bottom-sheet"
   ],
   "author": "Samuel Olvera (samline)",
   "repository": {
@@ -74,13 +60,11 @@
     "url": "https://github.com/samline/drawer/issues"
   },
   "devDependencies": {
-    "@types/node": "20.5.7",
-    "bunchee": "6.3.3",
-    "esbuild": "0.27.4",
-    "linkedom": "0.18.12",
-    "prettier": "^2.5.1",
-    "typescript": "5.2.2",
-    "vitest": "^2.1.8"
-  },
-  "packageManager": "bun@1.1.29"
+    "@types/node": "^24.0.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.3.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
 }

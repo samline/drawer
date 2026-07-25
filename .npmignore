@@ -4,15 +4,13 @@ test/
 
 # Build configs
 tsconfig.json
-tsconfig.*.json
 tsup.config.ts
 vitest.config.ts
-rollup.config.js
-vite.config.ts
 
-# Docs & examples
+# Docs (shipped docs go in docs/ alongside the published tarball via `files: ["dist"]`)
+# When the package is published from the dist/ output alone, this entry is moot,
+# but the npm pack step still walks the working tree to evaluate these patterns.
 docs/
-example/
 
 # Tooling & lockfiles
 .github/
@@ -23,9 +21,6 @@ pnpm-lock.yaml
 yarn.lock
 skills-lock.json
 
-# Coverage & build artifacts
-coverage/
-
 # Editor / OS junk
 .vscode/
 .idea/
@@ -34,6 +29,6 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# AI agent instructions (versionados en git, NO en el tarball npm)
+# AI agent instructions (versioned in git, NOT in the npm tarball)
 AGENTS.md
 .agents/

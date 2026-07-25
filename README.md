@@ -37,24 +37,17 @@ That quick start renders the built-in trigger inside the vanilla host. If you do
 ## Entrypoints
 
 - `@samline/drawer`: vanilla API and shared runtime helpers
-- `@samline/drawer/react`: React component API
 - `@samline/drawer/browser`: browser global for CDN or plain HTML
-- `@samline/drawer/vue`: Vue wrapper over the shared runtime
-- `@samline/drawer/svelte`: Svelte action and helpers
-- `@samline/drawer/core`: controller and snapshot contracts only
 - `@samline/drawer/styles.css`: shared styles
 
 ## Full Docs
 
-Use docs/ when you want the full API surface, lifecycle notes, runtime attributes, and framework-specific guidance.
+Use docs/ when you want the full API surface, lifecycle notes, and runtime attributes.
 
 - [docs/README.md](docs/README.md)
 - [docs/api.md](docs/api.md)
 - [docs/vanilla.md](docs/vanilla.md)
 - [docs/browser.md](docs/browser.md)
-- [docs/react.md](docs/react.md)
-- [docs/vue.md](docs/vue.md)
-- [docs/svelte.md](docs/svelte.md)
 
 ## Notes
 
