@@ -1,67 +1,76 @@
-export type CommonDrawerDirection = 'top' | 'bottom' | 'left' | 'right';
+export type CommonDrawerDirection = 'top' | 'bottom' | 'left' | 'right'
 
-export type CommonDrawerSnapPoint = number | string;
+export type CommonDrawerSnapPoint = number | string
 
-export type CommonDrawerId = string;
+export type CommonDrawerId = string
 
 export interface CommonDrawerOptions {
-  id?: CommonDrawerId;
-  parentId?: CommonDrawerId;
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onClose?: () => void;
-  onAnimationEnd?: (open: boolean) => void;
-  onDragChange?: (percentageDragged: number) => void;
-  onReleaseChange?: (open: boolean) => void;
-  dismissible?: boolean;
-  modal?: boolean;
-  nested?: boolean;
-  direction?: CommonDrawerDirection;
-  snapPoints?: CommonDrawerSnapPoint[];
-  fadeFromIndex?: number;
-  activeSnapPoint?: CommonDrawerSnapPoint | null;
-  closeThreshold?: number;
-  scrollLockTimeout?: number;
-  shouldScaleBackground?: boolean;
-  setBackgroundColorOnScale?: boolean;
-  handleOnly?: boolean;
-  fixed?: boolean;
-  disablePreventScroll?: boolean;
-  repositionInputs?: boolean;
-  snapToSequentialPoint?: boolean;
-  preventScrollRestoration?: boolean;
-  noBodyStyles?: boolean;
-  autoFocus?: boolean;
+  id?: CommonDrawerId
+  parentId?: CommonDrawerId
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  onClose?: () => void
+  onAnimationEnd?: (open: boolean) => void
+  onDragChange?: (percentageDragged: number) => void
+  onReleaseChange?: (open: boolean) => void
+  dismissible?: boolean
+  modal?: boolean
+  nested?: boolean
+  direction?: CommonDrawerDirection
+  snapPoints?: CommonDrawerSnapPoint[]
+  fadeFromIndex?: number
+  activeSnapPoint?: CommonDrawerSnapPoint | null
+  closeThreshold?: number
+  scrollLockTimeout?: number
+  shouldScaleBackground?: boolean
+  setBackgroundColorOnScale?: boolean
+  handleOnly?: boolean
+  fixed?: boolean
+  disablePreventScroll?: boolean
+  repositionInputs?: boolean
+  snapToSequentialPoint?: boolean
+  preventScrollRestoration?: boolean
+  noBodyStyles?: boolean
+  autoFocus?: boolean
+  /**
+   * Phase D: when `true`, the built-in `[data-drawer-handle]` element
+   * is rendered but its click-to-cycle behavior is disabled. The
+   * consumer can still drag from the handle (Phase A pipeline), but
+   * clicking it is a no-op. The default is `false` (cycle enabled).
+   *
+   * Mirrors the React `Drawer.Handle` `preventCycle` prop.
+   */
+  preventCycle?: boolean
 }
 
 export interface CommonDrawerState {
-  isOpen: boolean;
-  activeSnapPoint: CommonDrawerSnapPoint | null;
-  direction: CommonDrawerDirection;
-  snapPoints: CommonDrawerSnapPoint[];
-  dismissible: boolean;
-  modal: boolean;
+  isOpen: boolean
+  activeSnapPoint: CommonDrawerSnapPoint | null
+  direction: CommonDrawerDirection
+  snapPoints: CommonDrawerSnapPoint[]
+  dismissible: boolean
+  modal: boolean
 }
 
 export interface CommonDrawerSnapshot {
-  options: CommonDrawerOptions;
-  state: CommonDrawerState;
+  options: CommonDrawerOptions
+  state: CommonDrawerState
 }
 
 export interface CommonDrawerController {
-  getSnapshot: () => CommonDrawerSnapshot;
-  setOpen: (open: boolean) => CommonDrawerSnapshot;
-  setActiveSnapPoint: (snapPoint: CommonDrawerSnapPoint | null) => CommonDrawerSnapshot;
-  patch: (options: Partial<CommonDrawerOptions>) => CommonDrawerSnapshot;
-  subscribe: (listener: (snapshot: CommonDrawerSnapshot) => void) => () => void;
+  getSnapshot: () => CommonDrawerSnapshot
+  setOpen: (open: boolean) => CommonDrawerSnapshot
+  setActiveSnapPoint: (snapPoint: CommonDrawerSnapPoint | null) => CommonDrawerSnapshot
+  patch: (options: Partial<CommonDrawerOptions>) => CommonDrawerSnapshot
+  subscribe: (listener: (snapshot: CommonDrawerSnapshot) => void) => () => void
 }
 
 const DEFAULT_OPTIONS: Required<Pick<CommonDrawerOptions, 'direction' | 'dismissible' | 'modal'>> = {
   direction: 'bottom',
   dismissible: true,
-  modal: true,
-};
+  modal: true
+}
 
 function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
   return {
@@ -72,45 +81,45 @@ function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
       direction: options.direction ?? DEFAULT_OPTIONS.direction,
       snapPoints: options.snapPoints ?? [],
       dismissible: options.dismissible ?? DEFAULT_OPTIONS.dismissible,
-      modal: options.modal ?? DEFAULT_OPTIONS.modal,
-    },
-  };
+      modal: options.modal ?? DEFAULT_OPTIONS.modal
+    }
+  }
 }
 
 export function createDrawerController(initialOptions: CommonDrawerOptions = {}): CommonDrawerController {
-  let options: CommonDrawerOptions = { ...initialOptions };
-  let snapshot = toSnapshot(options);
-  const listeners = new Set<(snapshot: CommonDrawerSnapshot) => void>();
+  let options: CommonDrawerOptions = { ...initialOptions }
+  let snapshot = toSnapshot(options)
+  const listeners = new Set<(snapshot: CommonDrawerSnapshot) => void>()
 
   function publish() {
-    snapshot = toSnapshot(options);
-    listeners.forEach((listener) => listener(snapshot));
-    return snapshot;
+    snapshot = toSnapshot(options)
+    listeners.forEach((listener) => listener(snapshot))
+    return snapshot
   }
 
   return {
     getSnapshot() {
-      return snapshot;
+      return snapshot
     },
     setOpen(open) {
-      options = { ...options, open };
-      return publish();
+      options = { ...options, open }
+      return publish()
     },
     setActiveSnapPoint(activeSnapPoint) {
-      options = { ...options, activeSnapPoint };
-      return publish();
+      options = { ...options, activeSnapPoint }
+      return publish()
     },
     patch(nextOptions) {
-      options = { ...options, ...nextOptions };
-      return publish();
+      options = { ...options, ...nextOptions }
+      return publish()
     },
     subscribe(listener) {
-      listeners.add(listener);
-      listener(snapshot);
+      listeners.add(listener)
+      listener(snapshot)
 
       return () => {
-        listeners.delete(listener);
-      };
-    },
-  };
+        listeners.delete(listener)
+      }
+    }
+  }
 }

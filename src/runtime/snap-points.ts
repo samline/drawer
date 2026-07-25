@@ -1,31 +1,41 @@
-import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core';
+import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
+
+/**
+ * Pure snap-point math: index lookup, fade state, px/fraction offset
+ * per direction, drag-value, closest-snap, percentage-dragged between
+ * snap points.
+ *
+ * Consumed by `runtime/release.ts`. Will be wired by the drag pipeline
+ * in `vanilla/dialog.ts` (see the placeholder at the end of
+ * `vanilla/dialog.ts#attachListeners`).
+ */
 
 function isVerticalDirection(direction: CommonDrawerDirection) {
-  return direction === 'top' || direction === 'bottom';
+  return direction === 'top' || direction === 'bottom'
 }
 
 function toSnapPointNumber(snapPoint: CommonDrawerSnapPoint) {
-  return typeof snapPoint === 'string' ? parseInt(snapPoint, 10) : snapPoint;
+  return typeof snapPoint === 'string' ? parseInt(snapPoint, 10) : snapPoint
 }
 
 export function getActiveSnapPointIndex({
   snapPoints,
-  activeSnapPoint,
+  activeSnapPoint
 }: {
-  snapPoints?: CommonDrawerSnapPoint[];
-  activeSnapPoint?: CommonDrawerSnapPoint | null;
+  snapPoints?: CommonDrawerSnapPoint[]
+  activeSnapPoint?: CommonDrawerSnapPoint | null
 }) {
-  return snapPoints?.findIndex((snapPoint) => snapPoint === activeSnapPoint) ?? null;
+  return snapPoints?.findIndex((snapPoint) => snapPoint === activeSnapPoint) ?? null
 }
 
 export function getShouldFade({
   snapPoints,
   fadeFromIndex,
-  activeSnapPoint,
+  activeSnapPoint
 }: {
-  snapPoints?: CommonDrawerSnapPoint[];
-  fadeFromIndex?: number;
-  activeSnapPoint?: CommonDrawerSnapPoint | null;
+  snapPoints?: CommonDrawerSnapPoint[]
+  fadeFromIndex?: number
+  activeSnapPoint?: CommonDrawerSnapPoint | null
 }) {
   return (
     (snapPoints &&
@@ -34,68 +44,68 @@ export function getShouldFade({
       !Number.isNaN(fadeFromIndex) &&
       snapPoints[fadeFromIndex] === activeSnapPoint) ||
     !snapPoints
-  );
+  )
 }
 
 export function getSnapPointOffset({
   snapPoint,
   direction,
-  containerSize,
+  containerSize
 }: {
-  snapPoint: CommonDrawerSnapPoint;
-  direction: CommonDrawerDirection;
-  containerSize: { width: number; height: number };
+  snapPoint: CommonDrawerSnapPoint
+  direction: CommonDrawerDirection
+  containerSize: { width: number; height: number }
 }) {
-  const isPx = typeof snapPoint === 'string';
-  const snapPointAsNumber = toSnapPointNumber(snapPoint);
+  const isPx = typeof snapPoint === 'string'
+  const snapPointAsNumber = toSnapPointNumber(snapPoint)
 
   if (isVerticalDirection(direction)) {
-    const height = isPx ? snapPointAsNumber : snapPointAsNumber * containerSize.height;
-    return direction === 'bottom' ? containerSize.height - height : -containerSize.height + height;
+    const height = isPx ? snapPointAsNumber : snapPointAsNumber * containerSize.height
+    return direction === 'bottom' ? containerSize.height - height : -containerSize.height + height
   }
 
-  const width = isPx ? snapPointAsNumber : snapPointAsNumber * containerSize.width;
-  return direction === 'right' ? containerSize.width - width : -containerSize.width + width;
+  const width = isPx ? snapPointAsNumber : snapPointAsNumber * containerSize.width
+  return direction === 'right' ? containerSize.width - width : -containerSize.width + width
 }
 
 export function getSnapPointsOffset({
   snapPoints,
   direction,
-  containerSize,
+  containerSize
 }: {
-  snapPoints?: CommonDrawerSnapPoint[];
-  direction: CommonDrawerDirection;
-  containerSize: { width: number; height: number };
+  snapPoints?: CommonDrawerSnapPoint[]
+  direction: CommonDrawerDirection
+  containerSize: { width: number; height: number }
 }) {
-  return snapPoints?.map((snapPoint) => getSnapPointOffset({ snapPoint, direction, containerSize })) ?? [];
+  return snapPoints?.map((snapPoint) => getSnapPointOffset({ snapPoint, direction, containerSize })) ?? []
 }
 
 export function getSnapDragValue({
   activeSnapPointOffset,
   draggedDistance,
-  direction,
+  direction
 }: {
-  activeSnapPointOffset: number;
-  draggedDistance: number;
-  direction: CommonDrawerDirection;
+  activeSnapPointOffset: number
+  draggedDistance: number
+  direction: CommonDrawerDirection
 }) {
   return direction === 'bottom' || direction === 'right'
     ? activeSnapPointOffset - draggedDistance
-    : activeSnapPointOffset + draggedDistance;
+    : activeSnapPointOffset + draggedDistance
 }
 
 export function getClosestSnapPoint({
   snapPointsOffset,
-  currentPosition,
+  currentPosition
 }: {
-  snapPointsOffset?: number[];
-  currentPosition: number;
+  snapPointsOffset?: number[]
+  currentPosition: number
 }) {
   return snapPointsOffset?.reduce((prev, curr) => {
-    if (typeof prev !== 'number' || typeof curr !== 'number') return prev;
+    if (typeof prev !== 'number' || typeof curr !== 'number') return prev
 
-    return Math.abs(curr - currentPosition) < Math.abs(prev - currentPosition) ? curr : prev;
-  });
+    return Math.abs(curr - currentPosition) < Math.abs(prev - currentPosition) ? curr : prev
+  })
 }
 
 export function getSnapPointPercentageDragged({
@@ -105,44 +115,44 @@ export function getSnapPointPercentageDragged({
   fadeFromIndex,
   shouldFade,
   absDraggedDistance,
-  isDraggingDown,
+  isDraggingDown
 }: {
-  snapPoints?: CommonDrawerSnapPoint[];
-  activeSnapPointIndex?: number | null;
-  snapPointsOffset?: number[];
-  fadeFromIndex?: number;
-  shouldFade: boolean;
-  absDraggedDistance: number;
-  isDraggingDown: boolean;
+  snapPoints?: CommonDrawerSnapPoint[]
+  activeSnapPointIndex?: number | null
+  snapPointsOffset?: number[]
+  fadeFromIndex?: number
+  shouldFade: boolean
+  absDraggedDistance: number
+  isDraggingDown: boolean
 }) {
   if (!snapPoints || typeof activeSnapPointIndex !== 'number' || !snapPointsOffset || fadeFromIndex === undefined) {
-    return null;
+    return null
   }
 
-  const isOverlaySnapPoint = activeSnapPointIndex === fadeFromIndex - 1;
-  const isOverlaySnapPointOrHigher = activeSnapPointIndex >= fadeFromIndex;
+  const isOverlaySnapPoint = activeSnapPointIndex === fadeFromIndex - 1
+  const isOverlaySnapPointOrHigher = activeSnapPointIndex >= fadeFromIndex
 
   if (isOverlaySnapPointOrHigher && isDraggingDown) {
-    return 0;
+    return 0
   }
 
-  if (isOverlaySnapPoint && !isDraggingDown) return 1;
-  if (!shouldFade && !isOverlaySnapPoint) return null;
+  if (isOverlaySnapPoint && !isDraggingDown) return 1
+  if (!shouldFade && !isOverlaySnapPoint) return null
 
-  const targetSnapPointIndex = isOverlaySnapPoint ? activeSnapPointIndex + 1 : activeSnapPointIndex - 1;
+  const targetSnapPointIndex = isOverlaySnapPoint ? activeSnapPointIndex + 1 : activeSnapPointIndex - 1
 
-  const snapPointsOffsetCurrent = snapPointsOffset[targetSnapPointIndex];
+  const snapPointsOffsetCurrent = snapPointsOffset[targetSnapPointIndex]
   const snapPointsOffsetNext = isOverlaySnapPoint
     ? snapPointsOffset[targetSnapPointIndex - 1]
-    : snapPointsOffset[targetSnapPointIndex + 1];
+    : snapPointsOffset[targetSnapPointIndex + 1]
 
   if (snapPointsOffsetCurrent === undefined || snapPointsOffsetNext === undefined) {
-    return null;
+    return null
   }
 
-  const snapPointDistance = snapPointsOffsetCurrent - snapPointsOffsetNext;
+  const snapPointDistance = snapPointsOffsetCurrent - snapPointsOffsetNext
 
-  const percentageDragged = absDraggedDistance / Math.abs(snapPointDistance);
+  const percentageDragged = absDraggedDistance / Math.abs(snapPointDistance)
 
-  return isOverlaySnapPoint ? 1 - percentageDragged : percentageDragged;
+  return isOverlaySnapPoint ? 1 - percentageDragged : percentageDragged
 }

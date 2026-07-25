@@ -1,25 +1,23 @@
 // Public types for the vanilla render layer + a small helper that
 // mounts a single dialog instance into a host element.
 //
-// This module is the vanilla equivalent of the old `render.tsx`. It
-// exposes:
+// Exposes:
 //   - `VanillaRenderable` — the value shape accepted by `title`,
 //     `description`, and `content` (string / number / HTMLElement /
 //     thunk / nullish).
 //   - `VanillaDrawerOptions` — the public option surface, including
 //     the framework-agnostic extras (`mountElement`, `triggerElement`,
 //     `triggerText`, ARIA wiring, etc.).
-//   - `mountVanillaDialog` — the entrypoint used by the runtime
+//   - `mountVanillaDrawer` — the entrypoint used by the runtime
 //     registry to install the dialog DOM, the trigger button, the
 //     overlay, the content, and the handle into a host element.
 //
-// The actual dialog behavior (focus trap, escape, click-outside,
-// body scroll lock, drag-to-dismiss, snap points, handle cycle, etc.)
-// lives in `vanilla/dialog.ts`. The split mirrors the React build
-// where `react/components.tsx` owned the dialog primitives and
-// `vanilla/render.tsx` was the consumer-facing adapter.
+// The dialog behavior (focus trap, escape, click-outside, body scroll
+// lock) lives in `vanilla/dialog.ts`. The drag / snap / scale-background
+// pipeline is wired in Phase A (drag-to-dismiss) and Phase B
+// (snap points); see `runtime/*` for the pure math.
 
-import type { CommonDrawerOptions } from '../core'
+import type { CommonDrawerOptions, CommonDrawerSnapPoint } from '../core'
 import { mountVanillaDialog } from './dialog'
 
 export type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined
@@ -60,6 +58,7 @@ export function mountVanillaDrawer(options: {
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
 }): void {
   mountVanillaDialog({
     host: options.host,
@@ -70,10 +69,11 @@ export function mountVanillaDrawer(options: {
     ...(options.onBuiltInTriggerMouseDown !== undefined
       ? { onBuiltInTriggerMouseDown: options.onBuiltInTriggerMouseDown }
       : {}),
-    ...(options.onBuiltInTriggerClick !== undefined
-      ? { onBuiltInTriggerClick: options.onBuiltInTriggerClick }
-      : {}),
+    ...(options.onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick: options.onBuiltInTriggerClick } : {}),
     ...(options.onDragChange !== undefined ? { onDragChange: options.onDragChange } : {}),
-    ...(options.onReleaseChange !== undefined ? { onReleaseChange: options.onReleaseChange } : {})
+    ...(options.onReleaseChange !== undefined ? { onReleaseChange: options.onReleaseChange } : {}),
+    ...(options.onActiveSnapPointChange !== undefined
+      ? { onActiveSnapPointChange: options.onActiveSnapPointChange }
+      : {})
   })
 }

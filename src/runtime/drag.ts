@@ -1,55 +1,65 @@
-import type { CommonDrawerDirection } from '../core';
+import type { CommonDrawerDirection } from '../core'
+
+/**
+ * Pure pointer-drag math: direction sign, dragged distance, percentage
+ * dragged, release-toward-expanded, threshold-close decision.
+ *
+ * Consumed by `runtime/release.ts` (which is the spec for the drag
+ * pipeline wired in `vanilla/dialog.ts`). The vanilla dialog does not
+ * yet wire these — see the placeholder at the end of
+ * `vanilla/dialog.ts#attachListeners`.
+ */
 
 export function getDragDirectionMultiplier(direction: CommonDrawerDirection) {
-  return direction === 'bottom' || direction === 'right' ? 1 : -1;
+  return direction === 'bottom' || direction === 'right' ? 1 : -1
 }
 
 export function getDraggedDistance({
   pointerStart,
   currentPointer,
-  direction,
+  direction
 }: {
-  pointerStart: number;
-  currentPointer: number;
-  direction: CommonDrawerDirection;
+  pointerStart: number
+  currentPointer: number
+  direction: CommonDrawerDirection
 }) {
-  return (pointerStart - currentPointer) * getDragDirectionMultiplier(direction);
+  return (pointerStart - currentPointer) * getDragDirectionMultiplier(direction)
 }
 
 export function isDraggingTowardExpandedState(draggedDistance: number) {
-  return draggedDistance > 0;
+  return draggedDistance > 0
 }
 
 export function getDragPercentage({
   draggedDistance,
   drawerDimension,
-  snapPointPercentageDragged,
+  snapPointPercentageDragged
 }: {
-  draggedDistance: number;
-  drawerDimension: number;
-  snapPointPercentageDragged: number | null;
+  draggedDistance: number
+  drawerDimension: number
+  snapPointPercentageDragged: number | null
 }) {
-  const absDraggedDistance = Math.abs(draggedDistance);
-  let percentageDragged = absDraggedDistance / drawerDimension;
+  const absDraggedDistance = Math.abs(draggedDistance)
+  let percentageDragged = absDraggedDistance / drawerDimension
 
   if (snapPointPercentageDragged !== null) {
-    percentageDragged = snapPointPercentageDragged;
+    percentageDragged = snapPointPercentageDragged
   }
 
   return {
     absDraggedDistance,
-    percentageDragged,
-  };
+    percentageDragged
+  }
 }
 
 export function isReleaseTowardExpandedState({
   direction,
-  distMoved,
+  distMoved
 }: {
-  direction: CommonDrawerDirection;
-  distMoved: number;
+  direction: CommonDrawerDirection
+  distMoved: number
 }) {
-  return direction === 'bottom' || direction === 'right' ? distMoved > 0 : distMoved < 0;
+  return direction === 'bottom' || direction === 'right' ? distMoved > 0 : distMoved < 0
 }
 
 export function shouldCloseDrawerOnRelease({
@@ -57,17 +67,17 @@ export function shouldCloseDrawerOnRelease({
   velocityThreshold,
   swipeAmount,
   drawerDimension,
-  closeThreshold,
+  closeThreshold
 }: {
-  velocity: number;
-  velocityThreshold: number;
-  swipeAmount: number;
-  drawerDimension: number;
-  closeThreshold: number;
+  velocity: number
+  velocityThreshold: number
+  swipeAmount: number
+  drawerDimension: number
+  closeThreshold: number
 }) {
   if (velocity > velocityThreshold) {
-    return true;
+    return true
   }
 
-  return Math.abs(swipeAmount) >= drawerDimension * closeThreshold;
+  return Math.abs(swipeAmount) >= drawerDimension * closeThreshold
 }

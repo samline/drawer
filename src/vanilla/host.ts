@@ -1,13 +1,10 @@
-// Vanilla host: manages the mount target element for a drawer instance
-// without React. The host is a small container `<div data-drawer-vanilla-root>`
+// Vanilla host: manages the mount target element for a drawer instance.
+// The host is a small container `<div data-drawer-vanilla-root>`
 // appended to `document.body` (or a caller-provided `mountElement`) that
 // holds the rendered dialog DOM and the trigger button when one is needed.
-//
-// In the React build this file was `host.tsx` and used `createRoot` from
-// `react-dom/client`. The vanilla build renders the dialog directly with
-// `vanilla/render.ts` and a simple mount element — no virtual DOM, no
-// framework runtime, no peer dependency.
 
+import type { CommonDrawerSnapPoint } from '../core'
+import { destroyVanillaDialog } from './dialog'
 import type { VanillaDrawerOptions } from './render'
 import { mountVanillaDrawer } from './render'
 
@@ -62,7 +59,8 @@ export function renderVanillaHost({
   onBuiltInTriggerClick,
   onOpenChange,
   onDragChange,
-  onReleaseChange
+  onReleaseChange,
+  onActiveSnapPointChange
 }: {
   host: VanillaHostState
   id: string
@@ -73,6 +71,7 @@ export function renderVanillaHost({
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
 }): { root: HTMLElement | null; element: HTMLElement | null; ownsElement: boolean; container: HTMLElement } | null {
   const nextContainer = resolveVanillaContainer(host, id, options.mountElement)
   if (!nextContainer) return null
@@ -103,7 +102,8 @@ export function renderVanillaHost({
     ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
     ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
     ...(onDragChange !== undefined ? { onDragChange } : {}),
-    ...(onReleaseChange !== undefined ? { onReleaseChange } : {})
+    ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
+    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
   })
 
   return {
@@ -117,8 +117,20 @@ export function renderVanillaHost({
 /**
  * Tear down the vanilla host: remove the container if we own it.
  * Idempotent — calling on a host without an element is a no-op.
+ *
+ * Phase E: also runs the dialog-level teardown (via
+ * `destroyVanillaDialog`) before removing the host element. The
+ * dialog owns the `visualViewport.resize` listener and the
+ * `history.scrollRestoration` backup; both need a teardown pass
+ * when the host is destroyed without a prior `setOpen(false)` —
+ * the destroy path skips the re-mount that would normally drive
+ * `teardownMount` from the top of the next `mountVanillaDialog`
+ * call.
  */
 export function destroyVanillaHost(host: VanillaHostState): VanillaHostState {
+  if (host.element) {
+    destroyVanillaDialog(host.element)
+  }
   if (host.ownsElement && host.element?.parentNode) {
     host.element.parentNode.removeChild(host.element)
   }

@@ -1,19 +1,26 @@
+/**
+ * Pure mobile-keyboard + visualViewport math. The vanilla dialog
+ * does not yet wire this — see the placeholder at the end of
+ * `vanilla/dialog.ts#attachListeners`. The `repositionInputs` and
+ * `fixed` options are accepted but inert until this is wired.
+ */
+
 export function getKeyboardOpenState({
   previousDiffFromInitial,
   diffFromInitial,
   keyboardIsOpen,
-  threshold = 60,
+  threshold = 60
 }: {
-  previousDiffFromInitial: number;
-  diffFromInitial: number;
-  keyboardIsOpen: boolean;
-  threshold?: number;
+  previousDiffFromInitial: number
+  diffFromInitial: number
+  keyboardIsOpen: boolean
+  threshold?: number
 }) {
   if (Math.abs(previousDiffFromInitial - diffFromInitial) > threshold) {
-    return !keyboardIsOpen;
+    return !keyboardIsOpen
   }
 
-  return keyboardIsOpen;
+  return keyboardIsOpen
 }
 
 export function getViewportDrivenDrawerLayout({
@@ -27,57 +34,58 @@ export function getViewportDrivenDrawerLayout({
   initialDrawerHeight,
   activeSnapPointOffset,
   isMobileFirefox,
-  windowTopOffset,
+  windowTopOffset
 }: {
-  visualViewportHeight: number;
-  totalHeight: number;
-  drawerHeight: number;
-  offsetFromTop: number;
-  fixed?: boolean;
-  previousDiffFromInitial: number;
-  keyboardIsOpen: boolean;
-  initialDrawerHeight: number;
-  activeSnapPointOffset?: number;
-  isMobileFirefox: boolean;
-  windowTopOffset: number;
+  visualViewportHeight: number
+  totalHeight: number
+  drawerHeight: number
+  offsetFromTop: number
+  fixed?: boolean
+  previousDiffFromInitial: number
+  keyboardIsOpen: boolean
+  initialDrawerHeight: number
+  activeSnapPointOffset?: number
+  isMobileFirefox: boolean
+  windowTopOffset: number
 }) {
-  let diffFromInitial = totalHeight - visualViewportHeight;
-  const isTallEnough = drawerHeight > totalHeight * 0.8;
-  const nextInitialDrawerHeight = initialDrawerHeight || drawerHeight;
+  let diffFromInitial = totalHeight - visualViewportHeight
+  const isTallEnough = drawerHeight > totalHeight * 0.8
+  const nextInitialDrawerHeight = initialDrawerHeight || drawerHeight
 
   if (typeof activeSnapPointOffset === 'number') {
-    diffFromInitial += activeSnapPointOffset;
+    diffFromInitial += activeSnapPointOffset
   }
 
   const nextKeyboardIsOpen = getKeyboardOpenState({
     previousDiffFromInitial,
     diffFromInitial,
-    keyboardIsOpen,
-  });
+    keyboardIsOpen
+  })
 
-  let height: string | null = null;
+  let height: string | null = null
 
   if (drawerHeight > visualViewportHeight || nextKeyboardIsOpen) {
-    let newDrawerHeight = drawerHeight;
+    let newDrawerHeight = drawerHeight
 
     if (drawerHeight > visualViewportHeight) {
-      newDrawerHeight = visualViewportHeight - (isTallEnough ? offsetFromTop : windowTopOffset);
+      newDrawerHeight = visualViewportHeight - (isTallEnough ? offsetFromTop : windowTopOffset)
     }
 
     height = fixed
       ? `${drawerHeight - Math.max(diffFromInitial, 0)}px`
-      : `${Math.max(newDrawerHeight, visualViewportHeight - offsetFromTop)}px`;
+      : `${Math.max(newDrawerHeight, visualViewportHeight - offsetFromTop)}px`
   } else if (!isMobileFirefox) {
-    height = `${nextInitialDrawerHeight}px`;
+    height = `${nextInitialDrawerHeight}px`
   }
 
-  const bottom = activeSnapPointOffset !== undefined && !nextKeyboardIsOpen ? '0px' : `${Math.max(diffFromInitial, 0)}px`;
+  const bottom =
+    activeSnapPointOffset !== undefined && !nextKeyboardIsOpen ? '0px' : `${Math.max(diffFromInitial, 0)}px`
 
   return {
     diffFromInitial,
     nextKeyboardIsOpen,
     nextInitialDrawerHeight,
     height,
-    bottom,
-  };
+    bottom
+  }
 }
