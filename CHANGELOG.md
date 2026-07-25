@@ -6,6 +6,22 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 
 ## [Unreleased]
 
+### Changed (docs)
+
+- Aligns `docs/` with the `@samline/forms` and `@samline/notify` documentation conventions.
+  - `docs/README.md` rewritten as the index with a per-file map.
+  - `docs/getting-started.md` — anatomy, observable contract, lifecycle, registry helpers, side-effect table.
+  - `docs/options.md` — full `CommonDrawerOptions` field reference (defaults, behaviour, vanilla-only options).
+  - `docs/css-styling.md` — the data-attribute contract the stylesheet reads and theming recipes.
+  - `docs/typescript.md` — every exported type, callback, helper shape, and numeric constant.
+  - `docs/recipes.md` — end-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open / close, multiple independent drawers, SPA / dynamic mount.
+  - `docs/api/index.md` — overview, plus one page per public method:
+    `create-drawer`, `configure-drawer`, `get-drawer`, `get-drawers`, `get-parent-drawer`, `get-child-drawers`, `update-drawer`, `open-drawer`, `close-drawer`, `toggle-drawer`, `destroy-drawer`, `destroy-drawers`, `create-drawer-controller`.
+  - `docs/vanilla.md` and `docs/browser.md` rewritten to reference the new structure; CDN URLs point to `dist/browser/global.global.js` and `@3.0.0-beta.3`.
+  - The `docs/{react,vue,svelte}.md` files are removed. The `react`, `vue`, and `svelte` subpaths were already deleted from `package.json#exports` in `v3.0.0-beta.3`; the docs now reflect that.
+  - The monolithic `docs/api.md` is removed. Its content is split across the per-method pages under `docs/api/`.
+- The root `README.md` is rewritten to the forms / notify convention: TOC, CDN / browser section, entrypoints table, quick start, API at a glance, documentation index, license.
+
 ## [3.0.0-beta.3] — 2026-07-25
 
 The third beta of the v3.0.0 line. This release focuses on completing the drag pipeline that was deferred during the React→vanilla refactor (`v3.0.0-beta.0`), plus a tooling and cleanup pass to align with the `@samline/forms` and `@samline/notify` conventions.
