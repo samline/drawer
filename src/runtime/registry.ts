@@ -312,7 +312,6 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
         notifyOpenStateChange(runtime, open);
       }
 
-      renderVanillaDrawer(id);
       return snapshot;
     },
     setActiveSnapPoint(snapPoint) {

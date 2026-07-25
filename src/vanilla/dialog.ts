@@ -465,7 +465,7 @@ function attachListeners(
  */
 export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   if (!canUseDOM()) return
-  const { host, options, open, onOpenChange, onBuiltInTriggerMouseDown, onBuiltInTriggerClick, onDragChange, onReleaseChange } = dialogOptions
+  const { host, id, options, open, onOpenChange, onBuiltInTriggerMouseDown, onBuiltInTriggerClick, onDragChange, onReleaseChange } = dialogOptions
   const state = getHostState(host)
 
   // Tear down any prior mount before building the new one.
@@ -518,9 +518,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       tabIndex: -1
     })
     if (options.contentClassName) content.className = options.contentClassName
+    // Place the drawer id on the [data-drawer] content wrapper for CSS/JS selector compat.
+    content.id = id
     if (options.ariaLabel) content.setAttribute('aria-label', options.ariaLabel)
-    if (options.ariaLabelledBy) content.setAttribute('aria-labelledby', options.ariaLabelledBy)
-    if (options.ariaDescribedBy) content.setAttribute('aria-describedby', options.ariaDescribedBy)
     if (snapPoints) {
       const initialOffset = activeSnapPoint
         ? getSnapPointOffsetPx(activeSnapPoint, direction, host.ownerDocument)
@@ -545,13 +545,37 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
 
     const titleEl = createEl('div', { 'data-drawer-title': '' })
     const descEl = createEl('div', { 'data-drawer-description': '' })
+    // Reintroduce the vanilla-node wrapper for CSS retro-compat (v2 DOM contract).
+    // It sits between [data-drawer] and [data-drawer-vanilla-body].
+    const nodeWrapperEl = createEl('div', { 'data-drawer-vanilla-node': '' })
     const bodyEl = createEl('div', { 'data-drawer-vanilla-body': '' })
     state.title = titleEl
     state.description = descEl
     state.body = bodyEl
     content.appendChild(titleEl)
     content.appendChild(descEl)
-    content.appendChild(bodyEl)
+    content.appendChild(nodeWrapperEl)
+    nodeWrapperEl.appendChild(bodyEl)
+
+    // Auto-set id on title/description slots when ariaLabelledBy/ariaDescribedBy
+    // is provided but no matching element exists in the caller-supplied HTML.
+    // This makes aria-labelledby / aria-describedby point to a real target.
+    if (options.ariaLabelledBy) {
+      titleEl.id = options.ariaLabelledBy
+      content.setAttribute('aria-labelledby', options.ariaLabelledBy)
+    } else {
+      const autoTitleId = `${id}-title`
+      titleEl.id = autoTitleId
+      content.setAttribute('aria-labelledby', autoTitleId)
+    }
+    if (options.ariaDescribedBy) {
+      descEl.id = options.ariaDescribedBy
+      content.setAttribute('aria-describedby', options.ariaDescribedBy)
+    } else {
+      const autoDescId = `${id}-description`
+      descEl.id = autoDescId
+      content.setAttribute('aria-describedby', autoDescId)
+    }
 
     const contentRoot =
       options.content instanceof HTMLElement ? options.content : typeof options.content === 'function' ? options.content() : undefined
