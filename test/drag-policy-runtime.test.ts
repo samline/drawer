@@ -1,7 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { parseHTML } from 'linkedom';
+import { describe, expect, it } from 'vitest'
 
-import { getDragPermission, getDragTargetMetadata } from '../src/runtime/drag-policy';
+import { getDragPermission, getDragTargetMetadata } from '../src/runtime/drag-policy'
 
 describe('drag policy runtime helpers', () => {
   it('blocks select elements and no-drag targets', () => {
@@ -16,9 +15,9 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [],
-      }),
-    ).toEqual({ allow: false, updatePreventedAt: false });
+        ancestors: []
+      })
+    ).toEqual({ allow: false, updatePreventedAt: false })
 
     expect(
       getDragPermission({
@@ -31,10 +30,10 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [],
-      }),
-    ).toEqual({ allow: false, updatePreventedAt: false });
-  });
+        ancestors: []
+      })
+    ).toEqual({ allow: false, updatePreventedAt: false })
+  })
 
   it('allows horizontal drawers immediately', () => {
     expect(
@@ -48,10 +47,10 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [],
-      }),
-    ).toEqual({ allow: true, updatePreventedAt: false });
-  });
+        ancestors: []
+      })
+    ).toEqual({ allow: true, updatePreventedAt: false })
+  })
 
   it('blocks when dragging in the expanded direction or during scroll lock', () => {
     expect(
@@ -65,9 +64,9 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: 50,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [],
-      }),
-    ).toEqual({ allow: false, updatePreventedAt: true });
+        ancestors: []
+      })
+    ).toEqual({ allow: false, updatePreventedAt: true })
 
     expect(
       getDragPermission({
@@ -80,10 +79,10 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: true,
-        ancestors: [],
-      }),
-    ).toEqual({ allow: false, updatePreventedAt: true });
-  });
+        ancestors: []
+      })
+    ).toEqual({ allow: false, updatePreventedAt: true })
+  })
 
   it('blocks when a scrollable ancestor is not at the top', () => {
     expect(
@@ -97,10 +96,10 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 20, role: null }],
-      }),
-    ).toEqual({ allow: false, updatePreventedAt: true });
-  });
+        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 20, role: null }]
+      })
+    ).toEqual({ allow: false, updatePreventedAt: true })
+  })
 
   it('allows when a dialog ancestor is the first eligible scroll container', () => {
     expect(
@@ -114,32 +113,34 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 0, role: 'dialog' }],
-      }),
-    ).toEqual({ allow: true, updatePreventedAt: false });
-  });
+        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 0, role: 'dialog' }]
+      })
+    ).toEqual({ allow: true, updatePreventedAt: false })
+  })
 
   it('normalizes non-Element targets without throwing', () => {
-    const { window } = parseHTML('<!doctype html><html><body><div></div></body></html>');
+    const doc = document.implementation.createHTMLDocument('test')
 
-    expect(() => getDragTargetMetadata(window.document)).not.toThrow();
-    expect(getDragTargetMetadata(window.document)).toEqual({
+    expect(() => getDragTargetMetadata(doc)).not.toThrow()
+    expect(getDragTargetMetadata(doc)).toEqual({
       targetTagName: '',
       hasNoDragAttribute: false,
-      ancestors: [],
-    });
-  });
+      ancestors: []
+    })
+  })
 
   it('detects no-drag metadata from the target or its ancestors', () => {
-    const { window } = parseHTML(
-      '<!doctype html><html><body><div data-drawer-no-drag=""><button id="trigger">Open</button></div></body></html>',
-    );
-    const target = window.document.getElementById('trigger');
+    const wrapper = document.createElement('div')
+    wrapper.setAttribute('data-drawer-no-drag', '')
+    const target = document.createElement('button')
+    target.id = 'trigger'
+    wrapper.appendChild(target)
+    document.body.appendChild(wrapper)
 
     expect(getDragTargetMetadata(target)).toMatchObject({
       targetTagName: 'BUTTON',
-      hasNoDragAttribute: true,
-    });
-    expect(getDragTargetMetadata(target).ancestors.length).toBeGreaterThan(0);
-  });
-});
+      hasNoDragAttribute: true
+    })
+    expect(getDragTargetMetadata(target).ancestors.length).toBeGreaterThan(0)
+  })
+})

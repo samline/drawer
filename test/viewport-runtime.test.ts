@@ -1,17 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
-import { getKeyboardOpenState, getViewportDrivenDrawerLayout } from '../src/runtime/viewport';
+import { getKeyboardOpenState, getViewportDrivenDrawerLayout } from '../src/runtime/viewport'
 
 describe('viewport runtime helpers', () => {
   it('toggles keyboard state only when the diff crosses the threshold', () => {
-    expect(
-      getKeyboardOpenState({ previousDiffFromInitial: 0, diffFromInitial: 80, keyboardIsOpen: false }),
-    ).toBe(true);
+    expect(getKeyboardOpenState({ previousDiffFromInitial: 0, diffFromInitial: 80, keyboardIsOpen: false })).toBe(true)
 
-    expect(
-      getKeyboardOpenState({ previousDiffFromInitial: 20, diffFromInitial: 50, keyboardIsOpen: false }),
-    ).toBe(false);
-  });
+    expect(getKeyboardOpenState({ previousDiffFromInitial: 20, diffFromInitial: 50, keyboardIsOpen: false })).toBe(
+      false
+    )
+  })
 
   it('computes a fixed drawer layout while the keyboard is open', () => {
     expect(
@@ -26,16 +24,16 @@ describe('viewport runtime helpers', () => {
         initialDrawerHeight: 0,
         activeSnapPointOffset: undefined as unknown as number,
         isMobileFirefox: false,
-        windowTopOffset: 26,
-      }),
+        windowTopOffset: 26
+      })
     ).toEqual({
       diffFromInitial: 300,
       nextKeyboardIsOpen: true,
       nextInitialDrawerHeight: 700,
       height: '400px',
-      bottom: '300px',
-    });
-  });
+      bottom: '300px'
+    })
+  })
 
   it('restores the initial height when no keyboard layout is needed', () => {
     expect(
@@ -50,16 +48,16 @@ describe('viewport runtime helpers', () => {
         initialDrawerHeight: 320,
         activeSnapPointOffset: undefined as unknown as number,
         isMobileFirefox: false,
-        windowTopOffset: 26,
-      }),
+        windowTopOffset: 26
+      })
     ).toEqual({
       diffFromInitial: 0,
       nextKeyboardIsOpen: false,
       nextInitialDrawerHeight: 320,
       height: '320px',
-      bottom: '0px',
-    });
-  });
+      bottom: '0px'
+    })
+  })
 
   it('pins bottom to zero when snap points are active and the keyboard state remains closed', () => {
     expect(
@@ -74,8 +72,8 @@ describe('viewport runtime helpers', () => {
         initialDrawerHeight: 300,
         activeSnapPointOffset: 180,
         isMobileFirefox: false,
-        windowTopOffset: 26,
-      }).bottom,
-    ).toBe('0px');
-  });
-});
+        windowTopOffset: 26
+      }).bottom
+    ).toBe('0px')
+  })
+})

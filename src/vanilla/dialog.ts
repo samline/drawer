@@ -1,13 +1,13 @@
-// Vanilla dialog primitives. Replaces `@radix-ui/react-dialog` with
-// direct DOM manipulation — no React, no virtual DOM, no peer
-// dependencies. The runtime registry owns the controller state and
-// delegates side effects (focus, body scroll lock, ARIA, animations)
-// to this module through a small callback surface.
+// Vanilla dialog primitives. Direct DOM manipulation — no framework
+// runtime, no virtual DOM, no peer dependencies. The runtime registry
+// owns the controller state and delegates side effects (focus, body
+// scroll lock, ARIA, animations) to this module through a small
+// callback surface.
 //
-// The CSS contract is unchanged from the React build: every element
-// the stylesheet reads uses a `data-drawer*` attribute. The dialog
-// module is the only place that knows about those attributes; the
-// rest of the package uses `data-drawer` as an opaque marker.
+// The CSS contract: every element the stylesheet reads uses a
+// `data-drawer*` attribute. The dialog module is the only place that
+// knows about those attributes; the rest of the package uses
+// `data-drawer` as an opaque marker.
 //
 // What this module owns:
 //   - The portal target: a small `<div data-drawer-vanilla-root>`
@@ -32,9 +32,50 @@
 //     DOM and manages the focus / escape / click-outside contract.
 
 import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
-import { TRANSITIONS } from '../constants'
-import { isVertical } from '../helpers'
+import {
+  CLOSE_THRESHOLD,
+  NESTED_DISPLACEMENT,
+  SCROLL_LOCK_TIMEOUT,
+  TRANSITIONS,
+  VELOCITY_THRESHOLD,
+  WINDOW_TOP_OFFSET
+} from '../constants'
+import { isVertical, set } from '../helpers'
+import { getDraggedDistance, getDragPercentage } from '../runtime/drag'
+import { getDragPermission, getDragTargetMetadata, type DragTargetMetadata } from '../runtime/drag-policy'
+import { getNextHandleState } from '../runtime/handle'
+import { getDismissibleReleaseResult, getSnapPointReleaseAction } from '../runtime/release'
+import {
+  getActiveSnapPointIndex,
+  getShouldFade,
+  getSnapDragValue,
+  getSnapPointOffset,
+  getSnapPointPercentageDragged,
+  getSnapPointsOffset
+} from '../runtime/snap-points'
+import {
+  getAxisAwareTranslate,
+  getBackgroundDragState,
+  getBackgroundResetState,
+  getScaleTranslateTransform
+} from '../runtime/transforms'
+import { getViewportDrivenDrawerLayout } from '../runtime/viewport'
 import type { VanillaDrawerOptions, VanillaRenderable } from './render'
+
+/**
+ * Minimum attributes a synthetic `Event` must expose for the drag
+ * pipeline. Real `PointerEvent` instances satisfy this in browsers;
+ * the integration tests in `test/drag-pipeline-integration.test.ts`
+ * construct a plain `Event` and attach the geometry fields via
+ * `Object.assign` because jsdom does not implement `PointerEvent`.
+ */
+interface DragPointerEvent extends Event {
+  clientX: number
+  clientY: number
+  pointerId: number
+  currentTarget: HTMLElement
+  target: EventTarget | null
+}
 
 const VISUALLY_HIDDEN_STYLE = {
   position: 'absolute',
@@ -58,6 +99,36 @@ export interface VanillaDialogOptions {
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
+}
+
+/**
+ * Per-host drag state. Captured at `pointerdown`, mutated by
+ * `pointermove`, and discarded at `pointerup`. Mirrors the `useRef`
+ * cluster in the original React component.
+ *
+ * Phase B uses the snap-point fields when `options.snapPoints` is set:
+ * `activeSnapPointOffset` is the runtime offset of the active snap at
+ * `pointerdown` time, `activeSnapPointIndex` and `snapPointsOffset`
+ * are pre-computed for `getSnapPointReleaseAction`, and `shouldFade`
+ * is the `getShouldFade` result for the fade-overlay pipeline.
+ */
+interface DragState {
+  pointerStart: { x: number; y: number }
+  pointerStartTimeStamp: number
+  startedAt: number
+  draggedDistance: number
+  isDraggingDown: boolean
+  snapPointOffset: number
+  lastTimeDragPrevented: number
+  pointerId: number
+  // Phase B: snap-point context. `null` when no snap points are
+  // configured; otherwise the values captured at `pointerdown` and
+  // reused across the entire drag.
+  activeSnapPointOffset: number | null
+  activeSnapPointIndex: number | null
+  snapPointsOffset: number[]
+  shouldFade: boolean
 }
 
 /**
@@ -79,6 +150,37 @@ interface DialogMountState {
   cleanups: Array<() => void>
   bodyOverflowBackup: string | null
   bodyPaddingRightBackup: string | null
+  openedAt: number | null
+  drag: DragState | null
+  // Phase C: background-scale pipeline. `baseScale` is captured at
+  // open time so the drag/release math has a single source of truth
+  // for the rest-state scale. `clearTimeout` is the pending handle
+  // for the `TRANSITIONS.DURATION` deferred clear after a close
+  // release; we cancel it on teardown to avoid touching a wrapper
+  // that no longer belongs to this drawer.
+  backgroundScale: {
+    baseScale: number
+    clearTimeout: ReturnType<typeof setTimeout> | null
+  } | null
+  // Phase E: viewport / mobile-keyboard pipeline. The
+  // `getViewportDrivenDrawerLayout` helper is stateful (it tracks
+  // the diff from the initial layout to detect when the mobile
+  // keyboard toggles open/closed). The dialog caches the previous
+  // values here so the math stays stable across viewport resizes.
+  // `activeSnapPointOffset` is also cached so the snap-aware
+  // branches of the layout helper see the current snap on every
+  // resize (the registry re-renders on `setActiveSnapPoint`, which
+  // re-attaches the listener with fresh options).
+  keyboardIsOpen: boolean
+  previousDiffFromInitial: number
+  initialDrawerHeight: number
+  activeSnapPointOffset: number
+  // Phase E: `history.scrollRestoration` backup. Set to the prior
+  // value when `preventScrollRestoration: true` flips it to
+  // `'manual'`; cleared in `teardownMount` after restoring. `null`
+  // when the dialog never changed the value (e.g. it was already
+  // `'manual'` at mount time, or `preventScrollRestoration` is off).
+  scrollRestorationBackup: string | null
 }
 
 const hostState = new WeakMap<HTMLElement, DialogMountState>()
@@ -97,7 +199,15 @@ function getHostState(host: HTMLElement): DialogMountState {
       previouslyFocused: null,
       cleanups: [],
       bodyOverflowBackup: null,
-      bodyPaddingRightBackup: null
+      bodyPaddingRightBackup: null,
+      openedAt: null,
+      drag: null,
+      backgroundScale: null,
+      keyboardIsOpen: false,
+      previousDiffFromInitial: 0,
+      initialDrawerHeight: 0,
+      activeSnapPointOffset: 0,
+      scrollRestorationBackup: null
     }
     hostState.set(host, state)
   }
@@ -138,6 +248,157 @@ function setStyle(element: HTMLElement, styles: Record<string, string>) {
 }
 
 /**
+ * Phase C: background-scale pipeline helpers.
+ *
+ * The page wrapper (the element with `data-drawer-wrapper`) gets a
+ * `transform: scale + translate` + `border-radius` + `overflow: hidden`
+ * write during drag, a `reset state` (open-rest) write on release
+ * that the CSS transition carries back to NORMAL, and a deferred
+ * `setTimeout(clear, TRANSITIONS.DURATION * 1000)` that strips the
+ * inline styles so the consumer's CSS takes over.
+ *
+ * The wrapper selector is hard-coded to `data-drawer-wrapper` in
+ * Phase C. A custom selector is a follow-up.
+ */
+
+const WRAPPER_SELECTOR = '[data-drawer-wrapper]'
+
+function getWrapperElement(): HTMLElement | null {
+  if (!canUseDOM()) return null
+  return document.querySelector(WRAPPER_SELECTOR)
+}
+
+function computeBaseScale(direction: CommonDrawerDirection): number {
+  if (typeof window === 'undefined') return 1
+  const viewportSize = isVertical(direction) ? window.innerHeight : window.innerWidth
+  if (viewportSize <= 0) return 1
+  return (viewportSize - NESTED_DISPLACEMENT) / viewportSize
+}
+
+function getTransformOrigin(direction: CommonDrawerDirection): string {
+  return direction === 'top' || direction === 'bottom' ? 'top' : 'left'
+}
+
+/**
+ * Apply the drag-state transform to the wrapper. The drag pipeline
+ * calls this on every `pointermove` (after the content transform is
+ * written). `transition: 'none'` is explicit so the inline transform
+ * change is instant — the CSS transition is only enabled on release
+ * when the wrapper animates back to its rest / cleared state.
+ */
+function applyWrapperDragState({
+  wrapper,
+  baseScale,
+  percentageDragged,
+  direction,
+  setBackgroundColorOnScale
+}: {
+  wrapper: HTMLElement
+  baseScale: number
+  percentageDragged: number
+  direction: CommonDrawerDirection
+  setBackgroundColorOnScale: boolean
+}) {
+  const { scaleValue, borderRadiusValue, translateValue } = getBackgroundDragState({
+    baseScale,
+    percentageDragged
+  })
+  const transform = getScaleTranslateTransform({
+    direction,
+    scale: scaleValue,
+    translate: `${translateValue}px`
+  })
+  set(wrapper, {
+    transform,
+    borderRadius: `${borderRadiusValue}px`,
+    overflow: 'hidden',
+    transformOrigin: getTransformOrigin(direction),
+    transition: 'none',
+    // `setBackgroundColorOnScale` overlays a translucent black
+    // backdrop during drag. The value scales linearly with drag
+    // progress so the user feels the page "dimming" as the drawer
+    // opens. Cleared on release.
+    ...(setBackgroundColorOnScale ? { backgroundColor: `rgba(0, 0, 0, ${percentageDragged * 0.5})` } : {})
+  })
+}
+
+/**
+ * Apply the open-state wrapper transform. Used on the reset / new-snap
+ * release path and on close release (followed by a deferred clear).
+ * The CSS transition properties are written so the browser animates
+ * the property change from the drag state to this rest state.
+ */
+function applyWrapperOpenState({
+  wrapper,
+  direction,
+  baseScale,
+  clearBackgroundColor
+}: {
+  wrapper: HTMLElement
+  direction: CommonDrawerDirection
+  baseScale: number
+  clearBackgroundColor: boolean
+}) {
+  const resetState = getBackgroundResetState({ direction, baseScale })
+  set(wrapper, {
+    ...resetState,
+    transitionProperty: 'transform, border-radius',
+    transitionDuration: `${TRANSITIONS.DURATION}s`,
+    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
+    // `setBackgroundColorOnScale` only writes during drag; on release
+    // we strip the inline color so the consumer's CSS wins back.
+    ...(clearBackgroundColor ? { backgroundColor: '' } : {})
+  })
+}
+
+/**
+ * Schedule the deferred inline-style clear. After
+ * `TRANSITIONS.DURATION` the wrapper is stripped of every inline
+ * style we wrote so it lands in the NORMAL state (consumer's CSS).
+ * Any prior pending clear is cancelled so the wrappers do not pile
+ * up timeouts when the user reopens the drawer within the window.
+ */
+function scheduleWrapperClear(wrapper: HTMLElement, state: DialogMountState) {
+  if (!state.backgroundScale) return
+  const existing = state.backgroundScale.clearTimeout
+  if (existing !== null) {
+    clearTimeout(existing)
+  }
+  const handle = setTimeout(() => {
+    wrapper.removeAttribute('style')
+    if (state.backgroundScale) {
+      state.backgroundScale.clearTimeout = null
+    }
+  }, TRANSITIONS.DURATION * 1000)
+  state.backgroundScale.clearTimeout = handle
+}
+
+function cancelPendingWrapperClear(state: DialogMountState) {
+  const existing = state.backgroundScale?.clearTimeout
+  if (existing !== undefined && existing !== null) {
+    clearTimeout(existing)
+    if (state.backgroundScale) state.backgroundScale.clearTimeout = null
+  }
+}
+
+/**
+ * True when the wrapper currently carries any of the inline styles
+ * the drag pipeline writes. Used by `mountVanillaDialog` to decide
+ * whether a programmatic close needs to animate the wrapper back to
+ * NORMAL (the user dragged, then closed via a non-drag path) or
+ * whether the wrapper is already at rest and should be left alone.
+ */
+function wrapperHasInlineStyles(wrapper: HTMLElement): boolean {
+  return Boolean(
+    wrapper.style.transform ||
+    wrapper.style.borderRadius ||
+    wrapper.style.overflow ||
+    wrapper.style.transformOrigin ||
+    wrapper.style.backgroundColor
+  )
+}
+
+/**
  * Resolve the value of a `VanillaRenderable` into either text, a
  * pre-built element, or a fresh container `<div>` that the caller
  * can mount custom content into.
@@ -162,8 +423,7 @@ function resolveRenderable(value: VanillaRenderable | undefined): {
 
 /**
  * Read the accessible text from a root element by id, falling back
- * to the element's own text. Mirrors the helper that used to live
- * in the React `render.tsx`.
+ * to the element's own text.
  */
 function readAccessibleTextFromRoot(root: HTMLElement | null, elementId?: string): string | undefined {
   if (!root || !elementId) return undefined
@@ -187,6 +447,62 @@ function getActiveSnapPoint(options: VanillaDrawerOptions): CommonDrawerSnapPoin
 }
 
 /**
+ * Resolve the viewport size to feed the snap-point runtime helpers.
+ * Returns `{width: 0, height: 0}` in non-DOM environments (so the
+ * helpers degrade to `NaN` offsets, which the dialog treats as
+ * "no snap points configured" downstream).
+ */
+function getContainerSize() {
+  if (typeof window === 'undefined') {
+    return { width: 0, height: 0 }
+  }
+  return { width: window.innerWidth, height: window.innerHeight }
+}
+
+/**
+ * Invert `getSnapPointOffset` to find the snap-point **value** that
+ * produces the given offset. `getSnapPointReleaseAction` returns the
+ * matched offset; the dialog needs the original value (string /
+ * number) to call `controller.setActiveSnapPoint`.
+ *
+ * The index lookup is exact because the runtime helper stores offsets
+ * as a parallel array — two distinct snap points cannot produce the
+ * same offset unless the viewport is degenerate, in which case
+ * `findIndex` returns `-1` and we return `null` (the caller should
+ * keep the previous active snap).
+ */
+function findSnapPointByOffset(
+  snapPoints: CommonDrawerSnapPoint[] | undefined,
+  snapPointsOffset: number[],
+  targetOffset: number
+): CommonDrawerSnapPoint | null {
+  if (!snapPoints) return null
+  const index = snapPointsOffset.findIndex((offset) => offset === targetOffset)
+  if (index === -1) return null
+  return snapPoints[index] ?? null
+}
+
+/**
+ * Decide whether the overlay should be visible for a given active
+ * snap. Mirrors the original React `use-snap-points` logic: the
+ * overlay is hidden only when the active snap sits BELOW `fadeFromIndex`
+ * AND is not the last snap point. The last snap is always visible
+ * because the user has fully expanded the drawer.
+ */
+function shouldShowSnapOverlay(
+  snapPoints: CommonDrawerSnapPoint[] | undefined,
+  fadeFromIndex: number | undefined,
+  activeSnapPoint: CommonDrawerSnapPoint | null
+): boolean {
+  if (!snapPoints || snapPoints.length === 0) return true
+  if (fadeFromIndex === undefined) return true
+  const activeIndex = snapPoints.findIndex((snap) => snap === activeSnapPoint)
+  if (activeIndex === -1) return false
+  if (activeIndex === snapPoints.length - 1) return true
+  return activeIndex >= fadeFromIndex
+}
+
+/**
  * Tear down the previous dialog mount inside `host`. Removes the
  * overlay / content / trigger and detaches every listener. Also blurs
  * the old trigger so a click that triggered this teardown does not
@@ -201,6 +517,7 @@ function teardownMount(state: DialogMountState) {
   }
   if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
   if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
+  if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
   state.trigger = null
   state.overlay = null
   state.content = null
@@ -208,6 +525,38 @@ function teardownMount(state: DialogMountState) {
   state.title = null
   state.description = null
   state.body = null
+  state.drag = null
+  state.openedAt = null
+  // Phase C: cancel any pending wrapper-clear timer. The wrapper
+  // outlives the dialog mount (it is a page-level element), so the
+  // timer must not fire after the dialog is gone — it would touch
+  // a wrapper that no longer belongs to this drawer and leak the
+  // timeout handle.
+  cancelPendingWrapperClear(state)
+  state.backgroundScale = null
+  // Phase E: restore `history.scrollRestoration` if this dialog
+  // changed it. The backup is the value the page carried before
+  // the dialog mounted (typically `'auto'`); restoring it leaves
+  // the browser in the same state as before the dialog opened.
+  // When the backup is `null` we never wrote to `scrollRestoration`
+  // (the value was already `'manual'`, or `preventScrollRestoration`
+  // was off), so there is nothing to undo.
+  if (state.scrollRestorationBackup !== null) {
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
+    }
+    state.scrollRestorationBackup = null
+  }
+  // Phase E: reset the viewport / mobile-keyboard state. The
+  // listener is already detached (its `removeEventListener` was
+  // pushed onto `state.cleanups` and consumed above), so the
+  // cached diffs cannot influence a future mount. Resetting them
+  // keeps the next mount's first resize call from inheriting
+  // stale values.
+  state.keyboardIsOpen = false
+  state.previousDiffFromInitial = 0
+  state.initialDrawerHeight = 0
+  state.activeSnapPointOffset = 0
   // Restore focus + body scroll lock if we still own them.
   if (state.previouslyFocused && document.contains(state.previouslyFocused)) {
     state.previouslyFocused.focus?.()
@@ -298,11 +647,7 @@ function buildBodyContent(state: DialogMountState, options: VanillaDrawerOptions
   }
 }
 
-function applyOpenState(
-  state: DialogMountState,
-  options: VanillaDrawerOptions,
-  open: boolean
-) {
+function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, open: boolean) {
   if (state.overlay) {
     state.overlay.dataset.state = open ? 'open' : 'closed'
   }
@@ -314,11 +659,17 @@ function applyOpenState(
   }
   const direction = getDirection(options)
   if (state.content) state.content.dataset.drawerDirection = direction
+  const snapPoints = getSnapPoints(options)
+  const activeSnapPoint = getActiveSnapPoint(options)
+  const fadeFromIndex = options.fadeFromIndex
   if (state.overlay) {
-    state.overlay.dataset.drawerSnapPoints = getSnapPoints(options) ? 'true' : 'false'
+    state.overlay.dataset.drawerSnapPoints = snapPoints ? 'true' : 'false'
+    state.overlay.dataset.drawerSnapPointsOverlay = shouldShowSnapOverlay(snapPoints, fadeFromIndex, activeSnapPoint)
+      ? 'true'
+      : 'false'
   }
   if (state.content) {
-    state.content.dataset.drawerSnapPoints = getSnapPoints(options) ? 'true' : 'false'
+    state.content.dataset.drawerSnapPoints = snapPoints ? 'true' : 'false'
     state.content.dataset.drawerDelayedSnapPoints = 'false'
     state.content.dataset.drawerCustomContainer = 'false'
     state.content.dataset.drawerAnimate = 'true'
@@ -384,6 +735,7 @@ function attachListeners(
     onBuiltInTriggerClick?: () => void
     onDragChange?: (percentageDragged: number) => void
     onReleaseChange?: (open: boolean) => void
+    onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
   }
 ) {
   if (state.trigger) {
@@ -440,22 +792,499 @@ function attachListeners(
     state.cleanups.push(() => overlay.removeEventListener('mouseup', onMouseUp))
   }
 
-  // Drag hooks are placeholder — the host will replace this with the
-  // full pointer pipeline in a later iteration.
+  // Drag pipeline:
+  //   Phase A — drag-to-dismiss with no snap points, no scale
+  //     background, no handle cycle, no viewport.
+  //   Phase B — snap-point math when `options.snapPoints` is set:
+  //     the dialog tracks the active snap, positions the drawer at
+  //     `getSnapDragValue(activeOffset, draggedDistance)`, calls
+  //     `getSnapPointReleaseAction` on release, and forwards the
+  //     matched snap value through `onActiveSnapPointChange` so the
+  //     registry can call `controller.setActiveSnapPoint`.
   if (state.content) {
     const content = state.content
-    const onPointerMove = (event: PointerEvent) => {
-      void event
-      // Wire-up lives in the drag/snap modules once the vanilla
-      // pipeline is fully ported.
+    const direction = getDirection(options)
+    const isVerticalAxis = isVertical(direction)
+    const drawerDimension = isVerticalAxis ? window.innerHeight : window.innerWidth
+    const closeThreshold = options.closeThreshold ?? CLOSE_THRESHOLD
+    const scrollLockTimeout = options.scrollLockTimeout ?? SCROLL_LOCK_TIMEOUT
+    const snapPoints = getSnapPoints(options)
+    const activeSnapPoint = getActiveSnapPoint(options)
+    const snapPointsOffset = getSnapPointsOffset({
+      ...(snapPoints !== undefined ? { snapPoints } : {}),
+      direction,
+      containerSize: getContainerSize()
+    })
+    const activeSnapPointIndex = getActiveSnapPointIndex({
+      ...(snapPoints !== undefined ? { snapPoints } : {}),
+      activeSnapPoint
+    })
+    const activeSnapPointOffset =
+      activeSnapPointIndex !== null && activeSnapPointIndex >= 0
+        ? (snapPointsOffset[activeSnapPointIndex] ?? null)
+        : null
+    const initialShouldFade = getShouldFade({
+      ...(snapPoints !== undefined ? { snapPoints } : {}),
+      ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
+      activeSnapPoint
+    })
+
+    const onPointerDown = (rawEvent: Event) => {
+      const event = rawEvent as DragPointerEvent
+      // Capture first so the move/up events keep firing if the
+      // cursor leaves the dialog content mid-drag. `setPointerCapture`
+      // is not implemented in jsdom, so we guard the call.
+      const capture = event.currentTarget?.setPointerCapture
+      if (typeof capture === 'function') {
+        try {
+          capture.call(event.currentTarget, event.pointerId)
+        } catch {
+          // Some test environments do not implement pointer capture.
+          // Real browsers do, so the production drag pipeline keeps
+          // working; the integration test simulates pointer events
+          // directly on the content element.
+        }
+      }
+
+      const metadata: DragTargetMetadata = getDragTargetMetadata(event.target)
+      const timeSinceOpenMs = state.openedAt !== null ? performance.now() - state.openedAt : null
+      // `swipeAmount: null` lets the drag policy treat this as a
+      // fresh pointerdown. The remaining fields (highlighted text,
+      // last-prevented time, direction consistency) are inert here
+      // but the policy signature requires them; we forward the
+      // conservative defaults.
+      const permission = getDragPermission({
+        targetTagName: metadata.targetTagName,
+        hasNoDragAttribute: metadata.hasNoDragAttribute,
+        direction,
+        timeSinceOpenMs,
+        swipeAmount: null,
+        hasHighlightedText: false,
+        timeSinceLastPreventedMs: null,
+        scrollLockTimeout,
+        isDraggingInDirection: false,
+        ancestors: metadata.ancestors
+      })
+
+      if (!permission.allow) {
+        if (permission.updatePreventedAt) {
+          state.drag = state.drag
+            ? { ...state.drag, lastTimeDragPrevented: performance.now() }
+            : {
+                pointerStart: { x: event.clientX, y: event.clientY },
+                pointerStartTimeStamp: event.timeStamp || performance.now(),
+                startedAt: performance.now(),
+                draggedDistance: 0,
+                isDraggingDown: false,
+                snapPointOffset: 0,
+                lastTimeDragPrevented: performance.now(),
+                pointerId: event.pointerId,
+                activeSnapPointOffset,
+                activeSnapPointIndex,
+                snapPointsOffset,
+                shouldFade: initialShouldFade
+              }
+        }
+        return
+      }
+
+      state.drag = {
+        pointerStart: { x: event.clientX, y: event.clientY },
+        pointerStartTimeStamp: event.timeStamp || performance.now(),
+        startedAt: performance.now(),
+        draggedDistance: 0,
+        isDraggingDown: false,
+        snapPointOffset: 0,
+        lastTimeDragPrevented: 0,
+        pointerId: event.pointerId,
+        activeSnapPointOffset,
+        activeSnapPointIndex,
+        snapPointsOffset,
+        shouldFade: initialShouldFade
+      }
+
+      const onPointerMove = (moveRaw: Event) => {
+        const moveEvent = moveRaw as DragPointerEvent
+        const drag = state.drag
+        if (!drag) return
+        const currentPointer = isVerticalAxis ? moveEvent.clientY : moveEvent.clientX
+        const draggedDistance = getDraggedDistance({
+          pointerStart: isVerticalAxis ? drag.pointerStart.y : drag.pointerStart.x,
+          currentPointer,
+          direction
+        })
+        const absDraggedDistance = Math.abs(draggedDistance)
+        const isDraggingDown =
+          direction === 'bottom' || direction === 'right' ? draggedDistance < 0 : draggedDistance > 0
+
+        // Phase B: when snap points are configured, the inline
+        // transform follows `getSnapDragValue` (offset, not value).
+        // The percentage reported to the parent is the snap-point
+        // percentage so the nested-drawer transform tracks the
+        // active snap rather than the raw pixel drag.
+        const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
+        const snapPointPercentageDragged = hasSnapPoints
+          ? getSnapPointPercentageDragged({
+              ...(snapPoints !== undefined ? { snapPoints } : {}),
+              activeSnapPointIndex: drag.activeSnapPointIndex,
+              snapPointsOffset: drag.snapPointsOffset,
+              ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
+              shouldFade: drag.shouldFade,
+              absDraggedDistance,
+              isDraggingDown
+            })
+          : null
+        const { percentageDragged } = getDragPercentage({
+          draggedDistance,
+          drawerDimension,
+          snapPointPercentageDragged
+        })
+
+        state.drag = {
+          ...drag,
+          draggedDistance,
+          isDraggingDown
+        }
+
+        // Phase A: the snap-free path writes
+        // `translate(0, draggedDistance * -1)` (the inverse sign
+        // makes "drag down" move the drawer down, matching the
+        // finger). Phase B replaces this with the snap drag value.
+        const draggableOffset = hasSnapPoints
+          ? getSnapDragValue({
+              activeSnapPointOffset: drag.activeSnapPointOffset ?? 0,
+              draggedDistance,
+              direction
+            })
+          : direction === 'bottom' || direction === 'right'
+            ? -draggedDistance
+            : draggedDistance
+        set(content, {
+          transform: getAxisAwareTranslate(direction, draggableOffset),
+          transition: 'none'
+        })
+
+        // Phase B: fade the overlay while dragging between snap
+        // points when the active snap is at or one-below the
+        // configured `fadeFromIndex`. The original React
+        // implementation writes `1 - percentageDragged` so the
+        // overlay lightens as the user drags toward the smaller
+        // snap. Outside the fade window the CSS rule keeps the
+        // overlay hidden; we skip the inline write so the CSS
+        // transition stays in charge.
+        if (
+          hasSnapPoints &&
+          state.overlay &&
+          (drag.shouldFade || drag.activeSnapPointIndex === (options.fadeFromIndex ?? -1) - 1)
+        ) {
+          set(state.overlay, {
+            opacity: `${1 - percentageDragged}`,
+            transition: 'none'
+          })
+        }
+
+        // Phase C: scale the page wrapper along the drag. We look
+        // up the wrapper on every move (cheap query) and forward
+        // the percentage to `applyWrapperDragState` which writes
+        // `transition: 'none'` so the inline transform is instant
+        // and tracks the finger. The wrapper's CSS transition is
+        // re-enabled on release by the release handlers below.
+        if (options.shouldScaleBackground && state.backgroundScale) {
+          const wrapper = getWrapperElement()
+          if (wrapper) {
+            applyWrapperDragState({
+              wrapper,
+              baseScale: state.backgroundScale.baseScale,
+              percentageDragged,
+              direction,
+              setBackgroundColorOnScale: options.setBackgroundColorOnScale === true
+            })
+          }
+        }
+
+        callbacks.onDragChange?.(percentageDragged)
+      }
+
+      const onPointerUp = (upRaw: Event) => {
+        const upEvent = upRaw as DragPointerEvent
+        const drag = state.drag
+        state.drag = null
+        content.removeEventListener('pointermove', onPointerMove)
+        content.removeEventListener('pointerup', onPointerUp)
+        if (!drag) return
+
+        const releasedPointer = isVerticalAxis ? upEvent.clientY : upEvent.clientX
+        const draggedDistance = getDraggedDistance({
+          pointerStart: isVerticalAxis ? drag.pointerStart.y : drag.pointerStart.x,
+          currentPointer: releasedPointer,
+          direction
+        })
+        const now = performance.now()
+        const velocity = Math.abs(draggedDistance) / Math.max(now - drag.startedAt, 1)
+
+        const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
+
+        if (hasSnapPoints) {
+          // Phase B release: delegate to `getSnapPointReleaseAction`.
+          // The helper decides whether the gesture should close,
+          // jump to a different snap, or settle on the closest one.
+          // The target offset is mapped back to a snap-point value
+          // via `findSnapPointByOffset`; on `close` we just call
+          // `onOpenChange(false)`. `snapToSequentialPoint` is
+          // forwarded so high-velocity flings stay one snap at a
+          // time when the consumer opts in.
+          const release = getSnapPointReleaseAction({
+            ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
+            direction,
+            activeSnapPointOffset: drag.activeSnapPointOffset,
+            activeSnapPointIndex: drag.activeSnapPointIndex,
+            snapPointsOffset: drag.snapPointsOffset,
+            snapPointsCount: drag.snapPointsOffset.length,
+            draggedDistance,
+            velocity,
+            dismissible: options.dismissible !== false,
+            ...(options.snapToSequentialPoint !== undefined
+              ? { snapToSequentialPoint: options.snapToSequentialPoint }
+              : {}),
+            velocityThreshold: VELOCITY_THRESHOLD,
+            viewportSize: drawerDimension
+          })
+
+          if (release.type === 'close') {
+            set(content, { transition: 'none' })
+            // Phase C: drive the wrapper back to its rest state
+            // with the CSS transition enabled, then schedule the
+            // deferred inline-style clear. The re-render triggered
+            // by `onOpenChange(false)` will hit `mountVanillaDialog`
+            // which re-asserts the same reset state (the timer
+            // handle is reused so we only clear once).
+            if (options.shouldScaleBackground && state.backgroundScale) {
+              const wrapper = getWrapperElement()
+              if (wrapper) {
+                applyWrapperOpenState({
+                  wrapper,
+                  direction,
+                  baseScale: state.backgroundScale.baseScale,
+                  clearBackgroundColor: options.setBackgroundColorOnScale === true
+                })
+                scheduleWrapperClear(wrapper, state)
+              }
+            }
+            callbacks.onOpenChange(false)
+            callbacks.onReleaseChange?.(false)
+            return
+          }
+
+          if (release.type === 'snap' && typeof release.targetOffset === 'number') {
+            const matchedSnapPoint = findSnapPointByOffset(snapPoints, drag.snapPointsOffset, release.targetOffset)
+            if (matchedSnapPoint !== null) {
+              // Forward the new active snap to the registry, which
+              // calls `controller.setActiveSnapPoint` and re-renders
+              // the dialog. The re-render refreshes `--initial-transform`
+              // so the drawer sits at the new snap. We also write
+              // the inline transform as a fallback for the
+              // pre-render frame.
+              set(content, {
+                transform: getAxisAwareTranslate(direction, release.targetOffset),
+                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+              })
+              // Phase C: settle the wrapper on its rest state with
+              // the CSS transition enabled so the visual change
+              // from the drag state to `baseScale` is animated.
+              if (options.shouldScaleBackground && state.backgroundScale) {
+                const wrapper = getWrapperElement()
+                if (wrapper) {
+                  applyWrapperOpenState({
+                    wrapper,
+                    direction,
+                    baseScale: state.backgroundScale.baseScale,
+                    clearBackgroundColor: options.setBackgroundColorOnScale === true
+                  })
+                }
+              }
+              callbacks.onActiveSnapPointChange?.(matchedSnapPoint)
+            } else {
+              // No matching snap (degenerate viewport). Reset the
+              // inline transform so the drawer stays at the active
+              // snap.
+              set(content, {
+                transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
+                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+              })
+              if (options.shouldScaleBackground && state.backgroundScale) {
+                const wrapper = getWrapperElement()
+                if (wrapper) {
+                  applyWrapperOpenState({
+                    wrapper,
+                    direction,
+                    baseScale: state.backgroundScale.baseScale,
+                    clearBackgroundColor: options.setBackgroundColorOnScale === true
+                  })
+                }
+              }
+            }
+            callbacks.onReleaseChange?.(true)
+            return
+          }
+
+          // `type: 'noop'` — drag was inconclusive (no snap points,
+          // no offset target). Reset the inline transform so the
+          // drawer stays at the active snap.
+          set(content, {
+            transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
+            transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+          })
+          if (options.shouldScaleBackground && state.backgroundScale) {
+            const wrapper = getWrapperElement()
+            if (wrapper) {
+              applyWrapperOpenState({
+                wrapper,
+                direction,
+                baseScale: state.backgroundScale.baseScale,
+                clearBackgroundColor: options.setBackgroundColorOnScale === true
+              })
+            }
+          }
+          callbacks.onReleaseChange?.(true)
+          return
+        }
+
+        // Phase A release: no snap points, delegate to the
+        // dismissible release helper.
+        const release = getDismissibleReleaseResult({
+          direction,
+          distMoved: draggedDistance,
+          velocity,
+          velocityThreshold: VELOCITY_THRESHOLD,
+          swipeAmount: draggedDistance,
+          drawerDimension,
+          closeThreshold
+        })
+
+        if (release.action === 'close') {
+          set(content, { transition: 'none' })
+          // Phase C: drive the wrapper back to its rest state with
+          // the CSS transition enabled, then schedule the deferred
+          // clear. The re-render via `onOpenChange(false)` will
+          // re-enter `mountVanillaDialog` which re-asserts the same
+          // reset state (the timer is reused, so we only clear once).
+          if (options.shouldScaleBackground && state.backgroundScale) {
+            const wrapper = getWrapperElement()
+            if (wrapper) {
+              applyWrapperOpenState({
+                wrapper,
+                direction,
+                baseScale: state.backgroundScale.baseScale,
+                clearBackgroundColor: options.setBackgroundColorOnScale === true
+              })
+              scheduleWrapperClear(wrapper, state)
+            }
+          }
+          callbacks.onOpenChange(false)
+          callbacks.onReleaseChange?.(false)
+          return
+        }
+
+        // Snap back to the open position. The CSS provides the
+        // `transform` transition, but the dialog itself is re-mounted
+        // by the registry on state change; the inline transition here
+        // covers the in-place reset path (no re-render because the
+        // drawer stays open).
+        set(content, {
+          transform: getAxisAwareTranslate(direction, 0),
+          transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+        })
+        // Phase C: settle the wrapper on its rest state with the
+        // CSS transition enabled so the visual change from the drag
+        // state to `baseScale` is animated.
+        if (options.shouldScaleBackground && state.backgroundScale) {
+          const wrapper = getWrapperElement()
+          if (wrapper) {
+            applyWrapperOpenState({
+              wrapper,
+              direction,
+              baseScale: state.backgroundScale.baseScale,
+              clearBackgroundColor: options.setBackgroundColorOnScale === true
+            })
+          }
+        }
+        callbacks.onReleaseChange?.(true)
+      }
+
+      content.addEventListener('pointermove', onPointerMove)
+      content.addEventListener('pointerup', onPointerUp)
+      state.cleanups.push(() => {
+        content.removeEventListener('pointermove', onPointerMove)
+        content.removeEventListener('pointerup', onPointerUp)
+      })
     }
-    content.addEventListener('pointermove', onPointerMove)
-    state.cleanups.push(() => content.removeEventListener('pointermove', onPointerMove))
+
+    content.addEventListener('pointerdown', onPointerDown)
+    state.cleanups.push(() => content.removeEventListener('pointerdown', onPointerDown))
   }
-  void callbacks.onDragChange
-  void callbacks.onReleaseChange
-  void isVertical
-  void TRANSITIONS
+
+  // Phase D: handle cycle. When the consumer enables
+  // `handleOnly: true` or `showHandle: true`, the dialog mounts a
+  // built-in `[data-drawer-handle]` element. Clicking it should
+  // advance the drawer to the next snap point, or close it (when
+  // `dismissible: true`) at the last snap. The math is delegated
+  // to `getNextHandleState` (pure helper in `runtime/handle.ts`);
+  // the dialog only dispatches the result.
+  //
+  // Preconditions (enforced here, not in the helper):
+  //   1. The drawer must be open. The handle element is in the
+  //      DOM at all times (the CSS does not `display: none` it on
+  //      close), so a click on a closed drawer's handle would
+  //      otherwise fire. We read the content's `data-state` (set
+  //      by `applyOpenState`) to gate the dispatch.
+  //   2. Drag-priority. While `state.drag` is non-null the click
+  //      must not cycle. We pass `isDragging: state.drag !== null`
+  //      to the helper, which returns `{ type: 'noop' }`.
+  //
+  // Long-press is intentionally NOT implemented in Phase D
+  // (documented in the deliverable). `shouldCancelInteraction` is
+  // hard-coded to `false`. A future phase can wire a pointerdown
+  // timer on the handle that flips it to `true` before the click
+  // handler fires.
+  if (state.handle) {
+    const handle = state.handle
+    const onHandleClick = () => {
+      if (state.content?.dataset.state !== 'open') return
+
+      const handleSnapPoints = getSnapPoints(options)
+      const handleActiveSnapPoint = getActiveSnapPoint(options)
+      const result = getNextHandleState({
+        isDragging: state.drag !== null,
+        preventCycle: options.preventCycle === true,
+        shouldCancelInteraction: false,
+        ...(handleSnapPoints !== undefined ? { snapPoints: handleSnapPoints } : {}),
+        activeSnapPoint: handleActiveSnapPoint,
+        dismissible: options.dismissible !== false
+      })
+
+      if (result.type === 'close') {
+        callbacks.onOpenChange(false)
+        return
+      }
+      if (result.type === 'snap') {
+        // `result.snapPoint` is `null` when the helper cycles past
+        // the last snap with `dismissible: false` (length-1 snap
+        // list, or a last-snap where the next index is out of
+        // bounds). Forward `null` so the registry clears the
+        // active snap; the drawer stays open and renders the
+        // first snap's offset (via `getActiveSnapPoint`'s fallback
+        // in `core/index.ts`).
+        callbacks.onActiveSnapPointChange?.(result.snapPoint)
+        return
+      }
+      // `type: 'noop'` — drag in progress, `preventCycle` is on,
+      // no snap points configured with `dismissible: true`, or
+      // the active snap is not in the snap-points list. Do
+      // nothing.
+    }
+    handle.addEventListener('click', onHandleClick)
+    state.cleanups.push(() => handle.removeEventListener('click', onHandleClick))
+  }
 }
 
 /**
@@ -465,17 +1294,72 @@ function attachListeners(
  */
 export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   if (!canUseDOM()) return
-  const { host, id, options, open, onOpenChange, onBuiltInTriggerMouseDown, onBuiltInTriggerClick, onDragChange, onReleaseChange } = dialogOptions
+  const {
+    host,
+    id,
+    options,
+    open,
+    onOpenChange,
+    onBuiltInTriggerMouseDown,
+    onBuiltInTriggerClick,
+    onDragChange,
+    onReleaseChange,
+    onActiveSnapPointChange
+  } = dialogOptions
   const state = getHostState(host)
 
   // Tear down any prior mount before building the new one.
   teardownMount(state)
 
+  // Phase C: programmatic close path. When the drawer is being
+  // mounted with `open=false` AND the page wrapper still carries
+  // any of the inline styles the drag pipeline writes, we need to
+  // animate the wrapper back to NORMAL. The drag-release close
+  // path in `onPointerUp` already does this; this branch covers
+  // the case where the consumer closed the drawer via a non-drag
+  // path (e.g. clicking a custom close button that calls
+  // `controller.setOpen(false)`). When the wrapper is already
+  // clean we leave it alone — the spec says programmatic
+  // open/close must not change the wrapper's visual state.
+  if (!open && options.shouldScaleBackground) {
+    const wrapper = getWrapperElement()
+    if (wrapper && wrapperHasInlineStyles(wrapper)) {
+      const baseScale = computeBaseScale(getDirection(options))
+      state.backgroundScale = { baseScale, clearTimeout: null }
+      applyWrapperOpenState({
+        wrapper,
+        direction: getDirection(options),
+        baseScale,
+        clearBackgroundColor: options.setBackgroundColorOnScale === true
+      })
+      scheduleWrapperClear(wrapper, state)
+    }
+  }
+
+  // Track when the drawer became open so the drag policy can enforce
+  // the 500 ms grace period (the open animation is still running).
+  if (open) {
+    state.openedAt = performance.now()
+  }
+
+  // Phase C: capture the baseScale at open time. The drag pipeline
+  // reads `state.backgroundScale.baseScale` on every pointermove, so
+  // we need it populated before the first pointerdown can fire.
+  // Per spec, the dialog stays NORMAL at open (no inline wrapper
+  // styles) — the rest state is applied on the first drag move.
+  if (open && options.shouldScaleBackground) {
+    state.backgroundScale = {
+      baseScale: computeBaseScale(getDirection(options)),
+      clearTimeout: null
+    }
+  }
+
   const direction = getDirection(options)
   const snapPoints = getSnapPoints(options)
   const activeSnapPoint = getActiveSnapPoint(options)
   const shouldRenderHandle = Boolean(options.handleOnly || options.showHandle)
-  const shouldRenderVanillaContent = options.title !== undefined || options.description !== undefined || options.content !== undefined
+  const shouldRenderVanillaContent =
+    options.title !== undefined || options.description !== undefined || options.content !== undefined
   const shouldRenderOverlay = options.modal !== false
 
   // --- Trigger button (inside the host) -------------------------------
@@ -491,11 +1375,12 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
 
   // --- Overlay -------------------------------------------------------
   if (shouldRenderOverlay) {
+    const overlayShouldShow = shouldShowSnapOverlay(snapPoints, options.fadeFromIndex, activeSnapPoint)
     const overlay = createEl('div', {
       'data-drawer-overlay': '',
       'data-state': open ? 'open' : 'closed',
       'data-drawer-snap-points': snapPoints ? 'true' : 'false',
-      'data-drawer-snap-points-overlay': 'false',
+      'data-drawer-snap-points-overlay': overlayShouldShow ? 'true' : 'false',
       'data-drawer-animate': 'true'
     })
     if (options.overlayClassName) overlay.className = options.overlayClassName
@@ -522,8 +1407,19 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     content.id = id
     if (options.ariaLabel) content.setAttribute('aria-label', options.ariaLabel)
     if (snapPoints) {
+      // Write the active snap's RUNTIME offset (the same value the
+      // drag pipeline uses for `getSnapDragValue`). The CSS reads
+      // `--initial-transform` to drive the open-state transform, so
+      // keeping it in offset units ensures the inline drag transform
+      // and the at-rest transform stay in the same coordinate system.
+      // The default `100%` in the CSS rule is the closed-state fallback
+      // and is harmless when a numeric offset is present.
       const initialOffset = activeSnapPoint
-        ? getSnapPointOffsetPx(activeSnapPoint, direction, host.ownerDocument)
+        ? getSnapPointOffset({
+            snapPoint: activeSnapPoint,
+            direction,
+            containerSize: getContainerSize()
+          })
         : 0
       content.style.setProperty('--initial-transform', `${initialOffset}px`)
     }
@@ -578,7 +1474,11 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     }
 
     const contentRoot =
-      options.content instanceof HTMLElement ? options.content : typeof options.content === 'function' ? options.content() : undefined
+      options.content instanceof HTMLElement
+        ? options.content
+        : typeof options.content === 'function'
+          ? options.content()
+          : undefined
     buildTitleContent(state, options, contentRoot instanceof HTMLElement ? contentRoot : undefined)
     buildBodyContent(state, options)
   }
@@ -588,10 +1488,130 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
     ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
     ...(onDragChange !== undefined ? { onDragChange } : {}),
-    ...(onReleaseChange !== undefined ? { onReleaseChange } : {})
+    ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
+    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
   })
 
   applyOpenState(state, options, open)
+
+  // Phase E: `preventScrollRestoration`. While the drawer is open we
+  // disable the browser's automatic scroll restoration so closing
+  // the drawer does not jump the page back to its prior scroll
+  // position. The value is restored in `teardownMount` from
+  // `state.scrollRestorationBackup`. The guard `backup === null`
+  // makes the open-then-re-open path idempotent: a second mount
+  // (e.g. after `setActiveSnapPoint`) sees the backup already
+  // populated and skips the second `scrollRestoration` write, while
+  // the prior teardown has already cleared the backup.
+  if (open && options.preventScrollRestoration && typeof window !== 'undefined' && window.history) {
+    if (state.scrollRestorationBackup === null) {
+      const current = window.history.scrollRestoration
+      if (current !== 'manual') {
+        state.scrollRestorationBackup = current
+        window.history.scrollRestoration = 'manual'
+      }
+    }
+  }
+
+  // Phase E: viewport / mobile-keyboard pipeline. When the consumer
+  // sets `repositionInputs: true` (reposition the drawer so focused
+  // inputs stay above the keyboard) or `fixed: true` (shrink the
+  // drawer height instead of repositioning), the dialog attaches a
+  // `window.visualViewport.resize` listener that recomputes the
+  // drawer's `style.bottom` and `style.height` via
+  // `getViewportDrivenDrawerLayout` (the pure math in
+  // `runtime/viewport.ts`).
+  //
+  // Lifecycle:
+  //   - Attaches only when the drawer is `open` (closing detaches
+  //     the listener via the `state.cleanups` teardown array).
+  //   - Guards on `window.visualViewport` (jsdom + desktop do not
+  //     expose it). When the API is absent, the layout is the
+  //     default CSS-driven position and no math runs.
+  //   - Re-attaches on every mount. The registry re-renders the
+  //     dialog on `setActiveSnapPoint` / `setOpen`, so the listener
+  //     closure always sees the current `options.activeSnapPoint`.
+  if (open && (options.repositionInputs || options.fixed) && typeof window !== 'undefined' && window.visualViewport) {
+    const visualViewport = window.visualViewport
+    const listenerDirection = getDirection(options)
+    // Phase E scope limitation: the original `isMobileFirefox` helper
+    // lived in `src/browser-utils.ts` (deleted earlier this session).
+    // The cleanest in-line replacement is a user-agent regex. A
+    // dedicated helper is a follow-up.
+    const listenerIsMobileFirefox = /firefox|fxios/i.test(navigator.userAgent)
+
+    const onVisualViewportResize = () => {
+      const contentEl = state.content
+      if (!contentEl) return
+
+      // Re-read the active snap from the closure-captured `options`
+      // so a snap change that did not re-render (e.g. the registry
+      // patched `runtime.options` in place) still surfaces here.
+      // The registry re-renders on `setActiveSnapPoint`, so a
+      // fresh listener is attached with the new value in the
+      // common case; this read is the safety net.
+      const snapPoints = getSnapPoints(options)
+      const activeSnapPoint = getActiveSnapPoint(options)
+      let snapPointOffset = 0
+      if (snapPoints && activeSnapPoint !== null) {
+        snapPointOffset = getSnapPointOffset({
+          snapPoint: activeSnapPoint,
+          direction: listenerDirection,
+          containerSize: getContainerSize()
+        })
+      }
+      state.activeSnapPointOffset = snapPointOffset
+
+      const verticalAxis = isVertical(listenerDirection)
+      const totalSize = verticalAxis ? window.innerHeight : window.innerWidth
+      const drawerSize = verticalAxis ? contentEl.offsetHeight : contentEl.offsetWidth
+      // For a `bottom` / `right` drawer the natural top offset is
+      // `total - drawer`; for `top` / `left` it is `0`. The math
+      // helper uses this in the `isTallEnough` branch to compute
+      // the new drawer height when the visual viewport shrinks.
+      const offsetFromTop =
+        listenerDirection === 'bottom' || listenerDirection === 'right' ? Math.max(totalSize - drawerSize, 0) : 0
+      const visualViewportSize = verticalAxis ? visualViewport.height : visualViewport.width
+
+      const layout = getViewportDrivenDrawerLayout({
+        visualViewportHeight: visualViewportSize,
+        totalHeight: totalSize,
+        drawerHeight: drawerSize,
+        offsetFromTop,
+        fixed: options.fixed === true,
+        previousDiffFromInitial: state.previousDiffFromInitial,
+        keyboardIsOpen: state.keyboardIsOpen,
+        initialDrawerHeight: state.initialDrawerHeight,
+        activeSnapPointOffset: snapPointOffset,
+        isMobileFirefox: listenerIsMobileFirefox,
+        windowTopOffset: WINDOW_TOP_OFFSET
+      })
+
+      state.keyboardIsOpen = layout.nextKeyboardIsOpen
+      state.previousDiffFromInitial = layout.diffFromInitial
+      state.initialDrawerHeight = layout.nextInitialDrawerHeight
+
+      // `repositionInputs: true` writes `bottom` (the keyboard pushes
+      // the drawer up). `fixed: true` only writes `height` (the
+      // drawer's height shrinks by the keyboard height). The runtime
+      // helper always returns a `bottom`; the dialog decides whether
+      // to forward it. `height` may be `null` (no layout override
+      // needed) — in that case we leave the CSS-driven height alone.
+      const layoutStyles: Record<string, string> = {}
+      if (options.repositionInputs) {
+        layoutStyles.bottom = layout.bottom
+      }
+      if (layout.height !== null) {
+        layoutStyles.height = layout.height
+      }
+      set(contentEl, layoutStyles)
+    }
+
+    visualViewport.addEventListener('resize', onVisualViewportResize)
+    state.cleanups.push(() => {
+      visualViewport.removeEventListener('resize', onVisualViewportResize)
+    })
+  }
 
   if (open && options.modal !== false) {
     state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
@@ -601,18 +1621,31 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
 }
 
 /**
- * Convert a snap point (number, percentage-as-number, or px string)
- * to a pixel offset from the viewport edge along the active axis.
+ * Phase E: destroy-time teardown hook. The host module calls this
+ * before removing the host element from the DOM so the dialog can
+ * run the cleanup paths that `teardownMount` would normally run on
+ * the next `mountVanillaDialog` call.
+ *
+ * The `mountVanillaDialog` -> `teardownMount` pair covers the open
+ * -> close lifecycle (close re-mounts the dialog with `open: false`,
+ * which triggers teardown at the top of the next mount). The
+ * destroy path (`destroyDrawer` / `destroyDrawers` in the registry)
+ * skips that re-mount — it removes the host element directly. This
+ * hook bridges the gap: it runs the same teardown the close path
+ * would, so:
+ *   - the `visualViewport.resize` listener is detached (its
+ *     `removeEventListener` is in the cleanups array);
+ *   - `history.scrollRestoration` is restored from the backup
+ *     captured when the drawer opened with
+ *     `preventScrollRestoration: true`;
+ *   - the cached viewport / keyboard state is reset.
+ *
+ * The host is unchanged by the call (no element is removed here);
+ * the host module owns the DOM removal.
  */
-function getSnapPointOffsetPx(snap: CommonDrawerSnapPoint, direction: CommonDrawerDirection, doc: Document | null): number {
-  const viewport = doc?.defaultView
-  const isVerticalAxis = isVertical(direction)
-  const dimension = viewport ? (isVerticalAxis ? viewport.innerHeight : viewport.innerWidth) : 0
-  if (typeof snap === 'string') {
-    const parsed = parseFloat(snap)
-    if (snap.endsWith('%')) return (parsed / 100) * dimension
-    return parsed
+export function destroyVanillaDialog(host: HTMLElement): void {
+  const state = hostState.get(host)
+  if (state) {
+    teardownMount(state)
   }
-  if (snap <= 1) return snap * dimension
-  return snap
 }

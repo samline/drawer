@@ -1,12 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
-import { getDismissibleReleaseResult, getReleaseAction, shouldPreventFocusOnRelease } from '../src/runtime/release';
+import { getDismissibleReleaseResult, getReleaseAction, shouldPreventFocusOnRelease } from '../src/runtime/release'
 
 describe('release runtime helpers', () => {
   it('marks high-velocity releases to prevent focus', () => {
-    expect(shouldPreventFocusOnRelease(0.1)).toBe(true);
-    expect(shouldPreventFocusOnRelease(0.01)).toBe(false);
-  });
+    expect(shouldPreventFocusOnRelease(0.1)).toBe(true)
+    expect(shouldPreventFocusOnRelease(0.01)).toBe(false)
+  })
 
   it('resets when released toward expanded state', () => {
     expect(
@@ -17,10 +17,10 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25,
-      }),
-    ).toBe('reset');
-  });
+        closeThreshold: 0.25
+      })
+    ).toBe('reset')
+  })
 
   it('closes when release crosses the threshold toward dismissal', () => {
     expect(
@@ -31,10 +31,10 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 70,
         drawerDimension: 200,
-        closeThreshold: 0.25,
-      }),
-    ).toBe('close');
-  });
+        closeThreshold: 0.25
+      })
+    ).toBe('close')
+  })
 
   it('resets when release does not cross the closing criteria', () => {
     expect(
@@ -45,10 +45,10 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25,
-      }),
-    ).toBe('reset');
-  });
+        closeThreshold: 0.25
+      })
+    ).toBe('reset')
+  })
 
   it('returns the combined dismissible release result', () => {
     expect(
@@ -59,13 +59,13 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 70,
         drawerDimension: 200,
-        closeThreshold: 0.25,
-      }),
+        closeThreshold: 0.25
+      })
     ).toEqual({
       action: 'close',
       shouldPreventFocus: true,
-      nextOpen: false,
-    });
+      nextOpen: false
+    })
 
     expect(
       getDismissibleReleaseResult({
@@ -75,12 +75,12 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25,
-      }),
+        closeThreshold: 0.25
+      })
     ).toEqual({
       action: 'reset',
       shouldPreventFocus: false,
-      nextOpen: true,
-    });
-  });
-});
+      nextOpen: true
+    })
+  })
+})

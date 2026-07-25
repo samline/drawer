@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
-import { getSnapPointReleaseAction } from '../src/runtime/release';
+import { getSnapPointReleaseAction } from '../src/runtime/release'
 
 describe('snap release runtime helpers', () => {
   it('closes on a high-velocity dismissing release when dismissible', () => {
@@ -17,10 +17,10 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'close' });
-  });
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'close' })
+  })
 
   it('snaps back to the first point on a high-velocity dismissing release when not dismissible', () => {
     expect(
@@ -36,10 +36,10 @@ describe('snap release runtime helpers', () => {
         dismissible: false,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'snap', targetOffset: 680 });
-  });
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'snap', targetOffset: 680 })
+  })
 
   it('snaps to the last point on a high-velocity expanding release', () => {
     expect(
@@ -55,10 +55,10 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'snap', targetOffset: 0 });
-  });
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'snap', targetOffset: 0 })
+  })
 
   it('steps to the next snap point on a moderate directional release', () => {
     expect(
@@ -74,10 +74,10 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'snap', targetOffset: 0 });
-  });
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'snap', targetOffset: 0 })
+  })
 
   it('falls back to the closest snap point when velocity is low', () => {
     expect(
@@ -93,10 +93,10 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'snap', targetOffset: 400 });
-  });
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'snap', targetOffset: 400 })
+  })
 
   it('returns noop when snap release inputs are incomplete', () => {
     expect(
@@ -111,8 +111,8 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800,
-      }),
-    ).toEqual({ type: 'noop' });
-  });
-});
+        viewportSize: 800
+      })
+    ).toEqual({ type: 'noop' })
+  })
+})
