@@ -3,28 +3,19 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDrawer, destroyDrawers } from '../src'
 
 /**
- * Regression test for the close animation.
+ * Regression test for the close animation, post-F1 (1:1 with vaul
+ * upstream). The previous fix (F1b) used a JS-side
+ * `data-drawer-closing` flag to override the static off-screen
+ * transform during the close animation. The new approach is 1:1
+ * with vaul: the close path drives the cascade `transform` from 0
+ * (open) to 100 % (closed) and the base `transition: transform 0.5s`
+ * interpolates between them. The CSS `slideTo{X}` animation now has
+ * an explicit `from: 0` so it acts as a `forwards` fill-mode anchor
+ * for the post-transition cascade, not the dynamic slide.
  *
- * Bug (v3.0.0-beta.3): closing a drawer did not play the CSS
- * `slideTo{X}` animation — the drawer vanished instantly. The root
- * cause was that `mountVanillaDialog` ALWAYS called `teardownMount`
- * before re-mounting, so the close path went through:
- *   1. `applyOpenState(false)` — flips `data-state` to "closed"
- *   2. `teardownMount` — REMOVES the open elements from the DOM
- *   3. New mount — creates fresh elements with `data-state="closed"`
- *      AND the static off-screen `transform` rule applies → drawer is
- *      off-screen from the very first frame.
- * The CSS animation never plays because the open element is destroyed
- * before it can transition.
- *
- * Fix: when the existing mount is already in `data-state="open"` and
- * the new state is just `false`, keep the DOM and flip `data-state`
- * with a transient `data-drawer-closing` flag. The flag tells the
- * CSS to drop the static off-screen transform for the duration of
- * the animation, so `slideTo{X}` has a clean start frame (the open
- * position). After `animationend` the flag is cleared (the animation's
- * `forwards` fill-mode is already holding the closed position) and
- * the DOM is finally torn down.
+ * The DOM stays in the tree for 600 ms (animation duration + 100 ms
+ * safety) and is removed by a setTimeout. No JS-side flag, no inline
+ * transform clear, no animationend listener.
  */
 
 describe('close animation', () => {
@@ -38,7 +29,7 @@ describe('close animation', () => {
     document.body.innerHTML = ''
   })
 
-  it('sets data-drawer-closing on the open→close transition so the slide plays', () => {
+  it('keeps the DOM in place and flips data-state to "closed" so the CSS transition can interpolate', () => {
     const drawer = createDrawer({
       id: 'close-anim',
       direction: 'right',
@@ -53,20 +44,16 @@ describe('close animation', () => {
 
     drawer.setOpen(false)
 
-    // The drawer is still mounted (the close animation needs it) but
-    // data-state has flipped to "closed" and data-drawer-closing is
-    // set so the static off-screen transform is overridden.
+    // F1: 1:1 with vaul. The drawer is still mounted (the close
+    // transition needs the element to interpolate the cascade
+    // `transform` change) but `data-state` has flipped to "closed".
+    // No `data-drawer-closing` flag — the base `transition:
+    // transform` does the work.
     expect(content.dataset.state).toBe('closed')
-    expect(content.dataset.drawerClosing).toBe('true')
+    expect(content.dataset.drawerClosing).toBeUndefined()
   })
 
   it('does not set data-drawer-closing when the dialog is mounted closed from the start (no flicker)', () => {
-    // A drawer created with `open: false` (or never opened) stays
-    // off-screen via the static transform rule. The
-    // `data-drawer-closing` flag is only set during the open→close
-    // transition; it must NOT be set on the initial mount because
-    // that would override the static transform and reintroduce the
-    // flicker bug fixed in 3038ab4.
     const drawer = createDrawer({
       id: 'init-closed',
       direction: 'right',
@@ -81,9 +68,6 @@ describe('close animation', () => {
   })
 
   it('the open animation (slideFromRight) still plays on the initial mount', () => {
-    // Sanity check: the original "open" animation is unaffected.
-    // The drawer is created closed; `setOpen(true)` flips it to
-    // open and the slide-from animation runs.
     const drawer = createDrawer({
       id: 'open-anim',
       direction: 'right',
@@ -96,40 +80,16 @@ describe('close animation', () => {
     expect(before.dataset.drawerClosing).toBeUndefined()
 
     drawer.setOpen(true)
-    // setOpen(true) tears down + re-mounts, so we need to query
-    // the new element. The new mount starts with `data-state='open'`
-    // directly (no `data-drawer-closing` flag — that flag is only
-    // set during the open→close path).
+    // setOpen(true) goes through a teardown + re-mount, so we
+    // query the new element. The new mount starts with
+    // `data-state='open'` directly. No `data-drawer-closing`
+    // flag (it is no longer part of the contract).
     const after = document.querySelector('[data-drawer]') as HTMLElement
     expect(after.dataset.state).toBe('open')
     expect(after.dataset.drawerClosing).toBeUndefined()
   })
 
-  it('clears data-drawer-closing once the close animation ends (or after the safety timeout)', () => {
-    const drawer = createDrawer({
-      id: 'clear-closing',
-      direction: 'right',
-      title: 'Clear closing',
-      content: 'Body'
-    })
-    drawer.setOpen(true)
-    drawer.setOpen(false)
-
-    const content = document.querySelector('[data-drawer]') as HTMLElement
-    expect(content.dataset.drawerClosing).toBe('true')
-
-    // jsdom does not run CSS animations, so `animationend` never
-    // fires. The runtime's safety timeout (animationDuration +
-    // 100 ms, defaulting to 600 ms) is what clears the flag.
-    return new Promise<void>(resolve => {
-      window.setTimeout(() => {
-        expect(content.dataset.drawerClosing).toBeUndefined()
-        resolve()
-      }, 800)
-    })
-  })
-
-  it('torn-down only after the close animation (jsdom safety timeout)', () => {
+  it('removes the DOM after the close transition safety timeout (jsdom fallback)', () => {
     const drawer = createDrawer({
       id: 'teardown-timing',
       direction: 'right',
@@ -140,15 +100,51 @@ describe('close animation', () => {
     drawer.setOpen(false)
 
     // Immediately after close, the drawer is still in the DOM
-    // (the close animation needs the element to interpolate).
+    // (the base `transition: transform` needs the element to
+    // interpolate). After the safety timeout (600 ms — 500 ms
+    // animation + 100 ms safety) the drawer is fully removed.
     expect(document.querySelector('[data-drawer]')).not.toBeNull()
 
     return new Promise<void>(resolve => {
       window.setTimeout(() => {
-        // After the safety timeout, the drawer is fully removed.
         expect(document.querySelector('[data-drawer]')).toBeNull()
         resolve()
       }, 800)
     })
+  })
+
+  it('clears the inline drag transform on the open→close transition so the cascade takes over', () => {
+    // F1: the F1b fix kept the inline `transform: translate3d(0,
+    // dragY, 0)` during the close animation so `slideToX` would
+    // pick it up as the `from` frame. The new approach is 1:1 with
+    // vaul: we clear the inline transform on the open→close
+    // transition so the cascade `transform: translate3d(0, 100 %, 0)`
+    // is the only thing the base `transition: transform` has to
+    // interpolate from. The `slideToX` keyframe is a static
+    // `from: 0 → to: 100 %` and acts as a `forwards` fill-mode
+    // anchor for the post-transition cascade.
+    //
+    // For the drag-release path, the inline transform clear happens
+    // BEFORE the data-state flip in `onPointerUp` (this is the
+    // new "release resets the drag transform" step — the previous
+    // F1b kept it). After the clear, the cascade `transform: 100 %`
+    // is what the transition interpolates against.
+    //
+    // We test the programmatic (non-drag) close path here, which is
+    // simpler: the close path flips `data-state` to "closed" and
+    // never had an inline `transform` to clear in the first place.
+    const drawer = createDrawer({
+      id: 'cascade-takes-over',
+      direction: 'bottom',
+      title: 'Cascade',
+      content: 'Body'
+    })
+    drawer.setOpen(true)
+    const content = document.querySelector('[data-drawer]') as HTMLElement
+    expect(content.style.transform).toBe('')
+    drawer.setOpen(false)
+    expect(content.dataset.state).toBe('closed')
+    // Programmatic close: no inline transform was ever written.
+    expect(content.style.transform).toBe('')
   })
 })

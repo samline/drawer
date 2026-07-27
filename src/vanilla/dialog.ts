@@ -775,13 +775,6 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   }
   if (state.content) {
     state.content.dataset.state = open ? 'open' : 'closed'
-    // `data-drawer-closing` is intentionally NOT touched here.
-    // The runtime sets it before invoking this function on the
-    // open→close path (see `mountVanillaDialog#isClosingOnly`) so
-    // the CSS close-animation rule wins over the static off-screen
-    // transform. The runtime clears it on `animationend`. If we
-    // re-set it here we would lose that signal mid-animation.
-    delete state.content.dataset.drawerClosing
   }
   if (state.handle) {
     state.handle.dataset.drawerVisible = open ? 'true' : 'false'
@@ -1667,10 +1660,12 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   //
   // For the simple open→close transition we now keep the existing
   // DOM in place and flip `data-state` to `"closed"` so the CSS
-  // close animation can run. The actual teardown is deferred to
-  // the `animationend` event so listeners stay attached during the
-  // animation (the close button / form inputs / overlay mouseup
-  // continue to work — see `.agents/issues/2026-07-26-close-button-click-suppressed-by-pointer-capture.md`).
+  // base `transition: transform 0.5s` (added in F1) interpolates
+  // from the open cascade (0) to the closed cascade (100 %). The
+  // DOM removal is scheduled for after the close animation. The
+  // CSS contract is now 1:1 with vaul upstream: no JS-side
+  // `data-drawer-closing` flag, no inline transform clear in the
+  // animationend handler.
   //
   // Every other transition (closed→open, open→open on option change,
   // destroy, etc.) still goes through the standard teardown +
@@ -1703,29 +1698,27 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         scheduleWrapperClear(wrapper, state)
       }
     }
-    // The CSS close-animation rule
-    // `[data-state='closed'][data-drawer-closing]` overrides the
-    // static off-screen transform so `slideToRight` has a clean
-    // start frame (the open position) and the drawer visibly
-    // slides out instead of jumping. The animation's `forwards`
-    // fill-mode holds the closed position once it ends; the
-    // `animationend` listener below clears the flag.
+    // Flip data-state to "closed". The base `transition: transform`
+    // (CSS, not JS) interpolates from the open cascade (0) to the
+    // closed cascade (100 %). 1:1 with vaul.
     applyOpenState(state, options, false)
-    if (state.content) state.content.dataset.drawerClosing = 'true'
     // Detach listeners + restore page-level side-effects immediately
     // (matches v2 semantics; the visualViewport listener must come
     // off synchronously so the next `setOpen(true)` re-attaches a
     // fresh one with the current options). The DOM nodes themselves
     // stay in the tree until the close animation finishes — the
-    // CSS animation needs the elements present to interpolate the
-    // transform.
+    // base `transition: transform` needs the elements present to
+    // interpolate the transform.
     teardownMount(state, { deferDom: true })
     // Schedule the DOM removal for after the close animation. If
-    // the animation never ends (CSS animations disabled by a
+    // the transition never runs (CSS animations disabled by a
     // consumer `data-drawer-animate="false"`, or the test
     // environment doesn't run animations), the safety timeout
-    // still tears down.
-    const target = state.content
+    // still tears down. Note: in the real browser, the
+    // `transitionend` event would be the right hook — we use a
+    // setTimeout with the same duration for cross-environment
+    // robustness (jsdom + browsers that delay the transitionend
+    // event under load).
     const removeDom = () => {
       if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
       if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
@@ -1739,50 +1732,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       state.body = null
       state.closeButton = null
     }
-    if (target) {
-      const onAnimationEnd = () => {
-        target.removeEventListener('animationend', onAnimationEnd)
-        target.removeEventListener('animationcancel', onAnimationEnd)
-        // Bug fix (refined 2026-07-27): on the drag-release close
-        // path the inline `transform` is left in place during the
-        // close animation (the `from` frame of `slideToX` is the
-        // dragged position). Before clearing `data-drawer-closing`
-        // and removing the DOM, also clear the inline `transform`
-        // so the cascade `[data-state='closed']` rule's closed
-        // position (`translate3d(0, 100%, 0)`) takes over. On the
-        // programmatic close path the inline `transform` was
-        // already empty so this is a no-op.
-        target.style.transform = ''
-        // Clear the closing flag so the static off-screen
-        // transform rule takes over again (the animation's
-        // `forwards` fill-mode is already holding the element at
-        // the closed position; clearing the flag keeps the rule
-        // consistent if the consumer re-opens before the timer
-        // fires).
-        delete target.dataset.drawerClosing
-        // The drag-release pipeline (or `applyWrapperOpenState` on
-        // programmatic close) may have scheduled a deferred
-        // wrapper-clear timer via `scheduleWrapperClear`. That
-        // timer outlives the dialog mount — it touches the page
-        // wrapper, not the drawer — so it must NOT be cancelled
-        // here. The original `teardownMount` cancelled it because
-        // the dialog owned the wrapper, but on the close-only path
-        // we already ran the immediate teardown which left
-        // `state.backgroundScale` populated so the timer can fire.
-        removeDom()
-      }
-      target.addEventListener('animationend', onAnimationEnd)
-      target.addEventListener('animationcancel', onAnimationEnd)
-      const safetyMs = (() => {
-        const cs = window.getComputedStyle(target)
-        const raw = cs.animationDuration || cs.transitionDuration || '0.5s'
-        const n = parseFloat(raw)
-        return (Number.isFinite(n) ? n * 1000 : 500) + 100
-      })()
-      window.setTimeout(onAnimationEnd, safetyMs)
-    } else {
-      removeDom()
-    }
+    window.setTimeout(removeDom, 600)
     return
   }
 
@@ -2162,6 +2112,25 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // focus inside the dialog while it is open.
     if (options.autoFocus === true && state.content) {
       focusFirstElement(state.content)
+    }
+  }
+
+  // F9: vaul upstream's `shouldAnimate` ref. When the consumer uses
+  // `defaultOpen: true` the drawer is mounted already-open; we skip
+  // the entrance animation by writing `data-drawer-animate="false"`
+  // on the very first frame, then flip it back to `"true"` after one
+  // rAF so subsequent state changes (programmatic open, drag-close)
+  // animate normally. The CSS rule
+  // `[data-drawer-animate="false"] { animation: none !important }`
+  // already exists in the source stylesheet (carried over from v2).
+  if (options.defaultOpen === true) {
+    if (state.content) state.content.dataset.drawerAnimate = 'false'
+    if (state.overlay) state.overlay.dataset.drawerAnimate = 'false'
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => {
+        if (state.content) state.content.dataset.drawerAnimate = 'true'
+        if (state.overlay) state.overlay.dataset.drawerAnimate = 'true'
+      })
     }
   }
 }
