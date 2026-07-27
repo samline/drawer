@@ -17,7 +17,9 @@ import type {
   CommonDrawerController,
   VanillaDrawerController,
   VanillaDrawerOptions,
-  VanillaRenderable
+  VanillaRenderable,
+  VanillaCloseButtonOptions,
+  DrawerApi
 } from '@samline/drawer'
 ```
 
@@ -175,6 +177,24 @@ type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | n
 
 The value shape accepted by `title`, `description`, and `content`. Strings and numbers are mounted as text nodes. Pre-built `HTMLElement` instances are mounted directly. Thunks are invoked once on render and the returned `HTMLElement` is mounted. `null` / `undefined` render nothing for that slot.
 
+### `VanillaCloseButtonOptions`
+
+The shape of the object accepted by `VanillaDrawerOptions.closeButton`. Defined in `src/vanilla/render.ts`.
+
+```ts
+interface VanillaCloseButtonOptions {
+  className?: string
+  icon?: string | HTMLElement
+  ariaLabel?: string
+}
+```
+
+- `className` — class applied to the button. The consumer can use it to position the button (e.g. `absolute top-5 right-5`).
+- `icon` — icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An `HTMLElement` is appended as-is. Defaults to the literal `xmark` text.
+- `ariaLabel` — accessible label for the button. Defaults to `'Close'`.
+
+The full mount lifecycle of the button is in [docs/options.md → closeButton](./options.md#vanilla-only-options).
+
 ---
 
 ## Controller
@@ -202,7 +222,7 @@ The numeric defaults used by the runtime live in `src/constants.ts` and are re-e
 | `BORDER_RADIUS`        | `8`                  | Pixel value the scale-background pipeline uses for the page-shell border-radius at `percentageDragged = 0`. |
 | `NESTED_DISPLACEMENT`  | `16`                 | Pixel displacement the scale-background pipeline uses to compute the base scale.                            |
 | `WINDOW_TOP_OFFSET`    | `26`                 | Pixel offset the mobile-keyboard layout uses for `isMobileFirefox` (reserved).                              |
-| `DRAG_CLASS`           | `'drawer-dragging'`  | Reserved.                                                                                                   |
+| `DRAG_CLASS`           | `'drawer-dragging'`  | Reserved for a future drag-state class on `[data-drawer]` — currently unused.                               |
 
 ```ts
 import { TRANSITIONS, VELOCITY_THRESHOLD, CLOSE_THRESHOLD } from '@samline/drawer'

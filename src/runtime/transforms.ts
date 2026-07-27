@@ -1,11 +1,15 @@
 import type { CommonDrawerDirection } from '../core'
+import { BORDER_RADIUS } from '../constants'
 
 /**
  * Pure transform-string builders used by the nested-drawer pipeline
- * and the background-scale pipeline. Consumed by `runtime/nested.ts`
- * for the nested path; the background-scale path is not yet wired
- * (the `shouldScaleBackground` option is accepted but inert — see
- * the dialog.ts placeholder for the planned wiring).
+ * (Phase A — `getNestedDrawerTransform` / `getNestedDragTransform`)
+ * and the background-scale pipeline (Phase C — `getBackgroundDragState`
+ * / `getBackgroundResetState`). Both pipelines are wired by
+ * `vanilla/dialog.ts#attachListeners`: the nested path is called from
+ * `runtime/registry.ts#syncParentNestedTransform` on every
+ * `onDragChange` of a child; the background-scale path is called from
+ * `vanilla/dialog.ts#applyWrapperDragState` and `applyWrapperOpenState`.
  */
 
 export function getAxisAwareTranslate(direction: CommonDrawerDirection, value: number | string) {
@@ -79,7 +83,7 @@ export function getBackgroundDragState({
   percentageDragged: number
 }) {
   const scaleValue = Math.min(baseScale + percentageDragged * (1 - baseScale), 1)
-  const borderRadiusValue = 8 - percentageDragged * 8
+  const borderRadiusValue = BORDER_RADIUS - percentageDragged * BORDER_RADIUS
   const translateValue = Math.max(0, 14 - percentageDragged * 14)
 
   return {
@@ -97,7 +101,7 @@ export function getBackgroundResetState({
   baseScale: number
 }) {
   return {
-    borderRadius: '8px',
+    borderRadius: `${BORDER_RADIUS}px`,
     overflow: 'hidden',
     transform: getScaleTranslateTransform({
       direction,

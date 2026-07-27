@@ -1,0 +1,26 @@
+{
+  "name": "@packages/drawer-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Starlight documentation site for the @samline/drawer package. Lives in the example/ folder and deploys to GitHub Pages.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/starlight": "^0.41.1",
+    "astro": "^7.0.3",
+    "sharp": "^0.35.2",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

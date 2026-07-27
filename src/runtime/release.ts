@@ -3,11 +3,13 @@ import { isReleaseTowardExpandedState, shouldCloseDrawerOnRelease } from './drag
 import { getClosestSnapPoint } from './snap-points'
 
 /**
- * Pure release-decision math. When the user releases the drag, the
- * pipeline computes the action (close / reset / snap-to-X) plus
- * whether to skip the focus re-focus based on velocity. The vanilla
- * dialog does not yet wire this — see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`.
+ * Pure release-decision math. Wired by `vanilla/dialog.ts#attachListeners`
+ * (Phase A + Phase B): the `pointerup` handler delegates to
+ * `getDismissibleReleaseResult` (snap-free path) or
+ * `getSnapPointReleaseAction` (snap-point path) to decide between
+ * `close`, `reset`, and `snap-to-target`. `shouldPreventFocusOnRelease`
+ * controls whether the runtime re-focuses the dialog after a high-velocity
+ * release.
  */
 
 export function shouldPreventFocusOnRelease(velocity: number, threshold = 0.05) {

@@ -12,7 +12,10 @@
 - [CDN / Browser](#cdn--browser)
 - [Entrypoints](#entrypoints)
 - [Quick Start](#quick-start)
+- [What You Can Build](#what-you-can-build)
 - [API at a Glance](#api-at-a-glance)
+- [Mount-time Lifecycle](#mount-time-lifecycle)
+- [Title and Close Button](#title-and-close-button)
 - [Documentation](#documentation)
 - [License](#license)
 
@@ -119,6 +122,21 @@ What this does:
 
 ---
 
+## What You Can Build
+
+- Mobile-style bottom sheets, side panels, and modal dialogs with a typed controller.
+- Nested drawer flows (parent → child) where the parent scales and shifts when the child opens.
+- Snap-point flows (Spotify-like mini-player, sheet with a handle, drawer with a "show more" anchor).
+- Scale-background flows that dim and shift the page shell while the drawer is dragged open.
+- Drawers with a built-in handle, built-in trigger button, or built-in close button — no manual `document.addEventListener` boilerplate.
+- Browser / CDN / Shopify / WordPress embeds via the `window.Drawer` IIFE bundle.
+- HMR-safe SPAs under Vite (use `id` + helper API, not `window.Drawer.available`).
+- Drawers that honour the mobile keyboard (`repositionInputs` + `fixed` + `visualViewport`).
+- Drawers that opt out of scroll restoration (`preventScrollRestoration: true`).
+- Test-friendly flows via the headless `createDrawerController` API (no DOM, no side effects).
+
+---
+
 ## API at a Glance
 
 The runtime is built around one factory plus a focused set of helpers. Most methods are chainable; the imperative helpers are fire-and-forget.
@@ -133,6 +151,86 @@ The runtime is built around one factory plus a focused set of helpers. Most meth
 | Lifecycle (controller)  | `setOpen` · `setActiveSnapPoint` · `patch` · `update` · `subscribe` · `getSnapshot` · `destroy`                                                                                           |
 
 See the full per-method reference in [`docs/api/`](docs/api/index.md).
+
+---
+
+## Mount-time Lifecycle
+
+Unlike v2, the v3 package mounts the drawer's overlay **at `createDrawer` time**, not when the drawer is first opened. This is a deliberate change to make the package's behavior more predictable and to support features like the mount-time `mouseup` listener for the overlay.
+
+**Implications for consumers:**
+
+1. **The overlay exists on page load**, even if the drawer is closed. The package applies `pointer-events: none` to the closed overlay so it does not capture clicks (see [`src/style.css`](src/style.css) — the `[data-drawer-overlay][data-state="closed"]` rule).
+2. **`open: true` at mount means "drawer is open immediately"** — no mount animation runs, and the drawer is visible on page load. For dialogs that should appear on user interaction (e.g. a modal that opens on click), use `open: false` (or omit it) and call `setOpen(true)` later.
+3. **HMR considerations**: under Vite HMR, the consumer's script re-runs on every save. If the script creates a drawer with `open: true`, the drawer will be re-opened on every HMR cycle, causing a brief flash. For stable HMR behavior, prefer the `open: false` + `setOpen(true)` pattern (deferred with `queueMicrotask` so the open animation still runs).
+
+**Recommended pattern for "open on mount" dialogs:**
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'my-drawer'
+  // no `open` here — defaults to closed
+})
+
+// Defer the open to the next microtask so the open animation
+// runs after the mount is fully wired.
+queueMicrotask(() => drawer.setOpen(true))
+```
+
+See [`CommonDrawerOptions.open`](src/core/index.ts) for the full type contract.
+
+## Title and Close Button
+
+The package ships two convenience slots that cover the most common consumer needs.
+
+### Title slot
+
+The `[data-drawer-title]` slot has two roles:
+
+- **Visible title** — pass a string or `HTMLElement` to the `title` option. The package renders it visibly at the top of the drawer body.
+- **Accessibility target** — when only `ariaLabel` is provided (no `title`), the package auto-promotes the `ariaLabel` value into the title slot for the `aria-labelledby` reference, and **auto-hides the slot** so the a11y text does not leak visually into the drawer. Pass an explicit `titleVisuallyHidden: false` to opt out of the auto-hide.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// Visible title (a heading the user sees)
+createDrawer({
+  id: 'filters',
+  title: 'Filters',
+  content: 'Body'
+})
+
+// Accessibility-only title (proxy from ariaLabel, auto-hidden)
+createDrawer({
+  id: 'filters',
+  ariaLabel: 'Filters',
+  content: 'Body'
+})
+```
+
+### Built-in close button
+
+Pass `closeButton: true` (or a config object) and the package renders a `<button data-drawer-close>` inside the drawer, wired to `onOpenChange(false)`. This eliminates the need to write a manual `document.addEventListener('click', ...)` listener (which accumulates on Vite HMR cycles and triggers stale-controller bugs).
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'filters',
+  content: 'Body',
+  closeButton: {
+    className: 'absolute top-5 right-5',
+    icon: 'xmark', // any string; rendered as <span aria-hidden="true">
+    ariaLabel: 'Close'
+  }
+})
+```
+
+The button is removed automatically on re-mount (HMR safety) and on `destroyDrawer`. Its `click` event `stopPropagation()`s so it does not bubble to the drawer's content.
+
+See [`VanillaCloseButtonOptions`](src/vanilla/render.ts) for the full type contract.
 
 ---
 

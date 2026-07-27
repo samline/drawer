@@ -1,0 +1,68 @@
+# .github/workflows/deploy.yml
+#
+# Builds the documentation site with Astro and deploys the static
+# output to GitHub Pages.
+#
+# Triggers:
+#   • push to `main`             — build & deploy
+#   • workflow_dispatch          — manual run from the Actions tab
+#
+# Required repo settings (one-off setup, per package repo):
+#   Settings → Pages → Build and deployment → Source: GitHub Actions
+
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The Astro GitHub Action needs repository contents plus the OIDC
+# token to upload the Pages artifact.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Don't run concurrent deploys for the same branch — let one finish
+# before another starts.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        # `site.config.mjs` reads `site` / `base` directly; nothing
+        # extra is needed here.
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

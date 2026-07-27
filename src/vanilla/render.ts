@@ -31,13 +31,92 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   ariaLabel?: string
   ariaLabelledBy?: string
   ariaDescribedBy?: string
+  /**
+   * Optional title for the drawer.
+   *
+   * Two use cases:
+   *
+   * - **Visible title**: a heading the user sees inside the drawer.
+   *   Pass a string, number, or `HTMLElement` (or a thunk that
+   *   returns one). The package renders the value in the
+   *   `[data-drawer-title]` slot at the top of the drawer's
+   *   content area. Style the slot via the consumer's CSS.
+   * - **Accessibility-only title**: pass `ariaLabel` (and not
+   *   `title`) and the package auto-promotes the `ariaLabel`
+   *   value into the `[data-drawer-title]` slot for the
+   *   `aria-labelledby` reference. The package also auto-hides
+   *   the slot in that case, because proxy titles are
+   *   accessibility targets only — consumers who want a visible
+   *   title should put it in the `content` HTML.
+   *
+   * @see ariaLabel for the accessibility-only case.
+   */
   title?: VanillaRenderable
+  /**
+   * Whether the `[data-drawer-title]` slot should be visually
+   * hidden. The default is `false` (visible), unless the title
+   * was auto-promoted from `ariaLabel` (a "proxy" title) — in
+   * that case the package always hides the slot, because the
+   * proxy is an accessibility target, not visual content.
+   *
+   * Pass `true` to force-hide the title slot (e.g. when
+   * rendering your own visible title inside `content` but
+   * still keeping the `aria-labelledby` reference).
+   *
+   * Pass `false` explicitly to override the auto-hide when
+   * using a proxy title — the slot will render visibly.
+   */
   titleVisuallyHidden?: boolean
   description?: VanillaRenderable
   descriptionVisuallyHidden?: boolean
   content?: VanillaRenderable
   overlayClassName?: string
   contentClassName?: string
+  /**
+   * Built-in close button. When set, the package renders a
+   * `<button data-drawer-close>` inside the drawer (between
+   * the title slot and the body) and wires it to the
+   * controller's `onOpenChange(false)` so the user can dismiss
+   * the drawer without the consumer writing a manual click
+   * listener.
+   *
+   * This eliminates the most common source of HMR-related
+   * bugs in consumers (e.g. Vite HMR re-running the
+   * consumer's `<script>` and accumulating
+   * `document.addEventListener('click', ...)` listeners on
+   * `document`).
+   *
+   * Accepts:
+   *
+   * - `true` for default behavior: a button with
+   *   `className="drawer-close-button"`, an `xmark` icon
+   *   (rendered as a `<span aria-hidden="true">` so screen
+   *   readers ignore it), and `aria-label="Close"`.
+   * - An object to override the defaults. `icon` accepts a
+   *   string (rendered as text inside a `<span>`) or a
+   *   pre-built `HTMLElement`.
+   *
+   * The button is removed automatically on re-mount
+   * (`teardownMount` handles it) and on `destroyDrawer`.
+   *
+   * The button's `click` event does not bubble to the
+   * drawer's content — it `stopPropagation()`s to avoid
+   * triggering any content-level click handlers.
+   */
+  closeButton?: boolean | VanillaCloseButtonOptions
+}
+
+/**
+ * Options for the built-in close button. See
+ * `VanillaDrawerOptions.closeButton` for the full contract.
+ */
+export interface VanillaCloseButtonOptions {
+  /** Class applied to the button. The consumer can use it to position the button (e.g. `absolute top-5 right-5`). */
+  className?: string
+  /** Icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An `HTMLElement` is appended as-is. */
+  icon?: string | HTMLElement
+  /** Accessible label for the button. Defaults to `'Close'`. */
+  ariaLabel?: string
 }
 
 /**

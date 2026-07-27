@@ -22,3 +22,13 @@ export type {
   CommonDrawerSnapPoint
 } from './core'
 export { createDrawerController } from './core'
+export {
+  BORDER_RADIUS,
+  CLOSE_THRESHOLD,
+  DRAG_CLASS,
+  NESTED_DISPLACEMENT,
+  SCROLL_LOCK_TIMEOUT,
+  TRANSITIONS,
+  VELOCITY_THRESHOLD,
+  WINDOW_TOP_OFFSET
+} from './constants'

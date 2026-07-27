@@ -10,6 +10,12 @@
   animation-name: slideFromBottom;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'] {
+  /* Static off-screen position: prevents the initial-mount flicker
+     that the previous `animation-name: slideToBottom` + `forwards`
+     caused. The animation itself is preserved for the open→close
+     transition (start = open, end = off-screen), but the start and
+     end are now both off-screen on mount, so no visible change. */
+  transform: translate3d(0, var(--initial-transform, 100%), 0);
   animation-name: slideToBottom;
   animation-fill-mode: forwards;
 }
@@ -18,6 +24,7 @@
   animation-name: slideFromTop;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='closed'] {
+  transform: translate3d(0, calc(var(--initial-transform, 100%) * -1), 0);
   animation-name: slideToTop;
   animation-fill-mode: forwards;
 }
@@ -26,6 +33,7 @@
   animation-name: slideFromLeft;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='closed'] {
+  transform: translate3d(calc(var(--initial-transform, 100%) * -1), 0, 0);
   animation-name: slideToLeft;
   animation-fill-mode: forwards;
 }
@@ -34,6 +42,7 @@
   animation-name: slideFromRight;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'] {
+  transform: translate3d(var(--initial-transform, 100%), 0, 0);
   animation-name: slideToRight;
   animation-fill-mode: forwards;
 }
@@ -73,13 +82,28 @@
 [data-drawer-overlay][data-drawer-snap-points='false'] {
   animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 [data-drawer-overlay][data-drawer-snap-points='false'][data-state='open'] {
   animation-name: fadeIn;
 }
 [data-drawer-overlay][data-state='closed'] {
+  /* Static opacity:0 + transition on the base rule replaces the
+     `animation-name: fadeOut` + `forwards` that caused the overlay
+     to fade in→out on initial mount (visible as a 0.5s flicker on
+     pages that mount the drawer on load). The animation is
+     preserved for the open→close transition but the start and end
+     are now both opacity:0 on mount, so no visible change. */
+  opacity: 0;
   animation-name: fadeOut;
   animation-fill-mode: forwards;
+  /* When the drawer is closed the overlay sits at
+     `position: fixed; inset: 0; z-index: 100` (consumer's CSS) and
+     must NOT capture pointer events — otherwise it blocks every
+     click on the page even though `opacity: 0` makes it invisible.
+     The `auto` default is restored as soon as `data-state="open"`,
+     so the user can still click the overlay to dismiss. */
+  pointer-events: none;
 }
 
 [data-drawer-animate='false'] {

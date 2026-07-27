@@ -1,0 +1,19 @@
+# Build output
+dist/
+coverage/
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+
+# Third-party skill content (read-only reference material for AI agents,
+# not part of the package's source — see AGENTS.md and the .agents/skills/
+# directory layout in the monorepo convention).
+.agents/skills/

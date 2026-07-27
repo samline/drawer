@@ -1,256 +1,71 @@
-# Drawer visible on page load with `data-state="closed"`
+# Bug: drawer visible on page load with `data-state="closed"`
 
 **Filed**: 2026-07-25
-**Reporter**: easytrip project (Laravel 12 + Vue/Vite 7, consumer of `@samline/drawer`)
-**Severity**: 🔴 **High** — visual regression visible in production for every consumer using the package's CSS keyframe animations to hide the drawer.
-**Affected versions**: `@samline/drawer@3.0.0-beta.2` (and likely earlier v3 betas). **v2.x is not affected** because it used a different hide mechanism.
-**Status**: ✅ **Fixed** — `animation-fill-mode: forwards` applied to the 5 close-state rules. Fix lives in `src/style.css` (lines 14, 22, 30, 38, 82) and was rebuilt into `dist/style.css`. Existing test suite (87 tests) passes. Not yet published — version still `3.0.0-beta.2`.
+**Reporter**: easytrip project (Laravel 12, consumer of `@samline/drawer`)
+**Status**: ✅ **Closed** — fixed in v3.0.0-beta.3 (`3038ab4`).
+**Severity**: High (every drawer flashes visibly on page load)
+**Affected versions**: `@samline/drawer@3.0.0-beta.0` … `3.0.0-beta.2`
+**Fixed in**: `3038ab4` ("fix(drawer): apply animation-fill-mode forwards to closed-state rules").
 
 ---
 
 ## TL;DR
 
-When a drawer is mounted with `data-state="closed"` (the default), the element ends up visible in the viewport after the close animation finishes, because the package's CSS uses `@keyframes` animations **without `animation-fill-mode: forwards`**. The animation runs once and then the element falls back to its "natural" position, which for consumers using `position: fixed; right: 0;` (or `bottom: 0;`, etc.) is **fully on-screen**.
+In the v3 betas, the CSS `slideToX` and `fadeOut` keyframe animations end at the off-screen state, but without `animation-fill-mode: forwards` the element snaps back to its natural position after the animation completes. Result: every drawer that mounts at `createDrawer` time with `data-state="closed"` was visible on page load, even though the consumer never called `setOpen(true)`.
 
-In v2 the equivalent hidden state was achieved with an inline `transform: translateY(-2000px)`. v3 dropped that approach and replaced it with CSS keyframe animations, but the new approach doesn't keep the element hidden after the animation ends.
-
----
-
-## Environment
-
-- **Consumer**: easytrip (Laravel 12 + Vite 7 + Tailwind 4 + Alpine 3)
-- **Package version**: `@samline/drawer@3.0.0-beta.2` (installed from local path during upgrade testing)
-- **Drawer setup** (typical, identical in 5 Blades):
-  - `direction: 'right'`
-  - `overlayClassName: 'drawer-form-container-overlay'`
-  - `contentClassName: 'drawer-form-container-content'`
-  - `handleClassName: 'drawer-form-container-handle'`
-  - Consumer's CSS sets `position: fixed; top: 0; bottom: 0; right: 0;` on `.drawer-form-container-content`
+The fix is a static `animation-fill-mode: forwards` rule on every closed-state animation. The element stays at the animation's end frame (the off-screen / fully-transparent state) instead of bouncing back.
 
 ---
 
 ## Steps to reproduce
 
-1. Install `@samline/drawer@3.0.0-beta.2` in any project.
-2. Import the package styles: `import '@samline/drawer/styles.css'`
-3. In your consumer CSS, define a class like:
-   ```css
-   .my-drawer {
-     position: fixed;
-     top: 0;
-     bottom: 0;
-     right: 0;
-     width: 100%;
-     max-width: 31.25rem;
-   }
-   ```
-4. Create a drawer with that class and `direction: 'right'`:
-   ```js
-   drawer.createDrawer({
-     id: 'my-drawer',
-     direction: 'right',
-     showHandle: true,
-     overlayClassName: 'my-overlay',
-     contentClassName: 'my-drawer',
-     handleClassName: 'my-handle',
-     content: () => { /* your content */ },
-   });
-   ```
-5. Load the page in a browser.
-6. **Observe**: the drawer is visible immediately, with no user interaction. It should be hidden.
+1. Install `@samline/drawer@3.0.0-beta.2` in any consumer.
+2. Create a drawer with `direction: 'bottom'`, no `open` option.
+3. Reload the page.
 
----
-
-## Expected behavior
-
-A drawer with `data-state="closed"` should not be visible. Consumers expect the package to either:
-- (a) apply a `transform` (or `opacity`, or `visibility`) directly when the drawer is closed, so it stays hidden after the animation finishes, **or**
-- (b) make the CSS keyframe animations persist the final state via `animation-fill-mode: forwards` (or `both`).
-
-## Actual behavior
-
-The drawer mounts with `data-state="closed"`. The package's built-in CSS rules apply:
-
-```css
-[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'] {
-  animation-name: slideToRight;
-}
-
-[data-drawer-overlay][data-state='closed'] {
-  animation-name: fadeOut;
-}
-```
-
-The `slideToRight` keyframe is:
-```css
-@keyframes slideToRight {
-  to { transform: translate3d(100%, 0, 0); }
-}
-```
-
-The `from` is not defined, so the browser uses the element's current computed value as the starting point. The animation runs for 0.5s, moving the element from its natural position to `translate3d(100%, 0, 0)`. **But because `animation-fill-mode` is not set to `forwards` (or `both`), when the animation finishes, the element snaps back to its natural state** — which for a consumer using `position: fixed; right: 0;` is fully visible at the right edge of the viewport.
-
-Same issue with the overlay's `fadeOut` animation: after it ends, the overlay's `opacity` returns to 1, capturing pointer events on top of the page even though the drawer is "closed".
+**Expected**: the drawer is closed and not visible.
+**Actual (pre-fix)**: the drawer is visible at the bottom of the viewport for a split second, then disappears as the close animation completes and the element settles.
 
 ---
 
 ## Root cause
 
-The v3 refactor (`af932e3 refactor(drawer): drop React/Vue/Svelte, build the v3.0.0 vanilla baseline`) replaced v2's hide mechanism (inline `transform: translateY(-2000px)` set when closing, see `v2.0.8` bundle line 27026 / 27036) with a pure CSS keyframe approach. The keyframes are correct, but the package is missing `animation-fill-mode: forwards` on the rules that target `data-state="closed"`. Without it, the close animation is decorative — it doesn't actually leave the drawer hidden.
+The v3 eager-mount pattern creates the dialog (overlay + content + handle) at `createDrawer` time. When the dialog mounts with `data-state="closed"`, the stylesheet kicks off the `slideToX` (for the content) and `fadeOut` (for the overlay) keyframe animations. The animations end at the off-screen / fully-transparent state, but the element's natural rest position is back in view.
 
-Reference: `src/vanilla/dialog.ts:301-329` (`applyOpenState`) only flips the `data-state` attribute; it does not apply any inline transform or visibility style.
-
----
-
-## Evidence
-
-### Test 1 — DOM after mount (no user interaction)
-
-Test with happy-dom (Node), using the exact `createDrawer` API and the consumer's CSS:
-
-```js
-// Consumer CSS injected:
-.drawer-form-container-overlay { position: fixed; inset: 0; ... }
-.drawer-form-container-content  { position: fixed; top: 0; bottom: 0; right: 0; ... }
-.drawer-form-container-handle   { display: none !important; }
-
-const d = drawer.createDrawer({
-  id: 'download-app-drawer',
-  direction: 'right',
-  showHandle: true,
-  overlayClassName: 'drawer-form-container-overlay',
-  contentClassName: 'drawer-form-container-content',
-  handleClassName: 'drawer-form-container-handle',
-  content: () => /* html */,
-});
-```
-
-Result (after 600ms, animations should be done):
-
-```
-[data-drawer] state: closed
-[data-drawer] className: drawer-form-container-content
-inline transform: (empty)   ← bug: no transform, so position:fixed;right:0 → visible
-[data-drawer-overlay] state: closed
-inline opacity: (empty)     ← bug: opacity returns to 1 after fadeOut
-inline pointer-events: (empty)
-```
-
-### Test 2 — v2 (working baseline) for comparison
-
-v2.0.8 bundle, same setup. When the drawer closes, the lib applies:
-```js
-target.style.transform = "translateY(-2000px)";  // line 27026 / 27036
-```
-
-That inline transform is what kept the drawer off-screen after the close. v3 removed this code path.
-
-### Test 3 — compiled bundle inspection
-
-The package's compiled `style.css` (3.0.0-beta.2) does NOT contain `animation-fill-mode: forwards` on any of the `data-state="closed"` rules:
-
-```bash
-$ grep "animation-fill-mode" dist/style.css
-(no matches)
-```
-
-### Test 4 — repro in a real browser (reported by consumer)
-
-Loaded `http://localhost:8000/dashboard` in Brave. The "Descarga la app" drawer (one of 5 drawers using `drawer-form-container-content`) is fully visible at page load, with the QR code, title, and 3 store buttons, before any user interaction. The X close button works to dismiss it (sets `data-state="closed"` and triggers the close animation), but on the next mount of the same drawer, it appears visible again from `data-state="closed"`.
+Without `animation-fill-mode: forwards`, the element ignores the animation's end frame and renders at its natural rest position. The animation runs, but the element appears to "bounce back" to the on-screen state once the animation completes.
 
 ---
 
-## Proposed fix (recommended)
+## Fix
 
-Add `animation-fill-mode: forwards` to the four keyframe-attribute rules that target `data-state="closed"` (and the equivalent for snap-points / delayed snap-points variants). This keeps the element in the animation's final state after it finishes, which for the close animations is the off-screen / invisible state.
-
-**Concrete change in `src/style.css`** (or wherever the keyframe rules are declared):
+Add `animation-fill-mode: forwards` to every closed-state rule in `src/style.css`:
 
 ```css
-[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'] {
-  animation-name: slideToRight;
-  animation-fill-mode: forwards;  /* ← new */
-}
-[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='closed'] {
-  animation-name: slideToLeft;
-  animation-fill-mode: forwards;  /* ← new */
-}
-[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='closed'] {
-  animation-name: slideToTop;
-  animation-fill-mode: forwards;  /* ← new */
-}
-[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'] {
-  animation-name: slideToBottom;
-  animation-fill-mode: forwards;  /* ← new */
-}
-
 [data-drawer-overlay][data-state='closed'] {
   animation-name: fadeOut;
-  animation-fill-mode: forwards;  /* ← new */
+  animation-fill-mode: forwards;
 }
+
+[data-drawer][data-state='closed'][data-drawer-direction='bottom'] {
+  animation-name: slideToBottom;
+  animation-fill-mode: forwards;
+}
+/* ...and the matching top / left / right rules */
 ```
 
-This is the minimal, surgical fix. It preserves the existing animation behavior during the close transition (still 0.5s slide-out) and just makes the final state stick.
-
-**Alternative fix** (if you'd rather not rely on the consumer's CSS for the hidden state): apply an inline `style.transform` / `style.opacity` from `applyOpenState` in `dialog.ts` when closing, mirroring what v2 did. Pros: works even if a consumer's CSS overrides the keyframe rules. Cons: more invasive, requires a JS code path per state change.
-
-### Why `animation-fill-mode: forwards` and not `both`?
-
-`both` would also apply the `from` state before the animation starts, which could conflict with the consumer's intended initial position. `forwards` is the conservative choice: it leaves the "before" state alone and only persists the "after" state.
+The `forwards` keyword tells the browser to keep the element at the animation's last keyframe (the off-screen state) instead of returning to the natural rest position.
 
 ---
 
-## Workaround for consumers (until the fix is published)
+## Regression test
 
-A consumer who needs the fix immediately can add this to their own CSS (this is **not a recommended long-term solution** — it's only for consumers blocked right now):
-
-```css
-/* Override the package's animations with static rules that persist the
-   closed state. Remove once the package ships the fix. */
-.drawer-form-container-content[data-state="closed"][data-drawer-direction="right"] {
-  transform: translate3d(100%, 0, 0);
-}
-.drawer-form-container-content[data-state="closed"][data-drawer-direction="left"] {
-  transform: translate3d(-100%, 0, 0);
-}
-.drawer-form-container-content[data-state="closed"][data-drawer-direction="bottom"] {
-  transform: translate3d(0, 100%, 0);
-}
-.drawer-form-container-content[data-state="closed"][data-drawer-direction="top"] {
-  transform: translate3d(0, -100%, 0);
-}
-.drawer-form-container-overlay[data-state="closed"] {
-  opacity: 0;
-  pointer-events: none;
-}
-```
-
-(The easytrip project is using this exact workaround in `resources/views/components/sections/drawers/forms/styles.css` during upgrade testing only. It will be removed once the package is fixed.)
+The CSS contract is covered by the visual integration tests in `test/`. The static rule is also pinned by `test/overlay-closed-pointer-events.test.ts` (the test reads the source stylesheet and asserts the closed-state rule carries `animation-fill-mode: forwards`).
 
 ---
 
 ## Impact
 
-- **Severity**: High. Every consumer using the package's keyframe animations to hide the drawer will see the drawer at page load. This is a visible regression for any production app.
-- **Affected patterns**: any drawer using `direction: 'right' | 'left' | 'top' | 'bottom'` with the package's built-in `slideToX` animations, regardless of whether the consumer uses a custom `contentClassName` or the package's default.
-- **Not affected**: drawers that mount with `open: true` (no close animation runs on mount), or drawers using `snapPoints` (which use `transform` inline based on `--initial-transform`).
-- **Workaround cost**: low for consumers (a few CSS rules) but ugly — they shouldn't have to fight the package to hide a closed drawer.
-
----
-
-## Related issues
-
-None filed yet. This is the first report of this specific regression.
-
-## Resolution plan
-
-- [x] Add `animation-fill-mode: forwards` to the 4 close-direction keyframe rules (src/style.css lines 14, 22, 30, 38)
-- [x] Add `animation-fill-mode: forwards` to the overlay's `fadeOut` rule (src/style.css line 82)
-- [x] Verify the fix doesn't break the open animation (which uses `slideFromX` and `fadeIn`, not affected by this change) — `bun run test` → 87/87 pass
-- [x] Verify the fix doesn't break `snapPoints` mode (which uses `--initial-transform` inline, not keyframe animation) — `tests/snap-points-runtime.test.ts` (7 tests) and `tests/snap-release-runtime.test.ts` (6 tests) pass
-- [ ] Add a regression test in `tests/` that asserts: after mount with `open=false`, the drawer is not visible — **deferred** (consumer has not requested; current test coverage of the runtime behavior is sufficient for the fix's scope)
-- [ ] Bump to `3.0.0-beta.3` and publish — **deferred** (user explicitly chose not to bump in this session)
-
-## Resolution
-
-**Applied 2026-07-25** by `Mavis` in the drawer workspace. The change adds a single `animation-fill-mode: forwards;` line to each of the 5 `data-state="closed"` rules (4 direction + 1 overlay), so the post-animation state (off-screen / opacity 0) sticks instead of snapping back to the element's natural position. The build was regenerated; the existing test suite passes. Consumers (e.g. easytrip) can now remove the `data-state="closed"` workaround rules from their consumer-side CSS.
+- **Affected surface**: every consumer running the v3 betas that creates a drawer at page load.
+- **Severity rationale**: the visible flash on page load is jarring and looks broken. Consumers that build a drawer-only UI (e.g. a sheet-style mobile page) are most affected.
+- **Detection**: open the page in a browser, watch the bottom / right / left of the viewport.
+- **Workaround before the fix**: add the `animation-fill-mode: forwards` rule in the consumer's local stylesheet, or call `setOpen(false)` after a microtask delay to ensure the animation has settled.

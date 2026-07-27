@@ -1,8 +1,14 @@
 /**
- * Pure mobile-keyboard + visualViewport math. The vanilla dialog
- * does not yet wire this — see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`. The `repositionInputs` and
- * `fixed` options are accepted but inert until this is wired.
+ * Pure mobile-keyboard + visualViewport math. Wired by
+ * `vanilla/dialog.ts#attachListeners` (Phase E): the dialog attaches
+ * a `window.visualViewport.resize` listener when `repositionInputs`
+ * or `fixed` is set, and calls `getViewportDrivenDrawerLayout` to
+ * produce the inline `style.height` / `style.bottom` writes that
+ * keep the drawer usable while the mobile keyboard is open.
+ *
+ * `isMobileFirefox` is inlined at the call site because the runtime
+ * helper would otherwise pull a UA string into the pure-math path.
+ * Extracting it to a shared helper is a follow-up.
  */
 
 export function getKeyboardOpenState({

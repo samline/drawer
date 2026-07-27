@@ -5,9 +5,12 @@ import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
  * per direction, drag-value, closest-snap, percentage-dragged between
  * snap points.
  *
- * Consumed by `runtime/release.ts`. Will be wired by the drag pipeline
- * in `vanilla/dialog.ts` (see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`).
+ * Wired by `vanilla/dialog.ts#attachListeners` (Phase B). `getSnapPointsOffset`
+ * and `getActiveSnapPointIndex` pre-compute the per-snap offsets at
+ * `pointerdown`; `getSnapDragValue` drives the inline transform on every
+ * `pointermove`; `getSnapPointPercentageDragged` feeds the parent /
+ * overlay fade during the drag; `getClosestSnapPoint` is consumed by
+ * `runtime/release.ts` to settle on release.
  */
 
 function isVerticalDirection(direction: CommonDrawerDirection) {

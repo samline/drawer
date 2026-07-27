@@ -22,7 +22,14 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 - `destroyDrawers`
 - `createDrawerController`
 
-The IIFE bundle inlines the runtime stylesheet — when the script loads, the runtime injects a `<style data-drawer-runtime-styles>` element into the page. You do not need a separate `<link rel="stylesheet">`.
+The IIFE bundle is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+```
+
+The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
 
 ---
 

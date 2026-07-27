@@ -1,12 +1,22 @@
 import type { CommonDrawerDirection } from '../core'
 
 /**
- * Pure drag-permission policy. The vanilla dialog does not yet wire
- * this — see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`. The helpers decide whether
- * the pointerdown target should start a drag, taking into account
- * the data-drawer-no-drag opt-out, the recent scroll, and the
- * scrollable ancestors.
+ * The post-open grace period (ms). For the first 500 ms after a drawer
+ * opens, `pointerdown` does not start a drag — the consumer's tap-to-
+ * open gesture must not be hijacked into a drag-to-dismiss. The
+ * `getDragPermission` helper returns `allow: false` when
+ * `timeSinceOpenMs < POST_OPEN_GRACE_MS`.
+ */
+export const POST_OPEN_GRACE_MS = 500
+
+/**
+ * Pure drag-permission policy. Wired by `vanilla/dialog.ts#attachListeners`
+ * (Phase A): the `pointerdown` handler builds a `DragTargetMetadata`
+ * snapshot and forwards it to `getDragPermission`, which decides
+ * whether the gesture should start a drag. The policy honors the
+ * `data-drawer-no-drag` opt-out, the recent scroll, the highlighted
+ * text, the post-open grace period (500 ms), and the scrollable
+ * ancestor list.
  */
 
 export interface DragScrollableAncestor {
@@ -104,7 +114,7 @@ export function getDragPermission({
     return { allow: true, updatePreventedAt: false }
   }
 
-  if (timeSinceOpenMs !== null && timeSinceOpenMs < 500) {
+  if (timeSinceOpenMs !== null && timeSinceOpenMs < POST_OPEN_GRACE_MS) {
     return { allow: false, updatePreventedAt: false }
   }
 

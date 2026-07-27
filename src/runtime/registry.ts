@@ -20,12 +20,13 @@ const DEFAULT_DRAWER_ID = 'default'
  *   - a cleanup callback for the optional external `triggerElement`.
  *
  * The registry also wires the nested-drawer pipeline
- * (`syncParentNestedTransform`) and the open/close animation
- * notification (`notifyOpenStateChange`). The drag, snap, and
- * scale-background pipelines live in `runtime/{drag,snap-points,
- * transforms,release,handle,pointer,drag-policy,viewport}.ts` and
- * are not yet wired into `vanilla/dialog.ts` — see the placeholder
- * at the end of `vanilla/dialog.ts#attachListeners`.
+ * (`syncParentNestedTransform`), the open/close animation
+ * notification (`notifyOpenStateChange`), and the trigger-element
+ * re-binding on every re-render. The drag / snap / scale-background /
+ * handle / viewport pipelines live in `runtime/{drag,snap-points,
+ * transforms,release,handle,drag-policy,viewport}.ts` and are wired
+ * into `vanilla/dialog.ts#attachListeners`. The pointer-swipe intent
+ * math in `runtime/pointer.ts` is a planned API and is not wired yet.
  */
 
 export interface VanillaDrawerController extends CommonDrawerController {

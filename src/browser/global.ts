@@ -84,4 +84,8 @@ if (typeof window !== 'undefined' && (window as typeof globalThis) !== globalThi
   ;(window as { Drawer?: DrawerApi }).Drawer = Drawer
 }
 
+// Default export — mirrors the pattern used by `@samline/forms`
+// (`export default Forms`) and `@samline/notify` (`export default Notify`).
+// Lets bundlers / consumers that default-import the IIFE entry get
+// the same namespace as the named export.
 export default Drawer

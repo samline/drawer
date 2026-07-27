@@ -1,0 +1,358 @@
+---
+title: Examples
+description: End-to-end recipes for common real-world scenarios with @samline/drawer.
+template: doc
+sidebar:
+  order: 7
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+These examples are deliberately copy-pasteable. Each one lives in a self-contained snippet so it's easy to drop into a project and adapt.
+
+<Tabs syncKey="runtime">
+	<TabItem label="Bundler / TS">
+
+		The standard entrypoint — `import { createDrawer } from '@samline/drawer'`. Works with Vite, Webpack, Rollup, esbuild, Bun, and any modern bundler.
+
+		```ts
+		import '@samline/drawer/styles.css'
+		import { createDrawer } from '@samline/drawer'
+
+		const drawer = createDrawer({
+		  id: 'filters',
+		  direction: 'bottom',
+		  title: 'Filters',
+		  content: 'Drawer body'
+		})
+
+		drawer.setOpen(true)
+		```
+
+	</TabItem>
+	<TabItem label="Browser global">
+
+		No bundler required. Drop the CDN script and use `window.Drawer.createDrawer(options)`.
+
+		```html
+		<div data-drawer-wrapper id="app-shell">
+		  <main>App shell</main>
+		</div>
+
+		<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+		<script>
+		  window.Drawer.createDrawer({
+		    id: 'filters',
+		    triggerText: 'Open drawer',
+		    showHandle: true,
+		    direction: 'bottom',
+		    title: 'Drawer title',
+		    content: 'Drawer content'
+		  })
+		</script>
+		```
+
+	</TabItem>
+</Tabs>
+
+## Recipe: Nested drawers
+
+Use `parentId` to relate a child drawer to a parent. The runtime scales and shifts the parent when the child opens, and closes / destroys the child with the parent.
+
+```ts
+import { createDrawer, getParentDrawer, getChildDrawers, destroyDrawer } from '@samline/drawer'
+
+const parent = createDrawer({
+  id: 'parent',
+  direction: 'bottom',
+  title: 'Account',
+  content: 'Primary drawer body'
+})
+
+const child = createDrawer({
+  id: 'child',
+  parentId: 'parent',
+  direction: 'right',
+  title: 'Security',
+  content: 'Nested drawer body',
+  open: true
+})
+
+// Both drawers open when you call setOpen on the child.
+getParentDrawer('child')?.id // 'parent'
+getChildDrawers('parent').map((d) => d.id) // ['child']
+
+// Destroying the parent recursively destroys the child.
+destroyDrawer('parent')
+getDrawer('child') // null
+```
+
+The parent's transform during the child's drag is driven by `runtime/nested.ts#getParentNestedVisualState`. The runtime re-applies the transform on every `onDragChange` of the child.
+
+## Recipe: Snap points
+
+Snap points let the user drag the drawer between pre-defined positions. Numbers are fractions of the viewport (0–1); strings with `'%'` are a percentage; everything else is parsed as pixels.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'filters',
+  direction: 'bottom',
+  title: 'Filters',
+  content: 'Body',
+  snapPoints: ['180px', '420px', 1],
+  activeSnapPoint: '180px',
+  fadeFromIndex: 1, // overlay fades at the second snap and beyond
+  snapToSequentialPoint: false // allow high-velocity skip to the last
+})
+
+drawer.setOpen(true)
+
+// Programmatic snap jump:
+drawer.setActiveSnapPoint(1) // jump to the last snap (1 = 100% of viewport)
+drawer.setActiveSnapPoint('420px') // jump to the middle snap
+```
+
+### Behaviour
+
+- On open, the content positions itself at the active snap's offset.
+- During drag, the content interpolates between snaps via `getSnapDragValue(activeOffset, draggedDistance, direction)`.
+- On release, `getSnapPointReleaseAction` decides whether to close, snap to a neighbor, or noop (stays put).
+- When `fadeFromIndex` is set, the overlay's opacity transitions from full to transparent at the snap point. The CSS handles the transition; the runtime writes the data-attribute on the overlay.
+- When `snapToSequentialPoint: true`, a high-velocity swipe can only advance one snap at a time. The default is `false`, which lets the user fling to the last snap in one gesture.
+
+## Recipe: Scale background
+
+When `shouldScaleBackground: true`, the page shell (the element with `data-drawer-wrapper`) scales and shifts while the drag is in progress. The runtime uses `runtime/transforms.ts#getBackgroundDragState` and `getBackgroundResetState` to drive the inline `transform`.
+
+```html
+<div data-drawer-wrapper id="app-shell">
+  <main>App content</main>
+</div>
+```
+
+```ts
+import { createDrawer } from '@samline/drawer'
+import '@samline/drawer/styles.css'
+
+const drawer = createDrawer({
+  id: 'filters',
+  title: 'Filters',
+  content: 'Body',
+  shouldScaleBackground: true,
+  setBackgroundColorOnScale: true // optional translucent black overlay
+})
+
+drawer.setOpen(true)
+```
+
+The wrapper is automatically reset to its normal state on close-release. The reset is animated by the stylesheet's `transition: transform 0.5s …` rule on `[data-drawer-wrapper]`.
+
+## Recipe: Handle cycle
+
+When `handleOnly: true` or `showHandle: true`, the runtime renders a built-in handle inside the dialog. Clicking the handle advances the active snap point via `runtime/handle.ts#getNextHandleState`.
+
+- At any non-last snap, the click moves to the next snap.
+- At the last snap with `dismissible: true`, the click closes the drawer.
+- At the last snap with `dismissible: false`, the click cycles back to the first snap.
+- With no `snapPoints` configured and `dismissible: true`, the click is a noop.
+- With no `snapPoints` configured and `dismissible: false`, the click closes the drawer.
+- When `preventCycle: true`, the click is a noop.
+- When a drag is in progress, the click is suppressed.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'filters',
+  title: 'Filters',
+  content: 'Body',
+  showHandle: true,
+  snapPoints: ['120px', '320px', 1],
+  handleClassName: 'my-handle'
+})
+```
+
+The drag is restricted to the handle when `handleOnly: true`. With `showHandle: true`, the handle is visible but the drag can start from anywhere on the content surface.
+
+## Recipe: Viewport keyboard handling
+
+When `repositionInputs: true` or `fixed: true`, the dialog listens to `window.visualViewport.resize` and recomputes the layout via `runtime/viewport.ts#getViewportDrivenDrawerLayout`.
+
+- `repositionInputs: true` writes `style.bottom` so the input stays above the mobile keyboard.
+- `fixed: true` writes `style.height` so the drawer height changes (instead of repositioning) when the keyboard opens.
+- `preventScrollRestoration: true` flips `window.history.scrollRestoration` to `'manual'` while the drawer is mounted and restores the previous value on destroy.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'composer',
+  title: 'Compose',
+  content: /* … */,
+  repositionInputs: true,
+  fixed: true,
+  preventScrollRestoration: true
+})
+```
+
+The runtime inlines `isMobileFirefox` (a `navigator.userAgent` regex) where the layout helper needs it. A separate `isMobileFirefox` helper is a follow-up.
+
+## Recipe: Programmatic open / close with a controller
+
+```ts
+import { createDrawer, destroyDrawers } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'profile',
+  direction: 'bottom',
+  title: 'Profile',
+  content: 'Drawer body',
+  showHandle: true,
+  snapPoints: ['120px', '320px', 1],
+  activeSnapPoint: '120px'
+})
+
+drawer.subscribe((snapshot) => {
+  console.log('drawer state:', snapshot.state.isOpen, snapshot.state.activeSnapPoint)
+})
+
+drawer.setOpen(true)
+// ... user interacts ...
+drawer.setActiveSnapPoint(1)
+drawer.setOpen(false)
+
+destroyDrawers() // cleanup
+```
+
+## Recipe: Imperative helpers (no controller)
+
+For one-off draws where you do not need to keep the controller around, the imperative helpers cover the common cases.
+
+```ts
+import {
+  openDrawer,
+  closeDrawer,
+  toggleDrawer,
+  getDrawer,
+  getDrawers,
+  destroyDrawer,
+  destroyDrawers
+} from '@samline/drawer'
+
+openDrawer('filters')
+closeDrawer('filters')
+toggleDrawer('filters')
+
+getDrawer('filters')?.update({ activeSnapPoint: 1 })
+getDrawers() // { filters: <controller>, default: <controller> }
+
+destroyDrawer('filters')
+destroyDrawers() // clear every drawer
+```
+
+The helpers all target the same module-level registry as `createDrawer`. Reusing an `id` is an update, not a second mount.
+
+## Recipe: Triggered by an external button
+
+```html
+<button id="open-filters">Open filters</button>
+```
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const trigger = document.getElementById('open-filters')
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerElement: trigger,
+  title: 'Filters',
+  content: 'Body'
+})
+
+// Replace the trigger later (the runtime rebinds the click listener):
+drawer.update({ triggerElement: document.getElementById('open-filters-2') })
+
+// Tear down:
+destroyDrawer('filters')
+```
+
+The runtime attaches a `click` listener on the trigger element when the drawer is created, and detaches / rebinds it on `update` and `destroy`.
+
+## Recipe: Built-in trigger button (no external element)
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerText: 'Open filters',
+  title: 'Filters',
+  content: 'Body'
+})
+```
+
+The runtime mounts a `<button data-drawer-vanilla-trigger>` inside the host. The button is removed when the drawer is destroyed.
+
+## Recipe: Multiple independent drawers
+
+```ts
+import { createDrawer, getDrawers, destroyDrawers } from '@samline/drawer'
+
+createDrawer({ id: 'a', direction: 'bottom', title: 'A', content: 'A' })
+createDrawer({ id: 'b', direction: 'right', title: 'B', content: 'B' })
+
+console.log(Object.keys(getDrawers())) // ['a', 'b']
+
+destroyDrawers()
+```
+
+Each drawer is independent. The `browser` namespace from the IIFE bundle wraps the same surface and adds a `Drawer` global.
+
+## Recipe: Subscribe to state changes from a higher-level component
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
+
+const unsubscribe = drawer.subscribe((snapshot) => {
+  // Dispatch a Redux / Zustand / Pinia action, run a useEffect, etc.
+  console.log('state changed:', snapshot.state.isOpen)
+})
+
+// Later, when the consumer unmounts:
+unsubscribe()
+destroyDrawer('filters')
+```
+
+`getSnapshot()` returns the current snapshot synchronously, which is useful for selectors that read on every render.
+
+## Recipe: SPA / dynamic mount and unmount
+
+Pair `createDrawer` with the consumer's mount / unmount lifecycle. The `vanilla` adapter does not auto-mount, so the host only exists while the consumer holds the controller.
+
+```ts
+function showFilters() {
+  const drawer = createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
+  drawer.setOpen(true)
+  return () => drawer.destroy() // return the cleanup
+}
+
+// In the consumer (React, Vue, Svelte, vanilla — anything):
+const close = showFilters()
+// ... later:
+close()
+```
+
+Pair this with the [browser registry helpers](/drawer/getting-started/#browser-registry-helpers-bundler) when loading from a `<script>` tag: call `window.Drawer.createDrawer` on show, `window.Drawer.destroyDrawer` on close.
+
+## Common pitfalls
+
+- **Reusing the same `id` updates the same drawer.** It does not create a second one. If you want a transient second drawer, use a unique id (e.g. `filters-${Date.now()}`) and destroy it on close.
+- **The drag pipeline fires only on the content element.** A child element with `data-drawer-no-drag` does not start a drag (e.g. an input, a button, a scrollable list).
+- **`repositionInputs: true` requires `window.visualViewport`** to be present at runtime. jsdom does not implement it — the runtime guards the attach and skips the listener when absent.
+- **`setActiveSnapPoint` re-renders the dialog.** If you call it many times in a tick, debounce or only call it on user-driven events.
+- **`history.scrollRestoration`** is touched when `preventScrollRestoration: true`. The runtime saves the previous value on open and restores it on destroy. If the page already had it set to `'manual'`, the runtime does not change it.

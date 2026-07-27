@@ -12,6 +12,7 @@ This is the markdown reference for `@samline/drawer` v3.0.0-beta.3 — a framewo
 - [TypeScript reference](typescript.md) — every exported type, callback signature, and helper return shape.
 - [API reference](api/index.md) — one page per public method.
 - [Recipes](recipes.md) — end-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard.
+- [Vanilla](vanilla.md) — the root entrypoint in depth, with the `vanilla` host / dialog / trigger / handle contract.
 - [Browser](browser.md) — using `window.Drawer` from a plain `<script>` tag.
 
 ---
@@ -63,6 +64,7 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 | [api/destroy-drawers.md](api/destroy-drawers.md)                   | The `destroyDrawers()` full clear.                                                                       |
 | [api/create-drawer-controller.md](api/create-drawer-controller.md) | The `createDrawerController(options?)` headless controller factory.                                      |
 | [recipes.md](recipes.md)                                           | Nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open/close. |
+| [vanilla.md](vanilla.md)                                           | The root entrypoint in depth, with the vanilla host / dialog / trigger / handle / close-button contract. |
 | [browser.md](browser.md)                                           | Using `window.Drawer` from a plain `<script>` tag.                                                       |
 
 ---

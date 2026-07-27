@@ -10,7 +10,14 @@
 import '@samline/drawer/styles.css'
 ```
 
-The IIFE bundle (`@samline/drawer/browser`) inlines the stylesheet — when you load the script, the runtime injects a `<style data-drawer-runtime-styles>` element into the page with the same content. You do not need to import anything from the browser entry.
+The IIFE bundle (`@samline/drawer/browser`) is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately from the browser entry:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+```
+
+The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
 
 ---
 
@@ -40,6 +47,8 @@ When `triggerText` is set, the host renders a `<button>` with this attribute as 
 | `data-drawer-snap-points-overlay` | `'true' \| 'false'`  | true when the overlay should fade based on the active snap (`fadeFromIndex` is set) |
 | `data-drawer-animate`             | `'true' \| 'false'`  | `true` by default; set to `false` to disable the CSS animations                     |
 
+The shipped stylesheet applies `pointer-events: none` to the closed-state overlay (`[data-drawer-overlay][data-state='closed']`). The overlay mounts at `createDrawer` time with `data-state="closed"`, so without this rule the invisible overlay would capture every click on the page. The `auto` default is restored as soon as `data-state="open"`, so the user can still click the overlay to dismiss the drawer.
+
 ### `[data-drawer]` — the dialog surface
 
 | Attribute                         | Values                                   | When                                                                                                        |
@@ -65,13 +74,52 @@ Mounted when `showHandle: true` or `handleOnly: true`. Clicking it advances the 
 | `data-drawer-handle`  | always present      | mounts with the handle             |
 | `data-drawer-visible` | `'true' \| 'false'` | mirrors `data-state` of the dialog |
 
+### `[data-drawer-handle-hitarea]` — the handle's touch target
+
+Always mounted alongside `[data-drawer-handle]`. A 44px × 44px (`max(100%, 2.75rem)`) transparent touch target that makes the handle comfortable to hit on touch devices. Does not style — only expands the hit area.
+
+### `[data-drawer-vanilla-node]` — the inner-card wrapper
+
+A wrapper that contains the title, description, close button, and body slots. Mounted inside `[data-drawer]` between the handle and the `[data-drawer-vanilla-body]` body slot. Consumers can use it to style the inner card (e.g. apply `border-radius` / `background` / `box-shadow`).
+
 ### `[data-drawer-title]` and `[data-drawer-description]` — accessible slots
 
 Auto-generated when `ariaLabelledBy` / `ariaDescribedBy` is provided, or always present when `title` / `description` slots are used. The runtime assigns them ids (`<drawer-id>-title` and `<drawer-id>-description` by default) and points the dialog's `aria-labelledby` / `aria-describedby` at them.
 
+The title slot is auto-hidden when the title was promoted from `ariaLabel` (a "proxy" title); pass `titleVisuallyHidden: false` to keep it visible. See [docs/options.md → title](./options.md#vanilla-only-options) for the full contract.
+
+### `[data-drawer-close]` — built-in close button
+
+Rendered inside `[data-drawer]` when `options.closeButton` is `true` or a `VanillaCloseButtonOptions` object. Default class is `drawer-close-button`, default icon is `xmark` (rendered inside a `<span data-drawer-close-icon aria-hidden="true">`), default `aria-label` is `Close`. The button's `click` event `stopPropagation()`s so it does not bubble to the drawer's content. The button is removed on re-mount and on `destroyDrawer` (HMR-safe).
+
 ### `[data-drawer-vanilla-body]` — the body slot
 
 Renders the `content` value (string / number / HTMLElement / thunk). Always present when `content`, `title`, or `description` is set.
+
+### `data-drawer-delayed-snap-points` and `data-drawer-custom-container` — runtime-written flags
+
+The runtime sets these to `'false'` on the content wrapper at mount. They exist as part of the contract for parity with the upstream Vaul data-attribute set:
+
+- `data-drawer-delayed-snap-points='false'` — the drawer's snap-point math is computed at open time, not deferred. The stylesheet selectors that target the deferred mode (in `src/style.css`) never match in this package; the runtime always writes `'false'`.
+- `data-drawer-custom-container='false'` — the runtime does not allow the consumer to opt out of the `::after` element the stylesheet adds. The selectors in `src/style.css` always apply.
+
+These attributes are part of the runtime contract but not user-configurable. Documenting them prevents surprises when consumers inspect the DOM.
+
+### `data-drawer-no-drag` — opt-out marker for descendants (consumer-set)
+
+This is the only `data-drawer-*` attribute the **consumer** sets on a descendant of the drawer. Add it to any element (input, button, scrollable list) that should not start a drag gesture. The drag pipeline walks up from the pointer target and refuses to start a drag if it finds this attribute on the target or any ancestor. The stylesheet does not style this attribute — it is a behavior marker, not a visual one.
+
+```html
+<button data-drawer-no-drag>Click me without dragging the drawer</button>
+```
+
+### `data-drawer-vanilla-trigger` — the built-in trigger button
+
+Rendered inside `[data-drawer-vanilla-root]` when `triggerText` is set. A `<button data-drawer-vanilla-trigger>` with the consumer's label. Clicking it opens the drawer. The button is removed on re-mount and on `destroyDrawer`.
+
+### `data-drawer-wrapper` — the consumer's page shell (consumer-set)
+
+This is the only `data-drawer-*` attribute the **consumer** sets on a non-descendant. Add it to the page shell that should scale behind the drawer when `shouldScaleBackground: true` is set. The runtime reads it; it does not write it.
 
 ---
 

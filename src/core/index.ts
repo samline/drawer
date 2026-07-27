@@ -7,6 +7,30 @@ export type CommonDrawerId = string
 export interface CommonDrawerOptions {
   id?: CommonDrawerId
   parentId?: CommonDrawerId
+  /**
+   * Whether the drawer is open at mount time.
+   *
+   * - `undefined` (default): the drawer is closed at mount. Call
+   *   `setOpen(true)` later to open it. The drawer's open / close
+   *   animations run normally.
+   * - `true`: the drawer is open immediately when `createDrawer`
+   *   runs. No mount animation is shown. Use this for dialogs
+   *   that should be visible as soon as they are created (e.g.
+   *   a flash message that should show on every page load).
+   *   Note: under Vite HMR, the drawer will be re-mounted on
+   *   every save, which can cause a brief flash. For dialogs
+   *   that should appear on mount but are stable across HMR,
+   *   prefer `open: false` + an explicit `setOpen(true)` call
+   *   after the drawer is mounted (deferred with
+   *   `queueMicrotask` so the open animation runs).
+   * - `false`: explicit closed-at-mount. Same as `undefined` —
+   *   useful when the consumer wants to be clear about the
+   *   initial state.
+   *
+   * This is a v3 change from v2's `defaultOpen: true` pattern.
+   * The package no longer mounts the overlay lazily, so the open
+   * state is set at create time, not at first open.
+   */
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void

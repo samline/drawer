@@ -1,9 +1,17 @@
 import type { CommonDrawerDirection } from '../core'
 
 /**
- * Pure swipe-intent math. The vanilla dialog does not yet wire
- * swipe-to-dismiss — see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`.
+ * Pure swipe-intent math. **Planned API, not yet wired into the dialog.**
+ *
+ * The current drag pipeline in `vanilla/dialog.ts#attachListeners` reads
+ * the pointer delta inline and delegates the close decision to
+ * `runtime/drag.ts#shouldCloseDrawerOnRelease` + `runtime/release.ts`.
+ * `getSwipeIntent` was extracted for a future swipe-to-dismiss variant
+ * (e.g. a "swipe past the dismiss threshold even at low velocity"
+ * path) and is exercised by the unit tests in `test/pointer-runtime.test.ts`.
+ *
+ * It is safe to delete if the swipe-to-dismiss feature is dropped —
+ * the only consumer today is the test file.
  */
 
 export function getSwipeIntent({

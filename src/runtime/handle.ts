@@ -1,11 +1,11 @@
 import type { CommonDrawerSnapPoint } from '../core'
 
 /**
- * Pure handle-cycle math. The vanilla handle element renders a drag
- * affordance; clicking it should cycle to the next snap point (or
- * close at the last snap if `dismissible`). The vanilla dialog does
- * not yet wire this — see the placeholder at the end of
- * `vanilla/dialog.ts#attachListeners`.
+ * Pure handle-cycle math. Wired by `vanilla/dialog.ts#mountVanillaDialog`
+ * (Phase D): the built-in `[data-drawer-handle]` renders a drag
+ * affordance; clicking it advances to the next snap point (or closes
+ * the drawer at the last snap when `dismissible: true`). `preventCycle`
+ * disables the click-to-cycle while keeping the handle draggable.
  */
 
 export function getNextHandleState({

@@ -41,7 +41,7 @@ import {
   WINDOW_TOP_OFFSET
 } from '../constants'
 import { isVertical, set } from '../helpers'
-import { getDraggedDistance, getDragPercentage } from '../runtime/drag'
+import { getDraggableOffset, getDraggedDistance, getDragPercentage } from '../runtime/drag'
 import { getDragPermission, getDragTargetMetadata, type DragTargetMetadata } from '../runtime/drag-policy'
 import { getNextHandleState } from '../runtime/handle'
 import { getDismissibleReleaseResult, getSnapPointReleaseAction } from '../runtime/release'
@@ -60,7 +60,7 @@ import {
   getScaleTranslateTransform
 } from '../runtime/transforms'
 import { getViewportDrivenDrawerLayout } from '../runtime/viewport'
-import type { VanillaDrawerOptions, VanillaRenderable } from './render'
+import type { VanillaCloseButtonOptions, VanillaDrawerOptions, VanillaRenderable } from './render'
 
 /**
  * Minimum attributes a synthetic `Event` must expose for the drag
@@ -146,6 +146,14 @@ interface DialogMountState {
   title: HTMLDivElement | null
   description: HTMLDivElement | null
   body: HTMLDivElement | null
+  /**
+   * Built-in close button. Set when `options.closeButton` is truthy
+   * and the mount has built the button. `teardownMount` removes it
+   * (and the listener it carries) on the next mount. Held here
+   * separately from the body / title so the close button's
+   * lifecycle is independent of the title / description slots.
+   */
+  closeButton: HTMLButtonElement | null
   previouslyFocused: HTMLElement | null
   cleanups: Array<() => void>
   bodyOverflowBackup: string | null
@@ -196,6 +204,7 @@ function getHostState(host: HTMLElement): DialogMountState {
       title: null,
       description: null,
       body: null,
+      closeButton: null,
       previouslyFocused: null,
       cleanups: [],
       bodyOverflowBackup: null,
@@ -506,8 +515,9 @@ function shouldShowSnapOverlay(
  * Tear down the previous dialog mount inside `host`. Removes the
  * overlay / content / trigger and detaches every listener. Also blurs
  * the old trigger so a click that triggered this teardown does not
- * leave the old focused element behind (some DOM environments, like
- * linkedom, keep the focused element even after `removeChild`).
+ * leave the old focused element behind. jsdom and real browsers
+ * are consistent here, but the explicit `blur` is defensive — the
+ * runtime should not depend on the host's focus management.
  */
 function teardownMount(state: DialogMountState) {
   for (const cleanup of state.cleanups) cleanup()
@@ -525,6 +535,13 @@ function teardownMount(state: DialogMountState) {
   state.title = null
   state.description = null
   state.body = null
+  // Built-in close button. Removed together with `state.content`
+  // (the button is appended to `[data-drawer]`, which is detached
+  // above), so an explicit `removeChild` is unnecessary — but we
+  // null the reference so the next mount does not re-attach a
+  // stale listener. The click listener lives on the button
+  // element; removing the element is enough to detach it.
+  state.closeButton = null
   state.drag = null
   state.openedAt = null
   // Phase C: cancel any pending wrapper-clear timer. The wrapper
@@ -626,10 +643,85 @@ function buildTitleContent(
   }
 
   // Visually hidden styles
-  if (options.titleVisuallyHidden) setStyle(title, VISUALLY_HIDDEN_STYLE)
+  //
+  // Title slot visibility contract:
+  //
+  // - The consumer passed an explicit `title` (the visible
+  //   case): the slot renders visibly, unless
+  //   `titleVisuallyHidden: true` overrides.
+  // - The consumer did NOT pass `title` but passed `ariaLabel`
+  //   (the proxy case — the title slot is only there for the
+  //   `aria-labelledby` reference): the slot is auto-hidden
+  //   because proxy titles are accessibility targets, not
+  //   visual content. The consumer can opt out with an
+  //   explicit `titleVisuallyHidden: false`.
+  //
+  // See `.agents/recommendations/2026-07-25-auto-hide-title-slot-when-promoted-from-ariaLabel.md`
+  // for the full design rationale.
+  const isProxyTitle = showProxyTitle && !showTitle
+  const shouldHideTitle =
+    options.titleVisuallyHidden === true || (isProxyTitle && options.titleVisuallyHidden !== false)
+  if (shouldHideTitle) setStyle(title, VISUALLY_HIDDEN_STYLE)
   if (options.descriptionVisuallyHidden && state.description) {
     setStyle(state.description, VISUALLY_HIDDEN_STYLE)
   }
+}
+
+/**
+ * Resolve `options.closeButton` into a normalized options object,
+ * or `false` if the close button is not requested. Centralizes
+ * the `boolean | { className, icon, ariaLabel }` contract so the
+ * mount path can stay short.
+ */
+function normalizeCloseButtonOptions(
+  options: boolean | VanillaCloseButtonOptions | undefined
+): false | { className: string; icon: string | HTMLElement; ariaLabel: string } {
+  if (!options) return false
+  if (options === true) {
+    return { className: 'drawer-close-button', icon: 'xmark', ariaLabel: 'Close' }
+  }
+  return {
+    className: options.className ?? 'drawer-close-button',
+    icon: options.icon ?? 'xmark',
+    ariaLabel: options.ariaLabel ?? 'Close'
+  }
+}
+
+/**
+ * Build the close button DOM and wire its `click` to
+ * `callbacks.onOpenChange(false)`. The button's `click` event
+ * `stopPropagation()`s so it does not bubble to the drawer's
+ * content (e.g. a form submit handler).
+ *
+ * Returns the button element. The caller is responsible for
+ * appending it to the dialog tree and storing it on
+ * `state.closeButton` so `teardownMount` can remove it.
+ *
+ * The icon is rendered as a `<span aria-hidden="true">` so
+ * screen readers only announce the button's `aria-label`.
+ */
+function buildCloseButton(
+  options: { className: string; icon: string | HTMLElement; ariaLabel: string },
+  callbacks: { onOpenChange: (open: boolean) => void }
+): HTMLButtonElement {
+  const button = createEl('button', {
+    type: 'button',
+    'data-drawer-close': '',
+    'aria-label': options.ariaLabel
+  }) as HTMLButtonElement
+  button.className = options.className
+  if (options.icon instanceof HTMLElement) {
+    const iconSpan = createEl('span', { 'data-drawer-close-icon': '', 'aria-hidden': 'true' })
+    iconSpan.appendChild(options.icon)
+    button.appendChild(iconSpan)
+  } else {
+    button.appendChild(createEl('span', { 'data-drawer-close-icon': '', 'aria-hidden': 'true' }, [options.icon]))
+  }
+  button.addEventListener('click', (event) => {
+    event.stopPropagation()
+    callbacks.onOpenChange(false)
+  })
+  return button
 }
 
 function buildBodyContent(state: DialogMountState, options: VanillaDrawerOptions) {
@@ -744,8 +836,9 @@ function attachListeners(
       if (options.modal === false || options.autoFocus) return
       event.preventDefault()
       // `preventDefault` on a synthetic mousedown does not always
-      // remove an already-focused element (linkedom in particular keeps
-      // it), so we blur explicitly to match the Radix behaviour.
+      // remove an already-focused element across DOM environments, so
+      // we blur explicitly to match the Radix behaviour. The runtime
+      // should not depend on the host's focus management.
       if (typeof trigger.blur === 'function') trigger.blur()
       callbacks.onBuiltInTriggerMouseDown?.()
     }
@@ -946,19 +1039,24 @@ function attachListeners(
           isDraggingDown
         }
 
-        // Phase A: the snap-free path writes
-        // `translate(0, draggedDistance * -1)` (the inverse sign
-        // makes "drag down" move the drawer down, matching the
-        // finger). Phase B replaces this with the snap drag value.
+        // Phase A: the snap-free path delegates the
+        // `draggableOffset` math to `getDraggableOffset`, which
+        // applies elastic resistance when the user drags in the
+        // OPPOSITE of the close direction (e.g. dragging a
+        // `direction='right'` drawer to the left). The drawer
+        // still moves but at `DRAG_RESISTANCE` (0.5) of the
+        // gesture distance, matching the v2 vaul library and
+        // Safari's scroll-bounce. The close direction has no
+        // resistance so the close-threshold / velocity math stays
+        // predictable. Phase B replaces this with the snap drag
+        // value.
         const draggableOffset = hasSnapPoints
           ? getSnapDragValue({
               activeSnapPointOffset: drag.activeSnapPointOffset ?? 0,
               draggedDistance,
               direction
             })
-          : direction === 'bottom' || direction === 'right'
-            ? -draggedDistance
-            : draggedDistance
+          : getDraggableOffset({ direction, draggedDistance })
         set(content, {
           transform: getAxisAwareTranslate(direction, draggableOffset),
           transition: 'none'
@@ -1481,6 +1579,19 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
           : undefined
     buildTitleContent(state, options, contentRoot instanceof HTMLElement ? contentRoot : undefined)
     buildBodyContent(state, options)
+
+    // Built-in close button. Rendered last so it sits at the
+    // end of the dialog tree (between the body and any
+    // consumer-supplied children). The button is removed on
+    // the next `teardownMount` via `state.closeButton`; its
+    // `click` listener is owned by the button element, so
+    // removing the element is enough to detach the listener.
+    const closeButtonOptions = normalizeCloseButtonOptions(options.closeButton)
+    if (closeButtonOptions) {
+      const closeBtn = buildCloseButton(closeButtonOptions, { onOpenChange })
+      content.appendChild(closeBtn)
+      state.closeButton = closeBtn
+    }
   }
 
   attachListeners(state, options, {
@@ -1534,10 +1645,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   if (open && (options.repositionInputs || options.fixed) && typeof window !== 'undefined' && window.visualViewport) {
     const visualViewport = window.visualViewport
     const listenerDirection = getDirection(options)
-    // Phase E scope limitation: the original `isMobileFirefox` helper
-    // lived in `src/browser-utils.ts` (deleted earlier this session).
-    // The cleanest in-line replacement is a user-agent regex. A
-    // dedicated helper is a follow-up.
+    // Phase E scope limitation: a dedicated `isMobileFirefox` helper
+    // is a follow-up. The in-line user-agent regex keeps the
+    // layout math working without an extra module.
     const listenerIsMobileFirefox = /firefox|fxios/i.test(navigator.userAgent)
 
     const onVisualViewportResize = () => {

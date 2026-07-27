@@ -1,0 +1,158 @@
+---
+title: Getting started
+description: Install @samline/drawer and mount your first drawer in under five minutes.
+template: doc
+sidebar:
+  order: 1
+---
+
+import { Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page walks you through installing `@samline/drawer` and running a working example. By the end you'll have a mounted drawer, a controller you can drive, and a clear picture of the registry that the rest of the API shares.
+
+## Prerequisites
+
+- **Node.js 20+** when bundling (the package is published as ESM + CJS and ships TypeScript types).
+- A package manager — `npm`, `pnpm`, `yarn` or `bun`.
+- A runtime target of **ES2020** in the browser.
+
+## Install
+
+<Tabs syncKey="package-manager">
+	<TabItem label="npm">
+
+		```bash
+		npm install @samline/drawer
+		```
+
+	</TabItem>
+	<TabItem label="pnpm">
+
+		```bash
+		pnpm add @samline/drawer
+		```
+
+	</TabItem>
+	<TabItem label="yarn">
+
+		```bash
+		yarn add @samline/drawer
+		```
+
+	</TabItem>
+	<TabItem label="bun">
+
+		```bash
+		bun add @samline/drawer
+		```
+
+	</TabItem>
+</Tabs>
+
+## First example
+
+Drop this in any modern bundler or TypeScript project:
+
+```ts title="drawer.ts"
+import '@samline/drawer/styles.css'
+import { createDrawer } from '@samline/drawer'
+
+document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '')
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerText: 'Open drawer',
+  showHandle: true,
+  direction: 'bottom',
+  title: 'Drawer title',
+  description: 'Drawer description',
+  content: 'Drawer content'
+})
+
+drawer.setOpen(true)
+```
+
+What this does:
+
+- Mounts the drawer host under a `<div data-drawer-vanilla-root>` in `document.body` (or your `mountElement`).
+- Renders a built-in `<button data-drawer-vanilla-trigger>` because `triggerText` is set.
+- Renders the built-in handle because `showHandle: true` is set.
+- Opens the drawer.
+
+The shared stylesheet provides runtime behavior and the built-in handle, not a finished bottom-sheet theme — use `triggerElement`, `overlayClassName`, and `contentClassName` when you want a fully styled visible shell.
+
+## Browser global (no bundler)
+
+If you do not have a bundler, drop a single `<script>` and use the `window.Drawer` global:
+
+```html title="index.html"
+<div data-drawer-wrapper id="app-shell">
+  <main>App shell</main>
+</div>
+
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<script>
+  window.Drawer.createDrawer({
+    id: 'filters',
+    triggerText: 'Open drawer',
+    showHandle: true,
+    direction: 'bottom',
+    title: 'Drawer title',
+    content: 'Drawer content'
+  })
+</script>
+```
+
+:::caution[Pin the version in production]
+The CDN URL above uses `@3.0.0`. Replace the version with the one you ship.
+:::
+
+The IIFE bundle inlines the runtime stylesheet — when the script loads, the runtime injects a `<style data-drawer-runtime-styles>` element into the page. You do not need a separate `<link rel="stylesheet">`.
+
+See the [Browser global reference](/drawer/reference/browser/) for the full surface, including `Drawer.createDrawer`, `Drawer.destroyDrawer`, and the same module-level registry.
+
+## Browser registry helpers (bundler)
+
+If you have a bundler and want the same `{ createDrawer, destroyDrawer, getDrawer }` ergonomics as the IIFE — but without `window.Drawer` auto-installed — import the `browser` singleton from the vanilla entrypoint:
+
+```ts title="bundler.ts"
+import { browser } from '@samline/drawer'
+
+window.MyDrawer = { ...browser }
+
+window.MyDrawer.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
+window.MyDrawer.openDrawer('filters')
+window.MyDrawer.destroyDrawers()
+```
+
+`browser` is an object you can spread into your own globals or use directly. Because it shares the same module-level `drawerInstances` map as the named exports, every spread behaves the same — `window.MyDrawer.createDrawer({})` and `createDrawer({})` end up calling the same factory and updating the same DOM host.
+
+If you need multiple independent registries, use the named exports with distinct `id` values.
+
+## What's next?
+
+<CardGrid>
+	<Card title="Configuration" icon="setting">
+		Every option, default, and rationale — `id`, `parentId`, `direction`, `snapPoints`, `fadeFromIndex`, `closeThreshold`, and the rest.
+
+		[Configuration →](/drawer/reference/configuration/)
+	</Card>
+
+	<Card title="API reference" icon="open-book">
+		Function-by-function documentation with TypeScript signatures, return shapes, and behaviour tables.
+
+		[API reference →](/drawer/reference/api/)
+	</Card>
+
+	<Card title="TypeScript" icon="seti:typescript">
+		Every exported type — `CommonDrawerController`, `VanillaDrawerController`, `CommonDrawerOptions`, `VanillaDrawerOptions`, `DrawerApi`.
+
+		[TypeScript reference →](/drawer/reference/typescript/)
+	</Card>
+
+	<Card title="Examples" icon="puzzle">
+		End-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard handling, programmatic open/close, SPA cleanup.
+
+		[Browse examples →](/drawer/reference/examples/)
+	</Card>
+</CardGrid>

@@ -1,0 +1,25 @@
+/*
+ * src/styles/custom.css
+ *
+ * Free-form CSS that layers on top of Starlight's default theme.
+ * Loaded via `customCss` in `astro.config.mjs`.
+ *
+ * Use the CSS custom properties documented at
+ *   https://starlight.astro.build/guides/css-and-tailwind/
+ * to override the look & feel without forking Starlight.
+ */
+
+:root {
+	/* Tweak the brand accent here. Default is Starlight's purple. */
+	--sl-color-accent-low: #2a1e3f;
+	--sl-color-accent: #7556d4;
+	--sl-color-accent-high: #cbc2ff;
+
+	/* A subtle radius bump. */
+	--sl-radius-medium: 0.5rem;
+}
+
+/* "Built with Starlight" pill colour */
+starlight-menu-button + a {
+	font-weight: 600;
+}
