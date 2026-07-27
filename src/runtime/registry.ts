@@ -45,6 +45,15 @@ interface DrawerRuntimeInstance {
   controller: CommonDrawerController
   options: VanillaDrawerOptions
   cleanupTriggerElement: (() => void) | null
+  /**
+   * True after the drawer has been opened at least once in this
+   * mount session. Mirrors vaul upstream's `hasBeenOpened` state
+   * (see F14 in the forensic audit). Used to gate behavior that
+   * should only kick in AFTER the first open — most importantly
+   * the `shouldAnimate` ref (F9) that skips the opening animation
+   * for `defaultOpen: true` drawers.
+   */
+  hasBeenOpened: boolean
 }
 
 const drawerInstances = new Map<CommonDrawerId, DrawerRuntimeInstance>()
@@ -117,6 +126,14 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 
 function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   runtime.options.onOpenChange?.(open)
+
+  // Track first-open for the F14/F9 parity work (the `shouldAnimate`
+  // ref skips the entrance animation on `defaultOpen: true` and
+  // other future consumers — e.g. a `usePreventScroll` shim that
+  // only kicks in after the first user-driven open).
+  if (open) {
+    runtime.hasBeenOpened = true
+  }
 
   if (runtime.options.parentId) {
     syncParentNestedTransform(runtime.options.parentId)
@@ -411,7 +428,8 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
       ownsElement: false,
       controller: createDrawerController(nextOptions),
       options: nextOptions,
-      cleanupTriggerElement: null
+      cleanupTriggerElement: null,
+      hasBeenOpened: false
     })
   } else {
     existing.options = nextOptions

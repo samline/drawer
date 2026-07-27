@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  DRAG_RESISTANCE,
   dampenValue,
   getDraggableOffset,
   isDraggingInCloseDirection
@@ -149,12 +148,19 @@ describe('drag elastic resistance (opposite direction)', () => {
       expect(getDraggableOffset({ direction: 'left', draggedDistance: 0 })).toBeCloseTo(0)
     })
 
-    it('DRAG_RESISTANCE is exported as a multiplier (1 by default; v2 parity comes from dampenValue)', () => {
-      // `DRAG_RESISTANCE` is now a multiplier (default 1) on top of
-      // the logarithmic curve. The dampening curve itself lives in
-      // `dampenValue`. A future tuning pass can relax / tighten the
-      // elasticity without re-tuning the curve.
-      expect(DRAG_RESISTANCE).toBe(1)
+    it('1:1 with vaul upstream (no DRAG_RESISTANCE multiplier, just dampenValue)', () => {
+      // vaul upstream applies `dampenValue(draggedDistance)` directly
+      // to the opposite-direction drag. The port historically had a
+      // `DRAG_RESISTANCE = 1` multiplier (no-op) on top of the curve;
+      // removed in v3.0.0 stable. For `direction: 'bottom'` and a
+      // 100 px UP drag (opposite of close), `getDraggableOffset` returns
+      // the dampened magnitude with the sign of the base offset
+      // (negative, because the drawer is dragged up).
+      const expected = -(8 * (Math.log(101) - 2))
+      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: 100 })).toBeCloseTo(
+        expected,
+        5
+      )
     })
 
     it('opposite-direction resistance matches v2 ratio (~21% at 100 px)', () => {

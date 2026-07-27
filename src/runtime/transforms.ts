@@ -111,3 +111,35 @@ export function getBackgroundResetState({
     transformOrigin: direction === 'top' || direction === 'bottom' ? 'top' : 'left'
   }
 }
+
+/**
+ * Read the inline `translate*` value from an element's computed
+ * `transform` and return it as a pixel offset along the drawer's
+ * axis. Mirrors vaul upstream's `getTranslate` in
+ * `src/helpers.ts`, which the React port uses inside `shouldDrag` to
+ * detect "the drawer is already in a non-zero position" before
+ * allowing a drag in the close direction.
+ *
+ * Returns `null` when the element has no transform, when the
+ * transform does not match the expected matrix shape, or when the
+ * `DOMMatrix` API is unavailable (jsdom). Callers should treat
+ * `null` as "drawer is at rest" and use their fallback path.
+ */
+export function getTranslate(
+  element: HTMLElement | null,
+  direction: CommonDrawerDirection
+): number | null {
+  if (!element) return null
+  // `getComputedStyle(...).transform` returns a `matrix(a, b, c, d, tx, ty)`
+  // string when there is a non-trivial transform, or `'none'` for the
+  // identity matrix. Parse with `DOMMatrix` (modern browsers + jsdom
+  // 16+).
+  if (typeof DOMMatrix === 'undefined') return null
+  const transform = window.getComputedStyle(element).transform
+  if (!transform || transform === 'none') return null
+  const matrix = new DOMMatrix(transform)
+  // The drawer's `translate3d(x, y, 0)` sets `matrix.m41` for the
+  // horizontal axis and `matrix.m42` for the vertical axis. Pick the
+  // one that matches the drawer's axis.
+  return direction === 'top' || direction === 'bottom' ? matrix.m42 : matrix.m41
+}

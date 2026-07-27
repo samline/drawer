@@ -1138,8 +1138,17 @@ function attachListeners(
         shouldFade: initialShouldFade
       }
 
+      // F3 / F11: stash the most recent pointermove so the synthetic
+      // release listeners (`pointerout`, `contextmenu`,
+      // `pointercancel`, see below) can replay the last known
+      // gesture position when the real `pointerup` never reaches
+      // the content (cursor off the drawer, OS interruption,
+      // long-press context menu, etc.).
+      let lastPointerMove: DragPointerEvent | null = null
+
       const onPointerMove = (moveRaw: Event) => {
         const moveEvent = moveRaw as DragPointerEvent
+        lastPointerMove = moveEvent
         const drag = state.drag
         if (!drag) return
         const currentPointer = isVerticalAxis ? moveEvent.clientY : moveEvent.clientX
@@ -1516,11 +1525,45 @@ function attachListeners(
         callbacks.onReleaseChange?.(true)
       }
 
+      // F3 / F11: vaul upstream tracks the most recent `pointermove`
+      // event and replays the release path on `pointerout`,
+      // `contextmenu`, and `pointercancel`. Without these, dragging
+      // off the drawer's bounding box (or triggering a long-press
+      // context menu on iOS) leaves the inline transform stuck at
+      // the last drag position because the browser never fires a
+      // `pointerup` on the content element. The `pointerout` /
+      // `contextmenu` / `pointercancel` listeners replay the last
+      // known `pointermove` through the same `onPointerUp` handler.
+      const onPointerOut = (synthetic: Event) => {
+        if (!state.drag) return
+        if (typeof synthetic.preventDefault === 'function') {
+          synthetic.preventDefault()
+        }
+        onPointerUp(lastPointerMove ?? (synthetic as DragPointerEvent))
+      }
+      const onContextMenu = (synthetic: Event) => {
+        if (!state.drag) return
+        if (typeof synthetic.preventDefault === 'function') {
+          synthetic.preventDefault()
+        }
+        onPointerUp(lastPointerMove ?? (synthetic as DragPointerEvent))
+      }
+      const onPointerCancel = (synthetic: Event) => {
+        if (!state.drag) return
+        onPointerUp(lastPointerMove ?? (synthetic as DragPointerEvent))
+      }
+
       content.addEventListener('pointermove', onPointerMove)
       content.addEventListener('pointerup', onPointerUp)
+      content.addEventListener('pointerout', onPointerOut)
+      content.addEventListener('contextmenu', onContextMenu)
+      content.addEventListener('pointercancel', onPointerCancel)
       state.cleanups.push(() => {
         content.removeEventListener('pointermove', onPointerMove)
         content.removeEventListener('pointerup', onPointerUp)
+        content.removeEventListener('pointerout', onPointerOut)
+        content.removeEventListener('contextmenu', onContextMenu)
+        content.removeEventListener('pointercancel', onPointerCancel)
       })
     }
 

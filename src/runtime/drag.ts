@@ -47,26 +47,6 @@ export function isDraggingTowardExpandedState(draggedDistance: number) {
 }
 
 /**
- * Resistance applied to the inline transform when the user drags in
- * the OPPOSITE of the close direction. v2 (vaul) used a logarithmic
- * dampening (`8 * (log(d + 1) - 2)`) that grew much more slowly
- * than the finger movement; a 100 px drag in the wrong direction
- * produced ~21 px of movement, a 200 px drag ~32 px. v3.0.0-beta.3
- * replaced this with a linear `0.5` factor, which let the drawer
- * follow the finger at 50 % of the gesture distance — a visible
- * regression for the consumer ("the drawer follows the finger in
- * the opposite of the close direction"). This constant is kept
- * exported for the regression test in `test/drag-elastic-resistance.test.ts`
- * and documents the v2 behavior. The actual elastic math lives in
- * `dampenValue` below (a direct port from v2 helpers).
- *
- * `1` = no resistance, `0` = no movement. The close direction has
- * no resistance so the close-threshold / velocity math stays
- * predictable.
- */
-export const DRAG_RESISTANCE = 1
-
-/**
  * Logarithmic dampening of an out-of-bounds drag distance. Mirrors
  * the v2 vaul library's `dampenValue` (`8 * (log(d + 1) - 2)`), the
  * same curve used by Safari's scroll bounce. The function grows
@@ -113,9 +93,7 @@ export function isDraggingInCloseDirection({
  * matches the finger position 1:1 so the close threshold / velocity
  * math stays accurate. For the opposite direction, the offset is
  * scaled by `dampenValue` (logarithmic, v2 vaul parity) to give the
- * elastic / rubber-band effect. The `DRAG_RESISTANCE` factor of `1`
- * is kept as a multiplier so the v2 behavior is preserved even when
- * a future tuning pass wants to relax or tighten the elasticity.
+ * elastic / rubber-band effect. 1:1 with vaul upstream's onDrag.
  */
 export function getDraggableOffset({
   direction,
@@ -133,7 +111,7 @@ export function getDraggableOffset({
   // encodes the screen direction; we use the absolute value for
   // the curve and reapply the sign at the end).
   const magnitude = dampenValue(Math.abs(baseOffset))
-  return magnitude * Math.sign(baseOffset) * DRAG_RESISTANCE
+  return magnitude * Math.sign(baseOffset)
 }
 
 export function getDragPercentage({
