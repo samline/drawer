@@ -111,7 +111,18 @@
      to fade in→out on initial mount (visible as a 0.5s flicker on
      pages that mount the drawer on load). The animation is
      preserved for the open→close transition but the start and end
-     are now both opacity:0 on mount, so no visible change. */
+     are now both opacity:0 on mount, so no visible change.
+
+     Specificity note: the rule below
+     `[data-drawer-overlay][data-drawer-snap-points-overlay='true']`
+     has the same specificity (two attribute selectors) and is
+     declared later in the file — without an explicit
+     `:not([data-state='closed'])` clause it would otherwise win
+     and the overlay would start at opacity:1 on mount and fade
+     out over 0.5s. The `[data-drawer-overlay][data-drawer-overlay][…]`
+     selector below duplicates the attribute selector to push this
+     rule's specificity to (0,3,0), which is high enough to win
+     regardless of order. */
   opacity: 0;
   animation-name: fadeOut;
   animation-fill-mode: forwards;
@@ -121,6 +132,16 @@
      click on the page even though `opacity: 0` makes it invisible.
      The `auto` default is restored as soon as `data-state="open"`,
      so the user can still click the overlay to dismiss. */
+  pointer-events: none;
+}
+/* Specificity-boosted companion: duplicate `data-drawer-overlay` so
+   this rule wins specificity ties against the later
+   `[data-drawer-overlay][data-drawer-snap-points-overlay='true']`
+   rule. The visual effect is the same as the base rule above
+   (opacity:0, pointer-events:none, animation-name:fadeOut), the
+   only difference is the selector specificity. */
+[data-drawer-overlay][data-drawer-overlay][data-state='closed'] {
+  opacity: 0;
   pointer-events: none;
 }
 
