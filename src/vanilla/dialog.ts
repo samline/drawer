@@ -519,62 +519,49 @@ function shouldShowSnapOverlay(
  * are consistent here, but the explicit `blur` is defensive — the
  * runtime should not depend on the host's focus management.
  */
-function teardownMount(state: DialogMountState) {
+/**
+ * Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+ * ALWAYS called `teardownMount` and re-mounted the dialog, even
+ * for the trivial open→close transition. The new elements were
+ * created with `data-state="closed"` from the start (so the
+ * static `transform: translate3d(...)` rule positioned them
+ * off-screen immediately), and the CSS `slideToRight` /
+ * `slideToBottom` / etc. close animations never played. The
+ * drawer just vanished on close.
+ *
+ * For the simple open→close transition we now keep the existing
+ * DOM in place and flip `data-state` to `"closed"` so the CSS
+ * close animation can run. The DOM teardown is deferred to the
+ * `animationend` event so listeners stay attached during the
+ * animation (the close button / form inputs / overlay mouseup
+ * continue to work — see `.agents/issues/2026-07-26-close-button-click-suppressed-by-pointer-capture.md`).
+ *
+ * The listener teardown, body-scroll-lock restore, and focus
+ * restoration happen immediately (so the visualViewport listener
+ * etc. are detached synchronously, matching v2 behaviour), but
+ * the DOM nodes themselves stay in the tree until the animation
+ * completes.
+ *
+ * Every other transition (closed→open, open→open on option change,
+ * destroy, etc.) still goes through the standard teardown +
+ * re-mount path because the option set may have changed and the
+ * existing elements no longer reflect the desired DOM contract.
+ */
+function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {}) {
+  // Step 1 — run every cleanup callback registered on the state.
+  // This detaches every event listener the mount installed (visualViewport
+  // resize, scroll restoration, overlay mouseup, keydown, pointerdown,
+  // pointermove, pointerup, handle click, etc.) and clears the
+  // cleanup array. After this returns, no listener owned by this
+  // dialog will fire on subsequent events.
   for (const cleanup of state.cleanups) cleanup()
   state.cleanups = []
+
+  // Step 2 — restore the page-level side-effects we own (focus,
+  // body scroll lock, history scroll restoration, viewport state).
   if (state.trigger && document.activeElement === state.trigger) {
     if (typeof state.trigger.blur === 'function') state.trigger.blur()
   }
-  if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
-  if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
-  if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
-  state.trigger = null
-  state.overlay = null
-  state.content = null
-  state.handle = null
-  state.title = null
-  state.description = null
-  state.body = null
-  // Built-in close button. Removed together with `state.content`
-  // (the button is appended to `[data-drawer]`, which is detached
-  // above), so an explicit `removeChild` is unnecessary — but we
-  // null the reference so the next mount does not re-attach a
-  // stale listener. The click listener lives on the button
-  // element; removing the element is enough to detach it.
-  state.closeButton = null
-  state.drag = null
-  state.openedAt = null
-  // Phase C: cancel any pending wrapper-clear timer. The wrapper
-  // outlives the dialog mount (it is a page-level element), so the
-  // timer must not fire after the dialog is gone — it would touch
-  // a wrapper that no longer belongs to this drawer and leak the
-  // timeout handle.
-  cancelPendingWrapperClear(state)
-  state.backgroundScale = null
-  // Phase E: restore `history.scrollRestoration` if this dialog
-  // changed it. The backup is the value the page carried before
-  // the dialog mounted (typically `'auto'`); restoring it leaves
-  // the browser in the same state as before the dialog opened.
-  // When the backup is `null` we never wrote to `scrollRestoration`
-  // (the value was already `'manual'`, or `preventScrollRestoration`
-  // was off), so there is nothing to undo.
-  if (state.scrollRestorationBackup !== null) {
-    if (typeof window !== 'undefined' && window.history) {
-      window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
-    }
-    state.scrollRestorationBackup = null
-  }
-  // Phase E: reset the viewport / mobile-keyboard state. The
-  // listener is already detached (its `removeEventListener` was
-  // pushed onto `state.cleanups` and consumed above), so the
-  // cached diffs cannot influence a future mount. Resetting them
-  // keeps the next mount's first resize call from inheriting
-  // stale values.
-  state.keyboardIsOpen = false
-  state.previousDiffFromInitial = 0
-  state.initialDrawerHeight = 0
-  state.activeSnapPointOffset = 0
-  // Restore focus + body scroll lock if we still own them.
   if (state.previouslyFocused && document.contains(state.previouslyFocused)) {
     state.previouslyFocused.focus?.()
   }
@@ -587,6 +574,49 @@ function teardownMount(state: DialogMountState) {
     document.body.style.paddingRight = state.bodyPaddingRightBackup
     state.bodyPaddingRightBackup = null
   }
+  if (state.scrollRestorationBackup !== null) {
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
+    }
+    state.scrollRestorationBackup = null
+  }
+  state.keyboardIsOpen = false
+  state.previousDiffFromInitial = 0
+  state.initialDrawerHeight = 0
+  state.activeSnapPointOffset = 0
+  state.drag = null
+  state.openedAt = null
+
+  // Step 3 — cancel the wrapper-clear timer and remove the DOM
+  // nodes. The wrapper-clear timer is intentionally only cancelled
+  // in the FULL teardown path (not the close-only path with
+  // `deferDom: true`) because the close-only path needs the
+  // wrapper's CSS transition to complete after the drag-release
+  // pipeline wrote the inline rest styles.
+  if (opts.deferDom) {
+    // On the close-only path, keep `state.backgroundScale` populated
+    // until the DOM removal runs so `scheduleWrapperClear`'s
+    // pending timer can still touch the wrapper. The timer reads
+    // `state.backgroundScale.clearTimeout` to no-op itself once
+    // it fires; clearing `state.backgroundScale` here would
+    // make the timer's existence check fail and leave the
+    // wrapper with stale inline styles. The DOM removal block
+    // below is the one place that cancels the timer.
+    return
+  }
+  cancelPendingWrapperClear(state)
+  state.backgroundScale = null
+  if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
+  if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
+  if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
+  state.trigger = null
+  state.overlay = null
+  state.content = null
+  state.handle = null
+  state.title = null
+  state.description = null
+  state.body = null
+  state.closeButton = null
 }
 
 function buildTitleContent(
@@ -745,6 +775,13 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   }
   if (state.content) {
     state.content.dataset.state = open ? 'open' : 'closed'
+    // `data-drawer-closing` is intentionally NOT touched here.
+    // The runtime sets it before invoking this function on the
+    // open→close path (see `mountVanillaDialog#isClosingOnly`) so
+    // the CSS close-animation rule wins over the static off-screen
+    // transform. The runtime clears it on `animationend`. If we
+    // re-set it here we would lose that signal mid-animation.
+    delete state.content.dataset.drawerClosing
   }
   if (state.handle) {
     state.handle.dataset.drawerVisible = open ? 'true' : 'false'
@@ -1510,6 +1547,126 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     onActiveSnapPointChange
   } = dialogOptions
   const state = getHostState(host)
+
+  // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+  // ALWAYS called `teardownMount` and re-mounted the dialog, even
+  // for the trivial open→close transition. The new elements were
+  // created with `data-state="closed"` from the start (so the
+  // static `transform: translate3d(...)` rule positioned them
+  // off-screen immediately), and the CSS `slideToRight` /
+  // `slideToBottom` / etc. close animations never played. The
+  // drawer just vanished on close.
+  //
+  // For the simple open→close transition we now keep the existing
+  // DOM in place and flip `data-state` to `"closed"` so the CSS
+  // close animation can run. The actual teardown is deferred to
+  // the `animationend` event so listeners stay attached during the
+  // animation (the close button / form inputs / overlay mouseup
+  // continue to work — see `.agents/issues/2026-07-26-close-button-click-suppressed-by-pointer-capture.md`).
+  //
+  // Every other transition (closed→open, open→open on option change,
+  // destroy, etc.) still goes through the standard teardown +
+  // re-mount path because the option set may have changed and the
+  // existing elements no longer reflect the desired DOM contract.
+  const hadOpenMount = state.content !== null && state.content.dataset.state === 'open'
+  const isClosingOnly = hadOpenMount && !open
+  if (isClosingOnly) {
+    // Phase C: programmatic close path. When the drawer is being
+    // closed AND the page wrapper still carries any of the inline
+    // styles the drag pipeline wrote, we need to animate the
+    // wrapper back to NORMAL. The drag-release close path in
+    // `onPointerUp` already does this; this branch covers the case
+    // where the consumer closed the drawer via a non-drag path
+    // (e.g. clicking a custom close button that calls
+    // `controller.setOpen(false)`). When the wrapper is already
+    // clean we leave it alone — the spec says programmatic
+    // open/close must not change the wrapper's visual state.
+    if (options.shouldScaleBackground) {
+      const wrapper = getWrapperElement()
+      if (wrapper && wrapperHasInlineStyles(wrapper)) {
+        const baseScale = computeBaseScale(getDirection(options))
+        state.backgroundScale = { baseScale, clearTimeout: null }
+        applyWrapperOpenState({
+          wrapper,
+          direction: getDirection(options),
+          baseScale,
+          clearBackgroundColor: options.setBackgroundColorOnScale === true
+        })
+        scheduleWrapperClear(wrapper, state)
+      }
+    }
+    // The CSS close-animation rule
+    // `[data-state='closed'][data-drawer-closing]` overrides the
+    // static off-screen transform so `slideToRight` has a clean
+    // start frame (the open position) and the drawer visibly
+    // slides out instead of jumping. The animation's `forwards`
+    // fill-mode holds the closed position once it ends; the
+    // `animationend` listener below clears the flag.
+    applyOpenState(state, options, false)
+    if (state.content) state.content.dataset.drawerClosing = 'true'
+    // Detach listeners + restore page-level side-effects immediately
+    // (matches v2 semantics; the visualViewport listener must come
+    // off synchronously so the next `setOpen(true)` re-attaches a
+    // fresh one with the current options). The DOM nodes themselves
+    // stay in the tree until the close animation finishes — the
+    // CSS animation needs the elements present to interpolate the
+    // transform.
+    teardownMount(state, { deferDom: true })
+    // Schedule the DOM removal for after the close animation. If
+    // the animation never ends (CSS animations disabled by a
+    // consumer `data-drawer-animate="false"`, or the test
+    // environment doesn't run animations), the safety timeout
+    // still tears down.
+    const target = state.content
+    const removeDom = () => {
+      if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
+      if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
+      if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
+      state.trigger = null
+      state.overlay = null
+      state.content = null
+      state.handle = null
+      state.title = null
+      state.description = null
+      state.body = null
+      state.closeButton = null
+    }
+    if (target) {
+      const onAnimationEnd = () => {
+        target.removeEventListener('animationend', onAnimationEnd)
+        target.removeEventListener('animationcancel', onAnimationEnd)
+        // Clear the closing flag so the static off-screen
+        // transform rule takes over again (the animation's
+        // `forwards` fill-mode is already holding the element at
+        // the closed position; clearing the flag keeps the rule
+        // consistent if the consumer re-opens before the timer
+        // fires).
+        delete target.dataset.drawerClosing
+        // The drag-release pipeline (or `applyWrapperOpenState` on
+        // programmatic close) may have scheduled a deferred
+        // wrapper-clear timer via `scheduleWrapperClear`. That
+        // timer outlives the dialog mount — it touches the page
+        // wrapper, not the drawer — so it must NOT be cancelled
+        // here. The original `teardownMount` cancelled it because
+        // the dialog owned the wrapper, but on the close-only path
+        // we already ran the immediate teardown which left
+        // `state.backgroundScale` populated so the timer can fire.
+        removeDom()
+      }
+      target.addEventListener('animationend', onAnimationEnd)
+      target.addEventListener('animationcancel', onAnimationEnd)
+      const safetyMs = (() => {
+        const cs = window.getComputedStyle(target)
+        const raw = cs.animationDuration || cs.transitionDuration || '0.5s'
+        const n = parseFloat(raw)
+        return (Number.isFinite(n) ? n * 1000 : 500) + 100
+      })()
+      window.setTimeout(onAnimationEnd, safetyMs)
+    } else {
+      removeDom()
+    }
+    return
+  }
 
   // Tear down any prior mount before building the new one.
   teardownMount(state)

@@ -13,11 +13,20 @@
   /* Static off-screen position: prevents the initial-mount flicker
      that the previous `animation-name: slideToBottom` + `forwards`
      caused. The animation itself is preserved for the open→close
-     transition (start = open, end = off-screen), but the start and
-     end are now both off-screen on mount, so no visible change. */
+     transition (the consumer's runtime adds a `data-drawer-closing`
+     attribute on the way out, and the rule below that flag
+     overrides the static transform so the slide plays). */
   transform: translate3d(0, var(--initial-transform, 100%), 0);
   animation-name: slideToBottom;
   animation-fill-mode: forwards;
+}
+[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'][data-drawer-closing] {
+  /* Mid-transition: drop the static transform so `slideToBottom` has
+     a clean start frame (the open position) and the drawer visibly
+     slides out instead of jumping. The animation's `forwards` fill-
+     mode keeps it at the closed position once it ends; the runtime
+     clears `data-drawer-closing` on `animationend`. */
+  transform: none;
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='open'] {
@@ -28,6 +37,9 @@
   animation-name: slideToTop;
   animation-fill-mode: forwards;
 }
+[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='closed'][data-drawer-closing] {
+  transform: none;
+}
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='open'] {
   animation-name: slideFromLeft;
@@ -37,6 +49,9 @@
   animation-name: slideToLeft;
   animation-fill-mode: forwards;
 }
+[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='closed'][data-drawer-closing] {
+  transform: none;
+}
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='open'] {
   animation-name: slideFromRight;
@@ -45,6 +60,9 @@
   transform: translate3d(var(--initial-transform, 100%), 0, 0);
   animation-name: slideToRight;
   animation-fill-mode: forwards;
+}
+[data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'][data-drawer-closing] {
+  transform: none;
 }
 
 [data-drawer][data-drawer-snap-points='true'][data-drawer-direction='bottom'] {
