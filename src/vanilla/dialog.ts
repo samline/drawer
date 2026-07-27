@@ -1988,7 +1988,29 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   if (open && options.modal !== false) {
     state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
     lockBodyScroll()
-    if (state.content) focusFirstElement(state.content)
+    // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+    // ALWAYS called `focusFirstElement(content)`, which auto-focused
+    // the first focusable descendant of the drawer body (a link,
+    // a button, a form field). v2's default behaviour was the
+    // opposite: by default (`autoFocus: false`) the trigger was
+    // blurred before opening and the dialog body was NOT auto-
+    // focused — focus stayed on the trigger (or fell back to
+    // `document.body` for keyboard / screen-reader users). The
+    // consumer (easytrip) reported the regression: opening the
+    // support drawer auto-focused the WhatsApp link, which looks
+    // like a stray hover/focus state.
+    //
+    // The fix preserves v2's default: only auto-focus when the
+    // consumer explicitly opts in via `autoFocus: true`. The
+    // `releaseHiddenFocusBeforeOpen` helper (called from the
+    // registry BEFORE this mount, gated on `!options.autoFocus`)
+    // already blurs the trigger so the dialog never appears
+    // focused inside. Screen-reader and keyboard users can still
+    // Tab into the content; the focus trap in `trapFocus` keeps
+    // focus inside the dialog while it is open.
+    if (options.autoFocus === true && state.content) {
+      focusFirstElement(state.content)
+    }
   }
 }
 
