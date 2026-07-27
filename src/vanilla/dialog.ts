@@ -34,6 +34,7 @@
 import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
 import {
   CLOSE_THRESHOLD,
+  DRAG_CLASS,
   NESTED_DISPLACEMENT,
   SCROLL_LOCK_TIMEOUT,
   TRANSITIONS,
@@ -821,6 +822,14 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
     state.content.dataset.drawerCustomContainer = 'false'
     state.content.dataset.drawerAnimate = 'true'
   }
+  // F4: clear `--initial-transform` on the close path so the
+  // `slideToX` keyframe animates to the FULLY closed position
+  // (`100%` fallback) rather than the active snap's offset. The
+  // open path (handled in the mount block) re-sets it to the
+  // snap's runtime offset in pixels.
+  if (!open && state.content) {
+    state.content.style.removeProperty('--initial-transform')
+  }
 }
 
 function focusFirstElement(content: HTMLElement) {
@@ -1145,6 +1154,12 @@ function attachListeners(
         shouldFade: initialShouldFade
       }
 
+      // F10: add the dragging class so consumers can style the
+      // drawer differently while a drag is in progress (e.g.
+      // disable border-radius, dim the content, remove focus
+      // outlines). 1:1 with vaul upstream's `DRAG_CLASS` usage.
+      content.classList.add(DRAG_CLASS)
+
       // F3 / F11: stash the most recent pointermove so the synthetic
       // release listeners (`pointerout`, `contextmenu`,
       // `pointercancel`, see below) can replay the last known
@@ -1253,7 +1268,8 @@ function attachListeners(
               baseScale: state.backgroundScale.baseScale,
               percentageDragged,
               direction,
-              setBackgroundColorOnScale: options.setBackgroundColorOnScale === true
+              setBackgroundColorOnScale:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
             })
           }
         }
@@ -1267,6 +1283,10 @@ function attachListeners(
         state.drag = null
         content.removeEventListener('pointermove', onPointerMove)
         content.removeEventListener('pointerup', onPointerUp)
+        // F10: remove the dragging class on every release path
+        // (the close path also reaches here). 1:1 with vaul
+        // upstream's `drawerRef.current.classList.remove(DRAG_CLASS)`.
+        content.classList.remove(DRAG_CLASS)
         if (!drag) return
 
         const releasedPointer = isVerticalAxis ? upEvent.clientY : upEvent.clientX
@@ -1354,7 +1374,8 @@ function attachListeners(
                   wrapper,
                   direction,
                   baseScale: state.backgroundScale.baseScale,
-                  clearBackgroundColor: options.setBackgroundColorOnScale === true
+                  clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
                 })
                 scheduleWrapperClear(wrapper, state)
               }
@@ -1387,7 +1408,8 @@ function attachListeners(
                     wrapper,
                     direction,
                     baseScale: state.backgroundScale.baseScale,
-                    clearBackgroundColor: options.setBackgroundColorOnScale === true
+                    clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
                   })
                 }
               }
@@ -1407,7 +1429,8 @@ function attachListeners(
                     wrapper,
                     direction,
                     baseScale: state.backgroundScale.baseScale,
-                    clearBackgroundColor: options.setBackgroundColorOnScale === true
+                    clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
                   })
                 }
               }
@@ -1430,7 +1453,8 @@ function attachListeners(
                 wrapper,
                 direction,
                 baseScale: state.backgroundScale.baseScale,
-                clearBackgroundColor: options.setBackgroundColorOnScale === true
+                clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
               })
             }
           }
@@ -1496,7 +1520,8 @@ function attachListeners(
                 wrapper,
                 direction,
                 baseScale: state.backgroundScale.baseScale,
-                clearBackgroundColor: options.setBackgroundColorOnScale === true
+                clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
               })
               scheduleWrapperClear(wrapper, state)
             }
@@ -1525,7 +1550,8 @@ function attachListeners(
               wrapper,
               direction,
               baseScale: state.backgroundScale.baseScale,
-              clearBackgroundColor: options.setBackgroundColorOnScale === true
+              clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
             })
           }
         }
@@ -1707,7 +1733,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
           wrapper,
           direction: getDirection(options),
           baseScale,
-          clearBackgroundColor: options.setBackgroundColorOnScale === true
+          clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
         })
         scheduleWrapperClear(wrapper, state)
       }
@@ -1772,7 +1799,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         wrapper,
         direction: getDirection(options),
         baseScale,
-        clearBackgroundColor: options.setBackgroundColorOnScale === true
+        clearBackgroundColor:
+                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
       })
       scheduleWrapperClear(wrapper, state)
     }

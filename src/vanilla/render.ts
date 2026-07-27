@@ -23,6 +23,22 @@ import { mountVanillaDialog } from './dialog'
 export type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined
 
 export interface VanillaDrawerOptions extends CommonDrawerOptions {
+  /**
+   * Container element the drawer should mount into. 1:1 with vaul
+   * upstream's `container` prop. Defaults to `document.body` (the
+   * host creates a small wrapper `<div data-drawer-vanilla-root>`
+   * there).
+   *
+   * Alias for `mountElement`. Use whichever name you prefer; the
+   * other is read as a fallback. The alias exists for backward
+   * compat with the v2 / v3 API and to match vaul's naming.
+   */
+  container?: HTMLElement | null
+  /**
+   * @deprecated Use `container` instead. Kept for backward compat
+   * with the v2 / v3 API. The drawer reads `container ?? mountElement`
+   * internally, so passing both is harmless (container wins).
+   */
   mountElement?: HTMLElement | null
   triggerElement?: HTMLElement | null
   triggerText?: string

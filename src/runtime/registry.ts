@@ -54,6 +54,16 @@ interface DrawerRuntimeInstance {
    * for `defaultOpen: true` drawers.
    */
   hasBeenOpened: boolean
+  /**
+   * Pending `onAnimationEnd` callback handle. Tracked so we can
+   * cancel the previous one when a new state change fires before
+   * the prior `TRANSITIONS.DURATION` has elapsed. Without this,
+   * a quick open→close→open sequence would fire three overlapping
+   * `onAnimationEnd` callbacks within ~500ms, confusing consumers
+   * that use the callback to clean up external state (e.g.
+   * removing a `body.modal-open` class). F5/F17 in the audit.
+   */
+  pendingAnimationEndTimer: ReturnType<typeof setTimeout> | null
 }
 
 const drawerInstances = new Map<CommonDrawerId, DrawerRuntimeInstance>()
@@ -90,6 +100,15 @@ function normalizeDrawerId(id?: CommonDrawerId | null) {
 function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
   runtime.cleanupTriggerElement?.()
   runtime.cleanupTriggerElement = null
+  // Note: we intentionally do NOT cancel the pending
+  // `onAnimationEnd` timer here. `cleanupRuntimeTrigger` is called
+  // by `bindTriggerElement`, which fires on EVERY render of the
+  // drawer (e.g. when the user calls `setOpen` or `patch`). The
+  // animation-end callback is independent of the trigger
+  // lifecycle — it should fire after the drawer has visually
+  // finished animating, even if the trigger was re-bound in the
+  // meantime. The destroy path cancels the timer instead (see
+  // `destroyDrawer`).
 }
 
 function bindTriggerElement(runtime: DrawerRuntimeInstance) {
@@ -157,7 +176,16 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
     runtime.options.onClose?.()
   }
 
-  setTimeout(() => {
+  // F5/F17: cancel the previous `onAnimationEnd` timer before
+  // scheduling a new one. Guarantees only the LATEST
+  // `onAnimationEnd` fires (matching what consumers expect when
+  // they use the callback for external state cleanup).
+  if (runtime.pendingAnimationEndTimer !== null) {
+    clearTimeout(runtime.pendingAnimationEndTimer)
+    runtime.pendingAnimationEndTimer = null
+  }
+  runtime.pendingAnimationEndTimer = setTimeout(() => {
+    runtime.pendingAnimationEndTimer = null
     runtime.options.onAnimationEnd?.(open)
   }, TRANSITIONS.DURATION * 1000)
 }
@@ -429,7 +457,8 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
       controller: createDrawerController(nextOptions),
       options: nextOptions,
       cleanupTriggerElement: null,
-      hasBeenOpened: false
+      hasBeenOpened: false,
+      pendingAnimationEndTimer: null
     })
   } else {
     existing.options = nextOptions
@@ -524,6 +553,18 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   })
 
   cleanupRuntimeTrigger(runtime)
+  // F5/F17: cancel the pending `onAnimationEnd` callback on
+  // destroy. Without this, a destroy → reopen sequence would
+  // fire a stale callback for the destroyed drawer. We do this
+  // here (in the destroy path) instead of in
+  // `cleanupRuntimeTrigger` because that helper is also called
+  // by `bindTriggerElement` on every render, and clearing the
+  // timer there would cancel the animation-end callback on
+  // every state change.
+  if (runtime.pendingAnimationEndTimer !== null) {
+    clearTimeout(runtime.pendingAnimationEndTimer)
+    runtime.pendingAnimationEndTimer = null
+  }
   const nextHost = destroyVanillaHost({
     root: runtime.root,
     element: runtime.element,

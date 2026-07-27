@@ -24,6 +24,7 @@
  * kept for non-Safari browsers and is the desktop baseline.
  */
 import { isIOS, isSafari } from './browser'
+import { chain } from '../helpers'
 
 // Visual viewport used by the focus-input pipeline. May be
 // undefined in jsdom / SSR; the focus handler short-circuits.
@@ -389,16 +390,6 @@ export function trackScrollPosition(): () => void {
 /* ---------------------------------------------------------------- *
  * Pure helpers used by the two pipelines above.                    *
  * ---------------------------------------------------------------- */
-
-function chain(...callbacks: Array<(() => void) | undefined | null>): () => void {
-  return () => {
-    for (const callback of callbacks) {
-      if (typeof callback === 'function') {
-        callback()
-      }
-    }
-  }
-}
 
 function setStyle(
   element: HTMLElement,

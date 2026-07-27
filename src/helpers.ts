@@ -24,6 +24,27 @@ export function set(el: Element | HTMLElement | null | undefined, styles: Style)
   }
 }
 
+/**
+ * Chain a list of optional cleanup callbacks into a single one.
+ * Non-function entries are skipped (so callers can use
+ * `chain(...maybeUndefined, another)` without a manual null
+ * check). Each callback runs in order. Used by the F6 scroll-lock
+ * pipeline (the 6-step Mobile Safari workaround) to combine the
+ * `removeEventListener` cleanups and the style restore callbacks
+ * into a single teardown function.
+ *
+ * Mirrors vaul upstream's `chain` helper in `src/helpers.ts`.
+ */
+export function chain(...callbacks: Array<(() => void) | undefined | null>): () => void {
+  return () => {
+    for (const callback of callbacks) {
+      if (typeof callback === 'function') {
+        callback()
+      }
+    }
+  }
+}
+
 export function isVertical(direction: CommonDrawerDirection): boolean {
   return direction === 'top' || direction === 'bottom'
 }

@@ -22,17 +22,23 @@ function canUseDOM() {
  * Resolve the container element for a drawer host. Reuses the existing
  * element when it's still connected; otherwise creates a fresh `<div>`
  * owned by this host and appends it to `document.body`. When the caller
- * passes a `mountElement` we always use it and don't own the lifetime.
+ * passes a `container` (or the legacy `mountElement`) we always use it
+ * and don't own the lifetime.
+ *
+ * F12: 1:1 with vaul upstream's `container` prop. `container` takes
+ * precedence over `mountElement` (the legacy name kept for backward
+ * compat).
  */
 function resolveVanillaContainer(
   state: VanillaHostState,
   id: string,
-  mountElement?: HTMLElement | null
+  options: { container?: HTMLElement | null; mountElement?: HTMLElement | null }
 ): { container: HTMLElement; ownsElement: boolean } | null {
   if (!canUseDOM()) return null
 
-  if (mountElement) {
-    return { container: mountElement, ownsElement: false }
+  const target = options.container ?? options.mountElement
+  if (target) {
+    return { container: target, ownsElement: false }
   }
 
   if (state.element?.isConnected) {
@@ -73,7 +79,10 @@ export function renderVanillaHost({
   onReleaseChange?: (open: boolean) => void
   onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
 }): { root: HTMLElement | null; element: HTMLElement | null; ownsElement: boolean; container: HTMLElement } | null {
-  const nextContainer = resolveVanillaContainer(host, id, options.mountElement)
+  const nextContainer = resolveVanillaContainer(host, id, {
+    ...(options.container !== undefined ? { container: options.container } : {}),
+    ...(options.mountElement !== undefined ? { mountElement: options.mountElement } : {})
+  })
   if (!nextContainer) return null
 
   let nextRoot = host.root

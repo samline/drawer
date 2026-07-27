@@ -116,8 +116,11 @@ describe('vanilla root entry', () => {
     expect(onOpenChange).toHaveBeenNthCalledWith(1, true)
     expect(onOpenChange).toHaveBeenNthCalledWith(2, false)
     expect(onClose).toHaveBeenCalledTimes(1)
-    expect(onAnimationEnd).toHaveBeenNthCalledWith(1, true)
-    expect(onAnimationEnd).toHaveBeenNthCalledWith(2, false)
+    // F5/F17: `onAnimationEnd` is debounced — only the LATEST
+    // callback fires. The previous (buggy) behavior fired both
+    // the open AND close callbacks within ~500ms.
+    expect(onAnimationEnd).toHaveBeenCalledTimes(1)
+    expect(onAnimationEnd).toHaveBeenNthCalledWith(1, false)
 
     vi.useRealTimers()
   })
