@@ -3,13 +3,13 @@
 **Filed**: 2026-07-27
 **Reporter**: samline (consumer-driven review prompted by the user)
 **Status** (2026-07-27, end of session):
-- **CLOSED** (7): F1, F2, F3, F9, F11, F14, F15
-- **OPEN** (10): F4, F5, F6, F7, F8, F10, F12, F13, F16, F17
+- **CLOSED** (10): F1, F2, F3, F6, F7, F9, F11, F13, F14, F15
+- **OPEN** (7): F4, F5, F8, F10, F12, F16, F17
 
 The user approved a full 1:1 audit ("arréglalo todo"), so all 17 findings
-are in scope. The seven closed ones are covered by commits `b1a5665`,
-`475541a`, and `e73aeef` on the `refactor/drawer-v3-vanilla` branch.
-The ten open ones are the remaining platform / API gaps.
+are in scope. The ten closed ones are covered by commits `b1a5665`,
+`475541a`, `e73aeef`, and `7a60451` on the `refactor/drawer-v3-vanilla`
+branch. The seven open ones are the remaining cleanup / parity gaps.
 
 **Severity**: F1 was high (visible bug, user-reported). F2-F17 are mixed.
 **Affected versions**: `@samline/drawer@3.0.0-beta.0` … `3.0.0-beta.3` (current)
@@ -23,10 +23,10 @@ The vanilla port is **functionally complete for the common case** (open,
 close, drag-to-dismiss, snap points, basic a11y) but the migration
 systematically dropped the platform-specific / edge-case behaviors that
 vaul's React hooks used to provide. Out of **17 functional gaps** found,
-**7 are CLOSED** (F1, F2, F3, F9, F11, F14, F15) and **10 remain open**:
-4 cause visible animation bugs (F4, F5, F6 + the residual F1b path is
-gone), 1 causes iOS-Safari body-scroll, and 5 are API surface / dead
-code / parity losses.
+**10 are CLOSED** (F1, F2, F3, F6, F7, F9, F11, F13, F14, F15) and **7
+remain open**: 2 cause animation bugs (F4, F5), 1 is a missing
+`noBodyStyles` runtime read (F8), and 4 are API surface / dead code
+parity losses (F10, F12, F16, F17).
 
 The user's symptom — "muchas fallas en las animaciones del drawer, al
 ocultarse al hacer drag, al salir, etc." — has three concrete root causes:
@@ -686,6 +686,34 @@ No `use-prevent-scroll.ts`, no `use-position-fixed.ts`.
   Phase A drag wiring) so the lock is set on open and released on
   teardown.
 
+### Resolution (F6)
+
+**Status: CLOSED** in `7a60451`. Ported `usePreventScroll.ts` and
+`usePositionFixed.ts` to a new `src/runtime/scroll-lock.ts` (440
+lines, no React hooks). Three public functions:
+
+- `preventBodyScroll({ disablePreventScroll })` — returns a restore
+  function. Takes the iOS-Safari 6-step path when `isIOS()` is true,
+  otherwise the desktop `overflow: hidden` baseline (matching the
+  previous `lockBodyScroll()` behavior).
+- `setPositionFixed({ isOpen, modal, noBodyStyles })` — toggles
+  `position: fixed` on `<body>` on Safari, with the savedScrollY
+  module-level ref to preserve scroll position. No-op off Safari.
+  Honors `noBodyStyles: true` to skip body mutation (paired with F8).
+- `trackScrollPosition()` — subscribes to `window` `scroll` to keep
+  `savedScrollY` fresh for `setPositionFixed`.
+
+Wired into `src/vanilla/dialog.ts`: `unlockBodyScroll: (() => void) | null`
+state field replaces the older `bodyOverflowBackup` /
+`bodyPaddingRightBackup` pair for the restore path. Called from
+`mountVanillaDialog` (open path) and `teardownMount` (close path).
+
+Tests: `test/scroll-lock.test.ts` (8 tests) covers the desktop
+baseline, `disablePreventScroll` no-op, restore idempotency,
+scrollbar padding compensation, `setPositionFixed` no-op off Safari,
+the Safari toggle (with `isSafari` mocked), and the `noBodyStyles`
+short-circuit.
+
 ### F7. No iOS / Safari / mobile-Firefox detection helper — Severity: **LOW**
 
 **Symptom**: the `isMobileFirefox` detection is inlined in
@@ -706,6 +734,17 @@ upstream already solved.
   `vaul-reference/src/browser.ts`.
 - Refactor the existing `isMobileFirefox` inlines to use the
   central helper.
+
+### Resolution (F7)
+
+**Status: CLOSED** in `7a60451`. Added `src/runtime/browser.ts` with
+the same 7 exports as `vaul-reference/src/browser.ts`:
+`isMobileFirefox`, `isMac`, `isIPhone`, `isSafari`, `isIPad`, `isIOS`,
+`testPlatform`. All safe to call in any JS environment (no-op when
+`window` / `navigator` are undefined). The existing
+`isMobileFirefox` inlines in `dialog.ts` and `viewport.ts` were
+left in place for now (F16 will centralize them via
+`src/helpers.ts` extraction).
 
 ### F8. `noBodyStyles` option is in the type but not in the runtime — Severity: **LOW**
 
@@ -860,6 +899,14 @@ the port — see F6). So this option is dead.
 **Fix scope**: wire `disablePreventScroll` into the new
 `src/runtime/scroll-lock.ts` module proposed in F6.
 
+### Resolution (F13)
+
+**Status: CLOSED** in `7a60451` (folded into F6). `preventBodyScroll`
+now reads `options.disablePreventScroll` and returns a no-op restore
+when it is `true`, matching vaul upstream's `usePreventScroll.isDisabled`
+behavior. Wired from `mountVanillaDialog` via
+`preventBodyScroll({ disablePreventScroll: options.disablePreventScroll === true })`.
+
 ### F14. `hasBeenOpened` state never tracked — Severity: **LOW**
 
 vaul's `Root` tracks a `hasBeenOpened: boolean` state that
@@ -976,22 +1023,23 @@ animation bugs (F1-F5); Wave 2 fixes the platform / API gaps
 
 | #  | Finding  | File(s) touched                                  | Status |
 | -- | -------- | ------------------------------------------------ | ------ |
-| F6 | iOS Safari scroll lock  | new `src/runtime/scroll-lock.ts` + `src/vanilla/dialog.ts` | ⏳ **OPEN** (requires port of 300+ lines of `usePreventScroll` + `usePositionFixed`) |
-| F7 | Browser detection helper | new `src/runtime/browser.ts` | ⏳ **OPEN** |
+| F6 | iOS Safari scroll lock  | new `src/runtime/scroll-lock.ts` + `src/vanilla/dialog.ts` | ✅ **CLOSED** in `7a60451` |
+| F7 | Browser detection helper | new `src/runtime/browser.ts` | ✅ **CLOSED** in `7a60451` |
 | F8 | `noBodyStyles` runtime read | `src/vanilla/dialog.ts` (background-scale pipeline) | ⏳ **OPEN** |
 | F9 | `shouldAnimate` ref | `src/vanilla/dialog.ts` (mount) + `src/style.css` (CSS rule already exists) | ✅ **CLOSED** in `e73aeef` |
 | F10| `DRAG_CLASS` applied | `src/vanilla/dialog.ts` (drag start/release) | ⏳ **OPEN** |
 | F11| `pointercancel` handler | `src/vanilla/dialog.ts` | ✅ **CLOSED** in `475541a` |
 | F12| Rename `mountElement` → `container` | `src/vanilla/render.ts` + `src/vanilla/host.ts` + docs | ⏳ **OPEN** |
-| F13| `disablePreventScroll` wiring | `src/runtime/scroll-lock.ts` | ⏳ **OPEN** (depends on F6) |
+| F13| `disablePreventScroll` wiring | `src/runtime/scroll-lock.ts` | ✅ **CLOSED** in `7a60451` (folded into F6) |
 | F14| `hasBeenOpened` state | `src/runtime/registry.ts` | ✅ **CLOSED** in `475541a` |
 | F15| `getTranslate` helper | new `src/runtime/geometry.ts` | ✅ **CLOSED** in `475541a` (added to `src/runtime/transforms.ts`) |
 | F16| Extract `chain` / `assignStyle` helpers | `src/helpers.ts` | ⏳ **OPEN** |
 | F17| `onAnimationEnd` debounce (folded into F5) | — | ⏳ **OPEN** (folded into F5) |
 
-**Summary**: 7/17 closed (F1, F2, F3, F9, F11, F14, F15). 10/17 open
-(F4, F5, F6, F7, F8, F10, F12, F13, F16, F17). All F1, F2, F3
-animation correctness findings are resolved.
+**Summary**: 10/17 closed (F1, F2, F3, F6, F7, F9, F11, F13, F14, F15).
+7/17 open (F4, F5, F8, F10, F12, F16, F17). All F1-F3 animation
+correctness findings AND the iOS Safari body-scroll lock (F6) are
+resolved.
 
 ### Order of execution (recommended)
 
