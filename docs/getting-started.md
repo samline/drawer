@@ -48,7 +48,7 @@ Methods that return data instead of the controller: `drawer.id`, `drawer.options
 Once a drawer is created, you can rely on the following behaviour:
 
 - **A `<div data-drawer-vanilla-root>` is appended to `document.body`** (or to your `mountElement` if you provided one). The runtime owns this host and re-renders its children on every state change.
-- **A `<div data-drawer>` is mounted inside the host** with the data-attributes the stylesheet reads: `data-state="open" | "closed"`, `data-drawer-direction="top" | "bottom" | "left" | "right"`, `data-drawer-snap-points`, `data-drawer-animate`, plus `role="dialog"`, `aria-modal`, and an `id` matching the drawer's runtime id.
+- **A `<div data-drawer>` is mounted inside the host** with the data-attributes the stylesheet reads: `data-state="open" | "closed"`, `data-drawer-direction="top" | "bottom" | "left" | "right"`, `data-drawer-snap-points`, `data-drawer-animate`, plus `role="dialog"`, `aria-modal`, and a `data-drawer-id` attribute matching the drawer's runtime id. (The runtime id itself is placed on the host element — `<div data-drawer-vanilla-root="...">` — to avoid id collisions with the consumer's content HTML. Target the content via `[data-drawer]` or `[data-drawer-vanilla-root="myDrawer"] [data-drawer]`.)
 - **A `<div data-drawer-overlay>` is mounted for modal drawers** (default). It carries `data-state` and `data-drawer-snap-points-overlay` for the fade-from-index behaviour.
 - **An optional `<div data-drawer-handle>`** is mounted when `handleOnly: true` or `showHandle: true`. Clicking it advances the active snap point (see [recipes](recipes.md)).
 - **A built-in `<button data-drawer-vanilla-trigger>`** is mounted when `triggerText` is set. Clicking it opens the drawer.

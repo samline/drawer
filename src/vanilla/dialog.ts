@@ -1292,6 +1292,25 @@ function attachListeners(
 
           if (release.type === 'close') {
             set(content, { transition: 'none' })
+            // Bug fix (v3.0.0-beta.3 → stable): the drag pipeline
+            // leaves an inline `transform: translate3d(...)` on the
+            // content (the position the user dragged it to). The
+            // close animation (`slideToBottom` / `slideToRight` /
+            // etc.) interpolates from the current computed
+            // transform to the closed-position keyframe. If the
+            // inline transform is left in place, the animation
+            // starts at the dragged position (often already past
+            // the closed position) and the slide is invisible —
+            // the drawer just disappears.
+            //
+            // The close-button path doesn't hit this branch because
+            // no drag has happened — the inline transform is empty
+            // and the CSS `data-drawer-closing` rule's `transform:
+            // none` provides the open-position start frame. The
+            // drag-release path needs to clear the inline transform
+            // explicitly so the animation has the same start frame
+            // as the close-button path.
+            content.style.transform = ''
             // Phase C: drive the wrapper back to its rest state
             // with the CSS transition enabled, then schedule the
             // deferred inline-style clear. The re-render triggered
@@ -1403,6 +1422,19 @@ function attachListeners(
 
         if (release.action === 'close') {
           set(content, { transition: 'none' })
+          // Bug fix (v3.0.0-beta.3 → stable): see the matching
+          // block in the snap-points close path below. The drag
+          // pipeline leaves an inline `transform: translate3d(...)`
+          // on the content (the position the user dragged it to);
+          // we clear it here so the close animation (the same
+          // `slideToBottom` / `slideToRight` / etc. that fires on
+          // the close-button path) has the open position as its
+          // start frame. Without this, the drawer disappears
+          // silently because the animation interpolates from
+          // `transform: translate3d(0, dragY, 0)` — usually already
+          // past the closed position — to the closed-position
+          // keyframe, and the movement is invisible.
+          content.style.transform = ''
           // Phase C: drive the wrapper back to its rest state with
           // the CSS transition enabled, then schedule the deferred
           // clear. The re-render via `onOpenChange(false)` will
@@ -1763,8 +1795,42 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       tabIndex: -1
     })
     if (options.contentClassName) content.className = options.contentClassName
-    // Place the drawer id on the [data-drawer] content wrapper for CSS/JS selector compat.
-    content.id = id
+    // Bug fix (v3.0.0-beta.3 → stable): the drawer id used to be
+    // placed on the `[data-drawer]` content wrapper so consumers
+    // could target the drawer via `#myDrawer` in CSS. That created
+    // an id collision when the consumer's content HTML contained
+    // any element with the same id (the common case: a `<form
+    // id="myDrawer">` rendered inside the drawer). HTML's
+    // `getElementById` returns the FIRST element with the id in
+    // tree order, so the form controller (or any other consumer
+    // code that looks up the form by id) found the drawer's
+    // content `<div>` instead of the form, and the form's
+    // initialization silently failed.
+    //
+    // The first attempt at a fix (placing the id on the host
+    // element instead) also failed for the same reason: the host
+    // is still in the DOM, and `getElementById` returns the
+    // host when both the host and the inner form share the id.
+    // The correct fix is to NOT place the id on either the
+    // content or the host — the drawer is uniquely identified by
+    // the `data-drawer` attribute, the host is uniquely
+    // identified by the `data-drawer-vanilla-root` attribute, and
+    // the consumer can target the drawer's content by the new
+    // `data-drawer-id` attribute (which is just a metadata
+    // attribute, not a real id, so it cannot collide with any
+    // element's `id`).
+    //
+    // The migration path for consumers who relied on the `#myDrawer`
+    // CSS selector is to use `[data-drawer-id="myDrawer"]` (which
+    // matches the content) or `[data-drawer-vanilla-root="myDrawer"]`
+    // (which matches the host). The new attribute is added below.
+    if (host.id === id) {
+      // Defensive: a stale host from a previous instance of the
+      // same drawer (after a `destroyDrawer` + `createDrawer` cycle
+      // that reused the same id) may still have the id. Clear it.
+      host.removeAttribute('id')
+    }
+    content.setAttribute('data-drawer-id', id)
     if (options.ariaLabel) content.setAttribute('aria-label', options.ariaLabel)
     if (snapPoints) {
       // Write the active snap's RUNTIME offset (the same value the
