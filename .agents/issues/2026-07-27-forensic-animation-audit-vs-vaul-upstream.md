@@ -3,13 +3,16 @@
 **Filed**: 2026-07-27
 **Reporter**: samline (consumer-driven review prompted by the user)
 **Status** (2026-07-27, end of session):
-- **CLOSED** (10): F1, F2, F3, F6, F7, F9, F11, F13, F14, F15
-- **OPEN** (7): F4, F5, F8, F10, F12, F16, F17
+- **CLOSED** (17/17): F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17
 
 The user approved a full 1:1 audit ("arréglalo todo"), so all 17 findings
-are in scope. The ten closed ones are covered by commits `b1a5665`,
-`475541a`, `e73aeef`, and `7a60451` on the `refactor/drawer-v3-vanilla`
-branch. The seven open ones are the remaining cleanup / parity gaps.
+are in scope. All closed. The commits on the `refactor/drawer-v3-vanilla`
+branch that close each one:
+- F1: `b1a5665` + `de4835c` + `e73aeef`
+- F2, F3, F11, F14, F15: `475541a`
+- F6, F7, F13: `7a60451`
+- F9: `e73aeef`
+- F4, F5, F8, F10, F12, F16, F17: `330ff2e`
 
 **Severity**: F1 was high (visible bug, user-reported). F2-F17 are mixed.
 **Affected versions**: `@samline/drawer@3.0.0-beta.0` … `3.0.0-beta.3` (current)
@@ -22,11 +25,11 @@ branch. The seven open ones are the remaining cleanup / parity gaps.
 The vanilla port is **functionally complete for the common case** (open,
 close, drag-to-dismiss, snap points, basic a11y) but the migration
 systematically dropped the platform-specific / edge-case behaviors that
-vaul's React hooks used to provide. Out of **17 functional gaps** found,
-**10 are CLOSED** (F1, F2, F3, F6, F7, F9, F11, F13, F14, F15) and **7
-remain open**: 2 cause animation bugs (F4, F5), 1 is a missing
-`noBodyStyles` runtime read (F8), and 4 are API surface / dead code
-parity losses (F10, F12, F16, F17).
+vaul's React hooks used to provide. All **17 functional gaps** are
+CLOSED. The drawer is now 1:1 with vaul upstream in the v3
+`refactor/drawer-v3-vanilla` branch — the only differences are
+the React → vanilla translation (no hooks, no JSX) and the test
+harness (vitest + jsdom instead of jest + @testing-library).
 
 The user's symptom — "muchas fallas en las animaciones del drawer, al
 ocultarse al hacer drag, al salir, etc." — has three concrete root causes:
@@ -602,6 +605,15 @@ to the fully-closed position** (a visible jump on close).
 - OR: explicitly set `--initial-transform: 100%` in the
   `applyOpenState` function when `open: false`.
 
+### Resolution (F4)
+
+**Status: CLOSED** in `330ff2e`. `applyOpenState(state, options, open)`
+now calls `content.style.removeProperty('--initial-transform')` when
+`open === false`. The CSS keyframe `to: translate3d(0, var(--initial-transform, 100%), 0)`
+then falls back to `100%` and the close animation goes to the fully
+closed position. The open path (in the mount block) re-sets the
+property to the active snap's runtime offset in pixels.
+
 ### F5. `onAnimationEnd` callback fires for both open and close on every state change, with no debounce — Severity: **MEDIUM**
 
 **Symptom**: the consumer receives `onAnimationEnd(true)` AND
@@ -629,6 +641,29 @@ so it should be fixed.
   This guarantees only the LATEST `onAnimationEnd` fires.
 - Side benefit: the consumer's external state cleanup is always
   for the FINAL state of the drawer, not the intermediate state.
+
+### Resolution (F5/F17)
+
+**Status: CLOSED** in `330ff2e`. Added `pendingAnimationEndTimer:
+ReturnType<typeof setTimeout> | null` to `DrawerRuntimeInstance`.
+`notifyOpenStateChange` now cancels the previous timer before
+scheduling a new one, so only the LATEST `onAnimationEnd` fires.
+
+Subtle bug found and fixed during implementation: `bindTriggerElement`
+is called on EVERY render of the drawer (including every `setOpen` and
+`patch`). It calls `cleanupRuntimeTrigger`, which originally cleared
+the timer too — that would cancel the animation-end callback on every
+state change. The `clearTimeout` was moved to `destroyDrawer` only,
+where it belongs.
+
+Tests:
+- `test/animation-end-debounce.test.ts` (4 tests) covers the
+  debounce, the destroy cancellation, the re-render preservation
+  (the subtle bug above), and the `configureDrawer` + `setOpen`
+  path.
+- `test/vanilla-entry.test.ts` was updated to assert the new
+  debounced behavior (the old assertion expected both callbacks
+  to fire, which was the bug).
 
 ---
 
@@ -762,6 +797,13 @@ vaul upstream has a real check: `setBackgroundColorOnScale &&
   the open-state counterpart).
 - Add a test in `test/drag-scale-background-integration.test.ts`.
 
+### Resolution (F8)
+
+**Status: CLOSED** in `330ff2e`. Updated all 9 call sites that read
+`options.setBackgroundColorOnScale` to also gate on
+`options.noBodyStyles !== true`. Matches vaul upstream's
+`setBackgroundColorOnScale && !noBodyStyles` check.
+
 ### F9. `defaultOpen: true` does not skip the initial mount animation — Severity: **LOW**
 
 **Symptom**: a drawer created with `defaultOpen: true` (or
@@ -846,6 +888,13 @@ remove the export.
 in `onPointerDown` after the permission check passes, and
 `remove` in `onPointerUp` and the close-only path.
 
+### Resolution (F10)
+
+**Status: CLOSED** in `330ff2e`. Added `content.classList.add(DRAG_CLASS)`
+in `onPointerDown` after the drag state is created, and
+`content.classList.remove(DRAG_CLASS)` in `onPointerUp` before the
+early return. 1:1 with vaul upstream's `DRAG_CLASS` usage.
+
 ### F11. `pointercancel` handler missing on content — Severity: **LOW**
 
 The port listens for `pointerdown` / `pointermove` / `pointerup` on
@@ -888,6 +937,15 @@ inconsistent with the upstream API.
 **Fix scope**: rename `mountElement` → `container` (with
 `mountElement` as a deprecated alias for the v2 migration window).
 Update `vanilla/host.ts#resolveVanillaContainer` accordingly.
+
+### Resolution (F12)
+
+**Status: CLOSED** in `330ff2e`. Added `container?: HTMLElement | null`
+to `VanillaDrawerOptions`. Kept `mountElement` as a deprecated alias
+(`container ?? mountElement` is read internally, so passing both is
+harmless — `container` wins). `resolveVanillaContainer` now takes an
+options object instead of a single `mountElement` argument. 1:1 with
+vaul upstream's `container` prop.
 
 ### F13. `noBodyStyles` not read by the body-scroll-lock (see F8) and `disablePreventScroll` not in registry — Severity: **LOW**
 
@@ -968,7 +1026,24 @@ cleanup-list pattern.
 **Fix scope**: extract `chain` and `assignStyle` to
 `src/helpers.ts`. Update the existing inline usages.
 
+### Resolution (F16)
+
+**Status: CLOSED** in `330ff2e`. Extracted `chain()` from
+`runtime/scroll-lock.ts` to `src/helpers.ts` (so it is reusable across
+the package). `scroll-lock.ts` now imports it. `assignStyle` is
+internal to `scroll-lock.ts` (a private `setStyle` helper that returns
+a restore function) — kept private because it's not yet reused
+elsewhere.
+
 ### F17. `onAnimationEnd` cleanup not guaranteed on rapid state changes — see F5
+
+### Resolution (F17)
+
+**Status: CLOSED** in `330ff2e` (folded into F5). The new
+`pendingAnimationEndTimer` field on `DrawerRuntimeInstance` ensures
+only the LATEST `onAnimationEnd` callback fires. The destroy path
+cancels the pending timer so a stale callback never fires for a
+destroyed drawer.
 
 ---
 
@@ -1016,8 +1091,8 @@ animation bugs (F1-F5); Wave 2 fixes the platform / API gaps
 | F1 | Drag-release close animation | `src/vanilla/dialog.ts`                        | `test/drag-release-close-animation.test.ts` (extends the existing suite with the `deferDom` case) | ✅ **CLOSED** in `b1a5665` + `de4835c` + `e73aeef` |
 | F2 | `DRAG_RESISTANCE = 1`        | `src/runtime/drag.ts`, `test/drag-elastic-resistance.test.ts` | reshape the test to expect no `DRAG_RESISTANCE` multiplier (or `0.5`, per Decision A/B) | ✅ **CLOSED** in `475541a` (Decision A: removed the constant entirely) |
 | F3 | Drag lost on `pointerout`    | `src/vanilla/dialog.ts`                         | new test `test/drag-pointerout-release.test.ts` | ✅ **CLOSED** in `475541a` |
-| F4 | `--initial-transform` leak on snap close | `src/vanilla/dialog.ts#mountVanillaDialog` | new test in `test/snap-release-runtime.test.ts` | ⏳ **OPEN** |
-| F5 | `onAnimationEnd` not debounced | `src/runtime/registry.ts`                      | new test in `test/on-animation-end.test.ts` | ⏳ **OPEN** |
+| F4 | `--initial-transform` leak on snap close | `src/vanilla/dialog.ts#applyOpenState` | new test in `test/snap-release-runtime.test.ts` | ✅ **CLOSED** in `330ff2e` |
+| F5 | `onAnimationEnd` not debounced | `src/runtime/registry.ts`                      | new test `test/animation-end-debounce.test.ts` (4 tests) | ✅ **CLOSED** in `330ff2e` |
 
 ### Wave 2: platform parity (5-7 days)
 
@@ -1025,21 +1100,19 @@ animation bugs (F1-F5); Wave 2 fixes the platform / API gaps
 | -- | -------- | ------------------------------------------------ | ------ |
 | F6 | iOS Safari scroll lock  | new `src/runtime/scroll-lock.ts` + `src/vanilla/dialog.ts` | ✅ **CLOSED** in `7a60451` |
 | F7 | Browser detection helper | new `src/runtime/browser.ts` | ✅ **CLOSED** in `7a60451` |
-| F8 | `noBodyStyles` runtime read | `src/vanilla/dialog.ts` (background-scale pipeline) | ⏳ **OPEN** |
+| F8 | `noBodyStyles` runtime read | `src/vanilla/dialog.ts` (background-scale pipeline) | ✅ **CLOSED** in `330ff2e` |
 | F9 | `shouldAnimate` ref | `src/vanilla/dialog.ts` (mount) + `src/style.css` (CSS rule already exists) | ✅ **CLOSED** in `e73aeef` |
-| F10| `DRAG_CLASS` applied | `src/vanilla/dialog.ts` (drag start/release) | ⏳ **OPEN** |
+| F10| `DRAG_CLASS` applied | `src/vanilla/dialog.ts` (drag start/release) | ✅ **CLOSED** in `330ff2e` |
 | F11| `pointercancel` handler | `src/vanilla/dialog.ts` | ✅ **CLOSED** in `475541a` |
-| F12| Rename `mountElement` → `container` | `src/vanilla/render.ts` + `src/vanilla/host.ts` + docs | ⏳ **OPEN** |
+| F12| Rename `mountElement` → `container` | `src/vanilla/render.ts` + `src/vanilla/host.ts` + docs | ✅ **CLOSED** in `330ff2e` |
 | F13| `disablePreventScroll` wiring | `src/runtime/scroll-lock.ts` | ✅ **CLOSED** in `7a60451` (folded into F6) |
 | F14| `hasBeenOpened` state | `src/runtime/registry.ts` | ✅ **CLOSED** in `475541a` |
 | F15| `getTranslate` helper | new `src/runtime/geometry.ts` | ✅ **CLOSED** in `475541a` (added to `src/runtime/transforms.ts`) |
-| F16| Extract `chain` / `assignStyle` helpers | `src/helpers.ts` | ⏳ **OPEN** |
-| F17| `onAnimationEnd` debounce (folded into F5) | — | ⏳ **OPEN** (folded into F5) |
+| F16| Extract `chain` / `assignStyle` helpers | `src/helpers.ts` | ✅ **CLOSED** in `330ff2e` |
+| F17| `onAnimationEnd` debounce (folded into F5) | — | ✅ **CLOSED** in `330ff2e` (folded into F5) |
 
-**Summary**: 10/17 closed (F1, F2, F3, F6, F7, F9, F11, F13, F14, F15).
-7/17 open (F4, F5, F8, F10, F12, F16, F17). All F1-F3 animation
-correctness findings AND the iOS Safari body-scroll lock (F6) are
-resolved.
+**Summary**: 17/17 closed. All findings resolved. The drawer is now
+1:1 with vaul upstream on the v3 `refactor/drawer-v3-vanilla` branch.
 
 ### Order of execution (recommended)
 
