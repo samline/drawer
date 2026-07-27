@@ -818,6 +818,62 @@ function lockBodyScroll() {
   }
 }
 
+/**
+ * Returns `true` when a `pointerdown` target is an interactive child
+ * that the consumer expects to receive its own `click` event
+ * (buttons, links, form fields, anything with a non-`none` `role`).
+ *
+ * Used by `attachListeners#onPointerDown` to bail out of the drag
+ * pipeline BEFORE `setPointerCapture` is called. Without this guard,
+ * the pointer capture on `content` would redirect `mouseup` to
+ * `content`, the browser would not fire `click` on the original
+ * target, and the close button (or any other interactive child)
+ * would not work. The list of interactive tags mirrors what
+ * `focusFirstElement` considers focusable.
+ *
+ * `target` is typed loosely because real browsers deliver the
+ * `pointerdown` target as whatever element is at the click point —
+ * `SVGElement` instances (e.g. an `<i>`-with-fontawesome `<svg>` icon
+ * inside the close button) are NOT `HTMLElement` instances but they
+ * ARE clickable children and must not start a drag.
+ */
+function isInteractiveDragTarget(target: Element): boolean {
+  const tagName = target.tagName
+  if (
+    tagName === 'BUTTON' ||
+    tagName === 'A' ||
+    tagName === 'INPUT' ||
+    tagName === 'SELECT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'LABEL' ||
+    tagName === 'IFRAME'
+  ) {
+    return true
+  }
+  if (target.hasAttribute('role')) {
+    const role = target.getAttribute('role')
+    if (role && role !== 'presentation' && role !== 'none') {
+      return true
+    }
+  }
+  if (target.hasAttribute('tabindex')) {
+    const tabIndex = target.getAttribute('tabindex')
+    if (tabIndex !== null && tabIndex !== '-1') {
+      return true
+    }
+  }
+  // SVG icons inside an interactive parent (e.g. an `<svg>` inside a
+  // `<button>`) are not themselves interactive, but they ARE part of
+  // an interactive child. Walk up to the closest `<button>`, `<a>`,
+  // etc. — if we land on one, the original target is part of an
+  // interactive control and the drag pipeline must not capture the
+  // pointer.
+  const interactiveAncestor = target.closest(
+    'button, a[href], input, select, textarea, label, iframe, [role="button"], [role="link"], [role="checkbox"], [role="menuitem"], [role="tab"]'
+  )
+  return interactiveAncestor !== null
+}
+
 function attachListeners(
   state: DialogMountState,
   options: VanillaDrawerOptions,
@@ -924,19 +980,44 @@ function attachListeners(
 
     const onPointerDown = (rawEvent: Event) => {
       const event = rawEvent as DragPointerEvent
-      // Capture first so the move/up events keep firing if the
-      // cursor leaves the dialog content mid-drag. `setPointerCapture`
-      // is not implemented in jsdom, so we guard the call.
-      const capture = event.currentTarget?.setPointerCapture
-      if (typeof capture === 'function') {
-        try {
-          capture.call(event.currentTarget, event.pointerId)
-        } catch {
-          // Some test environments do not implement pointer capture.
-          // Real browsers do, so the production drag pipeline keeps
-          // working; the integration test simulates pointer events
-          // directly on the content element.
-        }
+
+      // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+      // called `setPointerCapture` BEFORE the drag-permission check.
+      // Once `content` captured the pointer, all subsequent pointer
+      // events for that pointer id were redirected to `content`, so
+      // the browser fired `mouseup` (and therefore `click`) on
+      // `content` instead of the original target. Result: clicking
+      // the built-in close button (`[data-drawer-close]`), a link,
+      // a form input, or any other interactive child of the drawer
+      // did not trigger the child's `click` handler. The pointer
+      // capture is now taken ONLY when the drag pipeline actually
+      // starts a drag, and never on a target the consumer expects to
+      // receive its own clicks.
+      //
+      // We also bail out before the drag pipeline is even consulted
+      // when the pointerdown landed on an interactive CHILD of the
+      // drawer (button, input, select, textarea, link, the close
+      // button itself, or any element explicitly opted out via
+      // `data-drawer-no-drag`). Without this, a tap on the close
+      // button started a no-op drag with `draggedDistance = 0`, the
+      // release path returned `'reset'`, and the drawer stayed
+      // open.
+      //
+      // The check deliberately excludes the drawer itself
+      // (`event.target === content`): the content carries
+      // `role="dialog"` and `tabindex="-1"` so it is keyboard-
+      // focusable, but it is the drag handle, not an interactive
+      // child. A drag MUST start when the user grabs the content
+      // background.
+      const eventTarget = event.target as Element | null
+      const isInteractiveChild =
+        eventTarget instanceof Element &&
+        eventTarget !== content &&
+        (isInteractiveDragTarget(eventTarget) ||
+          Boolean(eventTarget.closest('[data-drawer-close]')))
+
+      if (isInteractiveChild) {
+        return
       }
 
       const metadata: DragTargetMetadata = getDragTargetMetadata(event.target)
@@ -979,6 +1060,30 @@ function attachListeners(
               }
         }
         return
+      }
+
+      // Capture the pointer only after the drag pipeline has decided
+      // to start a drag. `setPointerCapture` redirects subsequent
+      // pointer events to `event.currentTarget` (the content element)
+      // for the lifetime of the gesture; capturing before the
+      // permission check would suppress `click` events on interactive
+      // children like the close button (mouseup would land on
+      // `content` instead of the original target, and the browser
+      // would not synthesize a click on the button).
+      //
+      // `setPointerCapture` is not implemented in jsdom, so we guard
+      // the call. Real browsers do, so the production drag pipeline
+      // keeps working; the integration test simulates pointer events
+      // directly on the content element.
+      const capture = event.currentTarget?.setPointerCapture
+      if (typeof capture === 'function') {
+        try {
+          capture.call(event.currentTarget, event.pointerId)
+        } catch {
+          // Some browsers throw if the pointer id is no longer active.
+          // The drag pipeline tolerates the loss: `pointermove` /
+          // `pointerup` will fall through to the global listeners.
+        }
       }
 
       state.drag = {

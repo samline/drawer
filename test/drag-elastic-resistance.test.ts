@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   DRAG_RESISTANCE,
+  dampenValue,
   getDraggableOffset,
   isDraggingInCloseDirection
 } from '../src/runtime/drag'
@@ -10,116 +11,160 @@ import {
  * Regression tests for the opposite-direction drag resistance
  * (v2 vaul parity).
  *
- * Symptom (v3.0.0-beta.3): when a drawer is open and the user drags
- * in the OPPOSITE of the close direction (e.g. dragging a
- * `direction='right'` drawer to the left), the drawer follows the
- * finger with no limit, sliding completely off-screen on the wrong
- * side. v2 (vaul) had a 50% resistance factor in this direction
- * (Safari-style scroll bounce); v3 dropped it.
+ * Background:
+ *   - v2 used `dampenValue(v) = 8 * (log(v + 1) - 2)` to dampen
+ *     out-of-bounds drags. A 100 px drag in the wrong direction
+ *     produced ~21 px of movement; a 200 px drag ~26 px.
+ *   - v3.0.0-beta.3 replaced it with a linear `0.5` factor. The
+ *     drawer followed the finger at 50 % of the gesture distance,
+ *     a visible regression for the consumer ("the drawer follows
+ *     the finger in the opposite of the close direction").
+ *   - This commit restores the v2 logarithmic dampening and adds
+ *     a `dampenValue` export so the curve is unit-testable without
+ *     a real DOM / PointerEvent.
  *
- * Fix: `getDraggableOffset` (pure helper in `runtime/drag.ts`)
- * returns the base offset in the close direction, and
- * `baseOffset * DRAG_RESISTANCE` (0.5) in the opposite direction.
- * `vanilla/dialog.ts` calls this on every `pointermove` to compute
- * the inline transform.
+ * Direction sign convention (matches the runtime):
+ *   - `getDraggedDistance` = (pointerStart - currentPointer) * multiplier
+ *   - Multiplier = 1 for `bottom`/`right`, -1 for `top`/`left`.
+ *   - Dragging toward the close direction ALWAYS yields a NEGATIVE
+ *     `draggedDistance` for every `direction` (the runtime uses
+ *     `(start - current)` because the close direction reduces the
+ *     drawer's visible offset from its rest position).
+ *   - `isDraggingInCloseDirection` therefore returns
+ *     `draggedDistance < 0` for every direction.
  *
- * The fix is exposed as a pure helper so it is unit-testable without
- * needing a real DOM / PointerEvent.
- *
- * See `.agents/issues/2026-07-26-drag-opposite-direction-no-elastic-resistance.md`
- * for the full diagnosis and the v2 vaul comparison.
+ * See `.agents/issues/2026-07-26-drag-opposite-direction-no-logarithmic-dampening.md`
+ * for the full diagnosis.
  */
 
 describe('drag elastic resistance (opposite direction)', () => {
+  describe('dampenValue (v2 logarithmic curve)', () => {
+    it('produces ~21 px for a 100 px wrong-direction drag', () => {
+      // dampenValue(100) = 8 * (ln(101) - 2) ≈ 8 * 2.615 ≈ 20.92
+      expect(dampenValue(100)).toBeCloseTo(20.92, 1)
+    })
+
+    it('produces ~26 px for a 200 px wrong-direction drag', () => {
+      // dampenValue(200) = 8 * (ln(201) - 2) ≈ 8 * 3.298 ≈ 26.4
+      // (the curve flattens quickly)
+      const v = dampenValue(200)
+      expect(v).toBeGreaterThan(25)
+      expect(v).toBeLessThan(30)
+    })
+
+    it('produces smaller magnitudes than the input (always resists)', () => {
+      for (const input of [10, 50, 100, 200, 500]) {
+        expect(dampenValue(input)).toBeLessThan(input)
+      }
+    })
+
+    it('handles zero distance as a no-op (negative side)', () => {
+      // dampenValue(0) = 8 * (ln(1) - 2) = 8 * (0 - 2) = -16
+      // (negative — the consumer should clamp with Math.abs first
+      // before feeding into the curve, which the runtime does)
+      expect(dampenValue(0)).toBeCloseTo(-16, 1)
+    })
+  })
+
   describe('isDraggingInCloseDirection', () => {
-    it('bottom: dragging up (negative Y) is the close direction', () => {
+    it('bottom: dragging down (positive Y) is the close direction', () => {
       // Multiplier for `bottom` is 1, so draggedDistance = (startY - currentY) * 1
-      // Drag from y=100 to y=60 → draggedDistance = (100 - 60) * 1 = 40 (positive)
-      // Close direction for `bottom` is draggedDistance < 0 (drag down → y increases)
-      expect(isDraggingInCloseDirection({ direction: 'bottom', draggedDistance: -40 })).toBe(true)
-      expect(isDraggingInCloseDirection({ direction: 'bottom', draggedDistance: 40 })).toBe(false)
+      // Drag from y=100 to y=200 (downward) → draggedDistance = (100 - 200) * 1 = -100
+      expect(isDraggingInCloseDirection({ direction: 'bottom', draggedDistance: -100 })).toBe(true)
+      expect(isDraggingInCloseDirection({ direction: 'bottom', draggedDistance: 100 })).toBe(false)
     })
 
     it('right: dragging right (positive X) is the close direction', () => {
       // Multiplier for `right` is 1, draggedDistance = (startX - currentX) * 1
-      // Drag from x=100 to x=140 → draggedDistance = (100 - 140) * 1 = -40 (negative)
-      // Close direction for `right` is draggedDistance < 0 (drag right)
-      expect(isDraggingInCloseDirection({ direction: 'right', draggedDistance: -40 })).toBe(true)
-      expect(isDraggingInCloseDirection({ direction: 'right', draggedDistance: 40 })).toBe(false)
+      // Drag from x=100 to x=200 (rightward) → draggedDistance = (100 - 200) * 1 = -100
+      expect(isDraggingInCloseDirection({ direction: 'right', draggedDistance: -100 })).toBe(true)
+      expect(isDraggingInCloseDirection({ direction: 'right', draggedDistance: 100 })).toBe(false)
     })
 
     it('left: dragging left (negative X) is the close direction', () => {
       // Multiplier for `left` is -1, draggedDistance = (startX - currentX) * -1
-      // Drag from x=100 to x=60 → draggedDistance = (100 - 60) * -1 = -40
-      // Close direction for `left` is draggedDistance > 0 (drag left)
-      expect(isDraggingInCloseDirection({ direction: 'left', draggedDistance: 40 })).toBe(true)
-      expect(isDraggingInCloseDirection({ direction: 'left', draggedDistance: -40 })).toBe(false)
+      // Drag from x=200 to x=100 (leftward) → draggedDistance = (200 - 100) * -1 = -100
+      expect(isDraggingInCloseDirection({ direction: 'left', draggedDistance: -100 })).toBe(true)
+      expect(isDraggingInCloseDirection({ direction: 'left', draggedDistance: 100 })).toBe(false)
     })
 
     it('top: dragging up (negative Y) is the close direction', () => {
       // Multiplier for `top` is -1, draggedDistance = (startY - currentY) * -1
-      // Drag from y=100 to y=60 → draggedDistance = (100 - 60) * -1 = -40
-      // Close direction for `top` is draggedDistance > 0 (drag up)
-      expect(isDraggingInCloseDirection({ direction: 'top', draggedDistance: 40 })).toBe(true)
-      expect(isDraggingInCloseDirection({ direction: 'top', draggedDistance: -40 })).toBe(false)
+      // Drag from y=200 to y=100 (upward) → draggedDistance = (200 - 100) * -1 = -100
+      expect(isDraggingInCloseDirection({ direction: 'top', draggedDistance: -100 })).toBe(true)
+      expect(isDraggingInCloseDirection({ direction: 'top', draggedDistance: 100 })).toBe(false)
     })
   })
 
   describe('getDraggableOffset (pure offset math, no DOM)', () => {
     it('right direction: drag right (close) → baseOffset follows 1:1', () => {
-      // draggedDistance = -40, baseOffset = -(-40) = 40
-      expect(getDraggableOffset({ direction: 'right', draggedDistance: -40 })).toBe(40)
-      // draggedDistance = -100, baseOffset = 100
+      // draggedDistance = -100, baseOffset = -(-100) = 100
       expect(getDraggableOffset({ direction: 'right', draggedDistance: -100 })).toBe(100)
     })
 
-    it('right direction: drag left (opposite) → baseOffset * DRAG_RESISTANCE', () => {
-      // draggedDistance = 40, baseOffset = -40, * 0.5 = -20
-      expect(getDraggableOffset({ direction: 'right', draggedDistance: 40 })).toBe(-20)
-      // draggedDistance = 100, baseOffset = -100, * 0.5 = -50
-      expect(getDraggableOffset({ direction: 'right', draggedDistance: 100 })).toBe(-50)
+    it('right direction: drag left (opposite) → logarithmic dampening', () => {
+      // draggedDistance = +100, baseOffset = -100, outOfBounds = true
+      // magnitude = dampenValue(100) ≈ 20.92, sign = -1, return ≈ -20.92
+      const offset = getDraggableOffset({ direction: 'right', draggedDistance: 100 })
+      expect(offset).toBeCloseTo(-20.92, 1)
+      expect(Math.abs(offset)).toBeLessThan(100 * 0.5) // less than half = v2 parity
     })
 
     it('bottom direction: drag down (close) → baseOffset follows 1:1', () => {
-      // draggedDistance = -40, baseOffset = -(-40) = 40
-      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: -40 })).toBe(40)
+      // draggedDistance = -100, baseOffset = -(-100) = 100
+      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: -100 })).toBe(100)
     })
 
-    it('bottom direction: drag up (opposite) → baseOffset * DRAG_RESISTANCE', () => {
-      // draggedDistance = 40, baseOffset = -40, * 0.5 = -20
-      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: 40 })).toBe(-20)
+    it('bottom direction: drag up (opposite) → logarithmic dampening', () => {
+      const offset = getDraggableOffset({ direction: 'bottom', draggedDistance: 100 })
+      expect(offset).toBeCloseTo(-20.92, 1)
     })
 
     it('left direction: drag left (close) → baseOffset follows 1:1', () => {
-      // For left, baseOffset = draggedDistance (no negation)
-      // draggedDistance = 40 (close direction for left), baseOffset = 40
-      expect(getDraggableOffset({ direction: 'left', draggedDistance: 40 })).toBe(40)
+      // For 'left', baseOffset = draggedDistance (no negation).
+      // Dragging left → draggedDistance = -100 → baseOffset = -100.
+      expect(getDraggableOffset({ direction: 'left', draggedDistance: -100 })).toBe(-100)
     })
 
-    it('left direction: drag right (opposite) → baseOffset * DRAG_RESISTANCE', () => {
-      // draggedDistance = -40 (opposite for left), baseOffset = -40, * 0.5 = -20
-      expect(getDraggableOffset({ direction: 'left', draggedDistance: -40 })).toBe(-20)
+    it('left direction: drag right (opposite) → logarithmic dampening', () => {
+      // Dragging right on a `direction: 'left'` drawer → draggedDistance = +100.
+      // baseOffset = +100. isDraggingInCloseDirection = false → outOfBounds.
+      // magnitude = dampenValue(100) ≈ 20.92, sign = +1, return ≈ +20.92.
+      const offset = getDraggableOffset({ direction: 'left', draggedDistance: 100 })
+      expect(offset).toBeCloseTo(20.92, 1)
     })
 
     it('top direction: drag up (close) → baseOffset follows 1:1', () => {
-      // draggedDistance = 40 (close for top), baseOffset = 40
-      expect(getDraggableOffset({ direction: 'top', draggedDistance: 40 })).toBe(40)
+      // Dragging up on a `direction: 'top'` drawer → draggedDistance = -100.
+      expect(getDraggableOffset({ direction: 'top', draggedDistance: -100 })).toBe(-100)
     })
 
-    it('top direction: drag down (opposite) → baseOffset * DRAG_RESISTANCE', () => {
-      // draggedDistance = -40 (opposite for top), baseOffset = -40, * 0.5 = -20
-      expect(getDraggableOffset({ direction: 'top', draggedDistance: -40 })).toBe(-20)
+    it('top direction: drag down (opposite) → logarithmic dampening', () => {
+      const offset = getDraggableOffset({ direction: 'top', draggedDistance: 100 })
+      expect(offset).toBeCloseTo(20.92, 1)
     })
 
     it('zero drag returns zero offset (no edge case)', () => {
-      // `-0` (from `-0 * 0.5`) is structurally equal to `0` but not
-      // strictly equal in `toBe`. Use `toBeCloseTo` to normalize.
       expect(getDraggableOffset({ direction: 'right', draggedDistance: 0 })).toBeCloseTo(0)
       expect(getDraggableOffset({ direction: 'left', draggedDistance: 0 })).toBeCloseTo(0)
     })
 
-    it('DRAG_RESISTANCE is exported at 0.5 (v2 vaul parity)', () => {
-      expect(DRAG_RESISTANCE).toBe(0.5)
+    it('DRAG_RESISTANCE is exported as a multiplier (1 by default; v2 parity comes from dampenValue)', () => {
+      // `DRAG_RESISTANCE` is now a multiplier (default 1) on top of
+      // the logarithmic curve. The dampening curve itself lives in
+      // `dampenValue`. A future tuning pass can relax / tighten the
+      // elasticity without re-tuning the curve.
+      expect(DRAG_RESISTANCE).toBe(1)
+    })
+
+    it('opposite-direction resistance matches v2 ratio (~21% at 100 px)', () => {
+      // Sanity check: the v2 vaul behavior was about 20% movement
+      // for a 100 px drag in the wrong direction. Verify the
+      // restored logarithmic curve matches.
+      const offset = Math.abs(getDraggableOffset({ direction: 'right', draggedDistance: 100 }))
+      const ratio = offset / 100
+      expect(ratio).toBeGreaterThan(0.15)
+      expect(ratio).toBeLessThan(0.3)
     })
   })
 })
