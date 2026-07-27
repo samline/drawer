@@ -1204,16 +1204,16 @@ function attachListeners(
           transition: 'none'
         })
 
-        // Phase B: fade the overlay while dragging between snap
-        // points when the active snap is at or one-below the
-        // configured `fadeFromIndex`. The original React
-        // implementation writes `1 - percentageDragged` so the
-        // overlay lightens as the user drags toward the smaller
-        // snap. Outside the fade window the CSS rule keeps the
-        // overlay hidden; we skip the inline write so the CSS
-        // transition stays in charge.
+        // Phase B: fade the overlay while dragging in close direction
+        // so it lightens as the user drags toward the closed position.
+        // Mirrors vaul upstream: the fade runs whenever `shouldFade`
+        // is true, which is the case both for snap-point drawers at
+        // the `fadeFromIndex` snap AND for snap-free drawers (the
+        // overlay always fades during the drag-to-dismiss gesture).
+        // Outside the fade window the CSS rule keeps the overlay
+        // hidden; we skip the inline write so the CSS transition
+        // stays in charge.
         if (
-          hasSnapPoints &&
           state.overlay &&
           (drag.shouldFade || drag.activeSnapPointIndex === (options.fadeFromIndex ?? -1) - 1)
         ) {
@@ -1292,25 +1292,39 @@ function attachListeners(
 
           if (release.type === 'close') {
             set(content, { transition: 'none' })
-            // Bug fix (v3.0.0-beta.3 → stable): the drag pipeline
-            // leaves an inline `transform: translate3d(...)` on the
-            // content (the position the user dragged it to). The
-            // close animation (`slideToBottom` / `slideToRight` /
-            // etc.) interpolates from the current computed
-            // transform to the closed-position keyframe. If the
-            // inline transform is left in place, the animation
-            // starts at the dragged position (often already past
-            // the closed position) and the slide is invisible —
-            // the drawer just disappears.
+            // Bug fix (v3.0.0-beta.3 → stable, refined 2026-07-27):
+            // The drag pipeline leaves an inline `transform:
+            // translate3d(...)` on the content (the position the
+            // user dragged it to). The previous fix cleared this
+            // inline transform so the `slideToX` animation could
+            // start from a clean open position. That worked for
+            // the close-button path (no inline transform) but the
+            // cascade flip from inline `230px` to CSS `open`
+            // painted a visible "jump back to open" frame on the
+            // drag-release path before the animation could take
+            // control — even with `animation-fill-mode: both` and
+            // the base `transition: transform` removed.
             //
-            // The close-button path doesn't hit this branch because
-            // no drag has happened — the inline transform is empty
-            // and the CSS `data-drawer-closing` rule's `transform:
-            // none` provides the open-position start frame. The
-            // drag-release path needs to clear the inline transform
-            // explicitly so the animation has the same start frame
-            // as the close-button path.
-            content.style.transform = ''
+            // The refined fix keeps the inline `transform` in place
+            // during the close so the `slideToX` animation picks
+            // it up as the `from` frame directly. The animation
+            // then interpolates from the dragged position to the
+            // closed-position keyframe (e.g. 30 % → 100 % of the
+            // drawer dimension for a 30 % drag) instead of jumping
+            // back to the open position and sliding the full
+            // 0 % → 100 % range. The visible behaviour is exactly
+            // what vaul upstream does: the drawer slides from
+            // wherever the user released it to the closed position.
+            //
+            // The inline `transform` is cleared in the `animationend`
+            // listener (see `mountVanillaDialog#isClosingOnly`) so
+            // the cascade `[data-state='closed']` rule's closed
+            // position (`translate3d(0, 100%, 0)`) takes over
+            // cleanly. If the animation never ends (e.g.
+            // `data-drawer-animate="false"`), the safety timeout
+            // still tears down the DOM and the inline `transform`
+            // is cleared with the node removal.
+            //
             // Phase C: drive the wrapper back to its rest state
             // with the CSS transition enabled, then schedule the
             // deferred inline-style clear. The re-render triggered
@@ -1422,19 +1436,38 @@ function attachListeners(
 
         if (release.action === 'close') {
           set(content, { transition: 'none' })
-          // Bug fix (v3.0.0-beta.3 → stable): see the matching
-          // block in the snap-points close path below. The drag
-          // pipeline leaves an inline `transform: translate3d(...)`
-          // on the content (the position the user dragged it to);
-          // we clear it here so the close animation (the same
-          // `slideToBottom` / `slideToRight` / etc. that fires on
-          // the close-button path) has the open position as its
-          // start frame. Without this, the drawer disappears
-          // silently because the animation interpolates from
-          // `transform: translate3d(0, dragY, 0)` — usually already
-          // past the closed position — to the closed-position
-          // keyframe, and the movement is invisible.
-          content.style.transform = ''
+          // Bug fix (v3.0.0-beta.3 → stable, refined 2026-07-27):
+          // The drag pipeline leaves an inline `transform:
+          // translate3d(...)` on the content (the position the
+          // user dragged it to). The previous fix cleared this
+          // inline transform so the `slideToX` animation could
+          // start from a clean open position. That worked for
+          // the close-button path (no inline transform) but the
+          // cascade flip from inline `230px` to CSS `open`
+          // painted a visible "jump back to open" frame on the
+          // drag-release path before the animation could take
+          // control — even with `animation-fill-mode: both` and
+          // the base `transition: transform` removed.
+          //
+          // The refined fix keeps the inline `transform` in place
+          // during the close so the `slideToX` animation picks
+          // it up as the `from` frame directly. The animation
+          // then interpolates from the dragged position to the
+          // closed-position keyframe (e.g. 30 % → 100 % of the
+          // drawer dimension for a 30 % drag) instead of jumping
+          // back to the open position and sliding the full
+          // 0 % → 100 % range. The visible behaviour is exactly
+          // what vaul upstream does: the drawer slides from
+          // wherever the user released it to the closed position.
+          //
+          // The inline `transform` is cleared in the `animationend`
+          // listener (see `mountVanillaDialog#isClosingOnly`) so
+          // the cascade `[data-state='closed']` rule's closed
+          // position (`translate3d(0, 100%, 0)`) takes over
+          // cleanly. If the animation never ends (e.g.
+          // `data-drawer-animate="false"`), the safety timeout
+          // still tears down the DOM and the inline `transform`
+          // is cleared with the node removal.
           // Phase C: drive the wrapper back to its rest state with
           // the CSS transition enabled, then schedule the deferred
           // clear. The re-render via `onOpenChange(false)` will
@@ -1667,6 +1700,16 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       const onAnimationEnd = () => {
         target.removeEventListener('animationend', onAnimationEnd)
         target.removeEventListener('animationcancel', onAnimationEnd)
+        // Bug fix (refined 2026-07-27): on the drag-release close
+        // path the inline `transform` is left in place during the
+        // close animation (the `from` frame of `slideToX` is the
+        // dragged position). Before clearing `data-drawer-closing`
+        // and removing the DOM, also clear the inline `transform`
+        // so the cascade `[data-state='closed']` rule's closed
+        // position (`translate3d(0, 100%, 0)`) takes over. On the
+        // programmatic close path the inline `transform` was
+        // already empty so this is a no-op.
+        target.style.transform = ''
         // Clear the closing flag so the static off-screen
         // transform rule takes over again (the animation's
         // `forwards` fill-mode is already holding the element at

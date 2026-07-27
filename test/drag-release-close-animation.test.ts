@@ -97,13 +97,26 @@ describe('drag-release close animation', () => {
     dragPastCloseThreshold('bottom')
 
     const content = getContent()
-    // The fix: the inline `transform` left over from the drag is
-    // cleared so the CSS slide animation has the open position as
-    // its start frame. Without this, the drawer disappears silently
-    // because the animation interpolates from the dragged position
-    // (often already past the closed position) to the closed-position
-    // keyframe.
-    expect(content.style.transform).toBe('')
+    // Bug fix (refined 2026-07-27): the inline `transform` is kept
+    // during the close animation so the `slideToBottom` keyframe
+    // interpolates from the dragged position (the `from` frame) to
+    // the closed-position keyframe (the `to` frame). The previous
+    // implementation cleared the inline `transform` synchronously
+    // here; that worked for the cascade but caused a visible
+    // "drawer jumps back to the open position mid-close" flicker
+    // because the cascade flip from the inline dragged position to
+    // the CSS open position was painted for one frame before the
+    // `slideToBottom` animation could take control. The inline
+    // `transform` is now cleared in the `animationend` listener
+    // (and as a fallback in the safety timeout).
+    //
+    // jsdom does not run CSS animations, so the inline `transform`
+    // still carries the dragged position here. The behaviour in a
+    // real browser is: animation plays from the dragged position
+    // to the closed position (visible slide), then the inline
+    // `transform` is cleared on `animationend` and the drawer is
+    // removed from the DOM.
+    expect(content.style.transform).toMatch(/translate3d\(/)
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
   })
@@ -133,7 +146,12 @@ describe('drag-release close animation', () => {
     dispatchOnContent(createPointerEvent('pointerup', { clientX: endX, clientY: 50, pointerId: 1 }))
 
     const content = getContent()
-    expect(content.style.transform).toBe('')
+    // Bug fix (refined 2026-07-27): see the matching block for
+    // direction: 'bottom'. The inline `transform` is kept during
+    // the close animation so the `slideToRight` keyframe
+    // interpolates from the dragged position to the closed-position
+    // keyframe, instead of jumping back to the open position first.
+    expect(content.style.transform).toMatch(/translate3d\(/)
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
   })
@@ -216,7 +234,12 @@ describe('drag-release close animation', () => {
     dispatchOnContent(createPointerEvent('pointerup', { clientX: endX, clientY: 50, pointerId: 1 }))
 
     const content = getContent()
-    expect(content.style.transform).toBe('')
+    // Bug fix (refined 2026-07-27): see the matching block for
+    // direction: 'bottom'. The inline `transform` is kept during
+    // the close animation so the snap-points close path also
+    // interpolates from the dragged position to the closed-position
+    // keyframe.
+    expect(content.style.transform).toMatch(/translate3d\(/)
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(getDrawer('drag-close-snap')?.getSnapshot().state.isOpen).toBe(false)
   })

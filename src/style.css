@@ -1,9 +1,23 @@
 [data-drawer] {
   touch-action: none;
   will-change: transform;
-  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The `transition: transform` is scoped to `data-state='open'` only.
+   The close path drives the `transform` via the `slideToX` CSS
+   animation, and having both `transition` and `animation` compete
+   for the same property caused the "drawer jumps back to the open
+   position mid-close" bug (user-reported 2026-07-27, root-caused in
+   the drag-close-detail.test.ts trace). On the open path, the
+   `transition` is still used by the snap-back-after-drag path (the
+   drag pipeline writes an inline `transition` directly, but the
+   CSS fallback here ensures the snap-back also animates if the
+   inline transition is missing — e.g. when the consumer resets
+   options in a way that drops the inline write). */
+[data-drawer][data-state='open'] {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='open'] {
@@ -21,12 +35,24 @@
   animation-fill-mode: forwards;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'][data-drawer-closing] {
-  /* Mid-transition: drop the static transform so `slideToBottom` has
-     a clean start frame (the open position) and the drawer visibly
-     slides out instead of jumping. The animation's `forwards` fill-
-     mode keeps it at the closed position once it ends; the runtime
-     clears `data-drawer-closing` on `animationend`. */
-  transform: none;
+  /* Mid-transition: explicit open-position transform so the
+     `slideToBottom` keyframe has a defined `from` frame (open
+     position). `transform: none` was the previous value; it works
+     for the close-button path (no inline `transform` to compete)
+     but caused a "drawer jumps back to the open position mid-close"
+     visible flicker on the drag-release path because the cascade
+     value of `transform` flipped from the inline dragged position
+     (e.g. `translate3d(0, 230px, 0)`) to `none` (= open) in a single
+     frame, painting the open position before the `slideToBottom`
+     animation took control. The explicit `translate3d(0, 0, 0)`
+     + `animation-fill-mode: both` makes the `from` frame explicit
+     so the browser never paints the dragged position as the
+     resting state. `both` keeps the open position applied before
+     the animation starts AND the `to` position held after the
+     animation ends (the latter is the same as `forwards` alone
+     but the former is what the close path needs). */
+  transform: translate3d(0, 0, 0);
+  animation-fill-mode: both;
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='open'] {
@@ -38,7 +64,8 @@
   animation-fill-mode: forwards;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='top'][data-state='closed'][data-drawer-closing] {
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  animation-fill-mode: both;
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='open'] {
@@ -50,7 +77,8 @@
   animation-fill-mode: forwards;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='closed'][data-drawer-closing] {
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  animation-fill-mode: both;
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='open'] {
@@ -62,7 +90,8 @@
   animation-fill-mode: forwards;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'][data-drawer-closing] {
-  transform: none;
+  transform: translate3d(0, 0, 0);
+  animation-fill-mode: both;
 }
 
 [data-drawer][data-drawer-snap-points='true'][data-drawer-direction='bottom'] {
@@ -99,8 +128,8 @@
 
 [data-drawer-overlay][data-drawer-snap-points='false'] {
   animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 [data-drawer-overlay][data-drawer-snap-points='false'][data-state='open'] {
   animation-name: fadeIn;
@@ -151,7 +180,7 @@
 
 [data-drawer-overlay][data-drawer-snap-points='true'] {
   opacity: 0;
-  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-drawer-overlay][data-drawer-snap-points='true'] {
