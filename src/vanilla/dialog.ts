@@ -60,6 +60,7 @@ import {
   getScaleTranslateTransform
 } from '../runtime/transforms'
 import { getViewportDrivenDrawerLayout } from '../runtime/viewport'
+import { preventBodyScroll, setPositionFixed, trackScrollPosition } from '../runtime/scroll-lock'
 import type { VanillaCloseButtonOptions, VanillaDrawerOptions, VanillaRenderable } from './render'
 
 /**
@@ -158,6 +159,16 @@ interface DialogMountState {
   cleanups: Array<() => void>
   bodyOverflowBackup: string | null
   bodyPaddingRightBackup: string | null
+  /**
+   * Restore function returned by `preventBodyScroll()`. Called from
+   * `teardownMount` to undo the body-scroll lock. `null` when the
+   * drawer was not modal (no lock was applied) or the dialog was
+   * not opened yet. Replaces the older `bodyOverflowBackup` /
+   * `bodyPaddingRightBackup` pair which only handled desktop
+   * browsers — the new pipeline is 1:1 with vaul upstream and
+   * handles iOS Safari too.
+   */
+  unlockBodyScroll: (() => void) | null
   openedAt: number | null
   drag: DragState | null
   // Phase C: background-scale pipeline. `baseScale` is captured at
@@ -209,6 +220,7 @@ function getHostState(host: HTMLElement): DialogMountState {
       cleanups: [],
       bodyOverflowBackup: null,
       bodyPaddingRightBackup: null,
+      unlockBodyScroll: null,
       openedAt: null,
       drag: null,
       backgroundScale: null,
@@ -574,6 +586,19 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
     document.body.style.paddingRight = state.bodyPaddingRightBackup
     state.bodyPaddingRightBackup = null
   }
+  // F6: invoke the body-scroll restore returned by
+  // `preventBodyScroll()`. Handles both the desktop `overflow: hidden`
+  // baseline AND the iOS-Safari 6-step workaround. Also flips
+  // `position: fixed` off on Safari.
+  if (state.unlockBodyScroll) {
+    state.unlockBodyScroll()
+    state.unlockBodyScroll = null
+  }
+  setPositionFixed({
+    isOpen: false,
+    modal: true,
+    noBodyStyles: false
+  })
   if (state.scrollRestorationBackup !== null) {
     if (typeof window !== 'undefined' && window.history) {
       window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
@@ -835,17 +860,6 @@ function trapFocus(state: DialogMountState, content: HTMLElement, event: Keyboar
   // Reference state to silence the unused warning when this is
   // closed over by a future iteration.
   void state
-}
-
-function lockBodyScroll() {
-  const scrollbar = window.innerWidth - document.documentElement.clientWidth
-  if (document.body.style.overflow !== 'hidden') {
-    document.body.style.overflow = 'hidden'
-  }
-  if (scrollbar > 0) {
-    const existing = window.getComputedStyle(document.body).paddingRight
-    document.body.style.paddingRight = `${parseFloat(existing || '0') + scrollbar}px`
-  }
 }
 
 /**
@@ -2089,7 +2103,29 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
 
   if (open && options.modal !== false) {
     state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
-    lockBodyScroll()
+    // F6: iOS Safari body-scroll prevention (1:1 with vaul upstream).
+    // - `preventBodyScroll` returns a restore function that handles
+    //   both the desktop `overflow: hidden` baseline AND the
+    //   6-step Mobile Safari workaround. The restore is stored on
+    //   state so `teardownMount` can call it on close.
+    // - `setPositionFixed` is the separate body-position trick
+    //   Safari needs to avoid several jank bugs (vaul#435, vaul#433).
+    //   It's a no-op off Safari.
+    // - `trackScrollPosition` keeps the current scroll Y in module
+    //   state so `setPositionFixed` can apply `top: -scrollY` and
+    //   preserve the user's scroll position visually.
+    state.unlockBodyScroll = preventBodyScroll({
+      disablePreventScroll: options.disablePreventScroll === true
+    })
+    setPositionFixed({
+      isOpen: true,
+      // We're inside the `options.modal !== false` branch
+      // (line 2104), so this is always `true` here.
+      modal: true,
+      noBodyStyles: options.noBodyStyles === true
+    })
+    const removeScrollTracker = trackScrollPosition()
+    state.cleanups.push(removeScrollTracker)
     // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
     // ALWAYS called `focusFirstElement(content)`, which auto-focused
     // the first focusable descendant of the drawer body (a link,
