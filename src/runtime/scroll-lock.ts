@@ -65,18 +65,47 @@ let savedScrollY = 0
  * Lock the page scroll. Returns a function that REVERTS the lock
  * when called.
  *
- * - `disablePreventScroll: true` → no-op (returns a noop function).
- * - `isIOS()` → the 6-step Mobile Safari workaround.
- * - Other browsers → `overflow: hidden` on `<body>` plus a
- *   `padding-right` adjustment to prevent shift from a
- *   disappearing scrollbar (same behavior as the previous
- *   `lockBodyScroll()` implementation).
+ * 1:1 with vaul upstream's `usePreventScroll` gates. The lock is
+ * suppressed when ANY of the following is true:
+ * - `isDisabled: true` — short-circuit. Caller can also pass
+ *   `disablePreventScroll: true` (the legacy alias).
+ * - `!isOpen` — closed drawer.
+ * - `isDragging` — user is currently dragging the drawer. vaul
+ *   releases the lock so the user can scroll content inside the
+ *   drawer mid-drag.
+ * - `!modal` — non-modal drawer, no lock.
+ * - `justReleased` — drag was released < 200ms ago, no lock
+ *   (avoids focus-input race).
+ * - `!hasBeenOpened` — never opened, no lock (skip on initial
+ *   mount with `defaultOpen: true`).
+ * - `!repositionInputs` — consumer opted out of input repositioning.
+ * - `!disablePreventScroll` — consumer disabled, no lock.
  *
- * The previous behavior is preserved exactly for non-Safari
- * browsers; the iOS path is the new contribution.
+ * On `isIOS()`, takes the 6-step Mobile Safari workaround
+ * regardless of the gates (the gate only controls whether to
+ * invoke the iOS pipeline at all).
  */
-export function preventBodyScroll(options: { disablePreventScroll?: boolean } = {}): () => void {
-  if (options.disablePreventScroll) {
+export function preventBodyScroll(
+  options: {
+    disablePreventScroll?: boolean
+    isOpen?: boolean
+    isDragging?: boolean
+    modal?: boolean
+    justReleased?: boolean
+    hasBeenOpened?: boolean
+    repositionInputs?: boolean
+  } = {}
+): () => void {
+  const isDisabled =
+    options.disablePreventScroll === true ||
+    options.isOpen === false ||
+    options.isDragging === true ||
+    options.modal === false ||
+    options.justReleased === true ||
+    options.hasBeenOpened === false ||
+    options.repositionInputs === false
+
+  if (isDisabled) {
     return () => {}
   }
 

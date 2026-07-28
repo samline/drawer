@@ -35,13 +35,12 @@ import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
 import {
   CLOSE_THRESHOLD,
   DRAG_CLASS,
-  NESTED_DISPLACEMENT,
   SCROLL_LOCK_TIMEOUT,
   TRANSITIONS,
   VELOCITY_THRESHOLD,
   WINDOW_TOP_OFFSET
 } from '../constants'
-import { isVertical, set } from '../helpers'
+import { isVertical, reset, set } from '../helpers'
 import { getDraggableOffset, getDraggedDistance, getDragPercentage } from '../runtime/drag'
 import { getDragPermission, getDragTargetMetadata, type DragTargetMetadata } from '../runtime/drag-policy'
 import { getNextHandleState } from '../runtime/handle'
@@ -96,6 +95,13 @@ export interface VanillaDialogOptions {
   id: string
   options: VanillaDrawerOptions
   open: boolean
+  /**
+   * G12: 1:1 with vaul upstream's `hasBeenOpened` state. Set to
+   * `true` on the first `setOpen(true)`. Used by the
+   * `preventBodyScroll` gate (G3) to skip the lock on the very
+   * first open.
+   */
+  hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
@@ -201,6 +207,18 @@ interface DialogMountState {
   // when the dialog never changed the value (e.g. it was already
   // `'manual'` at mount time, or `preventScrollRestoration` is off).
   scrollRestorationBackup: string | null
+  /**
+   * G11: `justReleased` ref + timer. Set to `true` in `onPointerUp`
+   * when `velocity > 0.05` (high-velocity release). Used by the
+   * `preventBodyScroll` gate (G3) to release the body-scroll lock
+   * for 200 ms after a fast drag-release, so the next focus event
+   * (on an input inside the drawer) does not fight the lock. Reset
+   * to `false` after `JUST_RELEASED_TIMEOUT` ms via the stored
+   * timer handle (cancelled on teardown to avoid touching a
+   * destroyed state).
+   */
+  justReleased: boolean
+  justReleasedTimer: ReturnType<typeof setTimeout> | null
 }
 
 const hostState = new WeakMap<HTMLElement, DialogMountState>()
@@ -229,7 +247,9 @@ function getHostState(host: HTMLElement): DialogMountState {
       previousDiffFromInitial: 0,
       initialDrawerHeight: 0,
       activeSnapPointOffset: 0,
-      scrollRestorationBackup: null
+      scrollRestorationBackup: null,
+      justReleased: false,
+      justReleasedTimer: null
     }
     hostState.set(host, state)
   }
@@ -292,9 +312,14 @@ function getWrapperElement(): HTMLElement | null {
 
 function computeBaseScale(direction: CommonDrawerDirection): number {
   if (typeof window === 'undefined') return 1
-  const viewportSize = isVertical(direction) ? window.innerHeight : window.innerWidth
-  if (viewportSize <= 0) return 1
-  return (viewportSize - NESTED_DISPLACEMENT) / viewportSize
+  // 1:1 with vaul upstream — `useScaleBackground#getScale()` always
+  // uses `innerWidth` and `WINDOW_TOP_OFFSET` (= 26), regardless of
+  // direction. The translate is per-direction; the scale itself is
+  // a uniform page-background shrink. The previous implementation
+  // used `NESTED_DISPLACEMENT` (= 16) and switched axes per
+  // direction, which was wrong on both counts (audit G4).
+  if (window.innerWidth <= 0) return 1
+  return (window.innerWidth - WINDOW_TOP_OFFSET) / window.innerWidth
 }
 
 function getTransformOrigin(direction: CommonDrawerDirection): string {
@@ -600,6 +625,19 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
     modal: true,
     noBodyStyles: false
   })
+  // G8: 1:1 with vaul upstream — the `scrollBehavior` reset
+  // happens in the `useEffect` cleanup, which only runs when
+  // `isOpen` transitions from `true` to `false` (and on
+  // unmount). In the drawer's lifecycle, this corresponds to
+  // the close-only path (`isClosingOnly === true`). Running
+  // it in `teardownMount` would be wrong because teardown
+  // also runs on every re-render (e.g. `setOpen(true)` from a
+  // closed state), which would reset the scrollBehavior before
+  // the new `set` runs. The `set` (G5) is gated by
+  // `if (open && ...)` so it only writes on the open path.
+  if (opts.deferDom && typeof document !== 'undefined' && document.documentElement) {
+    reset(document.documentElement, 'scrollBehavior')
+  }
   if (state.scrollRestorationBackup !== null) {
     if (typeof window !== 'undefined' && window.history) {
       window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
@@ -612,6 +650,14 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   state.activeSnapPointOffset = 0
   state.drag = null
   state.openedAt = null
+  // G11: clear the `justReleased` state on every teardown so a
+  // destroy → reopen sequence doesn't carry a stale flag from
+  // the destroyed drawer.
+  state.justReleased = false
+  if (state.justReleasedTimer !== null) {
+    clearTimeout(state.justReleasedTimer)
+    state.justReleasedTimer = null
+  }
 
   // Step 3 — cancel the wrapper-clear timer and remove the DOM
   // nodes. The wrapper-clear timer is intentionally only cancelled
@@ -1298,6 +1344,23 @@ function attachListeners(
         const now = performance.now()
         const velocity = Math.abs(draggedDistance) / Math.max(now - drag.startedAt, 1)
 
+        // G11: high-velocity releases set `justReleased = true` for
+        // 200 ms. The `preventBodyScroll` gate (G3) reads this and
+        // releases the body-scroll lock so the next focus event on
+        // an input inside the drawer does not fight the lock.
+        // 1:1 with vaul upstream's `setJustReleased(true)` +
+        // 200ms `setTimeout(setJustReleased(false))` in `onRelease`.
+        if (velocity > 0.05) {
+          state.justReleased = true
+          if (state.justReleasedTimer !== null) {
+            clearTimeout(state.justReleasedTimer)
+          }
+          state.justReleasedTimer = setTimeout(() => {
+            state.justReleased = false
+            state.justReleasedTimer = null
+          }, 200)
+        }
+
         const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
 
         if (hasSnapPoints) {
@@ -1680,6 +1743,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     id,
     options,
     open,
+    hasBeenOpened = false,
     onOpenChange,
     onBuiltInTriggerMouseDown,
     onBuiltInTriggerClick,
@@ -1743,6 +1807,15 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // (CSS, not JS) interpolates from the open cascade (0) to the
     // closed cascade (100 %). 1:1 with vaul.
     applyOpenState(state, options, false)
+    // G7: 1:1 with vaul upstream — on close, vaul sets
+    // `body.pointerEvents = 'auto'` so the body is clickable as
+    // soon as the close starts (the upstream comment notes "This
+    // will be removed when the exit animation ends (500ms)" —
+    // vaul relies on something else to clean it up, but the
+    // initial write is on close). Must run BEFORE the teardown
+    // so the write survives the teardown's other body-style
+    // restorations.
+    document.body.style.pointerEvents = 'auto'
     // Detach listeners + restore page-level side-effects immediately
     // (matches v2 semantics; the visualViewport listener must come
     // off synchronously so the next `setOpen(true)` re-attaches a
@@ -2129,6 +2202,19 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     })
   }
 
+  // G7: 1:1 with vaul upstream's onChange callback — for
+  // `modal: false` drawers, vaul explicitly sets
+  // `body.pointerEvents = 'auto'` so the user can click
+  // elements outside the drawer. The drawer is a vanilla port
+  // (no Radix), but the same safety net applies when a consumer
+  // wraps a parent in a `[inert]` or similar. Must run BEFORE
+  // the modal-only branch below (mutually exclusive paths).
+  if (open && options.modal === false) {
+    requestAnimationFrame(() => {
+      document.body.style.pointerEvents = 'auto'
+    })
+  }
+
   if (open && options.modal !== false) {
     state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
     // F6: iOS Safari body-scroll prevention (1:1 with vaul upstream).
@@ -2143,15 +2229,47 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     //   state so `setPositionFixed` can apply `top: -scrollY` and
     //   preserve the user's scroll position visually.
     state.unlockBodyScroll = preventBodyScroll({
-      disablePreventScroll: options.disablePreventScroll === true
-    })
-    setPositionFixed({
-      isOpen: true,
+      disablePreventScroll: options.disablePreventScroll === true,
+      isOpen: open,
+      isDragging: state.drag !== null,
       // We're inside the `options.modal !== false` branch
-      // (line 2104), so this is always `true` here.
+      // (line 2104), so `modal` is always `true` here.
       modal: true,
-      noBodyStyles: options.noBodyStyles === true
+      justReleased: state.justReleased,
+      hasBeenOpened,
+      repositionInputs: options.repositionInputs !== false
     })
+    // G12: 1:1 with vaul upstream — `setPositionFixed` only runs
+    // after the drawer has been opened at least once. On the very
+    // first open (typically with `defaultOpen: true`), the Safari
+    // toolbar is already shown, so forcing `position: fixed` is
+    // unnecessary and can cause a visible shift. Mirrors vaul's
+    // `nested || !hasBeenOpened` early-return in `usePositionFixed`.
+    if (hasBeenOpened && options.nested !== true) {
+      // Avoid for standalone mode (PWA) per vaul upstream.
+      const isStandalone =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(display-mode: standalone)').matches
+      if (!isStandalone) {
+        setPositionFixed({
+          isOpen: true,
+          // We're inside the `options.modal !== false` branch
+          // (line 2104), so this is always `true` here.
+          modal: true,
+          noBodyStyles: options.noBodyStyles === true
+        })
+      }
+    }
+    // G8: 1:1 with vaul upstream — while the drawer is open, set
+    // `html { scroll-behavior: auto }` to override any consumer
+    // `html { scroll-behavior: smooth }` (otherwise a hash-change
+    // triggered by the drawer would smooth-scroll and fight the
+    // open animation). The pre-open value is captured by `set`
+    // (G5) and restored by `reset` in `teardownMount` (G6).
+    if (typeof document !== 'undefined' && document.documentElement) {
+      set(document.documentElement, { scrollBehavior: 'auto' })
+    }
     const removeScrollTracker = trackScrollPosition()
     state.cleanups.push(removeScrollTracker)
     // Bug fix (v3.0.0-beta.3 → stable): the previous implementation

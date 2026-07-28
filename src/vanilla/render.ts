@@ -148,6 +148,14 @@ export function mountVanillaDrawer(options: {
   id: string
   options: VanillaDrawerOptions
   open: boolean
+  /**
+   * G12: 1:1 with vaul upstream's `hasBeenOpened` state. Set to
+   * `true` on the first `setOpen(true)`. Used by the
+   * `preventBodyScroll` gate (G3) to skip the lock on the very
+   * first open (the original vaul semantics: `usePreventScroll`
+   * only kicks in after the first user-driven open).
+   */
+  hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
@@ -160,6 +168,7 @@ export function mountVanillaDrawer(options: {
     id: options.id,
     options: options.options,
     open: options.open,
+    ...(options.hasBeenOpened !== undefined ? { hasBeenOpened: options.hasBeenOpened } : {}),
     onOpenChange: options.onOpenChange,
     ...(options.onBuiltInTriggerMouseDown !== undefined
       ? { onBuiltInTriggerMouseDown: options.onBuiltInTriggerMouseDown }

@@ -61,6 +61,7 @@ export function renderVanillaHost({
   id,
   options,
   open,
+  hasBeenOpened,
   onBuiltInTriggerMouseDown,
   onBuiltInTriggerClick,
   onOpenChange,
@@ -72,6 +73,12 @@ export function renderVanillaHost({
   id: string
   options: VanillaDrawerOptions
   open: boolean
+  /**
+   * G12: 1:1 with vaul upstream's `hasBeenOpened` runtime state.
+   * Used by the `preventBodyScroll` gate (G3) to skip the lock on
+   * the very first open.
+   */
+  hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
@@ -107,6 +114,7 @@ export function renderVanillaHost({
     id,
     options,
     open,
+    ...(hasBeenOpened !== undefined ? { hasBeenOpened } : {}),
     onOpenChange,
     ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
     ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),

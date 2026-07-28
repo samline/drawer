@@ -57,15 +57,16 @@ function removeWrapper() {
 }
 
 /**
- * Direction-aware viewport size used by `computeBaseScale` in
- * `src/vanilla/dialog.ts`. Mirrors the formula:
- *   `baseScale = (viewportSize - NESTED_DISPLACEMENT) / viewportSize`
- * where `NESTED_DISPLACEMENT = 16` and `viewportSize` is `innerHeight`
- * for vertical directions and `innerWidth` for horizontal ones.
+ * Mirrors `computeBaseScale` in `src/vanilla/dialog.ts`. 1:1 with
+ * vaul upstream's `useScaleBackground#getScale()`: always uses
+ * `innerWidth` and `WINDOW_TOP_OFFSET` (= 26), regardless of
+ * direction. Audit G4 fixed the previous formula which incorrectly
+ * used `NESTED_DISPLACEMENT` (= 16) and switched axes per
+ * direction.
  */
-function computeBaseScale(direction: CommonDrawerDirection): number {
-  const viewportSize = direction === 'top' || direction === 'bottom' ? window.innerHeight : window.innerWidth
-  return (viewportSize - 16) / viewportSize
+function computeBaseScale(_direction: CommonDrawerDirection): number {
+  if (window.innerWidth <= 0) return 1
+  return (window.innerWidth - 26) / window.innerWidth
 }
 
 describe('drag pipeline integration (Phase C — scale background)', () => {

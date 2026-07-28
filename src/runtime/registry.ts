@@ -292,6 +292,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     id: runtime.id,
     options: runtime.options,
     open: snapshot.state.isOpen,
+    hasBeenOpened: runtime.hasBeenOpened,
     onBuiltInTriggerMouseDown: () => {
       releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
     },
