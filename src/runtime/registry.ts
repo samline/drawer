@@ -144,6 +144,20 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 }
 
 function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
+  // G6: 1:1 with vaul upstream — `onClose` fires BEFORE
+  // `onOpenChange(false)`. vaul's `closeDrawer` (index.tsx:536-549)
+  // calls `onClose?.()` first, then `setIsOpen(false)` which
+  // fires the consumer's `onOpenChange` via the
+  // `useControllableState.onChange` callback. The drawer
+  // originally fired them in the opposite order, which broke
+  // consumers who read `controller.getSnapshot().state.isOpen`
+  // inside `onClose` (they got `false` in the drawer vs `true`
+  // in vaul, because vaul fires `onClose` BEFORE the state
+  // transitions). Match vaul.
+  if (!open) {
+    runtime.options.onClose?.()
+  }
+
   runtime.options.onOpenChange?.(open)
 
   // Track first-open for the F14/F9 parity work (the `shouldAnimate`
@@ -172,8 +186,23 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
       }
       renderVanillaDrawer(childId)
     })
+  }
 
-    runtime.options.onClose?.()
+  // G7: 1:1 with vaul upstream — after the close animation
+  // finishes, reset the active snap point to the first. vaul
+  // does this in `closeDrawer` (index.tsx:544-548) so a
+  // consumer with `snapPoints: [0.3, 0.5, 0.8]` who drags to
+  // 0.8, closes, and reopens gets 0.3 (the initial snap), not
+  // 0.8 (the last active).
+  if (!open && runtime.options.snapPoints && runtime.options.snapPoints.length > 0) {
+    setTimeout(() => {
+      const firstSnap = runtime.options.snapPoints?.[0]
+      if (firstSnap !== undefined) {
+        runtime.options = { ...runtime.options, activeSnapPoint: firstSnap }
+        runtime.controller.setActiveSnapPoint(firstSnap)
+        renderVanillaDrawer(runtime.id)
+      }
+    }, TRANSITIONS.DURATION * 1000)
   }
 
   // F5/F17: cancel the previous `onAnimationEnd` timer before
@@ -331,6 +360,13 @@ function renderVanillaDrawer(id: CommonDrawerId) {
       runtime.options = { ...runtime.options, activeSnapPoint: snapPoint }
       runtime.controller.setActiveSnapPoint(snapPoint)
       renderVanillaDrawer(id)
+      // G9: 1:1 with vaul upstream — fire the consumer's
+      // `onActiveSnapPointChange` so external state stays in
+      // sync. vaul wires this through `useControllableState`'s
+      // `onChange: setActiveSnapPointProp` (the consumer's setter
+      // callback). The drawer's controller is the source of truth,
+      // so the callback fires AFTER the state updates.
+      runtime.options.onActiveSnapPointChange?.(snapPoint)
     }
   })
 
@@ -404,6 +440,11 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
       // the re-render would write the stale snap's offset.
       runtime.options = { ...runtime.options, activeSnapPoint: snapPoint }
       const snapshot = runtime.controller.setActiveSnapPoint(snapPoint)
+      // G8: 1:1 with vaul upstream — if the consumer is snapping
+      // to the LAST snap, extend the post-open grace period. The
+      // dialog itself updates `state.openedAt` during the
+      // re-render (see `applyOpenState` in `vanilla/dialog.ts`),
+      // so we just trigger a re-render here.
       renderVanillaDrawer(id)
       return snapshot
     },

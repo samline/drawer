@@ -901,6 +901,26 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   if (!open && state.content) {
     state.content.style.removeProperty('--initial-transform')
   }
+
+  // G8: 1:1 with vaul upstream — when the active snap is the
+  // LAST snap (the drawer is fully expanded), extend the
+  // post-open grace period so a follow-up scroll inside the
+  // (now fully-expanded) drawer is not hijacked as a
+  // drag-to-close. Mirrors vaul's `onSnapPointChange` callback
+  // (`index.tsx:217-220`). Applied on every re-render so the
+  // consumer's `setActiveSnapPoint(lastSnap)` and the drag
+  // snap-target both trigger the extension.
+  if (open && state.content) {
+    const snapPoints = getSnapPoints(options)
+    const activeSnapPoint = getActiveSnapPoint(options)
+    if (
+      snapPoints &&
+      snapPoints.length > 0 &&
+      activeSnapPoint === snapPoints[snapPoints.length - 1]
+    ) {
+      state.openedAt = performance.now()
+    }
+  }
 }
 
 function focusFirstElement(content: HTMLElement) {
@@ -1059,7 +1079,24 @@ function attachListeners(
   if (state.overlay && options.dismissible !== false) {
     const overlay = state.overlay
     const onMouseUp = () => {
-      callbacks.onOpenChange(false)
+      // G11: 1:1 with vaul upstream — vaul routes the overlay's
+      // mouseup through the same release pipeline as the
+      // content's pointerup (`index.tsx:817`: `onMouseUp={onRelease}`).
+      // The drawer's content captures the pointer via
+      // `setPointerCapture`, so the overlay's mouseup is a
+      // rare edge case (only fires when the pointer capture
+      // is broken or the drawer is rendered into a portal
+      // that escapes the capture). To match vaul's contract
+      // without reaching into the content's private
+      // `onPointerUp` closure, we guard on `state.drag`:
+      // when a drag is in progress, the content's own
+      // `onPointerUp` (which fires via the captured pointer)
+      // handles the release math; we skip the overlay close
+      // to avoid double-firing. When no drag is in progress,
+      // we close directly.
+      if (!state.drag) {
+        callbacks.onOpenChange(false)
+      }
     }
     overlay.addEventListener('mouseup', onMouseUp)
     state.cleanups.push(() => overlay.removeEventListener('mouseup', onMouseUp))
@@ -1531,6 +1568,18 @@ function attachListeners(
                 }
               }
               callbacks.onActiveSnapPointChange?.(matchedSnapPoint)
+              // G8: 1:1 with vaul upstream — when the user snaps
+              // to the LAST snap, extend the post-open grace
+              // period (vaul: `index.tsx:217-220`). The user just
+              // expanded the drawer to full height and is
+              // probably scrolling content, not trying to
+              // drag-to-close. Without this, the grace period
+              // expires 500ms after the initial open and a
+              // follow-up scroll can be hijacked as a drag.
+              const snapPoints = getSnapPoints(options)
+              if (snapPoints && matchedSnapPoint === snapPoints[snapPoints.length - 1]) {
+                state.openedAt = performance.now()
+              }
             } else {
               // No matching snap (degenerate viewport). Reset the
               // inline transform so the drawer stays at the active
@@ -1773,6 +1822,12 @@ function attachListeners(
         // first snap's offset (via `getActiveSnapPoint`'s fallback
         // in `core/index.ts`).
         callbacks.onActiveSnapPointChange?.(result.snapPoint)
+        // G8: 1:1 with vaul upstream — handle-cycle that reaches
+        // the last snap also extends the post-open grace period.
+        const handleSnapPoints = getSnapPoints(options)
+        if (handleSnapPoints && result.snapPoint === handleSnapPoints[handleSnapPoints.length - 1]) {
+          state.openedAt = performance.now()
+        }
         return
       }
       // `type: 'noop'` — drag in progress, `preventCycle` is on,
