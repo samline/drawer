@@ -938,70 +938,55 @@ function buildTitleContent(
   options: VanillaDrawerOptions,
   resolvedContent: HTMLElement | undefined
 ) {
+  // The title slot only exists when the consumer passed an
+  // explicit `title` (the mount block skips creating it in
+  // the proxy / minimalist cases — `aria-label` is the
+  // accessible name there). The function fills the visible
+  // title and applies the `titleVisuallyHidden` opt-out.
   if (!state.title) return
   const title = state.title
   title.innerHTML = ''
 
-  const hasCustomTitle = findElementByIdInSubtree(resolvedContent ?? null, options.ariaLabelledBy) !== null
-
-  const showTitle = options.title !== undefined
-  const showDescription = options.description !== undefined
-  const showProxyTitle = !showTitle && !hasCustomTitle && Boolean(options.ariaLabel)
-
-  // Title
-  if (showProxyTitle) {
-    const proxy = options.ariaLabel ?? ''
-    title.appendChild(document.createTextNode(proxy))
-  }
-  if (showTitle) {
-    const resolved = resolveRenderable(options.title)
-    if (resolved.text !== undefined) {
-      title.appendChild(document.createTextNode(resolved.text))
-    } else if (resolved.element) {
-      title.appendChild(resolved.element)
-    } else if (resolved.container) {
-      title.appendChild(resolved.container)
-    }
+  const resolved = resolveRenderable(options.title)
+  if (resolved.text !== undefined) {
+    title.appendChild(document.createTextNode(resolved.text))
+  } else if (resolved.element) {
+    title.appendChild(resolved.element)
+  } else if (resolved.container) {
+    title.appendChild(resolved.container)
   }
 
-  // Description
-  if (state.description) {
-    const desc = state.description
-    desc.innerHTML = ''
-    if (showDescription) {
-      const resolved = resolveRenderable(options.description)
-      if (resolved.text !== undefined) {
-        desc.appendChild(document.createTextNode(resolved.text))
-      } else if (resolved.element) {
-        desc.appendChild(resolved.element)
-      } else if (resolved.container) {
-        desc.appendChild(resolved.container)
-      }
-    }
+  // `titleVisuallyHidden: true` is the escape hatch for
+  // consumers who want a visible title in their own `content`
+  // HTML but still need the runtime to mount the slot for the
+  // `aria-labelledby` reference.
+  if (options.titleVisuallyHidden === true) {
+    setStyle(title, VISUALLY_HIDDEN_STYLE)
+  }
+}
+
+function buildDescriptionContent(state: DialogMountState, options: VanillaDrawerOptions) {
+  // The description slot only exists when the consumer passed
+  // an explicit `description` (the mount block skips creating
+  // it in the no-description case — `aria-describedby` is
+  // omitted entirely there). The slot is auto-hidden by
+  // default; `descriptionVisuallyHidden: false` is the escape
+  // hatch for consumers who want a visible description.
+  if (!state.description) return
+  const desc = state.description
+  desc.innerHTML = ''
+
+  const resolved = resolveRenderable(options.description)
+  if (resolved.text !== undefined) {
+    desc.appendChild(document.createTextNode(resolved.text))
+  } else if (resolved.element) {
+    desc.appendChild(resolved.element)
+  } else if (resolved.container) {
+    desc.appendChild(resolved.container)
   }
 
-  // Visually hidden styles
-  //
-  // Title slot visibility contract:
-  //
-  // - The consumer passed an explicit `title` (the visible
-  //   case): the slot renders visibly, unless
-  //   `titleVisuallyHidden: true` overrides.
-  // - The consumer did NOT pass `title` but passed `ariaLabel`
-  //   (the proxy case — the title slot is only there for the
-  //   `aria-labelledby` reference): the slot is auto-hidden
-  //   because proxy titles are accessibility targets, not
-  //   visual content. The consumer can opt out with an
-  //   explicit `titleVisuallyHidden: false`.
-  //
-  // See `.agents/recommendations/2026-07-25-auto-hide-title-slot-when-promoted-from-ariaLabel.md`
-  // for the full design rationale.
-  const isProxyTitle = showProxyTitle && !showTitle
-  const shouldHideTitle =
-    options.titleVisuallyHidden === true || (isProxyTitle && options.titleVisuallyHidden !== false)
-  if (shouldHideTitle) setStyle(title, VISUALLY_HIDDEN_STYLE)
-  if (options.descriptionVisuallyHidden && state.description) {
-    setStyle(state.description, VISUALLY_HIDDEN_STYLE)
+  if (options.descriptionVisuallyHidden !== false) {
+    setStyle(desc, VISUALLY_HIDDEN_STYLE)
   }
 }
 
@@ -1069,7 +1054,15 @@ function buildBodyContent(
 ) {
   if (!state.body) return
   const body = state.body
-  body.innerHTML = ''
+  // Clear only the consumer-content children, NOT the title
+  // and description slots that now live inside the body.
+  // The slots are managed by `buildTitleContent` (which runs
+  // first) and must survive this pass.
+  for (const child of Array.from(body.children)) {
+    if (child !== state.title && child !== state.description) {
+      body.removeChild(child)
+    }
+  }
   if (options.content === undefined) return
   if (resolvedContent.text !== undefined) {
     body.appendChild(document.createTextNode(resolvedContent.text))
@@ -2218,7 +2211,6 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       host.removeAttribute('id')
     }
     content.setAttribute('data-drawer-id', id)
-    if (options.ariaLabel) content.setAttribute('aria-label', options.ariaLabel)
     if (snapPoints && snapPoints.length > 0) {
       // Write the active snap's RUNTIME offset (the same value the
       // drag pipeline uses for `getSnapDragValue`). The CSS reads
@@ -2263,45 +2255,97 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       state.handle = handle
     }
 
-    const titleEl = createEl('div', { 'data-drawer-title': '' })
-    const descEl = createEl('div', { 'data-drawer-description': '' })
-    // Reintroduce the vanilla-node wrapper for CSS retro-compat (v2 DOM contract).
-    // It sits between [data-drawer] and [data-drawer-vanilla-body].
-    const nodeWrapperEl = createEl('div', { 'data-drawer-vanilla-node': '' })
-    const bodyEl = createEl('div', { 'data-drawer-vanilla-body': '' })
+    // Conditional slots: `[data-drawer-title]` and
+    // `[data-drawer-description]` only mount when the consumer
+    // actually has content for them. The minimalist fallback
+    // (and the proxy `ariaLabel` case) relies on `aria-label`
+    // alone for the accessible name, so the title slot is
+    // unnecessary there. Same for the description slot: when
+    // no description is provided, neither the slot nor
+    // `aria-describedby` is needed.
+    const hasTitle = options.title !== undefined
+    const hasDescription = options.description !== undefined
+
+    let titleEl: HTMLDivElement | null = null
+    let descEl: HTMLDivElement | null = null
+    if (hasTitle) {
+      titleEl = createEl('div', { 'data-drawer-title': '' })
+    }
+    if (hasDescription) {
+      descEl = createEl('div', { 'data-drawer-description': '' })
+    }
+
+    // The simplified body wrapper. The title and description
+    // slots (when present) are children of the body so consumer
+    // CSS can target the `[data-drawer-body]` subtree as a
+    // single visual unit. Order inside the body: title →
+    // description → consumer content.
+    const bodyEl = createEl('div', { 'data-drawer-body': '' })
     state.title = titleEl
     state.description = descEl
     state.body = bodyEl
-    content.appendChild(titleEl)
-    content.appendChild(descEl)
-    content.appendChild(nodeWrapperEl)
-    nodeWrapperEl.appendChild(bodyEl)
+    if (titleEl) bodyEl.appendChild(titleEl)
+    if (descEl) bodyEl.appendChild(descEl)
+    content.appendChild(bodyEl)
 
     const resolvedBodyContent = resolveRenderable(options.content)
     const contentRoot = resolvedBodyContent.element
     const contentHasId = (targetId: string) => findElementByIdInSubtree(contentRoot ?? null, targetId) !== null
 
-    // Auto-set id on title/description slots when ariaLabelledBy/ariaDescribedBy
-    // is provided but no matching element exists in the caller-supplied HTML.
-    // This makes aria-labelledby / aria-describedby point to a real target.
-    if (options.ariaLabelledBy) {
-      if (!contentHasId(options.ariaLabelledBy)) titleEl.id = options.ariaLabelledBy
+    // Default-props: when the consumer passed neither `title`
+    // nor `ariaLabel`, auto-assign `ariaLabel = id` so the
+    // dialog always has an accessible name. The fallback is
+    // exposed via `aria-label` only (no `aria-labelledby`,
+    // because the title slot is not rendered in this case).
+    const resolvedAriaLabel = options.ariaLabel ?? (!hasTitle ? id : undefined)
+
+    // Title wiring. The title slot exists only when the
+    // consumer passed a visible `title`. When it does, the
+    // slot is the `aria-labelledby` target (auto-generated id
+    // or the consumer's `ariaLabelledBy` id). When the
+    // consumer passed only `ariaLabelledBy` (without `title`),
+    // no slot is created and the consumer is responsible for
+    // the labelledby target in their content.
+    if (titleEl) {
+      if (options.ariaLabelledBy) {
+        titleEl.id = options.ariaLabelledBy
+      } else {
+        titleEl.id = `${id}-title`
+      }
+      content.setAttribute('aria-labelledby', titleEl.id)
+    } else if (options.ariaLabelledBy) {
       content.setAttribute('aria-labelledby', options.ariaLabelledBy)
-    } else {
-      const autoTitleId = `${id}-title`
-      titleEl.id = autoTitleId
-      content.setAttribute('aria-labelledby', autoTitleId)
     }
-    if (options.ariaDescribedBy) {
-      if (!contentHasId(options.ariaDescribedBy)) descEl.id = options.ariaDescribedBy
+    // If neither titleEl nor ariaLabelledBy, no `aria-labelledby`
+    // is set — the dialog relies on `aria-label` (from
+    // `resolvedAriaLabel`) for the accessible name.
+
+    // Description wiring. Mirrors the title: the slot exists
+    // only when the consumer passed a `description`. The
+    // `aria-describedby` attribute is OMITTED when no slot
+    // exists and no `ariaDescribedBy` is provided, so a11y
+    // linters don't see a reference to a missing target.
+    if (descEl) {
+      if (options.ariaDescribedBy) {
+        descEl.id = options.ariaDescribedBy
+      } else {
+        descEl.id = `${id}-description`
+      }
+      content.setAttribute('aria-describedby', descEl.id)
+    } else if (options.ariaDescribedBy) {
       content.setAttribute('aria-describedby', options.ariaDescribedBy)
-    } else {
-      const autoDescId = `${id}-description`
-      descEl.id = autoDescId
-      content.setAttribute('aria-describedby', autoDescId)
     }
 
+    // `aria-label` is set on the content whenever a resolved
+    // `ariaLabel` exists — either the consumer passed it
+    // explicitly, or the minimalist fallback assigned it to
+    // the drawer id. This is the primary accessible name
+    // source when no `aria-labelledby` is in play (the
+    // title-slot case relies on `aria-labelledby` instead).
+    if (resolvedAriaLabel) content.setAttribute('aria-label', resolvedAriaLabel)
+
     buildTitleContent(state, options, contentRoot)
+    buildDescriptionContent(state, options)
     buildBodyContent(state, options, resolvedBodyContent)
 
     // Built-in close button. Rendered last so it sits at the

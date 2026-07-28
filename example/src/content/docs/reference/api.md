@@ -6,7 +6,7 @@ sidebar:
   order: 3
 ---
 
-The public API of `@samline/drawer@3.0.0-beta.4`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
+The public API of `@samline/drawer@3.0.0`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
 
 The runtime is built around `id`. Reusing an id merges into its registered instance and dedicated host rather than creating another host.
 

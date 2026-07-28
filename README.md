@@ -48,11 +48,11 @@ Requires Node 20+ when bundling. Runtime target is ES2020.
 Use the browser build when you do not have a bundler and need to run the package directly in HTML, Shopify, WordPress, or any traditional template.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.0.0-beta.4` with the version you ship.
+> Pin the version in production. Replace `3.0.0` with the version you ship.
 
 The browser bundle exposes a single global: `window.Drawer`.
 
@@ -61,8 +61,8 @@ The browser bundle exposes a single global: `window.Drawer`.
   <button id="open-drawer" type="button">Open</button>
 </form>
 
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 <script>
   window.Drawer.createDrawer({
     id: 'demo',

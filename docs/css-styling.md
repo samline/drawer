@@ -61,9 +61,9 @@ An initially closed drawer has no overlay. During close, the overlay remains tem
 | `role`                    | `'dialog'`                               | always present                                                                      |
 | `aria-modal`              | `'true' \| 'false'`                      | mirrors the `modal` option                                                          |
 | `data-drawer-id`          | the drawer id (string)                   | always present; identifies the runtime drawer without creating an HTML id collision |
-| `aria-label`              | string                                   | when `ariaLabel` option is set                                                      |
-| `aria-labelledby`         | string id                                | auto-generated or mirrored from `ariaLabelledBy`                                    |
-| `aria-describedby`        | string id                                | auto-generated or mirrored from `ariaDescribedBy`                                   |
+| `aria-label`              | string                                   | mirrors `ariaLabel` (or the `id` fallback in the minimalist case); omitted when the consumer passes a visible `title` without `ariaLabel` |
+| `aria-labelledby`         | string id                                | only set when the title slot is mounted (consumer passed a `title`) or when the consumer provides `ariaLabelledBy` |
+| `aria-describedby`        | string id                                | only set when the description slot is mounted (consumer passed a `description`) or when the consumer provides `ariaDescribedBy` |
 
 ### `[data-drawer-handle]` — the built-in handle (optional)
 
@@ -78,23 +78,25 @@ Mounted when `showHandle: true` or `handleOnly: true`. Clicking it advances the 
 
 Always mounted alongside `[data-drawer-handle]`. A 44px × 44px (`max(100%, 2.75rem)`) transparent touch target that makes the handle comfortable to hit on touch devices. Does not style — only expands the hit area.
 
-### `[data-drawer-vanilla-node]` — the inner-card wrapper
+### `[data-drawer-body]` — the inner body wrapper
 
-A wrapper around `[data-drawer-vanilla-body]`. The title and description slots are siblings before it, and the optional close button is appended to `[data-drawer]`. Consumers can use the node wrapper to style the body card (for example, `border-radius`, `background`, or `box-shadow`).
+A wrapper inside `[data-drawer]` that contains the title slot (when mounted), the description slot (when mounted), and the consumer-supplied `content` (in that order). The optional close button is appended to `[data-drawer]` after the body. Consumers can use the body wrapper to style the panel (for example, `border-radius`, `background`, or `box-shadow`).
 
-### `[data-drawer-title]` and `[data-drawer-description]` — accessible slots
+### `[data-drawer-title]` — the visible title slot (optional)
 
-Both slots are created whenever the open or exiting dialog is present, even when empty. The runtime assigns default ids (`<drawer-id>-title` and `<drawer-id>-description`) when those slots are used as ARIA targets; custom `ariaLabelledBy` / `ariaDescribedBy` ids can instead point into consumer content.
+Mounted **only** when the consumer passes a `title` option. The slot lives inside `[data-drawer-body]` at the top, is the dialog's `aria-labelledby` target (auto-generated id `<drawer-id>-title` or the consumer's `ariaLabelledBy`), and renders visibly by default. `titleVisuallyHidden: true` is the escape hatch for consumers who render their own visible heading in `content` HTML but still need the slot for the `aria-labelledby` reference.
 
-The title slot is auto-hidden when the title was promoted from `ariaLabel` (a "proxy" title); pass `titleVisuallyHidden: false` to keep it visible. See [docs/options.md → title](./options.md#vanilla-only-options) for the full contract.
+In the proxy (`ariaLabel` only) and minimalist (no `title` / `description` / `ariaLabel`) cases, the slot is NOT mounted. The dialog's accessible name comes from `aria-label` instead (set from `ariaLabel` or the `id` fallback).
+
+### `[data-drawer-description]` — the accessible description slot (optional)
+
+Mounted **only** when the consumer passes a `description` option. The slot lives inside `[data-drawer-body]` after the title slot (when both are present), is the dialog's `aria-describedby` target (auto-generated id `<drawer-id>-description` or the consumer's `ariaDescribedBy`), and is auto-hidden by default (the description is an a11y target, not visual content). `descriptionVisuallyHidden: false` is the escape hatch for a visible description.
+
+In the no-description case, the slot is NOT mounted and the `aria-describedby` attribute is OMITTED entirely (rather than pointing at a non-existent target).
 
 ### `[data-drawer-close]` — built-in close button
 
 Rendered inside `[data-drawer]` when `options.closeButton` is `true` or a close-button options object. Default class is `drawer-close-button`, default icon is `xmark` (rendered inside a `<span data-drawer-close-icon aria-hidden="true">`), default `aria-label` is `Close`. The button's `click` event `stopPropagation()`s so it does not bubble to the drawer's content. The button is removed on re-mount and on `destroyDrawer` (HMR-safe).
-
-### `[data-drawer-vanilla-body]` — the body slot
-
-Renders the `content` value (string / number / HTMLElement / thunk). The body, title, and description slots are created whenever the open or exiting dialog is present, and may be empty when their options are omitted.
 
 ### `data-drawer-delayed-snap-points` and `data-drawer-custom-container` — runtime-written flags
 

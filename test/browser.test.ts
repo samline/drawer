@@ -297,10 +297,12 @@ describe('browser entry', () => {
       expect(dialog?.querySelectorAll('[id]').length).toBe(2)
       expect(document.getElementById(titleId)?.textContent).toBe('A controlled drawer.')
       expect(document.getElementById(descriptionId)?.textContent).toBe('Accessible custom content.')
-      expect(dialog?.querySelector('[data-drawer-title]')?.id).not.toBe(titleId)
-      expect(dialog?.querySelector('[data-drawer-description]')?.id).not.toBe(descriptionId)
-      expect(dialog?.querySelector('[data-drawer-title]')?.textContent).toBe('')
-      expect(dialog?.querySelector('[data-drawer-description]')?.textContent).toBe('')
+      // The runtime does NOT create its own title/description
+      // slots when the consumer provides `ariaLabelledBy` /
+      // `ariaDescribedBy` — the consumer's content is the
+      // labelledby/describedby target.
+      expect(dialog?.querySelector('[data-drawer-title]')).toBeNull()
+      expect(dialog?.querySelector('[data-drawer-description]')).toBeNull()
     } finally {
       Drawer.destroyDrawers()
       errorSpy.mockRestore()

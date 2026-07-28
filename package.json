@@ -1,13 +1,13 @@
 {
   "name": "@samline/drawer",
-  "version": "3.0.0-beta.4",
+  "version": "3.0.0",
   "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://samline.github.io/drawer",
   "publishConfig": {
     "access": "public",
-    "tag": "beta"
+    "tag": "latest"
   },
   "engines": {
     "node": ">=20"

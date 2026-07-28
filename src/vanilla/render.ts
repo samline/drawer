@@ -44,46 +44,103 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   triggerText?: string
   showHandle?: boolean
   handleClassName?: string
+  /**
+   * Accessible name for the dialog. Three cases:
+   *
+   * - The consumer passes a value AND no explicit `title`:
+   *   the value is set as `aria-label` on the dialog. No
+   *   title slot is mounted. This is the recommended path
+   *   when the consumer wants a screen-reader-friendly
+   *   name but no visible heading.
+   * - The consumer passes a value AND a `title`: the visible
+   *   title wins in the title slot (which is the
+   *   `aria-labelledby` target), and the dialog's
+   *   `aria-label` is set to this value in parallel as a
+   *   fallback for AT that ignores the reference.
+   * - The consumer passes nothing: the package auto-assigns
+   *   `ariaLabel = id` so the dialog always has an accessible
+   *   name. `aria-label = id` is set, no `aria-labelledby`.
+   */
   ariaLabel?: string
+  /**
+   * Optional override for the labelledby target id. When set
+   * AND no `title` is provided, the dialog's `aria-labelledby`
+   * points at this id (the consumer is responsible for the
+   * matching element in their `content`).
+   *
+   * When set AND a `title` is also provided, the title slot
+   * is stamped with this id and becomes the `aria-labelledby`
+   * target.
+   */
   ariaLabelledBy?: string
+  /**
+   * Optional override for the describedby target id. When
+   * set AND no `description` is provided, the dialog's
+   * `aria-describedby` points at this id (the consumer is
+   * responsible for the matching element in their `content`).
+   *
+   * When set AND a `description` is also provided, the
+   * description slot is stamped with this id and becomes the
+   * `aria-describedby` target.
+   */
   ariaDescribedBy?: string
   /**
    * Optional title for the drawer.
    *
-   * Two use cases:
+   * When the consumer passes a `title`, the package renders
+   * the value inside the `[data-drawer-title]` slot at the
+   * top of the drawer's body (visibly by default), and the
+   * slot becomes the dialog's `aria-labelledby` target.
+   * Pass a string, number, or `HTMLElement` (or a thunk that
+   * returns one).
    *
-   * - **Visible title**: a heading the user sees inside the drawer.
-   *   Pass a string, number, or `HTMLElement` (or a thunk that
-   *   returns one). The package renders the value in the
-   *   `[data-drawer-title]` slot at the top of the drawer's
-   *   content area. Style the slot via the consumer's CSS.
-   * - **Accessibility-only title**: pass `ariaLabel` (and not
-   *   `title`) and the package auto-promotes the `ariaLabel`
-   *   value into the `[data-drawer-title]` slot for the
-   *   `aria-labelledby` reference. The package also auto-hides
-   *   the slot in that case, because proxy titles are
-   *   accessibility targets only — consumers who want a visible
-   *   title should put it in the `content` HTML.
+   * When the consumer does NOT pass a `title`, the slot is
+   * NOT mounted. The dialog's accessible name comes from
+   * `aria-label` (set from `ariaLabel` or the `id` fallback)
+   * — see `ariaLabel`.
    *
-   * @see ariaLabel for the accessibility-only case.
+   * The visible title wins over `ariaLabel` when both are
+   * provided: the slot renders the visible title text and
+   * `aria-label` is set in parallel as a fallback for AT.
    */
   title?: VanillaRenderable
   /**
-   * Whether the `[data-drawer-title]` slot should be visually
-   * hidden. The default is `false` (visible), unless the title
-   * was auto-promoted from `ariaLabel` (a "proxy" title) — in
-   * that case the package always hides the slot, because the
-   * proxy is an accessibility target, not visual content.
+   * Force the `[data-drawer-title]` slot to be visually
+   * hidden.
    *
-   * Pass `true` to force-hide the title slot (e.g. when
-   * rendering your own visible title inside `content` but
-   * still keeping the `aria-labelledby` reference).
-   *
-   * Pass `false` explicitly to override the auto-hide when
-   * using a proxy title — the slot will render visibly.
+   * Rarely needed, kept for retro-compat. The only use case
+   * is when the consumer passes an explicit `title` but
+   * wants it hidden (e.g. they render their own visible
+   * heading in `content` HTML but still need the slot for
+   * the `aria-labelledby` reference). Pass `true` to hide,
+   * `false` to keep visible (default is `false`).
    */
   titleVisuallyHidden?: boolean
+  /**
+   * Optional description for the drawer. When set, the
+   * package renders the value inside the
+   * `[data-drawer-description]` slot (auto-hidden by
+   * default — the slot is an `aria-describedby` target,
+   * not visual content) and the slot becomes the dialog's
+   * `aria-describedby` target.
+   *
+   * When the consumer does NOT pass a `description`, the
+   * slot is NOT mounted and the `aria-describedby`
+   * attribute is OMITTED entirely. Consumers who used to
+   * pass `description: '...'` +
+   * `descriptionVisuallyHidden: true` only to silence a11y
+   * warnings can now drop both props.
+   */
   description?: VanillaRenderable
+  /**
+   * Force the `[data-drawer-description]` slot to be
+   * visible.
+   *
+   * Rarely needed, kept for retro-compat. Pass `false` to
+   * keep the slot visible (default is `true` — the slot is
+   * auto-hidden because the description is an a11y target,
+   * not visual content).
+   */
   descriptionVisuallyHidden?: boolean
   content?: VanillaRenderable
   overlayClassName?: string

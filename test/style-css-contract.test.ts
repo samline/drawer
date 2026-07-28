@@ -47,9 +47,18 @@ describe('style.css — animation / transition contract', () => {
     for (const direction of ['Bottom', 'Top', 'Left', 'Right']) {
       expect(CSS_WITHOUT_COMMENTS).toMatch(new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*to\\s*\\{`))
       expect(CSS_WITHOUT_COMMENTS).not.toMatch(
-        new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*(?:from|0%)\\s*\\{`)
+        new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*(?:from|0%)\\s*\{`)
       )
     }
+  })
+
+  it('does not reference the removed [data-drawer-vanilla-node] or [data-drawer-vanilla-body] selectors', () => {
+    // The HTML tree was simplified: the [data-drawer-vanilla-node]
+    // wrapper is gone, and [data-drawer-vanilla-body] was renamed
+    // to [data-drawer-body]. The stylesheet must not retain
+    // references to the old names.
+    expect(CSS_WITHOUT_COMMENTS).not.toMatch(/\[data-drawer-vanilla-node\]/)
+    expect(CSS_WITHOUT_COMMENTS).not.toMatch(/\[data-drawer-vanilla-body\]/)
   })
 
   describe('dist/style.css (compiled bundle — what the consumer actually loads)', () => {

@@ -25,8 +25,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 The IIFE bundle is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -36,19 +36,19 @@ The browser bundle only attaches `window.Drawer`. It does not inject any `<style
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.0.0-beta.4` with the version you ship.
+> Pin the version in production. Replace `3.0.0` with the version you ship.
 
 ---
 
 ## Basic Usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>

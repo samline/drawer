@@ -2,9 +2,17 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: pre-`3.0.0` — the package remains in **beta** while the interaction and browser matrix is validated before the stable release.
+> **Status**: `3.0.0` is the first **stable** release of the v3 line. The v3 series drops React/Vue/Svelte as peer dependencies and goes pure vanilla. The package is published under the `latest` npm tag.
 
-## [Unreleased]
+## [3.0.0] — 2026-07-28
+
+First stable release of the v3 vanilla line. Closes the long-running beta series by promoting the `3.0.0-beta.4` surface with two consumer-facing simplifications.
+
+### Changed
+
+- **Default props — accessibility wiring without boilerplate.** `title`, `description`, and `ariaLabel` are now all optional. When the consumer passes none of them, the runtime auto-assigns `ariaLabel = id` as a fallback, exposed on the dialog via `aria-label`. The title and description slots are **only mounted when the consumer passes the corresponding `title` / `description` option** — there is no empty proxy slot. When a slot exists, it carries the consumer-supplied text and is the `aria-labelledby` / `aria-describedby` target. When it does not, the corresponding ARIA reference is **omitted entirely** (no more `aria-describedby` pointing at an empty slot, no more `aria-labelledby` pointing at a hidden proxy). Consumers who used to pass `title: '...', titleVisuallyHidden: true, description: '...', descriptionVisuallyHidden: true` only to silence a11y warnings can now drop all four props.
+- **HTML tree — fewer wrappers, simpler custom drawers.** Removed the inner `[data-drawer-vanilla-node]` wrapper. The `[data-drawer-vanilla-body]` wrapper was renamed to `[data-drawer-body]`. The title and description slots (when present) live inside `[data-drawer-body]`, in that order, before the consumer content. The optional close button is still appended to `[data-drawer]` after the body. Consumers targeting these slots in CSS should update their selectors accordingly.
+- **Default visibility.** The title slot renders visibly by default when an explicit `title` is passed (escape hatch `titleVisuallyHidden: true` is preserved for retro-compat). The description slot is auto-hidden by default when an explicit `description` is passed (escape hatch `descriptionVisuallyHidden: false` is preserved for retro-compat).
 
 ## [3.0.0-beta.4] — 2026-07-28
 

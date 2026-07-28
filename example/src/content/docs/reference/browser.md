@@ -6,7 +6,7 @@ sidebar:
   order: 5
 ---
 
-Use the browser entry when a CDN and a classic script are simpler than a bundler. This page targets the exact `3.0.0-beta.4` assets.
+Use the browser entry when a CDN and a classic script are simpler than a bundler. This page targets the exact `3.0.0` assets.
 
 ---
 
@@ -35,12 +35,12 @@ The IIFE is JavaScript only. It does not contain the runtime stylesheet and does
 ## Quick include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 ```
 
 :::caution[Pin the version in production]
-Keep the CSS and JS URLs pinned to the same exact version. These docs intentionally use `@3.0.0-beta.4`.
+Keep the CSS and JS URLs pinned to the same exact version. These docs intentionally use `@3.0.0`.
 :::
 
 ---
@@ -48,13 +48,13 @@ Keep the CSS and JS URLs pinned to the same exact version. These docs intentiona
 ## Basic usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
 </div>
 
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 <script>
   window.Drawer.createDrawer({
     id: 'filters',

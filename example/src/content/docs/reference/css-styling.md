@@ -16,11 +16,11 @@ With a bundler:
 import '@samline/drawer/styles.css'
 ```
 
-With the beta.4 browser bundle, CSS and JavaScript are separate assets:
+With the 3.0.0 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -216,6 +216,6 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 ## Notes
 
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
-- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; beta.4 JavaScript does not write it.
+- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 3.0.0 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
