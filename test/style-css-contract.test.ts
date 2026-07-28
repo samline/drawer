@@ -26,7 +26,7 @@ describe('style.css — animation / transition contract', () => {
     expect(baseRuleMatch, 'expected a [data-drawer] base rule in style.css').not.toBeNull()
     const baseRule = baseRuleMatch![0]
     expect(baseRule).toMatch(
-      /transition\s*:\s*transform\s+0\.5s\s+cubic-bezier\(0\.4,\s*0,\s*0\.2,\s*1\)/
+      /transition\s*:\s*transform\s+0\.5s\s+cubic-bezier\(0\.32,\s*0\.72,\s*0,\s*1\)/
     )
   })
 

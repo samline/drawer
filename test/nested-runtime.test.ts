@@ -12,7 +12,7 @@ describe('nested runtime helpers', () => {
       })
     ).toEqual({
       transform: 'scale(0.96) translate3d(0, -16px, 0)',
-      transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)'
+      transition: 'transform 0.5s cubic-bezier(0.32,0.72,0,1)'
     })
   })
 
@@ -25,7 +25,7 @@ describe('nested runtime helpers', () => {
       })
     ).toEqual({
       transform: 'scale(1) translate3d(0, 0px, 0)',
-      transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)'
+      transition: 'transform 0.5s cubic-bezier(0.32,0.72,0,1)'
     })
   })
 

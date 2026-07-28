@@ -8,9 +8,9 @@
      is the fallback for the open path. CSS animations have higher
      specificity than transitions for the same property, so the
      `slideToX` keyframe still wins on the open path. */
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='open'] {
@@ -91,8 +91,8 @@
 
 [data-drawer-overlay][data-drawer-snap-points='false'] {
   animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 [data-drawer-overlay][data-drawer-snap-points='false'][data-state='open'] {
   animation-name: fadeIn;
@@ -143,7 +143,7 @@
 
 [data-drawer-overlay][data-drawer-snap-points='true'] {
   opacity: 0;
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-drawer-overlay][data-drawer-snap-points='true'] {

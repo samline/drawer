@@ -130,6 +130,20 @@ interface DragState {
   snapPointOffset: number
   lastTimeDragPrevented: number
   pointerId: number
+  /**
+   * G5: 1:1 with vaul upstream — the drawer's actual rendered
+   * dimensions (height for vertical directions, width for
+   * horizontal). Captured at `pointerdown` time via
+   * `getBoundingClientRect()` and reused across the entire
+   * drag. Used as the denominator for `percentageDragged` and
+   * the close-threshold check (vaul: `index.tsx:213-214, 266-267`).
+   * Without this, non-full-height drawers (e.g. `height: 300px`
+   * or `fixed: true` with a constrained height) would calculate
+   * the drag-to-close threshold against the viewport instead of
+   * the actual drawer, breaking the gesture.
+   */
+  drawerHeight: number
+  drawerWidth: number
   // Phase B: snap-point context. `null` when no snap points are
   // configured; otherwise the values captured at `pointerdown` and
   // reused across the entire drag.
@@ -499,9 +513,20 @@ function getActiveSnapPoint(options: VanillaDrawerOptions): CommonDrawerSnapPoin
  * helpers degrade to `NaN` offsets, which the dialog treats as
  * "no snap points configured" downstream).
  */
-function getContainerSize() {
+function getContainerSize(container?: HTMLElement | null) {
   if (typeof window === 'undefined') {
     return { width: 0, height: 0 }
+  }
+  // G3: 1:1 with vaul upstream — when the consumer passes a
+  // `container` option, use the container's bounding rect for the
+  // snap-point math instead of the viewport. vaul does this in
+  // `use-snap-points.ts:75-80`. Without this, a consumer with
+  // `container: someInnerDiv` and `snapPoints: [0.5, 0.8]` would
+  // get viewport-based snap points in the drawer but
+  // container-based in vaul.
+  if (container && typeof container.getBoundingClientRect === 'function') {
+    const rect = container.getBoundingClientRect()
+    return { width: rect.width, height: rect.height }
   }
   return { width: window.innerWidth, height: window.innerHeight }
 }
@@ -1053,15 +1078,28 @@ function attachListeners(
     const content = state.content
     const direction = getDirection(options)
     const isVerticalAxis = isVertical(direction)
-    const drawerDimension = isVerticalAxis ? window.innerHeight : window.innerWidth
+    // G5: 1:1 with vaul upstream — use the drawer's actual
+    // dimensions (captured at `pointerdown` and stored on
+    // `state.drag`) instead of the viewport. The fallback to
+    // the viewport is a defensive no-op for the rare case where
+    // `state.drag` is null (e.g. before the first pointerdown) or
+    // the drawer is not laid out (e.g. jsdom tests where
+    // `getBoundingClientRect` returns 0,0).
+    const initialDrawerRect = content.getBoundingClientRect()
+    const initialDimension = isVerticalAxis ? initialDrawerRect.height : initialDrawerRect.width
+    const viewportDimension = isVerticalAxis ? window.innerHeight : window.innerWidth
+    const drawerDimension = initialDimension > 0 ? initialDimension : viewportDimension
     const closeThreshold = options.closeThreshold ?? CLOSE_THRESHOLD
     const scrollLockTimeout = options.scrollLockTimeout ?? SCROLL_LOCK_TIMEOUT
     const snapPoints = getSnapPoints(options)
     const activeSnapPoint = getActiveSnapPoint(options)
+    // G3: 1:1 with vaul upstream — pass `options.container` so
+    // the snap math uses the container's bounding rect (when set)
+    // instead of the viewport.
     const snapPointsOffset = getSnapPointsOffset({
       ...(snapPoints !== undefined ? { snapPoints } : {}),
       direction,
-      containerSize: getContainerSize()
+      containerSize: getContainerSize(options.container ?? null)
     })
     const activeSnapPointIndex = getActiveSnapPointIndex({
       ...(snapPoints !== undefined ? { snapPoints } : {}),
@@ -1185,6 +1223,15 @@ function attachListeners(
         }
       }
 
+      // G5: 1:1 with vaul upstream — capture the drawer's actual
+      // rendered dimensions at pointerdown so the drag math
+      // (percentageDragged, close threshold) uses the real
+      // drawer size instead of the viewport. Without this, a
+      // consumer with a non-full-height drawer (e.g. `height:
+      // 300px` or `fixed: true` with a constrained height) would
+      // miscalculate the drag-to-close threshold.
+      const contentRect = content.getBoundingClientRect()
+      const fallbackVertical = isVerticalAxis ? window.innerHeight : window.innerWidth
       state.drag = {
         pointerStart: { x: event.clientX, y: event.clientY },
         pointerStartTimeStamp: event.timeStamp || performance.now(),
@@ -1194,6 +1241,13 @@ function attachListeners(
         snapPointOffset: 0,
         lastTimeDragPrevented: 0,
         pointerId: event.pointerId,
+        // Fallback to the viewport when the drawer is not laid out
+        // (jsdom tests where `getBoundingClientRect` returns 0,0).
+        // vaul falls back to `window.innerWidth/Height` in the
+        // `useRef` initializers at `index.tsx:213-214` for the same
+        // reason.
+        drawerHeight: contentRect.height > 0 ? contentRect.height : fallbackVertical,
+        drawerWidth: contentRect.width > 0 ? contentRect.width : fallbackVertical,
         activeSnapPointOffset,
         activeSnapPointIndex,
         snapPointsOffset,
@@ -1995,7 +2049,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         ? getSnapPointOffset({
             snapPoint: activeSnapPoint,
             direction,
-            containerSize: getContainerSize()
+            // G3: pass the container so the snap math uses the
+            // container's bounding rect when set.
+            containerSize: getContainerSize(options.container ?? null)
           })
         : 0
       content.style.setProperty('--initial-transform', `${initialOffset}px`)
@@ -2143,10 +2199,12 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       const activeSnapPoint = getActiveSnapPoint(options)
       let snapPointOffset = 0
       if (snapPoints && activeSnapPoint !== null) {
+        // G3: pass the container so the snap math uses the
+        // container's bounding rect when set.
         snapPointOffset = getSnapPointOffset({
           snapPoint: activeSnapPoint,
           direction: listenerDirection,
-          containerSize: getContainerSize()
+          containerSize: getContainerSize(options.container ?? null)
         })
       }
       state.activeSnapPointOffset = snapPointOffset
