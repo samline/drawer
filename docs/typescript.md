@@ -1,6 +1,6 @@
 # TypeScript reference
 
-`@samline/drawer` is written in strict TypeScript (`strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`, `verbatimModuleSyntax: true`). Every public type is exported from the root entrypoint.
+`@samline/drawer` is written in strict TypeScript (`strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`, `verbatimModuleSyntax: true`). The root entrypoint exports the controller, options, snapshot, id, direction, snap-point, and renderable types listed below. Some useful shapes are intentionally available only through an exported type's properties, and `DrawerApi` is exported from the browser subpath rather than the root.
 
 ---
 
@@ -12,14 +12,11 @@ import type {
   CommonDrawerSnapPoint,
   CommonDrawerId,
   CommonDrawerOptions,
-  CommonDrawerState,
   CommonDrawerSnapshot,
   CommonDrawerController,
   VanillaDrawerController,
   VanillaDrawerOptions,
-  VanillaRenderable,
-  VanillaCloseButtonOptions,
-  DrawerApi
+  VanillaRenderable
 } from '@samline/drawer'
 ```
 
@@ -37,7 +34,7 @@ The four directions a drawer can slide from / to.
 type CommonDrawerSnapPoint = number | string
 ```
 
-A snap point value. Numbers are interpreted as fractions of the viewport (0–1). Strings with a `'%'` suffix are treated as a percentage of the viewport. Any other string is parsed as a pixel value (e.g. `'120px'`).
+A snap point value. Numbers are interpreted as fractions of the viewport or supplied custom container. Every string is parsed with `parseInt` and treated as an absolute pixel count: `'120px'` resolves to 120 px, `'50%'` resolves to 50 px, and decimal strings are truncated.
 
 ### `CommonDrawerId`
 
@@ -60,6 +57,7 @@ interface CommonDrawerOptions {
   onOpenChange?: (open: boolean) => void
   onClose?: () => void
   onAnimationEnd?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   dismissible?: boolean
@@ -85,12 +83,15 @@ interface CommonDrawerOptions {
 }
 ```
 
-### `CommonDrawerState`
+### Snapshot state shape
 
-The runtime state derived from the controller's options.
+The runtime state is available as `CommonDrawerSnapshot['state']`. `CommonDrawerState` is the source-level interface name, but it is not a named root export.
 
 ```ts
-interface CommonDrawerState {
+type DrawerState = CommonDrawerSnapshot['state']
+
+// Equivalent shape:
+interface DrawerStateShape {
   isOpen: boolean
   activeSnapPoint: CommonDrawerSnapPoint | null
   direction: CommonDrawerDirection
@@ -107,7 +108,7 @@ The full controller snapshot.
 ```ts
 interface CommonDrawerSnapshot {
   options: CommonDrawerOptions
-  state: CommonDrawerState
+  state: DrawerStateShape
 }
 ```
 
@@ -142,7 +143,7 @@ interface VanillaDrawerController extends CommonDrawerController {
 - `id` — the runtime instance id.
 - `element` — the current host element (`<div data-drawer-vanilla-root>`) when mounted, or `null` after `destroy()`.
 - `options` — the latest merged options passed to the root entrypoint.
-- `update(options?)` — merge new options into the same instance and re-render. Returns the same controller.
+- `update(options?)` — merge new options into the same id and re-render. Returns a controller facade for that instance; object identity is not guaranteed across helper calls.
 - `destroy()` — alias for `destroyDrawer(id)`.
 
 ### `VanillaDrawerOptions`
@@ -151,6 +152,8 @@ interface VanillaDrawerController extends CommonDrawerController {
 
 ```ts
 interface VanillaDrawerOptions extends CommonDrawerOptions {
+  container?: HTMLElement | null
+  /** @deprecated Use container. */
   mountElement?: HTMLElement | null
   triggerElement?: HTMLElement | null
   triggerText?: string
@@ -166,8 +169,17 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
   content?: VanillaRenderable
   overlayClassName?: string
   contentClassName?: string
+  closeButton?:
+    | boolean
+    | {
+        className?: string
+        icon?: string | HTMLElement
+        ariaLabel?: string
+      }
 }
 ```
+
+`container` is the preferred mount target. `mountElement` is deprecated and used as a nullish fallback: the target is `container ?? mountElement ?? document.body`. Every drawer gets its own host inside the target, so multiple drawers can share a container without sharing mount state.
 
 ### `VanillaRenderable`
 
@@ -177,17 +189,15 @@ type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | n
 
 The value shape accepted by `title`, `description`, and `content`. Strings and numbers are mounted as text nodes. Pre-built `HTMLElement` instances are mounted directly. Thunks are invoked once on render and the returned `HTMLElement` is mounted. `null` / `undefined` render nothing for that slot.
 
-### `VanillaCloseButtonOptions`
+### Close-button option shape
 
-The shape of the object accepted by `VanillaDrawerOptions.closeButton`. Defined in `src/vanilla/render.ts`.
+The source names this object `VanillaCloseButtonOptions`, but that name is not exported from the package root. Derive it from the exported options type when a standalone alias is useful:
 
 ```ts
-interface VanillaCloseButtonOptions {
-  className?: string
-  icon?: string | HTMLElement
-  ariaLabel?: string
-}
+type CloseButtonOptions = Exclude<NonNullable<VanillaDrawerOptions['closeButton']>, boolean>
 ```
+
+Its equivalent shape is `{ className?: string; icon?: string | HTMLElement; ariaLabel?: string }`.
 
 - `className` — class applied to the button. The consumer can use it to position the button (e.g. `absolute top-5 right-5`).
 - `icon` — icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An `HTMLElement` is appended as-is. Defaults to the literal `xmark` text.
@@ -218,11 +228,11 @@ The numeric defaults used by the runtime live in `src/constants.ts` and are re-e
 | `TRANSITIONS.EASE`     | `[0.32, 0.72, 0, 1]` | CSS `cubic-bezier()` ease curve.                                                                            |
 | `VELOCITY_THRESHOLD`   | `0.4`                | Minimum velocity (px / ms) for a release to dismiss the drawer.                                             |
 | `CLOSE_THRESHOLD`      | `0.25`               | Minimum fraction of the drawer dimension the user must drag past for release to dismiss.                    |
-| `SCROLL_LOCK_TIMEOUT`  | `100`                | Reserved for the scroll-lock interaction (currently inert).                                                 |
+| `SCROLL_LOCK_TIMEOUT`  | `100`                | Drag-permission cooldown in milliseconds after a gesture is blocked by scroll state.                        |
 | `BORDER_RADIUS`        | `8`                  | Pixel value the scale-background pipeline uses for the page-shell border-radius at `percentageDragged = 0`. |
-| `NESTED_DISPLACEMENT`  | `16`                 | Pixel displacement the scale-background pipeline uses to compute the base scale.                            |
-| `WINDOW_TOP_OFFSET`    | `26`                 | Pixel offset the mobile-keyboard layout uses for `isMobileFirefox` (reserved).                              |
-| `DRAG_CLASS`           | `'drawer-dragging'`  | Reserved for a future drag-state class on `[data-drawer]` — currently unused.                               |
+| `NESTED_DISPLACEMENT`  | `16`                 | Pixel displacement used when an open child scales and shifts its parent drawer.                             |
+| `WINDOW_TOP_OFFSET`    | `26`                 | Pixel offset used by scale-background math and the mobile Firefox viewport layout.                          |
+| `DRAG_CLASS`           | `'drawer-dragging'`  | Class added after axis intent is accepted and removed on release or cancellation.                           |
 
 ```ts
 import { TRANSITIONS, VELOCITY_THRESHOLD, CLOSE_THRESHOLD } from '@samline/drawer'
@@ -236,10 +246,10 @@ console.log(CLOSE_THRESHOLD) // 0.25
 
 ## Browser global
 
-The IIFE bundle exports a `Drawer` namespace. Type it from the root entrypoint:
+The IIFE bundle exports a `Drawer` namespace. `DrawerApi` comes from the browser subpath, not the root entrypoint:
 
 ```ts
-import type { DrawerApi } from '@samline/drawer'
+import type { DrawerApi } from '@samline/drawer/browser'
 
 declare global {
   interface Window {
@@ -257,7 +267,10 @@ interface DrawerApi {
   openDrawer: (id?: string | null) => VanillaDrawerController
   closeDrawer: (id?: string | null) => VanillaDrawerController
   toggleDrawer: (id?: string | null) => VanillaDrawerController
-  updateDrawer: (id?: string | null, options?: VanillaDrawerOptions) => VanillaDrawerController
+  updateDrawer: (
+    idOrOptions?: string | VanillaDrawerOptions | null,
+    options?: VanillaDrawerOptions
+  ) => VanillaDrawerController
   createDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
   configureDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
   getDrawer: (id?: string | null) => VanillaDrawerController | null

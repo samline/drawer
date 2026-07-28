@@ -46,24 +46,14 @@ describe('drag direction permission (horizontal)', () => {
   })
 
   it('allows `right` swipe when direction is `right` (close)', () => {
-    // Drag right (close for `right`). Swipe amount is the current
-    // translation along the axis: positive means dragging toward the
-    // close position when direction is `right` (the runtime passes
-    // `getDraggableOffset` semantics — sign here matches the drag
-    // pipeline's positive close axis for `right`).
-    //
-    // Concretely: dragging right on a `right` drawer produces a
-    // negative `draggedDistance` (per `getDraggedDistance`'s
-    // `(start - current)` sign convention), so `swipeAmount < 0`
-    // is the close-direction indicator. We pass `swipeAmount`
-    // through the same convention the runtime uses (a number that
-    // mirrors `draggedDistance`).
+    // `swipeAmount` is the current CSS translation, not the
+    // normalized dragged distance used by the release helper.
     const result = getDragPermission({
       targetTagName: 'DIV',
       hasNoDragAttribute: false,
       direction: 'right',
       timeSinceOpenMs: 1000,
-      swipeAmount: -50,
+      swipeAmount: 50,
       hasHighlightedText: false,
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
@@ -74,31 +64,30 @@ describe('drag direction permission (horizontal)', () => {
   })
 
   it('denies `left` swipe when direction is `right` (opposite)', () => {
-    // Drag left on a `right` drawer → swipeAmount > 0 (per the
-    // same sign convention) → opposite direction → drag denied.
+    // Drag left on a right drawer produces a negative translation.
     const result = getDragPermission({
       targetTagName: 'DIV',
       hasNoDragAttribute: false,
       direction: 'right',
       timeSinceOpenMs: 1000,
-      swipeAmount: 50,
+      swipeAmount: -50,
       hasHighlightedText: false,
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
-      isDraggingInDirection: false,
+      isDraggingInDirection: true,
       ancestors: []
     })
     expect(result.allow).toBe(false)
   })
 
   it('allows `left` swipe when direction is `left` (close)', () => {
-    // Drag left on a `left` drawer → swipeAmount > 0 → close.
+    // Drag left on a left drawer produces a negative translation.
     const result = getDragPermission({
       targetTagName: 'DIV',
       hasNoDragAttribute: false,
       direction: 'left',
       timeSinceOpenMs: 1000,
-      swipeAmount: 50,
+      swipeAmount: -50,
       hasHighlightedText: false,
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
@@ -114,11 +103,11 @@ describe('drag direction permission (horizontal)', () => {
       hasNoDragAttribute: false,
       direction: 'left',
       timeSinceOpenMs: 1000,
-      swipeAmount: -50,
+      swipeAmount: 50,
       hasHighlightedText: false,
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
-      isDraggingInDirection: false,
+      isDraggingInDirection: true,
       ancestors: []
     })
     expect(result.allow).toBe(false)
@@ -130,7 +119,7 @@ describe('drag direction permission (horizontal)', () => {
       hasNoDragAttribute: true,
       direction: 'right',
       timeSinceOpenMs: 1000,
-      swipeAmount: -50,
+      swipeAmount: 50,
       hasHighlightedText: false,
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,

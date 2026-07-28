@@ -16,7 +16,7 @@ describe('handle runtime helpers', () => {
     ).toEqual({ type: 'noop' })
   })
 
-  it('closes when there are no snap points and the drawer is not dismissible', () => {
+  it('noops when there are no snap points', () => {
     expect(
       getNextHandleState({
         isDragging: false,
@@ -25,7 +25,7 @@ describe('handle runtime helpers', () => {
         activeSnapPoint: null,
         dismissible: false
       })
-    ).toEqual({ type: 'close' })
+    ).toEqual({ type: 'noop' })
   })
 
   it('advances to the next snap point when available', () => {

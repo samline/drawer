@@ -10,7 +10,9 @@ function destroyDrawers(): void
 
 ## Description
 
-`destroyDrawers` is a bulk teardown. It iterates the registry in insertion order and calls `destroyDrawer` for each. The order is the reverse of the creation order, so a parent is destroyed after its children. After the call, the registry is empty.
+`destroyDrawers` snapshots registry ids in insertion order and calls `destroyDrawer` for each. Each call recursively destroys that drawer's current descendants first; ids already removed by a parent's recursive teardown become no-ops later in the snapshot. There is no separate global reverse-creation ordering. After the call, the registry is empty.
+
+Each drawer removes only its dedicated host, so consumer-owned custom containers remain. Reference-counted scroll, focus, history, Safari, and scale-background ownership is released per drawer; original shared styles are restored after the final owner is gone. Destroy remains immediate and does not run close exits.
 
 Useful for "close everything" hooks (navigation, logout, route change) without enumerating the ids yourself. Pair with `getDrawers()` if you need to inspect before tearing down.
 

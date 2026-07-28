@@ -117,7 +117,11 @@ export function getSnapPointReleaseAction({
   highVelocityThreshold?: number
   viewportSize: number
 }) {
-  if (fadeFromIndex === undefined || activeSnapPointOffset === null || snapPointsOffset.length === 0) {
+  // Overlay fading and snap release are independent. Vaul defaults
+  // `fadeFromIndex` to the last snap, but omitting a visual fade option
+  // must never disable the entire release pipeline.
+  void fadeFromIndex
+  if (activeSnapPointOffset === null || snapPointsOffset.length === 0) {
     return { type: 'noop' as const }
   }
 

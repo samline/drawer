@@ -1,6 +1,6 @@
 // Vanilla host: manages the mount target element for a drawer instance.
 // The host is a small container `<div data-drawer-vanilla-root>`
-// appended to `document.body` (or a caller-provided `mountElement`) that
+// appended to `document.body` (or a caller-provided `container`) that
 // holds the rendered dialog DOM and the trigger button when one is needed.
 
 import type { CommonDrawerSnapPoint } from '../core'
@@ -21,13 +21,13 @@ function canUseDOM() {
 /**
  * Resolve the container element for a drawer host. Reuses the existing
  * element when it's still connected; otherwise creates a fresh `<div>`
- * owned by this host and appends it to `document.body`. When the caller
- * passes a `container` (or the legacy `mountElement`) we always use it
- * and don't own the lifetime.
+ * owned by this drawer and appends it to `document.body` or the caller's
+ * `container`. A dedicated host is required even for custom containers:
+ * using the container itself as the host made two drawers share one
+ * `DialogMountState`, so mounting either drawer destroyed the other.
  *
- * F12: 1:1 with vaul upstream's `container` prop. `container` takes
- * precedence over `mountElement` (the legacy name kept for backward
- * compat).
+ * `container` is the preferred target and `mountElement` is the legacy
+ * nullish fallback kept for backward compatibility.
  */
 function resolveVanillaContainer(
   state: VanillaHostState,
@@ -36,18 +36,22 @@ function resolveVanillaContainer(
 ): { container: HTMLElement; ownsElement: boolean } | null {
   if (!canUseDOM()) return null
 
-  const target = options.container ?? options.mountElement
-  if (target) {
-    return { container: target, ownsElement: false }
+  const target = options.container ?? options.mountElement ?? document.body
+
+  if (state.element?.isConnected && state.element.parentElement === target) {
+    return { container: state.element, ownsElement: state.ownsElement }
   }
 
-  if (state.element?.isConnected) {
-    return { container: state.element, ownsElement: state.ownsElement }
+  if (state.element) {
+    destroyVanillaDialog(state.element)
+    if (state.ownsElement && state.element.parentNode) {
+      state.element.parentNode.removeChild(state.element)
+    }
   }
 
   const element = document.createElement('div')
   element.dataset.drawerVanillaRoot = id
-  document.body.appendChild(element)
+  target.appendChild(element)
   return { container: element, ownsElement: true }
 }
 
@@ -61,6 +65,7 @@ export function renderVanillaHost({
   id,
   options,
   open,
+  openOrder,
   hasBeenOpened,
   onBuiltInTriggerMouseDown,
   onBuiltInTriggerClick,
@@ -73,11 +78,8 @@ export function renderVanillaHost({
   id: string
   options: VanillaDrawerOptions
   open: boolean
-  /**
-   * G12: 1:1 with vaul upstream's `hasBeenOpened` runtime state.
-   * Used by the `preventBodyScroll` gate (G3) to skip the lock on
-   * the very first open.
-   */
+  openOrder?: number | null
+  /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
@@ -114,6 +116,7 @@ export function renderVanillaHost({
     id,
     options,
     open,
+    ...(openOrder !== undefined ? { openOrder } : {}),
     ...(hasBeenOpened !== undefined ? { hasBeenOpened } : {}),
     onOpenChange,
     ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),

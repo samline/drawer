@@ -18,7 +18,7 @@ Useful for:
 - **Headless logic** — model drawer state in a server-rendered context or in a worker.
 - **Custom renderers** — build your own dialog primitive on top of the same observable state. Subscribe to the controller and re-render your own host when the snapshot changes.
 
-The default `id` is `'default'`. Pass `id` to namespace multiple controllers.
+Headless controllers are independent objects and do not join the id-based registry. An `id` is retained in `snapshot.options` when supplied, but it has no default and does not namespace or connect separate controllers.
 
 ## Parameters
 

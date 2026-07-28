@@ -6,61 +6,90 @@ sidebar:
   order: 7
 ---
 
-import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+import { Tabs, TabItem } from '@astrojs/starlight/components'
 
-These examples are deliberately copy-pasteable. Each one lives in a self-contained snippet so it's easy to drop into a project and adapt.
+These examples target `@samline/drawer@3.0.0-beta.4` and its lazy-Presence lifecycle. Each registered id owns a host; overlay/content exist only while open or exiting.
 
 <Tabs syncKey="runtime">
-	<TabItem label="Bundler / TS">
+  <TabItem label="Bundler / TS">
 
-		The standard entrypoint — `import { createDrawer } from '@samline/drawer'`. Works with Vite, Webpack, Rollup, esbuild, Bun, and any modern bundler.
+    The standard entrypoint — `import { createDrawer } from '@samline/drawer'`. Works with Vite, Webpack, Rollup, esbuild, Bun, and any modern bundler.
 
-		```ts
-		import '@samline/drawer/styles.css'
-		import { createDrawer } from '@samline/drawer'
+    ```ts
+    import '@samline/drawer/styles.css'
+    import { createDrawer } from '@samline/drawer'
 
-		const drawer = createDrawer({
-		  id: 'filters',
-		  direction: 'bottom',
-		  title: 'Filters',
-		  content: 'Drawer body'
-		})
+    const drawer = createDrawer({
+      id: 'filters',
+      direction: 'bottom',
+      title: 'Filters',
+      content: 'Drawer body'
+    })
 
-		drawer.setOpen(true)
-		```
+    drawer.setOpen(true)
+    ```
 
-	</TabItem>
-	<TabItem label="Browser global">
+  </TabItem>
+  <TabItem label="Browser global">
 
-		No bundler required. Drop the CDN script and use `window.Drawer.createDrawer(options)`.
+    No bundler required. Load the separate CSS and JS assets, then use `window.Drawer.createDrawer(options)`.
 
-		```html
-		<div data-drawer-wrapper id="app-shell">
-		  <main>App shell</main>
-		</div>
+    ```html
+    <div data-drawer-wrapper id="app-shell">
+      <main>App shell</main>
+    </div>
 
-		<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
-		<script>
-		  window.Drawer.createDrawer({
-		    id: 'filters',
-		    triggerText: 'Open drawer',
-		    showHandle: true,
-		    direction: 'bottom',
-		    title: 'Drawer title',
-		    content: 'Drawer content'
-		  })
-		</script>
-		```
+    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+    <script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
+    <script>
+      window.Drawer.createDrawer({
+        id: 'filters',
+        triggerText: 'Open drawer',
+        showHandle: true,
+        direction: 'bottom',
+        title: 'Drawer title',
+        content: 'Drawer content'
+      })
+    </script>
+    ```
 
-	</TabItem>
+  </TabItem>
+
 </Tabs>
+
+## Recipe: All four directions
+
+Every direction uses its matching axis for open, close, drag, and snap behavior:
+
+| `direction` | Enters from | Drag toward close |
+| ----------- | ----------- | ----------------- |
+| `top`       | top         | up                |
+| `bottom`    | bottom      | down              |
+| `left`      | left        | left              |
+| `right`     | right       | right             |
+
+```ts
+import { createDrawer } from '@samline/drawer'
+import '@samline/drawer/styles.css'
+
+const drawers = {
+  top: createDrawer({ id: 'from-top', direction: 'top', content: 'Top drawer' }),
+  bottom: createDrawer({ id: 'from-bottom', direction: 'bottom', content: 'Bottom drawer' }),
+  left: createDrawer({ id: 'from-left', direction: 'left', content: 'Left drawer' }),
+  right: createDrawer({ id: 'from-right', direction: 'right', content: 'Right drawer' })
+}
+
+drawers.right.setOpen(true)
+```
+
+The shared stylesheet supplies direction-aware transforms, but your CSS must position each panel on the matching edge. Start with the [four-direction positioning recipe](/drawer/reference/css-styling/#position-all-four-directions).
 
 ## Recipe: Nested drawers
 
 Use `parentId` to relate a child drawer to a parent. The runtime scales and shifts the parent when the child opens, and closes / destroys the child with the parent.
 
 ```ts
-import { createDrawer, getParentDrawer, getChildDrawers, destroyDrawer } from '@samline/drawer'
+import { createDrawer, destroyDrawer, getChildDrawers, getDrawer, getParentDrawer } from '@samline/drawer'
 
 const parent = createDrawer({
   id: 'parent',
@@ -78,7 +107,7 @@ const child = createDrawer({
   open: true
 })
 
-// Both drawers open when you call setOpen on the child.
+// Opening the child also opens its registered ancestor chain.
 getParentDrawer('child')?.id // 'parent'
 getChildDrawers('parent').map((d) => d.id) // ['child']
 
@@ -91,7 +120,7 @@ The parent's transform during the child's drag is driven by `runtime/nested.ts#g
 
 ## Recipe: Snap points
 
-Snap points let the user drag the drawer between pre-defined positions. Numbers are fractions of the viewport (0–1); strings with `'%'` are a percentage; everything else is parsed as pixels.
+Snap points let the user drag between predefined positions. Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'180px'` is 180); percent-suffixed strings do not use percentage math in beta.4.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -104,13 +133,16 @@ const drawer = createDrawer({
   snapPoints: ['180px', '420px', 1],
   activeSnapPoint: '180px',
   fadeFromIndex: 1, // overlay fades at the second snap and beyond
-  snapToSequentialPoint: false // allow high-velocity skip to the last
+  snapToSequentialPoint: false, // allow a high-velocity skip
+  onActiveSnapPointChange(snapPoint) {
+    console.log('runtime-selected snap:', snapPoint)
+  }
 })
 
 drawer.setOpen(true)
 
 // Programmatic snap jump:
-drawer.setActiveSnapPoint(1) // jump to the last snap (1 = 100% of viewport)
+drawer.setActiveSnapPoint(1) // jump to the last snap (1 = zero translation offset)
 drawer.setActiveSnapPoint('420px') // jump to the middle snap
 ```
 
@@ -119,12 +151,13 @@ drawer.setActiveSnapPoint('420px') // jump to the middle snap
 - On open, the content positions itself at the active snap's offset.
 - During drag, the content interpolates between snaps via `getSnapDragValue(activeOffset, draggedDistance, direction)`.
 - On release, `getSnapPointReleaseAction` decides whether to close, snap to a neighbor, or noop (stays put).
-- When `fadeFromIndex` is set, the overlay's opacity transitions from full to transparent at the snap point. The CSS handles the transition; the runtime writes the data-attribute on the overlay.
-- When `snapToSequentialPoint: true`, a high-velocity swipe can only advance one snap at a time. The default is `false`, which lets the user fling to the last snap in one gesture.
+- The overlay is hidden below `fadeFromIndex` and visible at that index or above. When omitted, `fadeFromIndex` defaults to the last snap.
+- With `snapToSequentialPoint: true`, a high-velocity release that moved less than 40% of the drawer dimension advances at most one snap. Longer releases still choose the closest snap and may skip points. The default is `false`.
+- Runtime-driven changes (drag, handle cycle, post-close reset) call `onActiveSnapPointChange` after state updates. Direct `setActiveSnapPoint()` calls do not echo it.
 
 ## Recipe: Scale background
 
-When `shouldScaleBackground: true`, the page shell (the element with `data-drawer-wrapper`) scales and shifts while the drag is in progress. The runtime uses `runtime/transforms.ts#getBackgroundDragState` and `getBackgroundResetState` to drive the inline `transform`.
+When `shouldScaleBackground: true`, the first page shell marked with `data-drawer-wrapper` scales and shifts as soon as the drawer opens. A close-direction drag moves the wrapper toward its normal state.
 
 ```html
 <div data-drawer-wrapper id="app-shell">
@@ -140,14 +173,15 @@ const drawer = createDrawer({
   id: 'filters',
   title: 'Filters',
   content: 'Body',
-  shouldScaleBackground: true,
-  setBackgroundColorOnScale: true // optional translucent black overlay
+  shouldScaleBackground: true
 })
 
 drawer.setOpen(true)
 ```
 
-The wrapper is automatically reset to its normal state on close-release. The reset is animated by the stylesheet's `transition: transform 0.5s …` rule on `[data-drawer-wrapper]`.
+`setBackgroundColorOnScale` defaults to `true`, so the body becomes black while scaling is owned and the wrapper can receive a translucent drag color. Set it to `false` to opt out. On close, the wrapper animates to normal and its original inline styles are restored after the transition.
+
+Scale ownership is stacked. If two open drawers target the same wrapper, the most recently opened owner controls it; closing that drawer reapplies the earlier owner's transform instead of clearing shared state.
 
 ## Recipe: Handle cycle
 
@@ -156,8 +190,7 @@ When `handleOnly: true` or `showHandle: true`, the runtime renders a built-in ha
 - At any non-last snap, the click moves to the next snap.
 - At the last snap with `dismissible: true`, the click closes the drawer.
 - At the last snap with `dismissible: false`, the click cycles back to the first snap.
-- With no `snapPoints` configured and `dismissible: true`, the click is a noop.
-- With no `snapPoints` configured and `dismissible: false`, the click closes the drawer.
+- With no `snapPoints` configured, the click is a noop regardless of `dismissible`.
 - When `preventCycle: true`, the click is a noop.
 - When a drag is in progress, the click is suppressed.
 
@@ -178,11 +211,12 @@ The drag is restricted to the handle when `handleOnly: true`. With `showHandle: 
 
 ## Recipe: Viewport keyboard handling
 
-When `repositionInputs: true` or `fixed: true`, the dialog listens to `window.visualViewport.resize` and recomputes the layout via `runtime/viewport.ts#getViewportDrivenDrawerLayout`.
+`repositionInputs` defaults to `true`. While an open drawer has `window.visualViewport`, the runtime listens for viewport resize but ignores the opening resize unless a keyboard-producing input, textarea, or editable element is focused inside the dialog. Once the keyboard is open, it also handles the closing resize.
 
-- `repositionInputs: true` writes `style.bottom` so the input stays above the mobile keyboard.
-- `fixed: true` writes `style.height` so the drawer height changes (instead of repositioning) when the keyboard opens.
-- `preventScrollRestoration: true` flips `window.history.scrollRestoration` to `'manual'` while the drawer is mounted and restores the previous value on destroy.
+- Default `repositionInputs: true` writes `style.bottom` so the focused input stays above the mobile keyboard.
+- `fixed: true` also writes `style.height`; because repositioning remains on by default, both values are normally applied.
+- `repositionInputs: false` opts out of bottom repositioning. If `fixed` is also false, no viewport listener is attached.
+- `preventScrollRestoration: true` owns global `window.history.scrollRestoration = 'manual'` while open and restores the original after the final owning drawer closes or is destroyed.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -190,14 +224,17 @@ import { createDrawer } from '@samline/drawer'
 const drawer = createDrawer({
   id: 'composer',
   title: 'Compose',
-  content: /* … */,
-  repositionInputs: true,
+  content: () => {
+    const input = document.createElement('textarea')
+    input.placeholder = 'Write a message'
+    return input
+  },
   fixed: true,
   preventScrollRestoration: true
 })
 ```
 
-The runtime inlines `isMobileFirefox` (a `navigator.userAgent` regex) where the layout helper needs it. A separate `isMobileFirefox` helper is a follow-up.
+On browsers without `visualViewport`, CSS positioning is left unchanged. Input repositioning does not control the modal scroll lock; use `disablePreventScroll` for that separate concern.
 
 ## Recipe: Programmatic open / close with a controller
 
@@ -228,7 +265,7 @@ destroyDrawers() // cleanup
 
 ## Recipe: Imperative helpers (no controller)
 
-For one-off draws where you do not need to keep the controller around, the imperative helpers cover the common cases.
+For one-off drawers where you do not need to keep the controller around, the imperative helpers cover the common cases.
 
 ```ts
 import {
@@ -246,7 +283,7 @@ closeDrawer('filters')
 toggleDrawer('filters')
 
 getDrawer('filters')?.update({ activeSnapPoint: 1 })
-getDrawers() // { filters: <controller>, default: <controller> }
+getDrawers() // { filters: <controller> }
 
 destroyDrawer('filters')
 destroyDrawers() // clear every drawer
@@ -290,11 +327,32 @@ const drawer = createDrawer({
   id: 'filters',
   triggerText: 'Open filters',
   title: 'Filters',
-  content: 'Body'
+  content: 'Body',
+  closeButton: true
 })
 ```
 
-The runtime mounts a `<button data-drawer-vanilla-trigger>` inside the host. The button is removed when the drawer is destroyed.
+The runtime mounts a `<button data-drawer-vanilla-trigger>` inside the per-id host. Closed overlay/content use lazy Presence, but this trigger persists and can reopen the drawer. It is removed when `triggerText` is cleared or the drawer is destroyed. `closeButton: true` creates an HMR-safe close control only while the dialog content is present.
+
+## Recipe: Custom container
+
+Prefer `container` when a drawer belongs inside a specific DOM region. The deprecated `mountElement` alias remains a nullish fallback only.
+
+```html
+<div id="drawer-region"></div>
+```
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const container = document.getElementById('drawer-region')
+if (!container) throw new Error('Missing drawer region')
+
+createDrawer({ id: 'region-a', container, content: 'A' })
+createDrawer({ id: 'region-b', container, content: 'B' })
+```
+
+The container receives two dedicated `[data-drawer-vanilla-root]` children, one per id. Fractional snap points use `container.getBoundingClientRect()` rather than the full viewport.
 
 ## Recipe: Multiple independent drawers
 
@@ -309,7 +367,7 @@ console.log(Object.keys(getDrawers())) // ['a', 'b']
 destroyDrawers()
 ```
 
-Each drawer is independent. The `browser` namespace from the IIFE bundle wraps the same surface and adds a `Drawer` global.
+Each id has isolated host/dialog state. Shared page-level effects still compose globally: Escape closes only the most recently opened drawer, scroll/history locks restore after their final owner, and background scale uses the newest owner for a shared wrapper.
 
 ## Recipe: Subscribe to state changes from a higher-level component
 
@@ -332,7 +390,7 @@ destroyDrawer('filters')
 
 ## Recipe: SPA / dynamic mount and unmount
 
-Pair `createDrawer` with the consumer's mount / unmount lifecycle. The `vanilla` adapter does not auto-mount, so the host only exists while the consumer holds the controller.
+Pair `createDrawer` with the consumer's mount/unmount lifecycle. The runtime registers and mounts the per-id host immediately; merely dropping the controller reference does not remove it. Return an explicit destroy cleanup.
 
 ```ts
 function showFilters() {
@@ -342,17 +400,19 @@ function showFilters() {
 }
 
 // In the consumer (React, Vue, Svelte, vanilla — anything):
-const close = showFilters()
+const cleanup = showFilters()
 // ... later:
-close()
+cleanup()
 ```
 
-Pair this with the [browser registry helpers](/drawer/getting-started/#browser-registry-helpers-bundler) when loading from a `<script>` tag: call `window.Drawer.createDrawer` on show, `window.Drawer.destroyDrawer` on close.
+For a `<script>` integration, call `window.Drawer.createDrawer` on mount and `window.Drawer.destroyDrawer` on teardown. For a bundler, use the [root named registry helpers](/drawer/getting-started/#registry-helpers-bundler).
 
 ## Common pitfalls
 
 - **Reusing the same `id` updates the same drawer.** It does not create a second one. If you want a transient second drawer, use a unique id (e.g. `filters-${Date.now()}`) and destroy it on close.
 - **The drag pipeline fires only on the content element.** A child element with `data-drawer-no-drag` does not start a drag (e.g. an input, a button, a scrollable list).
-- **`repositionInputs: true` requires `window.visualViewport`** to be present at runtime. jsdom does not implement it — the runtime guards the attach and skips the listener when absent.
-- **`setActiveSnapPoint` re-renders the dialog.** If you call it many times in a tick, debounce or only call it on user-driven events.
-- **`history.scrollRestoration`** is touched when `preventScrollRestoration: true`. The runtime saves the previous value on open and restores it on destroy. If the page already had it set to `'manual'`, the runtime does not change it.
+- **Input repositioning defaults on but is focus-gated.** It also requires `window.visualViewport`; the runtime skips the listener when the API is absent.
+- **`setActiveSnapPoint` updates an unchanged open mount in place.** It updates transform/overlay state without requiring consumers to rebuild content.
+- **`history.scrollRestoration` is globally owned.** With `preventScrollRestoration: true`, the original value returns only after the final owner closes or is destroyed.
+- **Closing is not destroying.** Close removes overlay/content after the exit transition but keeps the id, host, and optional trigger registered.
+- **Body pointer events are application-owned.** Drawer open, non-modal open, close, and destroy never write `document.body.style.pointerEvents`.

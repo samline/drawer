@@ -6,7 +6,7 @@ sidebar:
   order: 5
 ---
 
-Use the browser entry when you want a browser-facing global API from a CDN or plain HTML page. The browser bundle is designed for environments without a bundler and without `script type="module"`.
+Use the browser entry when a CDN and a classic script are simpler than a bundler. This page targets the exact `3.0.0-beta.4` assets.
 
 ---
 
@@ -28,19 +28,19 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 - `destroyDrawers`
 - `createDrawerController`
 
-The IIFE bundle inlines the runtime stylesheet — when the script loads, the runtime injects a `<style data-drawer-runtime-styles>` element into the page. You do not need a separate `<link rel="stylesheet">`.
+The IIFE is JavaScript only. It does not contain the runtime stylesheet and does not inject a `<style>` element.
 
 ---
 
 ## Quick include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 ```
 
 :::caution[Pin the version in production]
-The CDN URL above uses `@3.0.0`. Replace the version with the one you ship.
+Keep the CSS and JS URLs pinned to the same exact version. These docs intentionally use `@3.0.0-beta.4`.
 :::
 
 ---
@@ -48,13 +48,13 @@ The CDN URL above uses `@3.0.0`. Replace the version with the one you ship.
 ## Basic usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
 </div>
 
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 <script>
   window.Drawer.createDrawer({
     id: 'filters',
@@ -67,44 +67,65 @@ The CDN URL above uses `@3.0.0`. Replace the version with the one you ship.
 </script>
 ```
 
-That is the same basic drawer used across the other entrypoints. The browser bundle just reaches it through `window.Drawer`.
+`createDrawer()` registers a closed `filters` instance, creates its dedicated host, and leaves the optional trigger mounted. The overlay and dialog content are created only when the trigger opens the drawer.
 
 ---
 
 ## Notes
 
-- The browser bundle targets the same shared runtime registry as the root package.
-- Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
-- Treat each browser drawer id as an owned runtime instance. If your page removes that flow, swaps to a new id, or rebuilds the integration dynamically, call `destroyDrawer(id)` or `destroyDrawers()` so the shared registry can release the instance.
+- Loading the script only attaches `window.Drawer`; it does not create a drawer.
+- The methods on one loaded IIFE share that bundle's module-level registry. A separately bundled root import is a separate build; do not depend on the two copies sharing instances.
+- Each registered id owns a separate `<div data-drawer-vanilla-root="id">`, including when multiple drawers use the same custom `container`.
+- Closed drawers use lazy Presence: no overlay or `[data-drawer]` content is mounted initially. During close, those nodes remain for the exit transition and are removed after the safety timeout.
+- A built-in `triggerText` button persists while closed. An external `triggerElement` listener also remains bound until it is replaced or the drawer is destroyed.
+- `closeDrawer(id)` changes open state but keeps the registry entry, host, and trigger. `destroyDrawer(id)` removes the entry, listeners, host, and owned effects.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
 - Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
 - Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
-- Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.
-- Reusing the same `id` updates the existing runtime instance bound to that browser namespace.
+- Reusing the same `id` merges options into that registered instance rather than adding another host.
+- The runtime never writes `document.body.style.pointerEvents`; application or other modal-library values are preserved.
+
+For bundler code, use root named imports such as `import { createDrawer } from '@samline/drawer'`. There is no `browser` singleton exported from the root package.
+
+---
+
+## TypeScript global type
+
+`DrawerApi` belongs to the browser subpath, not the root type exports. A type-only import is erased from emitted JavaScript and does not load the IIFE:
+
+```ts
+import type { DrawerApi } from '@samline/drawer/browser'
+
+declare global {
+  interface Window {
+    Drawer?: DrawerApi
+  }
+}
+```
 
 ---
 
 ## Cleanup guidance
 
-When browser usage is long-lived, the most important lifecycle rule is that `createDrawer()` is not fire-and-forget. The browser entry stores runtime instances in a shared registry until you destroy them.
+The browser entry retains each id until you destroy it. Use explicit teardown when a CMS widget, partial-navigation region, or dynamically rebuilt integration goes away:
 
 ```html
 <script>
-  const drawer = window.Drawer.createDrawer({
+  window.Drawer.createDrawer({
     id: 'settings',
     title: 'Settings',
     content: 'Drawer content'
   })
 
-  drawer.setOpen(true)
+  window.Drawer.openDrawer('settings')
 
-  window.addEventListener('beforeunload', function () {
+  function removeSettingsWidget() {
     window.Drawer.destroyDrawer('settings')
-  })
+  }
 </script>
 ```
 
-Use `destroyDrawer(id)` when a specific integration is being replaced. Use `destroyDrawers()` when the whole page shell is being torn down or rebuilt.
+Use `destroyDrawer(id)` for one integration and `destroyDrawers()` when the bundle's entire page shell is being torn down. Shared scroll, history, focus, and scale effects restore only when their final owning drawer releases them.
 
 ---
 
@@ -112,4 +133,4 @@ Use `destroyDrawer(id)` when a specific integration is being replaced. Use `dest
 
 - Use it when you need a browser global API.
 - Use it for plain HTML pages, embeds, CMS integrations, or demos where a CDN script is simpler than a bundler.
-- Use the root package instead if you already control the module graph and do not need a browser global.
+- Use root named exports instead if you control the module graph and do not need `window.Drawer`.

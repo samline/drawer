@@ -18,12 +18,8 @@ import type { CommonDrawerDirection } from '../core'
  *
  * `isReleaseTowardExpandedState` is used by `runtime/release.ts#getReleaseAction`.
  *
- * `isDraggingTowardExpandedState` is **exported for the public API** but
- * not wired into the dialog — the dialog does the equivalent direction
- * check inline at the `pointermove` handler. The function is exercised
- * by `test/drag-runtime.test.ts` and is kept as a pure helper for
- * consumers who want the same logic without the direction-encoding
- * overhead. Safe to delete if the public surface is trimmed.
+ * `isDraggingTowardExpandedState` is also exported as the pure form of
+ * the sign check used by the pointer pipeline.
  */
 
 export function getDragDirectionMultiplier(direction: CommonDrawerDirection) {
@@ -102,8 +98,7 @@ export function getDraggableOffset({
   direction: CommonDrawerDirection
   draggedDistance: number
 }) {
-  const baseOffset =
-    direction === 'bottom' || direction === 'right' ? -draggedDistance : draggedDistance
+  const baseOffset = direction === 'bottom' || direction === 'right' ? -draggedDistance : draggedDistance
   const outOfBounds = !isDraggingInCloseDirection({ direction, draggedDistance })
   if (!outOfBounds) return baseOffset
   // `dampenValue` expects a non-negative distance. The opposite-
@@ -111,7 +106,7 @@ export function getDraggableOffset({
   // encodes the screen direction; we use the absolute value for
   // the curve and reapply the sign at the end).
   const magnitude = dampenValue(Math.abs(baseOffset))
-  return magnitude * Math.sign(baseOffset)
+  return Math.max(0, magnitude) * Math.sign(baseOffset)
 }
 
 export function getDragPercentage({
@@ -124,7 +119,7 @@ export function getDragPercentage({
   snapPointPercentageDragged: number | null
 }) {
   const absDraggedDistance = Math.abs(draggedDistance)
-  let percentageDragged = absDraggedDistance / drawerDimension
+  let percentageDragged = drawerDimension > 0 ? absDraggedDistance / drawerDimension : 0
 
   if (snapPointPercentageDragged !== null) {
     percentageDragged = snapPointPercentageDragged
@@ -143,7 +138,12 @@ export function isReleaseTowardExpandedState({
   direction: CommonDrawerDirection
   distMoved: number
 }) {
-  return direction === 'bottom' || direction === 'right' ? distMoved > 0 : distMoved < 0
+  // `getDraggedDistance` normalizes every direction: closing is
+  // negative and expanding is positive. Release decisions must use
+  // that normalized sign rather than interpreting it as a raw axis
+  // delta (which inverted top/left drawers).
+  void direction
+  return distMoved > 0
 }
 
 export function shouldCloseDrawerOnRelease({

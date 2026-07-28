@@ -4,6 +4,8 @@ The public API of `@samline/drawer`. Every entrypoint returns a `VanillaDrawerCo
 
 The runtime is built around the `id` — calling any of these with the same `id` updates the same drawer rather than creating a second one.
 
+Each id owns a dedicated host. Closed drawers keep only that host and an optional built-in trigger; overlay and dialog content are present while open or exiting. With multiple open drawers, closed-to-open order controls Escape handling, focus restoration, and shared scale ownership. Re-rendering an open drawer does not promote it.
+
 ---
 
 ## Factory

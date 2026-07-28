@@ -1,30 +1,30 @@
 [data-drawer] {
   touch-action: none;
   will-change: transform;
-  /* F1: 1:1 with vaul upstream — `transition: transform` lives on the
-     base rule. The close path drives the cascade `transform` from
-     the open value (0) to the closed value (100 %), and the base
-     transition interpolates between them. The `slideToX` keyframe
-     is the fallback for the open path. CSS animations have higher
-     specificity than transitions for the same property, so the
-     `slideToX` keyframe still wins on the open path. */
+  /* The base transition handles programmatic close. After a drag,
+     the to-only slideToX animation starts at the retained release
+     transform and avoids jumping back to the fully open position. */
   transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-drawer][data-drawer-direction='top'],
+[data-drawer][data-drawer-direction='bottom'] {
+  touch-action: pan-x;
+}
+
+[data-drawer][data-drawer-direction='left'],
+[data-drawer][data-drawer-direction='right'] {
+  touch-action: pan-y;
 }
 
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='open'] {
   animation-name: slideFromBottom;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'] {
-  /* Static off-screen position: prevents the initial-mount flicker
-     that the previous `animation-name: slideToBottom` + `forwards`
-     caused. The close animation runs via the base `transition:
-     transform` (above) — when the data-state flips from `open` to
-     `closed` the cascade `transform` goes from 0 to 100 %, and the
-     transition interpolates. The `animation-name: slideToBottom`
-     + `forwards` here is a fallback for the open path (the open
-     cascade has no `transform`, so the transition has no work). */
+  /* Static exit endpoint for the base transition and the to-only
+     animation used when a drag release leaves transition disabled. */
   transform: translate3d(0, var(--initial-transform, 100%), 0);
   animation-name: slideToBottom;
   animation-fill-mode: forwards;
@@ -43,7 +43,7 @@
   animation-name: slideFromLeft;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='left'][data-state='closed'] {
-  transform: translate3d(0, calc(var(--initial-transform, 100%) * -1), 0);
+  transform: translate3d(calc(var(--initial-transform, 100%) * -1), 0, 0);
   animation-name: slideToLeft;
   animation-fill-mode: forwards;
 }
@@ -52,7 +52,7 @@
   animation-name: slideFromRight;
 }
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='right'][data-state='closed'] {
-  transform: translate3d(0, var(--initial-transform, 100%), 0);
+  transform: translate3d(var(--initial-transform, 100%), 0, 0);
   animation-name: slideToRight;
   animation-fill-mode: forwards;
 }
@@ -62,11 +62,11 @@
 }
 
 [data-drawer][data-drawer-snap-points='true'][data-drawer-direction='top'] {
-  transform: translate3d(0, calc(var(--initial-transform, 100%) * -1), 0);
+  transform: translate3d(0, var(--initial-transform, 100%), 0);
 }
 
 [data-drawer][data-drawer-snap-points='true'][data-drawer-direction='left'] {
-  transform: translate3d(calc(var(--initial-transform, 100%) * -1), 0, 0);
+  transform: translate3d(var(--initial-transform, 100%), 0, 0);
 }
 
 [data-drawer][data-drawer-snap-points='true'][data-drawer-direction='right'] {
@@ -82,11 +82,11 @@
 }
 
 [data-drawer][data-drawer-delayed-snap-points='true'][data-drawer-direction='left'] {
-  transform: translate3d(0, var(--snap-point-height, 0), 0);
+  transform: translate3d(var(--snap-point-height, 0), 0, 0);
 }
 
 [data-drawer][data-drawer-delayed-snap-points='true'][data-drawer-direction='right'] {
-  transform: translate3d(0, var(--snap-point-height, 0), 0);
+  transform: translate3d(var(--snap-point-height, 0), 0, 0);
 }
 
 [data-drawer-overlay][data-drawer-snap-points='false'] {
@@ -98,12 +98,9 @@
   animation-name: fadeIn;
 }
 [data-drawer-overlay][data-state='closed'] {
-  /* Static opacity:0 + transition on the base rule replaces the
-     `animation-name: fadeOut` + `forwards` that caused the overlay
-     to fade in→out on initial mount (visible as a 0.5s flicker on
-     pages that mount the drawer on load). The animation is
-     preserved for the open→close transition but the start and end
-     are now both opacity:0 on mount, so no visible change.
+  /* Hold the exiting overlay at opacity:0 after fadeOut. Initially
+     closed drawers use lazy presence, so this rule only applies to
+     visual nodes retained for an active close transition.
 
      Specificity note: the rule below
      `[data-drawer-overlay][data-drawer-snap-points-overlay='true']`
@@ -209,7 +206,7 @@
   height: 5px;
   width: 32px;
   border-radius: 1rem;
-  touch-action: pan-y;
+  touch-action: inherit;
 }
 
 [data-drawer-handle]:hover,
@@ -265,17 +262,6 @@
 }
 
 @keyframes slideToBottom {
-  /* F1: 1:1 with vaul upstream. The close path drives the cascade
-     `transform` from 0 (open) to 100 % (closed) via the base
-     `transition: transform 0.5s`. The animation runs in parallel
-     but only acts as a `forwards` fill-mode anchor for the
-     post-transition cascade. For the drag-release path the
-     transition picks up the inline `transform: translate3d(0,
-     dragY, 0)` left by `onPointerUp` and interpolates from dragY
-     to 100 %. */
-  from {
-    transform: translate3d(0, 0, 0);
-  }
   to {
     transform: translate3d(0, var(--initial-transform, 100%), 0);
   }
@@ -291,9 +277,6 @@
 }
 
 @keyframes slideToTop {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
   to {
     transform: translate3d(0, calc(var(--initial-transform, 100%) * -1), 0);
   }
@@ -309,9 +292,6 @@
 }
 
 @keyframes slideToLeft {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
   to {
     transform: translate3d(calc(var(--initial-transform, 100%) * -1), 0, 0);
   }
@@ -327,9 +307,6 @@
 }
 
 @keyframes slideToRight {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
   to {
     transform: translate3d(var(--initial-transform, 100%), 0, 0);
   }

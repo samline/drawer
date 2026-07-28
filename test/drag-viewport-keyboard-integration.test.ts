@@ -91,6 +91,12 @@ function mockContentSize(content: HTMLElement, height: number, width: number = 1
   Object.defineProperty(content, 'offsetWidth', { configurable: true, value: width })
 }
 
+function createKeyboardInput() {
+  const input = document.createElement('input')
+  input.type = 'text'
+  return input
+}
+
 describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', () => {
   let visualViewport: MockVisualViewport
 
@@ -117,12 +123,13 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
   })
 
   it('writes the keyboard offset to the content style.bottom when repositionInputs: true', () => {
+    const input = createKeyboardInput()
     const drawer = createDrawer({
       id: 'reposition-inputs',
       direction: 'bottom',
       repositionInputs: true,
       title: 'Reposition inputs',
-      content: '<input type="text" />'
+      content: input
     })
     drawer.setOpen(true)
 
@@ -131,6 +138,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     // `offsetHeight` so the math produces a valid (non-negative)
     // height and jsdom's CSS parser accepts the inline write.
     mockContentSize(content, 600)
+    input.focus()
 
     // Simulate the mobile keyboard opening: visualViewport.height
     // shrinks from 768 to 368 (a 400 px keyboard). The dialog
@@ -160,13 +168,14 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     expect(parseInt(content.style.bottom, 10)).toBeGreaterThan(0)
   })
 
-  it('writes the drawer height (but not the bottom) to the content when fixed: true', () => {
+  it('writes the drawer height and default input offset when fixed: true', () => {
+    const input = createKeyboardInput()
     const drawer = createDrawer({
       id: 'fixed-height',
       direction: 'bottom',
       fixed: true,
       title: 'Fixed',
-      content: 'Body'
+      content: input
     })
     drawer.setOpen(true)
 
@@ -175,6 +184,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     // valid `height` (a zero drawer height yields a negative
     // height that jsdom's CSS parser silently rejects).
     mockContentSize(content, 600)
+    input.focus()
     fireVisualViewportResize(visualViewport, 368)
 
     const drawerHeight = content.offsetHeight
@@ -194,19 +204,20 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       windowTopOffset: WINDOW_TOP_OFFSET
     })
 
-    // `fixed: true` writes `height` (the drawer's height shrinks by
-    // the keyboard offset). It does NOT write `bottom` — the drawer's
-    // top stays anchored, the body extends under it.
+    // `fixed` controls height while input repositioning remains
+    // enabled by default, so both layout values are applied.
     expect(content.style.height).toBe(expectedLayout.height)
-    expect(content.style.bottom).toBe('')
+    expect(content.style.bottom).toBe(expectedLayout.bottom)
   })
 
-  it('does not change the content inline styles when neither repositionInputs nor fixed is set', () => {
+  it('does not change viewport styles when repositionInputs is explicitly disabled', () => {
+    const input = createKeyboardInput()
     const drawer = createDrawer({
       id: 'no-viewport',
       direction: 'bottom',
+      repositionInputs: false,
       title: 'No viewport',
-      content: 'Body'
+      content: input
     })
     drawer.setOpen(true)
 
@@ -215,10 +226,9 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     // height are empty. The pre-resize snapshot should be clean.
     expect(content.style.bottom).toBe('')
     expect(content.style.height).toBe('')
+    input.focus()
 
-    // Fire a resize. The dialog only attaches the listener when
-    // `repositionInputs` or `fixed` is set; the resize event has
-    // no effect on the content's inline styles.
+    // Explicit opt-out means no viewport listener mutates layout.
     fireVisualViewportResize(visualViewport, 368)
 
     expect(content.style.bottom).toBe('')
@@ -334,6 +344,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
   })
 
   it('threads the active snap offset into the layout when snap points are configured', () => {
+    const input = createKeyboardInput()
     const drawer = createDrawer({
       id: 'snap-viewport',
       direction: 'bottom',
@@ -341,7 +352,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       activeSnapPoint: '120px',
       repositionInputs: true,
       title: 'Snap viewport',
-      content: 'Body'
+      content: input
     })
     drawer.setOpen(true)
 
@@ -349,6 +360,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     // valid layout string. (See `mockContentSize` for the rationale.)
     const content = getContent()
     mockContentSize(content, 600)
+    input.focus()
 
     // Fire a resize. The listener reads the current activeSnapPoint
     // ('120px') and passes the snap offset to the layout helper,

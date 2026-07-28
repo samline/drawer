@@ -6,26 +6,25 @@ sidebar:
   order: 4
 ---
 
-`@samline/drawer` is written in strict TypeScript (`strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`, `verbatimModuleSyntax: true`). Every public type is exported from the root entrypoint.
+`@samline/drawer` is written in strict TypeScript. The root entrypoint exports the types below; browser-global typing is intentionally separate.
 
----
-
-## Top-level types
+## Root type exports
 
 ```ts
 import type {
+  CommonDrawerController,
   CommonDrawerDirection,
-  CommonDrawerSnapPoint,
   CommonDrawerId,
   CommonDrawerOptions,
-  CommonDrawerState,
   CommonDrawerSnapshot,
-  CommonDrawerController,
+  CommonDrawerSnapPoint,
   VanillaDrawerController,
   VanillaDrawerOptions,
   VanillaRenderable
 } from '@samline/drawer'
 ```
+
+`CommonDrawerState`, `VanillaCloseButtonOptions`, and `DrawerApi` are not root named type exports. Their usable forms are documented below.
 
 ### `CommonDrawerDirection`
 
@@ -33,7 +32,7 @@ import type {
 type CommonDrawerDirection = 'top' | 'bottom' | 'left' | 'right'
 ```
 
-The four directions a drawer can slide from / to.
+All four values support entrance/exit motion, snap math, and drag-to-dismiss. Closing gestures are up for `top`, down for `bottom`, left for `left`, and right for `right`.
 
 ### `CommonDrawerSnapPoint`
 
@@ -41,7 +40,7 @@ The four directions a drawer can slide from / to.
 type CommonDrawerSnapPoint = number | string
 ```
 
-A snap point value. Numbers are interpreted as fractions of the viewport (0–1). Strings with a `'%'` suffix are treated as a percentage of the viewport. Any other string is parsed as a pixel value (e.g. `'120px'`).
+Numbers are fractions of the viewport or custom container. Strings are parsed as absolute pixel counts, so `'120px'` resolves to 120 pixels and `'50%'` is parsed as 50 pixels rather than 50 percent.
 
 ### `CommonDrawerId`
 
@@ -49,11 +48,11 @@ A snap point value. Numbers are interpreted as fractions of the viewport (0–1)
 type CommonDrawerId = string
 ```
 
-The runtime instance id. Reusing an `id` updates the same drawer.
+The registry key. Reusing an id merges options into the same runtime instance and per-id host.
 
 ### `CommonDrawerOptions`
 
-The full options surface — see [Configuration](/drawer/reference/configuration/) for the field-by-field reference.
+See [Configuration](/drawer/reference/configuration/) for defaults and detailed behavior.
 
 ```ts
 interface CommonDrawerOptions {
@@ -64,6 +63,7 @@ interface CommonDrawerOptions {
   onOpenChange?: (open: boolean) => void
   onClose?: () => void
   onAnimationEnd?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   dismissible?: boolean
@@ -89,35 +89,31 @@ interface CommonDrawerOptions {
 }
 ```
 
-### `CommonDrawerState`
-
-The runtime state derived from the controller's options.
-
-```ts
-interface CommonDrawerState {
-  isOpen: boolean
-  activeSnapPoint: CommonDrawerSnapPoint | null
-  direction: CommonDrawerDirection
-  snapPoints: CommonDrawerSnapPoint[]
-  dismissible: boolean
-  modal: boolean
-}
-```
-
 ### `CommonDrawerSnapshot`
-
-The full controller snapshot.
 
 ```ts
 interface CommonDrawerSnapshot {
   options: CommonDrawerOptions
-  state: CommonDrawerState
+  state: {
+    isOpen: boolean
+    activeSnapPoint: CommonDrawerSnapPoint | null
+    direction: CommonDrawerDirection
+    snapPoints: CommonDrawerSnapPoint[]
+    dismissible: boolean
+    modal: boolean
+  }
 }
 ```
 
-### `CommonDrawerController`
+The source names the nested shape `CommonDrawerState`, but the root package does not re-export that name. Derive it without relying on an unavailable import:
 
-The headless controller interface. The `VanillaDrawerController` returned by `createDrawer` extends this with the DOM-aware helpers (`element`, `update`, `destroy`).
+```ts
+import type { CommonDrawerSnapshot } from '@samline/drawer'
+
+type CommonDrawerState = CommonDrawerSnapshot['state']
+```
+
+### `CommonDrawerController`
 
 ```ts
 interface CommonDrawerController {
@@ -129,7 +125,11 @@ interface CommonDrawerController {
 }
 ```
 
-`setOpen` and `setActiveSnapPoint` return the new snapshot. `patch` merges the partial into the existing options. `subscribe` registers a listener; the returned function unsubscribes it.
+- `getSnapshot()` synchronously reads state.
+- `setOpen(open)` publishes and returns the resulting snapshot.
+- `setActiveSnapPoint(value)` updates the point and returns the snapshot; it does not echo `onActiveSnapPointChange`.
+- `patch(options)` shallow-merges options, publishes, and returns the snapshot.
+- `subscribe(listener)` invokes the listener immediately and returns an unsubscribe function.
 
 ### `VanillaDrawerController`
 
@@ -143,18 +143,20 @@ interface VanillaDrawerController extends CommonDrawerController {
 }
 ```
 
-- `id` — the runtime instance id.
-- `element` — the current host element (`<div data-drawer-vanilla-root>`) when mounted, or `null` after `destroy()`.
-- `options` — the latest merged options passed to the root entrypoint.
-- `update(options?)` — merge new options into the same instance and re-render. Returns the same controller.
-- `destroy()` — alias for `destroyDrawer(id)`.
+- `id` is the normalized registry id.
+- `element` is the dedicated `[data-drawer-vanilla-root]` host, not the lazy `[data-drawer]` dialog. It exists while the id is registered in a DOM environment, including while closed, and becomes `null` after destroy.
+- `options` is the latest shallow-merged vanilla option object.
+- `update(options?)` delegates to `createDrawer({ ...options, id })` and returns a controller wrapper for the same underlying instance.
+- `destroy()` delegates to `destroyDrawer(id)`.
+
+`getDrawer()` and `getDrawers()` can return fresh controller wrapper objects. Compare ids or state, not object identity; all wrappers for one live id target the same underlying controller.
 
 ### `VanillaDrawerOptions`
 
-`CommonDrawerOptions` extended with the vanilla-only host / trigger / handle / content / className options. See [Configuration → Vanilla-only options](/drawer/reference/configuration/#vanilla-only-options) for the full list.
-
 ```ts
 interface VanillaDrawerOptions extends CommonDrawerOptions {
+  container?: HTMLElement | null
+  /** @deprecated Use container. */
   mountElement?: HTMLElement | null
   triggerElement?: HTMLElement | null
   triggerText?: string
@@ -170,8 +172,35 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
   content?: VanillaRenderable
   overlayClassName?: string
   contentClassName?: string
+  closeButton?:
+    | boolean
+    | {
+        className?: string
+        icon?: string | HTMLElement
+        ariaLabel?: string
+      }
 }
 ```
+
+`container` is preferred. `mountElement` is deprecated and only used as a fallback when `container` is nullish.
+
+### Close-button object shape
+
+The source interface is named `VanillaCloseButtonOptions`, but that name is not re-exported from the package root. Derive the object branch from `VanillaDrawerOptions`:
+
+```ts
+import type { VanillaDrawerOptions } from '@samline/drawer'
+
+type CloseButtonOptions = Exclude<NonNullable<VanillaDrawerOptions['closeButton']>, boolean>
+
+const closeButton: CloseButtonOptions = {
+  className: 'drawer-close',
+  icon: 'xmark',
+  ariaLabel: 'Close filters'
+}
+```
+
+The defaults are `drawer-close-button`, `xmark`, and `Close` respectively.
 
 ### `VanillaRenderable`
 
@@ -179,53 +208,47 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
 type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined
 ```
 
-The value shape accepted by `title`, `description`, and `content`. Strings and numbers are mounted as text nodes. Pre-built `HTMLElement` instances are mounted directly. Thunks are invoked once on render and the returned `HTMLElement` is mounted. `null` / `undefined` render nothing for that slot.
+Strings and numbers become text nodes. An element is moved into the dialog. A thunk is invoked once per dialog DOM build and must return an `HTMLElement`; lazy Presence means closing removes that element and reopening builds the slots again.
 
----
-
-## Controller
-
-The vanilla `createDrawer(options?)` factory returns a `VanillaDrawerController`. The headless `createDrawerController(options?)` factory returns a `CommonDrawerController` with no DOM awareness.
+## Factory returns
 
 ```ts
 function createDrawer(options?: VanillaDrawerOptions): VanillaDrawerController
 function createDrawerController(options?: CommonDrawerOptions): CommonDrawerController
 ```
 
----
+`createDrawer` registers and renders a per-id host. `createDrawerController` is headless: it publishes snapshots but does not mount DOM or run registry lifecycle callbacks/effects.
 
 ## Numeric constants
 
-The numeric defaults used by the runtime live in `src/constants.ts` and are re-exported as plain numbers from the root entrypoint. Use them when you want to reason about timing without re-deriving values.
+These values are root runtime exports, not type-only declarations:
 
-| Constant               | Default              | Meaning                                                                                                     |
-| ---------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `TRANSITIONS.DURATION` | `0.5`                | CSS transition duration in seconds.                                                                         |
-| `TRANSITIONS.EASE`     | `[0.32, 0.72, 0, 1]` | CSS `cubic-bezier()` ease curve.                                                                            |
-| `VELOCITY_THRESHOLD`   | `0.4`                | Minimum velocity (px / ms) for a release to dismiss the drawer.                                             |
-| `CLOSE_THRESHOLD`      | `0.25`               | Minimum fraction of the drawer dimension the user must drag past for release to dismiss.                    |
-| `SCROLL_LOCK_TIMEOUT`  | `100`                | Reserved for the scroll-lock interaction (currently inert).                                                 |
-| `BORDER_RADIUS`        | `8`                  | Pixel value the scale-background pipeline uses for the page-shell border-radius at `percentageDragged = 0`. |
-| `NESTED_DISPLACEMENT`  | `16`                 | Pixel displacement the scale-background pipeline uses to compute the base scale.                            |
-| `WINDOW_TOP_OFFSET`    | `26`                 | Pixel offset the mobile-keyboard layout uses for `isMobileFirefox` (reserved).                              |
-| `DRAG_CLASS`           | `'drawer-dragging'`  | Reserved.                                                                                                   |
+| Constant               | Value                | Runtime use                                                              |
+| ---------------------- | -------------------- | ------------------------------------------------------------------------ |
+| `TRANSITIONS.DURATION` | `0.5`                | Transition duration in seconds and lifecycle timer basis.                |
+| `TRANSITIONS.EASE`     | `[0.32, 0.72, 0, 1]` | Transform/opacity easing curve.                                          |
+| `VELOCITY_THRESHOLD`   | `0.4`                | Velocity threshold used by release decisions.                            |
+| `CLOSE_THRESHOLD`      | `0.25`               | Default dismissed fraction of the rendered drawer dimension.             |
+| `SCROLL_LOCK_TIMEOUT`  | `100`                | Drag cooldown after scrollable content prevents a gesture.               |
+| `BORDER_RADIUS`        | `8`                  | Open-rest page-wrapper radius for background scaling.                    |
+| `NESTED_DISPLACEMENT`  | `16`                 | Parent displacement used by nested-drawer transforms.                    |
+| `WINDOW_TOP_OFFSET`    | `26`                 | Background base-scale and mobile viewport offset input.                  |
+| `DRAG_CLASS`           | `'drawer-dragging'`  | Class added after axis intent is accepted and removed on release/cancel. |
 
 ```ts
-import { TRANSITIONS, VELOCITY_THRESHOLD, CLOSE_THRESHOLD } from '@samline/drawer'
+import { CLOSE_THRESHOLD, TRANSITIONS, VELOCITY_THRESHOLD } from '@samline/drawer'
 
 console.log(TRANSITIONS.DURATION) // 0.5
 console.log(VELOCITY_THRESHOLD) // 0.4
 console.log(CLOSE_THRESHOLD) // 0.25
 ```
 
----
+## Browser global type
 
-## Browser global
-
-The IIFE bundle exports a `Drawer` namespace. Type it from the root entrypoint:
+`DrawerApi` is exported by the `@samline/drawer/browser` declarations, not by the root entrypoint. Keep the import type-only so no runtime browser bundle is imported:
 
 ```ts
-import type { DrawerApi } from '@samline/drawer'
+import type { DrawerApi } from '@samline/drawer/browser'
 
 declare global {
   interface Window {
@@ -236,42 +259,20 @@ declare global {
 window.Drawer?.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
 ```
 
-```ts
-interface DrawerApi {
-  getParentDrawer: (id?: string | null) => VanillaDrawerController | null
-  getChildDrawers: (id?: string | null) => VanillaDrawerController[]
-  openDrawer: (id?: string | null) => VanillaDrawerController
-  closeDrawer: (id?: string | null) => VanillaDrawerController
-  toggleDrawer: (id?: string | null) => VanillaDrawerController
-  updateDrawer: (id?: string | null, options?: VanillaDrawerOptions) => VanillaDrawerController
-  createDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
-  configureDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
-  getDrawer: (id?: string | null) => VanillaDrawerController | null
-  getDrawers: () => Record<string, VanillaDrawerController>
-  destroyDrawer: (id?: string | null) => void
-  destroyDrawers: () => void
-  createDrawerController: (options?: CommonDrawerOptions) => CommonDrawerController
-}
-```
+The interface uses the same function types as the root named API, including both `updateDrawer(options)` and `updateDrawer(id, options)` forms. There is no root runtime export named `browser` or root type export named `DrawerApi`.
 
----
-
-## Subscribing to state changes
-
-The controller is observable. `subscribe` fires the listener immediately with the current snapshot, then on every subsequent state change.
+## Subscribing
 
 ```ts
 import { createDrawer } from '@samline/drawer'
 
 const drawer = createDrawer({ id: 'filters', title: 'Filters' })
-
 const unsubscribe = drawer.subscribe((snapshot) => {
   console.log('isOpen:', snapshot.state.isOpen)
   console.log('snap:', snapshot.state.activeSnapPoint)
 })
 
-// Later, when the subscriber is no longer needed:
 unsubscribe()
 ```
 
-`getSnapshot()` returns the current snapshot without subscribing — useful for read-only consumers.
+The listener runs immediately and on each controller publication. Use `getSnapshot()` for a synchronous read without subscribing.

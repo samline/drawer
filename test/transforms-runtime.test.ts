@@ -6,7 +6,8 @@ import {
   getBackgroundResetState,
   getNestedDragTransform,
   getNestedDrawerTransform,
-  getScaleTranslateTransform
+  getScaleTranslateTransform,
+  getTranslate
 } from '../src/runtime/transforms'
 
 describe('transform runtime helpers', () => {
@@ -67,5 +68,24 @@ describe('transform runtime helpers', () => {
       transform: 'scale(0.95) translate3d(0, calc(env(safe-area-inset-top) + 14px), 0)',
       transformOrigin: 'top'
     })
+  })
+
+  it('reads axis translation without relying on DOMMatrix', () => {
+    const element = document.createElement('div')
+    document.body.appendChild(element)
+
+    element.style.transform = 'matrix(1, 0, 0, 1, 40, 60)'
+    expect(getTranslate(element, 'right')).toBe(40)
+    expect(getTranslate(element, 'bottom')).toBe(60)
+
+    element.style.transform = 'matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 70, 90, 0, 1)'
+    expect(getTranslate(element, 'left')).toBe(70)
+    expect(getTranslate(element, 'top')).toBe(90)
+
+    element.style.transform = 'translate3d(-12px, 24px, 0)'
+    expect(getTranslate(element, 'left')).toBe(-12)
+    expect(getTranslate(element, 'bottom')).toBe(24)
+
+    element.remove()
   })
 })

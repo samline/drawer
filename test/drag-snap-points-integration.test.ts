@@ -51,6 +51,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
     destroyDrawers()
     document.body.innerHTML = ''
   })
@@ -77,6 +78,45 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     // Sanity: the offset is the same value the drag pipeline uses
     // for `getSnapDragValue` (runtime helper output).
     expect(expectedOffset).toBeGreaterThan(0)
+  })
+
+  it('animates from the closed edge to the active snap on a later open', () => {
+    const frames: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback)
+      return frames.length
+    })
+
+    const drawer = createDrawer({
+      id: 'snap-entrance',
+      direction: 'bottom',
+      snapPoints: ['120px', '320px', 1],
+      activeSnapPoint: '120px',
+      fadeFromIndex: 0,
+      title: 'Snap entrance',
+      content: 'Body'
+    })
+
+    drawer.setOpen(true)
+
+    const content = getContent()
+    const overlay = getOverlay()
+    const expectedOffset = getSnapPointOffset({
+      snapPoint: '120px',
+      direction: 'bottom',
+      containerSize: { width: window.innerWidth, height: window.innerHeight }
+    })
+
+    expect(content.style.transform).toBe('translate3d(0, 100%, 0)')
+    expect(content.style.transition).toBe('none')
+    expect(overlay.style.opacity).toBe('0')
+
+    frames.forEach((callback) => callback(0))
+
+    expect(content.style.transform).toBe(`translate3d(0, ${expectedOffset}px, 0)`)
+    expect(content.style.transition).toContain('transform 0.5s')
+    expect(overlay.style.opacity).toBe('1')
+    expect(overlay.style.transition).toContain('opacity 0.5s')
   })
 
   it('moves the content transform to the new snap after a release that snaps', () => {
@@ -302,6 +342,29 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     })
     drawerAboveFade.setOpen(true)
     expect(getOverlay().dataset.drawerSnapPointsOverlay).toBe('true')
+  })
+
+  it('settles overlay opacity from the newly selected snap point', () => {
+    vi.useFakeTimers()
+    const drawer = createDrawer({
+      id: 'snap-overlay-release',
+      direction: 'bottom',
+      snapPoints: ['120px', '320px', 1],
+      activeSnapPoint: '120px',
+      fadeFromIndex: 1,
+      content: 'Body'
+    })
+    drawer.setOpen(true)
+    vi.advanceTimersByTime(600)
+
+    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 78 }))
+    vi.advanceTimersByTime(100)
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 100, pointerId: 78 }))
+    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 100, pointerId: 78 }))
+
+    expect(drawer.getSnapshot().state.activeSnapPoint).toBe('320px')
+    expect(getOverlay().dataset.drawerSnapPointsOverlay).toBe('true')
+    expect(getOverlay().style.opacity).toBe('1')
   })
 
   it('tracks the active snap with getSnapDragValue during a drag (inline transform matches offset math)', () => {

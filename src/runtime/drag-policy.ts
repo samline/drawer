@@ -59,7 +59,7 @@ function isElementLike(target: unknown): target is ElementLike {
   )
 }
 
-export function getDragTargetMetadata(target: EventTarget | null): DragTargetMetadata {
+export function getDragTargetMetadata(target: EventTarget | null, boundary?: EventTarget | null): DragTargetMetadata {
   const targetElement = isElementLike(target) ? target : null
   const ancestors: DragScrollableAncestor[] = []
   let element: ElementLike | null = targetElement
@@ -71,6 +71,8 @@ export function getDragTargetMetadata(target: EventTarget | null): DragTargetMet
       scrollTop: element.scrollTop,
       role: element.getAttribute('role')
     })
+
+    if (element === (boundary as unknown as ElementLike)) break
 
     element = element.parentElement
   }
@@ -110,42 +112,12 @@ export function getDragPermission({
     return { allow: false, updatePreventedAt: false }
   }
 
-  if (direction === 'left' || direction === 'right') {
-    // For horizontal directions the policy used to short-circuit
-    // with `allow: true`, which let the drag pipeline start a drag
-    // in the WRONG direction (e.g. dragging a `direction: 'right'`
-    // drawer to the LEFT). That mirrored a v2 vaul regression that
-    // the consumer flagged as "the drawer follows the finger in
-    // the opposite of the close direction". v2 only allowed the
-    // close-direction swipe; the opposite direction was resisted
-    // by the logarithmic dampening in `dampenValue`. Restore the
-    // same direction check here so the pointerdown handler bails
-    // out before `setPointerCapture` runs, and the wrong-direction
-    // gesture falls through to the close-button / form-input
-    // listeners instead of starting a drag.
-    //
-    // The early-out for `swipeAmount === null` (fresh pointerdown,
-    // direction not yet known) is preserved so the very first
-    // pointer event still starts the drag pipeline. The follow-up
-    // `pointermove` (which carries the swipe direction) calls
-    // `getDragPermission` again via the run-time check below.
-    if (swipeAmount === null) {
-      return { allow: true, updatePreventedAt: false }
-    }
-    const isClosingSwipeOffset =
-      direction === 'right' ? swipeAmount < 0 : swipeAmount > 0
-    if (isClosingSwipeOffset) {
-      return { allow: true, updatePreventedAt: false }
-    }
-    return { allow: false, updatePreventedAt: false }
-  }
-
   if (timeSinceOpenMs !== null && timeSinceOpenMs < POST_OPEN_GRACE_MS) {
     return { allow: false, updatePreventedAt: false }
   }
 
   if (swipeAmount !== null) {
-    const isClosingSwipeOffset = direction === 'bottom' ? swipeAmount > 0 : swipeAmount < 0
+    const isClosingSwipeOffset = direction === 'bottom' || direction === 'right' ? swipeAmount > 0 : swipeAmount < 0
     if (isClosingSwipeOffset) {
       return { allow: true, updatePreventedAt: false }
     }

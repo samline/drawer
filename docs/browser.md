@@ -25,8 +25,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 The IIFE bundle is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -36,19 +36,19 @@ The browser bundle only attaches `window.Drawer`. It does not inject any `<style
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.0.0-beta.3` with the version you ship.
+> Pin the version in production. Replace `3.0.0-beta.4` with the version you ship.
 
 ---
 
 ## Basic Usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
@@ -72,14 +72,14 @@ That is the same basic drawer used across the other entrypoints. The browser bun
 
 ## Notes
 
-- The browser bundle targets the same shared runtime registry as the root package.
-- Loading the script only attaches `window.Drawer`. A drawer is mounted lazily when you call `createDrawer()` or `configureDrawer()`.
+- All methods on one `window.Drawer` namespace use the same registry. The namespace does not expose controllers as keyed properties; use `getDrawer(id)` or `getDrawers()`.
+- Loading the script only attaches `window.Drawer`. Calling `createDrawer()` or `configureDrawer()` creates that drawer's dedicated host and optional trigger immediately; overlay and content mount only while open or exiting.
 - Treat each browser drawer id as an owned runtime instance. If your page removes that flow, swaps to a new id, or rebuilds the integration dynamically, call `destroyDrawer(id)` or `destroyDrawers()` so the shared registry can release the instance.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
 - Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
 - Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
 - Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.
-- Reusing the same `id` updates the existing runtime instance bound to that browser namespace.
+- Reusing the same `id` updates the existing runtime instance bound to that browser namespace. Distinct ids remain isolated, including when their hosts share one custom `container`.
 
 ---
 
@@ -111,4 +111,4 @@ Use `destroyDrawer(id)` when a specific integration is being replaced. Use `dest
 
 - Use it when you need a browser global API.
 - Use it for plain HTML pages, embeds, CMS integrations, or demos where a CDN script is simpler than a bundler.
-- Use the root package instead if you already control the module graph and do not need a browser global.
+- Use named exports from the root package if you already control the module graph and do not need a browser global. The root does not export a `browser` namespace.

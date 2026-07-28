@@ -25,8 +25,8 @@ const DEFAULT_DRAWER_ID = 'default'
  * re-binding on every re-render. The drag / snap / scale-background /
  * handle / viewport pipelines live in `runtime/{drag,snap-points,
  * transforms,release,handle,drag-policy,viewport}.ts` and are wired
- * into `vanilla/dialog.ts#attachListeners`. The pointer-swipe intent
- * math in `runtime/pointer.ts` is a planned API and is not wired yet.
+ * into `vanilla/dialog.ts#attachListeners`, including the axis-intent
+ * threshold from `runtime/pointer.ts`.
  */
 
 export interface VanillaDrawerController extends CommonDrawerController {
@@ -45,6 +45,7 @@ interface DrawerRuntimeInstance {
   controller: CommonDrawerController
   options: VanillaDrawerOptions
   cleanupTriggerElement: (() => void) | null
+  openOrder: number | null
   /**
    * True after the drawer has been opened at least once in this
    * mount session. Mirrors vaul upstream's `hasBeenOpened` state
@@ -64,9 +65,15 @@ interface DrawerRuntimeInstance {
    * removing a `body.modal-open` class). F5/F17 in the audit.
    */
   pendingAnimationEndTimer: ReturnType<typeof setTimeout> | null
+  pendingSnapResetTimer: ReturnType<typeof setTimeout> | null
 }
 
 const drawerInstances = new Map<CommonDrawerId, DrawerRuntimeInstance>()
+let nextOpenOrder = 0
+
+function assignOpenOrder(runtime: DrawerRuntimeInstance) {
+  if (runtime.openOrder === null) runtime.openOrder = ++nextOpenOrder
+}
 
 function getChildDrawerIds(parentId: CommonDrawerId) {
   return Array.from(drawerInstances.entries())
@@ -87,9 +94,7 @@ function openAncestorChain(parentId: CommonDrawerId) {
 
   if (!parentRuntime.controller.getSnapshot().state.isOpen) {
     releaseHiddenFocusBeforeOpen(parentRuntime.options, getRuntimeDrawerElement(parentRuntime))
-    parentRuntime.controller.setOpen(true)
-    notifyOpenStateChange(parentRuntime, true)
-    renderVanillaDrawer(parentRuntime.id)
+    setRuntimeOpen(parentRuntime, true, { openAncestors: false })
   }
 }
 
@@ -129,8 +134,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   const triggerElement = runtime.options.triggerElement
   const handleClick = () => {
     releaseHiddenFocusBeforeOpen(runtime.options, drawerElement)
-    runtime.controller.setOpen(true)
-    renderVanillaDrawer(runtime.id)
+    setRuntimeOpen(runtime, true)
   }
 
   triggerElement.addEventListener('click', handleClick)
@@ -144,20 +148,6 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 }
 
 function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
-  // G6: 1:1 with vaul upstream — `onClose` fires BEFORE
-  // `onOpenChange(false)`. vaul's `closeDrawer` (index.tsx:536-549)
-  // calls `onClose?.()` first, then `setIsOpen(false)` which
-  // fires the consumer's `onOpenChange` via the
-  // `useControllableState.onChange` callback. The drawer
-  // originally fired them in the opposite order, which broke
-  // consumers who read `controller.getSnapshot().state.isOpen`
-  // inside `onClose` (they got `false` in the drawer vs `true`
-  // in vaul, because vaul fires `onClose` BEFORE the state
-  // transitions). Match vaul.
-  if (!open) {
-    runtime.options.onClose?.()
-  }
-
   runtime.options.onOpenChange?.(open)
 
   // Track first-open for the F14/F9 parity work (the `shouldAnimate`
@@ -175,16 +165,7 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   if (!open) {
     getChildDrawerIds(runtime.id).forEach((childId) => {
       const childRuntime = drawerInstances.get(childId)
-      if (!childRuntime) {
-        return
-      }
-
-      const childWasOpen = childRuntime.controller.getSnapshot().state.isOpen
-      childRuntime.controller.setOpen(false)
-      if (childWasOpen) {
-        notifyOpenStateChange(childRuntime, false)
-      }
-      renderVanillaDrawer(childId)
+      if (childRuntime) setRuntimeOpen(childRuntime, false)
     })
   }
 
@@ -194,13 +175,20 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   // consumer with `snapPoints: [0.3, 0.5, 0.8]` who drags to
   // 0.8, closes, and reopens gets 0.3 (the initial snap), not
   // 0.8 (the last active).
+  if (runtime.pendingSnapResetTimer !== null) {
+    clearTimeout(runtime.pendingSnapResetTimer)
+    runtime.pendingSnapResetTimer = null
+  }
   if (!open && runtime.options.snapPoints && runtime.options.snapPoints.length > 0) {
-    setTimeout(() => {
+    runtime.pendingSnapResetTimer = setTimeout(() => {
+      runtime.pendingSnapResetTimer = null
+      if (drawerInstances.get(runtime.id) !== runtime) return
+      if (runtime.controller.getSnapshot().state.isOpen) return
       const firstSnap = runtime.options.snapPoints?.[0]
       if (firstSnap !== undefined) {
         runtime.options = { ...runtime.options, activeSnapPoint: firstSnap }
         runtime.controller.setActiveSnapPoint(firstSnap)
-        renderVanillaDrawer(runtime.id)
+        runtime.options.onActiveSnapPointChange?.(firstSnap)
       }
     }, TRANSITIONS.DURATION * 1000)
   }
@@ -217,6 +205,36 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
     runtime.pendingAnimationEndTimer = null
     runtime.options.onAnimationEnd?.(open)
   }, TRANSITIONS.DURATION * 1000)
+}
+
+function setRuntimeOpen(
+  runtime: DrawerRuntimeInstance,
+  open: boolean,
+  options: { render?: boolean; openAncestors?: boolean } = {}
+) {
+  const previousOpen = runtime.controller.getSnapshot().state.isOpen
+  if (previousOpen === open) {
+    runtime.options = { ...runtime.options, open }
+    return runtime.controller.setOpen(open)
+  }
+
+  if (open && options.openAncestors !== false && runtime.options.parentId) {
+    openAncestorChain(runtime.options.parentId)
+  }
+  if (open) assignOpenOrder(runtime)
+
+  // vaul calls onClose before changing its open state. Keep that
+  // observable ordering while still making the vanilla controller the
+  // single source of truth after the transition.
+  if (!open) runtime.options.onClose?.()
+
+  runtime.options = { ...runtime.options, open }
+  const snapshot = runtime.controller.setOpen(open)
+  notifyOpenStateChange(runtime, open)
+
+  if (options.render !== false) renderVanillaDrawer(runtime.id)
+  if (!open) runtime.openOrder = null
+  return snapshot
 }
 
 function canUseDOM() {
@@ -321,6 +339,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     id: runtime.id,
     options: runtime.options,
     open: snapshot.state.isOpen,
+    openOrder: runtime.openOrder,
     hasBeenOpened: runtime.hasBeenOpened,
     onBuiltInTriggerMouseDown: () => {
       releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
@@ -329,15 +348,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
       releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
     },
     onOpenChange: (open: boolean) => {
-      const previousOpen = runtime.controller.getSnapshot().state.isOpen
-
-      runtime.controller.setOpen(open)
-
-      if (previousOpen !== open) {
-        notifyOpenStateChange(runtime, open)
-      }
-
-      renderVanillaDrawer(id)
+      setRuntimeOpen(runtime, open)
     },
     onDragChange: (percentageDragged: number) => {
       runtime.options.onDragChange?.(percentageDragged)
@@ -377,6 +388,9 @@ function renderVanillaDrawer(id: CommonDrawerId) {
   runtime.ownsElement = nextHost.ownsElement
 
   bindTriggerElement(runtime)
+  if (getChildDrawerIds(id).some((childId) => drawerInstances.get(childId)?.controller.getSnapshot().state.isOpen)) {
+    syncParentNestedTransform(id)
+  }
   return nextHost.container
 }
 
@@ -412,20 +426,7 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
         releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
       }
 
-      const previousOpen = runtime.controller.getSnapshot().state.isOpen
-      const snapshot = runtime.controller.setOpen(open)
-
-      if (previousOpen !== open) {
-        notifyOpenStateChange(runtime, open)
-        // Re-render so the dialog DOM reflects the new `data-state`,
-        // `aria-modal`, body-scroll lock, and focus. The internal
-        // `renderVanillaDrawer's onOpenChange` callback also renders
-        // when the user clicks the trigger; that path produces a
-        // second render with the same state, which is a no-op.
-        renderVanillaDrawer(id)
-      }
-
-      return snapshot
+      return setRuntimeOpen(runtime, open)
     },
     setActiveSnapPoint(snapPoint) {
       const runtime = drawerInstances.get(id)
@@ -456,13 +457,20 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
 
       const previousOpen = runtime.controller.getSnapshot().state.isOpen
       runtime.options = { ...runtime.options, ...options, id }
+      const requestedOpen = Boolean(runtime.options.open ?? runtime.options.defaultOpen)
+      if (previousOpen && !requestedOpen) runtime.options.onClose?.()
+      if (!previousOpen && requestedOpen && runtime.options.parentId) {
+        openAncestorChain(runtime.options.parentId)
+      }
+      if (!previousOpen && requestedOpen) assignOpenOrder(runtime)
       const snapshot = runtime.controller.patch(runtime.options)
 
-      if (typeof runtime.options.open === 'boolean' && previousOpen !== snapshot.state.isOpen) {
+      if (previousOpen !== snapshot.state.isOpen) {
         notifyOpenStateChange(runtime, snapshot.state.isOpen)
       }
 
       renderVanillaDrawer(id)
+      if (!snapshot.state.isOpen) runtime.openOrder = null
       return snapshot
     },
     get element() {
@@ -491,34 +499,51 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
   }
 
   if (!existing) {
+    const controller = createDrawerController(nextOptions)
     drawerInstances.set(id, {
       id,
       root: null,
       element: null,
       ownsElement: false,
-      controller: createDrawerController(nextOptions),
+      controller,
       options: nextOptions,
       cleanupTriggerElement: null,
+      openOrder: null,
       hasBeenOpened: false,
-      pendingAnimationEndTimer: null
+      pendingAnimationEndTimer: null,
+      pendingSnapResetTimer: null
     })
   } else {
     existing.options = nextOptions
+    const requestedOpen = Boolean(nextOptions.open ?? nextOptions.defaultOpen)
+    if (previousOpen && !requestedOpen) existing.options.onClose?.()
+    if (!previousOpen && requestedOpen && nextOptions.parentId) {
+      openAncestorChain(nextOptions.parentId)
+    }
+    if (!previousOpen && requestedOpen) assignOpenOrder(existing)
     const snapshot = existing.controller.patch(nextOptions)
 
-    if (typeof nextOptions.open === 'boolean' && previousOpen !== snapshot.state.isOpen) {
+    if (previousOpen !== snapshot.state.isOpen) {
       notifyOpenStateChange(existing, snapshot.state.isOpen)
     }
   }
 
-  if (nextOptions.open && !previousOpen) {
+  const nextOpen = drawerInstances.get(id)?.controller.getSnapshot().state.isOpen ?? false
+  const runtime = drawerInstances.get(id)
+  if (nextOpen && nextOptions.parentId) {
+    openAncestorChain(nextOptions.parentId)
+  }
+  if (nextOpen && runtime) assignOpenOrder(runtime)
+  if (nextOpen && !previousOpen) {
     releaseHiddenFocusBeforeOpen(nextOptions, existing ? getRuntimeDrawerElement(existing) : null)
   }
 
   renderVanillaDrawer(id)
 
-  if (nextOptions.parentId && nextOptions.open) {
-    openAncestorChain(nextOptions.parentId)
+  if (runtime && nextOpen) runtime.hasBeenOpened = true
+  if (runtime && !nextOpen) runtime.openOrder = null
+
+  if (nextOptions.parentId && nextOpen) {
     syncParentNestedTransform(nextOptions.parentId)
   }
 
@@ -606,6 +631,10 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   if (runtime.pendingAnimationEndTimer !== null) {
     clearTimeout(runtime.pendingAnimationEndTimer)
     runtime.pendingAnimationEndTimer = null
+  }
+  if (runtime.pendingSnapResetTimer !== null) {
+    clearTimeout(runtime.pendingSnapResetTimer)
+    runtime.pendingSnapResetTimer = null
   }
   const nextHost = destroyVanillaHost({
     root: runtime.root,

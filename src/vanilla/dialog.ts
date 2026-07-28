@@ -10,26 +10,14 @@
 // `data-drawer` as an opaque marker.
 //
 // What this module owns:
-//   - The portal target: a small `<div data-drawer-vanilla-root>`
-//     inside the host that holds the dialog (overlay + content).
-//   - The trigger button when `triggerText` is provided.
-//   - Focus trap + initial focus when the dialog opens (modal=true).
-//   - Escape key handling.
-//   - Click-outside / backdrop dismiss.
-//   - Body scroll lock while open.
-//   - ARIA wiring (role="dialog", aria-modal, aria-labelledby,
-//     aria-describedby).
-//   - The `data-state` and `data-drawer-animate` attributes the
-//     stylesheet consumes to drive the open/close animation.
-//   - Inert siblings while the modal is open.
+//   - Lazy overlay/content presence inside each registry-owned host.
+//   - The optional built-in trigger, handle, and close button.
+//   - Focus, Escape, backdrop dismissal, ARIA, and viewport behavior.
+//   - Pointer gestures and their visual drag/snap/scale effects.
+//   - Acquisition and release of shared page-level side effects.
 //
-// What this module does NOT own:
-//   - The controller (state, snap-point math, drag math) — lives in
-//     `core/` and `runtime/`.
-//   - The drag / release / snap-point logic itself — the host wires
-//     pointer listeners on the content element and forwards events
-//     back through the callback API. This module only mounts the
-//     DOM and manages the focus / escape / click-outside contract.
+// The controller and pure interaction math remain in `core/` and
+// `runtime/`; this module applies their results to the DOM.
 
 import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
 import {
@@ -40,10 +28,11 @@ import {
   VELOCITY_THRESHOLD,
   WINDOW_TOP_OFFSET
 } from '../constants'
-import { isVertical, reset, set } from '../helpers'
+import { isVertical, set } from '../helpers'
 import { getDraggableOffset, getDraggedDistance, getDragPercentage } from '../runtime/drag'
 import { getDragPermission, getDragTargetMetadata, type DragTargetMetadata } from '../runtime/drag-policy'
 import { getNextHandleState } from '../runtime/handle'
+import { getSwipeIntent } from '../runtime/pointer'
 import { getDismissibleReleaseResult, getSnapPointReleaseAction } from '../runtime/release'
 import {
   getActiveSnapPointIndex,
@@ -57,10 +46,16 @@ import {
   getAxisAwareTranslate,
   getBackgroundDragState,
   getBackgroundResetState,
-  getScaleTranslateTransform
+  getScaleTranslateTransform,
+  getTranslate
 } from '../runtime/transforms'
 import { getViewportDrivenDrawerLayout } from '../runtime/viewport'
-import { preventBodyScroll, setPositionFixed, trackScrollPosition } from '../runtime/scroll-lock'
+import {
+  lockDocumentScrollBehavior,
+  lockScrollRestoration,
+  preventBodyScroll,
+  setPositionFixed
+} from '../runtime/scroll-lock'
 import type { VanillaCloseButtonOptions, VanillaDrawerOptions, VanillaRenderable } from './render'
 
 /**
@@ -74,6 +69,9 @@ interface DragPointerEvent extends Event {
   clientX: number
   clientY: number
   pointerId: number
+  pointerType?: string
+  button?: number
+  relatedTarget?: EventTarget | null
   currentTarget: HTMLElement
   target: EventTarget | null
 }
@@ -95,12 +93,8 @@ export interface VanillaDialogOptions {
   id: string
   options: VanillaDrawerOptions
   open: boolean
-  /**
-   * G12: 1:1 with vaul upstream's `hasBeenOpened` state. Set to
-   * `true` on the first `setOpen(true)`. Used by the
-   * `preventBodyScroll` gate (G3) to skip the lock on the very
-   * first open.
-   */
+  openOrder?: number | null
+  /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
@@ -151,6 +145,29 @@ interface DragState {
   activeSnapPointIndex: number | null
   snapPointsOffset: number[]
   shouldFade: boolean
+  lastPointerEvent: DragPointerEvent | null
+  reachedIntentBoundary: boolean
+  isAllowed: boolean
+}
+
+interface BackgroundScaleGroup {
+  wrapper: HTMLElement
+  wrapperCssText: string
+  wrapperBackgroundColor: string
+  wrapperBackgroundColorPriority: string
+  owners: BackgroundScaleOwner[]
+  clearTimeout: ReturnType<typeof setTimeout> | null
+  closingSetBodyBackground: boolean
+  pendingStates: Set<DialogMountState>
+}
+
+interface BackgroundScaleOwner {
+  state: DialogMountState
+  group: BackgroundScaleGroup
+  baseScale: number
+  direction: CommonDrawerDirection
+  setBodyBackground: boolean
+  openOrder: number
 }
 
 /**
@@ -162,6 +179,7 @@ interface DragState {
  */
 interface DialogMountState {
   trigger: HTMLButtonElement | null
+  cleanupBuiltInTrigger: (() => void) | null
   overlay: HTMLDivElement | null
   content: HTMLDivElement | null
   handle: HTMLDivElement | null
@@ -178,30 +196,36 @@ interface DialogMountState {
   closeButton: HTMLButtonElement | null
   previouslyFocused: HTMLElement | null
   cleanups: Array<() => void>
-  bodyOverflowBackup: string | null
-  bodyPaddingRightBackup: string | null
+  options: VanillaDrawerOptions
+  mountedOptions: VanillaDrawerOptions | null
+  openOrder: number
+  hasMounted: boolean
+  closeRemovalTimer: number | null
+  suppressHandleClick: boolean
+  lastTimeDragPrevented: number | null
   /**
    * Restore function returned by `preventBodyScroll()`. Called from
    * `teardownMount` to undo the body-scroll lock. `null` when the
    * drawer was not modal (no lock was applied) or the dialog was
    * not opened yet. Replaces the older `bodyOverflowBackup` /
    * `bodyPaddingRightBackup` pair which only handled desktop
-   * browsers — the new pipeline is 1:1 with vaul upstream and
-   * handles iOS Safari too.
+   * browsers. The current pipeline also handles iOS Safari and
+   * concurrent owners.
    */
   unlockBodyScroll: (() => void) | null
+  restoreBodyPosition: (() => void) | null
+  restoreScrollBehavior: (() => void) | null
   openedAt: number | null
   drag: DragState | null
+  cleanupDragGesture: (() => void) | null
   // Phase C: background-scale pipeline. `baseScale` is captured at
   // open time so the drag/release math has a single source of truth
   // for the rest-state scale. `clearTimeout` is the pending handle
   // for the `TRANSITIONS.DURATION` deferred clear after a close
   // release; we cancel it on teardown to avoid touching a wrapper
   // that no longer belongs to this drawer.
-  backgroundScale: {
-    baseScale: number
-    clearTimeout: ReturnType<typeof setTimeout> | null
-  } | null
+  backgroundScale: BackgroundScaleOwner | null
+  pendingBackgroundScaleGroup: BackgroundScaleGroup | null
   // Phase E: viewport / mobile-keyboard pipeline. The
   // `getViewportDrivenDrawerLayout` helper is stateful (it tracks
   // the diff from the initial layout to detect when the mobile
@@ -220,7 +244,7 @@ interface DialogMountState {
   // `'manual'`; cleared in `teardownMount` after restoring. `null`
   // when the dialog never changed the value (e.g. it was already
   // `'manual'` at mount time, or `preventScrollRestoration` is off).
-  scrollRestorationBackup: string | null
+  restoreScrollRestoration: (() => void) | null
   /**
    * G11: `justReleased` ref + timer. Set to `true` in `onPointerUp`
    * when `velocity > 0.05` (high-velocity release). Used by the
@@ -236,12 +260,29 @@ interface DialogMountState {
 }
 
 const hostState = new WeakMap<HTMLElement, DialogMountState>()
+const openDialogStack: DialogMountState[] = []
+const handledEscapeEvents = new WeakSet<Event>()
+let fallbackOpenOrder = 0
+
+function removeFromOpenDialogStack(state: DialogMountState) {
+  const index = openDialogStack.indexOf(state)
+  if (index !== -1) openDialogStack.splice(index, 1)
+}
+
+function registerOpenDialog(state: DialogMountState, openOrder?: number | null) {
+  removeFromOpenDialogStack(state)
+  state.openOrder = openOrder ?? ++fallbackOpenOrder
+  const insertionIndex = openDialogStack.findIndex((candidate) => candidate.openOrder > state.openOrder)
+  if (insertionIndex === -1) openDialogStack.push(state)
+  else openDialogStack.splice(insertionIndex, 0, state)
+}
 
 function getHostState(host: HTMLElement): DialogMountState {
   let state = hostState.get(host)
   if (!state) {
     state = {
       trigger: null,
+      cleanupBuiltInTrigger: null,
       overlay: null,
       content: null,
       handle: null,
@@ -251,17 +292,26 @@ function getHostState(host: HTMLElement): DialogMountState {
       closeButton: null,
       previouslyFocused: null,
       cleanups: [],
-      bodyOverflowBackup: null,
-      bodyPaddingRightBackup: null,
+      options: {},
+      mountedOptions: null,
+      openOrder: 0,
+      hasMounted: false,
+      closeRemovalTimer: null,
+      suppressHandleClick: false,
+      lastTimeDragPrevented: null,
       unlockBodyScroll: null,
+      restoreBodyPosition: null,
+      restoreScrollBehavior: null,
       openedAt: null,
       drag: null,
+      cleanupDragGesture: null,
       backgroundScale: null,
+      pendingBackgroundScaleGroup: null,
       keyboardIsOpen: false,
       previousDiffFromInitial: 0,
       initialDrawerHeight: 0,
       activeSnapPointOffset: 0,
-      scrollRestorationBackup: null,
+      restoreScrollRestoration: null,
       justReleased: false,
       justReleasedTimer: null
     }
@@ -272,6 +322,89 @@ function getHostState(host: HTMLElement): DialogMountState {
 
 function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
+}
+
+type DialogCallbacks = {
+  onOpenChange: VanillaDialogOptions['onOpenChange']
+  onBuiltInTriggerMouseDown?: () => void
+  onBuiltInTriggerClick?: () => void
+  onDragChange?: (percentageDragged: number) => void
+  onReleaseChange?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
+}
+
+const IN_PLACE_OPTION_KEYS = new Set<keyof VanillaDrawerOptions>([
+  'activeSnapPoint',
+  'open',
+  'onOpenChange',
+  'onClose',
+  'onAnimationEnd',
+  'onActiveSnapPointChange',
+  'onDragChange',
+  'onReleaseChange'
+])
+
+function canUpdateOpenMount(previous: VanillaDrawerOptions | null, next: VanillaDrawerOptions): boolean {
+  if (!previous) return false
+  const keys = new Set<keyof VanillaDrawerOptions>([
+    ...(Object.keys(previous) as Array<keyof VanillaDrawerOptions>),
+    ...(Object.keys(next) as Array<keyof VanillaDrawerOptions>)
+  ])
+  for (const key of keys) {
+    if (IN_PLACE_OPTION_KEYS.has(key)) continue
+    if (!Object.is(previous[key], next[key])) return false
+  }
+  return true
+}
+
+function cancelCloseRemoval(state: DialogMountState) {
+  if (state.closeRemovalTimer !== null) {
+    clearTimeout(state.closeRemovalTimer)
+    state.closeRemovalTimer = null
+  }
+}
+
+function attachBuiltInTrigger(
+  state: DialogMountState,
+  host: HTMLElement,
+  options: VanillaDrawerOptions,
+  callbacks: DialogCallbacks
+) {
+  state.cleanupBuiltInTrigger?.()
+  state.cleanupBuiltInTrigger = null
+  if (!options.triggerText) {
+    state.trigger?.remove()
+    state.trigger = null
+    return
+  }
+  let trigger = state.trigger
+  if (!trigger) {
+    trigger = createEl('button', {
+      type: 'button',
+      'data-drawer-vanilla-trigger': ''
+    })
+    host.appendChild(trigger)
+    state.trigger = trigger
+  }
+  trigger.textContent = options.triggerText
+
+  const onMouseDown = (event: MouseEvent) => {
+    if (options.modal === false || options.autoFocus) return
+    event.preventDefault()
+    trigger?.blur()
+    callbacks.onBuiltInTriggerMouseDown?.()
+  }
+  const onClick = () => {
+    trigger?.blur()
+    callbacks.onBuiltInTriggerClick?.()
+    callbacks.onOpenChange(true)
+  }
+  trigger.addEventListener('mousedown', onMouseDown)
+  trigger.addEventListener('click', onClick)
+  state.cleanupBuiltInTrigger = () => {
+    trigger?.removeEventListener('mousedown', onMouseDown)
+    trigger?.removeEventListener('click', onClick)
+  }
 }
 
 function createEl<K extends keyof HTMLElementTagNameMap>(
@@ -392,71 +525,189 @@ function applyWrapperDragState({
 function applyWrapperOpenState({
   wrapper,
   direction,
-  baseScale,
-  clearBackgroundColor
+  baseScale
 }: {
   wrapper: HTMLElement
   direction: CommonDrawerDirection
   baseScale: number
-  clearBackgroundColor: boolean
 }) {
   const resetState = getBackgroundResetState({ direction, baseScale })
   set(wrapper, {
     ...resetState,
     transitionProperty: 'transform, border-radius',
     transitionDuration: `${TRANSITIONS.DURATION}s`,
-    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
-    // `setBackgroundColorOnScale` only writes during drag; on release
-    // we strip the inline color so the consumer's CSS wins back.
-    ...(clearBackgroundColor ? { backgroundColor: '' } : {})
+    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`
   })
 }
 
-/**
- * Schedule the deferred inline-style clear. After
- * `TRANSITIONS.DURATION` the wrapper is stripped of every inline
- * style we wrote so it lands in the NORMAL state (consumer's CSS).
- * Any prior pending clear is cancelled so the wrappers do not pile
- * up timeouts when the user reopens the drawer within the window.
- */
-function scheduleWrapperClear(wrapper: HTMLElement, state: DialogMountState) {
-  if (!state.backgroundScale) return
-  const existing = state.backgroundScale.clearTimeout
-  if (existing !== null) {
-    clearTimeout(existing)
-  }
-  const handle = setTimeout(() => {
-    wrapper.removeAttribute('style')
-    if (state.backgroundScale) {
-      state.backgroundScale.clearTimeout = null
-    }
-  }, TRANSITIONS.DURATION * 1000)
-  state.backgroundScale.clearTimeout = handle
+function applyWrapperClosedState(wrapper: HTMLElement) {
+  set(wrapper, {
+    transform: 'none',
+    borderRadius: '0px',
+    transitionProperty: 'transform, border-radius',
+    transitionDuration: `${TRANSITIONS.DURATION}s`,
+    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+  })
 }
 
-function cancelPendingWrapperClear(state: DialogMountState) {
-  const existing = state.backgroundScale?.clearTimeout
-  if (existing !== undefined && existing !== null) {
-    clearTimeout(existing)
-    if (state.backgroundScale) state.backgroundScale.clearTimeout = null
-  }
+const backgroundScaleGroups = new Map<HTMLElement, BackgroundScaleGroup>()
+let backgroundScaleBodySnapshot: { value: string; priority: string } | null = null
+
+function restoreStyleProperty(element: HTMLElement, property: string, value: string, priority: string) {
+  if (value) element.style.setProperty(property, value, priority)
+  else element.style.removeProperty(property)
 }
 
-/**
- * True when the wrapper currently carries any of the inline styles
- * the drag pipeline writes. Used by `mountVanillaDialog` to decide
- * whether a programmatic close needs to animate the wrapper back to
- * NORMAL (the user dragged, then closed via a non-drag path) or
- * whether the wrapper is already at rest and should be left alone.
- */
-function wrapperHasInlineStyles(wrapper: HTMLElement): boolean {
-  return Boolean(
-    wrapper.style.transform ||
-    wrapper.style.borderRadius ||
-    wrapper.style.overflow ||
-    wrapper.style.transformOrigin ||
-    wrapper.style.backgroundColor
+function applyBackgroundScaleOpen(owner: BackgroundScaleOwner) {
+  applyWrapperOpenState({
+    wrapper: owner.group.wrapper,
+    direction: owner.direction,
+    baseScale: owner.baseScale
+  })
+  restoreStyleProperty(
+    owner.group.wrapper,
+    'background-color',
+    owner.group.wrapperBackgroundColor,
+    owner.group.wrapperBackgroundColorPriority
   )
+}
+
+function clearPendingBackgroundScaleStates(group: BackgroundScaleGroup) {
+  for (const pendingState of group.pendingStates) {
+    if (pendingState.pendingBackgroundScaleGroup === group) {
+      pendingState.pendingBackgroundScaleGroup = null
+    }
+  }
+  group.pendingStates.clear()
+}
+
+function updateBackgroundScaleBody() {
+  const groups = Array.from(backgroundScaleGroups.values())
+  const shouldSetBackground = groups.some(
+    (group) =>
+      group.owners.some((owner) => owner.setBodyBackground) ||
+      (group.clearTimeout !== null && group.closingSetBodyBackground)
+  )
+  if (shouldSetBackground) {
+    document.body.style.setProperty('background-color', 'black')
+  } else if (backgroundScaleBodySnapshot) {
+    restoreStyleProperty(
+      document.body,
+      'background-color',
+      backgroundScaleBodySnapshot.value,
+      backgroundScaleBodySnapshot.priority
+    )
+  }
+  if (groups.length === 0) backgroundScaleBodySnapshot = null
+}
+
+function restoreBackgroundScaleGroup(group: BackgroundScaleGroup) {
+  if (group.owners.length > 0) return
+  if (backgroundScaleGroups.get(group.wrapper) !== group) {
+    clearPendingBackgroundScaleStates(group)
+    return
+  }
+  if (group.clearTimeout !== null) clearTimeout(group.clearTimeout)
+  group.clearTimeout = null
+  group.wrapper.style.cssText = group.wrapperCssText
+  clearPendingBackgroundScaleStates(group)
+  backgroundScaleGroups.delete(group.wrapper)
+  updateBackgroundScaleBody()
+}
+
+function acquireBackgroundScale(
+  state: DialogMountState,
+  wrapper: HTMLElement,
+  direction: CommonDrawerDirection,
+  setBodyBackground: boolean,
+  openOrder: number
+) {
+  const stalePendingGroup = state.pendingBackgroundScaleGroup
+  if (stalePendingGroup && stalePendingGroup !== backgroundScaleGroups.get(wrapper)) {
+    state.pendingBackgroundScaleGroup = null
+  }
+  let group = backgroundScaleGroups.get(wrapper)
+  if (!group) {
+    if (!backgroundScaleBodySnapshot) {
+      backgroundScaleBodySnapshot = {
+        value: document.body.style.getPropertyValue('background-color'),
+        priority: document.body.style.getPropertyPriority('background-color')
+      }
+    }
+    group = {
+      wrapper,
+      wrapperCssText: wrapper.style.cssText,
+      wrapperBackgroundColor: wrapper.style.getPropertyValue('background-color'),
+      wrapperBackgroundColorPriority: wrapper.style.getPropertyPriority('background-color'),
+      owners: [],
+      clearTimeout: null,
+      closingSetBodyBackground: false,
+      pendingStates: new Set()
+    }
+    backgroundScaleGroups.set(wrapper, group)
+  }
+  if (group.clearTimeout !== null) {
+    clearTimeout(group.clearTimeout)
+    group.clearTimeout = null
+  }
+  clearPendingBackgroundScaleStates(group)
+  group.closingSetBodyBackground = false
+  const owner: BackgroundScaleOwner = {
+    state,
+    group,
+    baseScale: computeBaseScale(direction),
+    direction,
+    setBodyBackground,
+    openOrder
+  }
+  const insertionIndex = group.owners.findIndex((candidate) => candidate.openOrder > openOrder)
+  if (insertionIndex === -1) group.owners.push(owner)
+  else group.owners.splice(insertionIndex, 0, owner)
+  state.backgroundScale = owner
+  applyBackgroundScaleOpen(group.owners[group.owners.length - 1] as BackgroundScaleOwner)
+  updateBackgroundScaleBody()
+}
+
+function isActiveBackgroundScaleOwner(owner: BackgroundScaleOwner) {
+  return owner.group.owners[owner.group.owners.length - 1] === owner
+}
+
+function releaseBackgroundScale(state: DialogMountState, animate: boolean) {
+  const owner = state.backgroundScale
+  if (!owner) return
+  state.backgroundScale = null
+  const { group } = owner
+  const ownerIndex = group.owners.indexOf(owner)
+  if (ownerIndex !== -1) group.owners.splice(ownerIndex, 1)
+
+  const nextOwner = group.owners[group.owners.length - 1]
+  if (nextOwner) {
+    applyBackgroundScaleOpen(nextOwner)
+    updateBackgroundScaleBody()
+    return
+  }
+
+  if (!animate || !group.wrapper.isConnected) {
+    restoreBackgroundScaleGroup(group)
+    return
+  }
+
+  applyWrapperClosedState(group.wrapper)
+  state.pendingBackgroundScaleGroup = group
+  group.pendingStates.add(state)
+  group.closingSetBodyBackground = owner.setBodyBackground
+  updateBackgroundScaleBody()
+  group.clearTimeout = setTimeout(() => {
+    group.clearTimeout = null
+    restoreBackgroundScaleGroup(group)
+  }, TRANSITIONS.DURATION * 1000)
+}
+
+function restoreBackgroundScale(state: DialogMountState) {
+  releaseBackgroundScale(state, false)
+  const pendingGroup = state.pendingBackgroundScaleGroup
+  state.pendingBackgroundScaleGroup = null
+  if (pendingGroup) restoreBackgroundScaleGroup(pendingGroup)
 }
 
 /**
@@ -482,20 +733,26 @@ function resolveRenderable(value: VanillaRenderable | undefined): {
   return {}
 }
 
-/**
- * Read the accessible text from a root element by id, falling back
- * to the element's own text.
- */
-function readAccessibleTextFromRoot(root: HTMLElement | null, elementId?: string): string | undefined {
-  if (!root || !elementId) return undefined
-  if (root.id === elementId) return root.textContent?.trim() || undefined
-  const found = root.querySelector(`#${CSS.escape(elementId)}`)
-  if (found && found.textContent) return found.textContent.trim() || undefined
-  return undefined
+function findElementByIdInSubtree(root: HTMLElement | null, elementId?: string): Element | null {
+  if (!root || !elementId) return null
+  if (root.id === elementId) return root
+
+  for (const candidate of root.querySelectorAll('[id]')) {
+    if (candidate.id === elementId) return candidate
+  }
+
+  return null
 }
 
 function getDirection(options: VanillaDrawerOptions): CommonDrawerDirection {
   return (options.direction ?? 'bottom') as CommonDrawerDirection
+}
+
+function getClosedTransform(direction: CommonDrawerDirection) {
+  if (direction === 'bottom') return 'translate3d(0, 100%, 0)'
+  if (direction === 'top') return 'translate3d(0, -100%, 0)'
+  if (direction === 'right') return 'translate3d(100%, 0, 0)'
+  return 'translate3d(-100%, 0, 0)'
 }
 
 function getSnapPoints(options: VanillaDrawerOptions): CommonDrawerSnapPoint[] | undefined {
@@ -503,8 +760,12 @@ function getSnapPoints(options: VanillaDrawerOptions): CommonDrawerSnapPoint[] |
 }
 
 function getActiveSnapPoint(options: VanillaDrawerOptions): CommonDrawerSnapPoint | null {
-  if (options.activeSnapPoint !== undefined) return options.activeSnapPoint
-  return options.snapPoints?.[0] ?? null
+  return options.activeSnapPoint ?? options.snapPoints?.[0] ?? null
+}
+
+function getFadeFromIndex(options: VanillaDrawerOptions): number | undefined {
+  if (options.fadeFromIndex !== undefined) return options.fadeFromIndex
+  return options.snapPoints && options.snapPoints.length > 0 ? options.snapPoints.length - 1 : undefined
 }
 
 /**
@@ -575,42 +836,13 @@ function shouldShowSnapOverlay(
 }
 
 /**
- * Tear down the previous dialog mount inside `host`. Removes the
- * overlay / content / trigger and detaches every listener. Also blurs
- * the old trigger so a click that triggered this teardown does not
- * leave the old focused element behind. jsdom and real browsers
- * are consistent here, but the explicit `blur` is defensive — the
- * runtime should not depend on the host's focus management.
- */
-/**
- * Bug fix (v3.0.0-beta.3 → stable): the previous implementation
- * ALWAYS called `teardownMount` and re-mounted the dialog, even
- * for the trivial open→close transition. The new elements were
- * created with `data-state="closed"` from the start (so the
- * static `transform: translate3d(...)` rule positioned them
- * off-screen immediately), and the CSS `slideToRight` /
- * `slideToBottom` / etc. close animations never played. The
- * drawer just vanished on close.
- *
- * For the simple open→close transition we now keep the existing
- * DOM in place and flip `data-state` to `"closed"` so the CSS
- * close animation can run. The DOM teardown is deferred to the
- * `animationend` event so listeners stay attached during the
- * animation (the close button / form inputs / overlay mouseup
- * continue to work — see `.agents/issues/2026-07-26-close-button-click-suppressed-by-pointer-capture.md`).
- *
- * The listener teardown, body-scroll-lock restore, and focus
- * restoration happen immediately (so the visualViewport listener
- * etc. are detached synchronously, matching v2 behaviour), but
- * the DOM nodes themselves stay in the tree until the animation
- * completes.
- *
- * Every other transition (closed→open, open→open on option change,
- * destroy, etc.) still goes through the standard teardown +
- * re-mount path because the option set may have changed and the
- * existing elements no longer reflect the desired DOM contract.
+ * Detach listeners and release page-level ownership for a mount.
+ * Full teardown also removes its DOM; `deferDom` keeps the closing
+ * visual nodes until the exit timeout removes them.
  */
 function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {}) {
+  if (!opts.deferDom) cancelCloseRemoval(state)
+  removeFromOpenDialogStack(state)
   // Step 1 — run every cleanup callback registered on the state.
   // This detaches every event listener the mount installed (visualViewport
   // resize, scroll restoration, overlay mouseup, keydown, pointerdown,
@@ -619,24 +851,30 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   // dialog will fire on subsequent events.
   for (const cleanup of state.cleanups) cleanup()
   state.cleanups = []
+  state.cleanupDragGesture?.()
+  state.cleanupDragGesture = null
+  state.cleanupBuiltInTrigger?.()
+  state.cleanupBuiltInTrigger = null
 
   // Step 2 — restore the page-level side-effects we own (focus,
   // body scroll lock, history scroll restoration, viewport state).
   if (state.trigger && document.activeElement === state.trigger) {
     if (typeof state.trigger.blur === 'function') state.trigger.blur()
   }
-  if (state.previouslyFocused && document.contains(state.previouslyFocused)) {
+  const otherOpenDrawer = openDialogStack[openDialogStack.length - 1]?.content ?? null
+  const activeElementWasClosing = Boolean(
+    state.content && document.activeElement instanceof Node && state.content.contains(document.activeElement)
+  )
+  if (
+    state.previouslyFocused &&
+    document.contains(state.previouslyFocused) &&
+    (!otherOpenDrawer || otherOpenDrawer.contains(state.previouslyFocused))
+  ) {
     state.previouslyFocused.focus?.()
+  } else if (activeElementWasClosing && otherOpenDrawer) {
+    otherOpenDrawer.focus()
   }
   state.previouslyFocused = null
-  if (state.bodyOverflowBackup !== null) {
-    document.body.style.overflow = state.bodyOverflowBackup
-    state.bodyOverflowBackup = null
-  }
-  if (state.bodyPaddingRightBackup !== null) {
-    document.body.style.paddingRight = state.bodyPaddingRightBackup
-    state.bodyPaddingRightBackup = null
-  }
   // F6: invoke the body-scroll restore returned by
   // `preventBodyScroll()`. Handles both the desktop `overflow: hidden`
   // baseline AND the iOS-Safari 6-step workaround. Also flips
@@ -645,11 +883,8 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
     state.unlockBodyScroll()
     state.unlockBodyScroll = null
   }
-  setPositionFixed({
-    isOpen: false,
-    modal: true,
-    noBodyStyles: false
-  })
+  state.restoreBodyPosition?.()
+  state.restoreBodyPosition = null
   // G8: 1:1 with vaul upstream — the `scrollBehavior` reset
   // happens in the `useEffect` cleanup, which only runs when
   // `isOpen` transitions from `true` to `false` (and on
@@ -660,21 +895,17 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   // closed state), which would reset the scrollBehavior before
   // the new `set` runs. The `set` (G5) is gated by
   // `if (open && ...)` so it only writes on the open path.
-  if (opts.deferDom && typeof document !== 'undefined' && document.documentElement) {
-    reset(document.documentElement, 'scrollBehavior')
-  }
-  if (state.scrollRestorationBackup !== null) {
-    if (typeof window !== 'undefined' && window.history) {
-      window.history.scrollRestoration = state.scrollRestorationBackup as ScrollRestoration
-    }
-    state.scrollRestorationBackup = null
-  }
+  state.restoreScrollBehavior?.()
+  state.restoreScrollBehavior = null
+  state.restoreScrollRestoration?.()
+  state.restoreScrollRestoration = null
   state.keyboardIsOpen = false
   state.previousDiffFromInitial = 0
   state.initialDrawerHeight = 0
   state.activeSnapPointOffset = 0
   state.drag = null
   state.openedAt = null
+  state.suppressHandleClick = false
   // G11: clear the `justReleased` state on every teardown so a
   // destroy → reopen sequence doesn't carry a stale flag from
   // the destroyed drawer.
@@ -684,25 +915,10 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
     state.justReleasedTimer = null
   }
 
-  // Step 3 — cancel the wrapper-clear timer and remove the DOM
-  // nodes. The wrapper-clear timer is intentionally only cancelled
-  // in the FULL teardown path (not the close-only path with
-  // `deferDom: true`) because the close-only path needs the
-  // wrapper's CSS transition to complete after the drag-release
-  // pipeline wrote the inline rest styles.
-  if (opts.deferDom) {
-    // On the close-only path, keep `state.backgroundScale` populated
-    // until the DOM removal runs so `scheduleWrapperClear`'s
-    // pending timer can still touch the wrapper. The timer reads
-    // `state.backgroundScale.clearTimeout` to no-op itself once
-    // it fires; clearing `state.backgroundScale` here would
-    // make the timer's existence check fail and leave the
-    // wrapper with stale inline styles. The DOM removal block
-    // below is the one place that cancels the timer.
-    return
-  }
-  cancelPendingWrapperClear(state)
-  state.backgroundScale = null
+  // Step 3 — remove the DOM on a full teardown. The close-only path
+  // keeps it mounted for the exit animation.
+  if (opts.deferDom) return
+  restoreBackgroundScale(state)
   if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
   if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
   if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
@@ -714,6 +930,7 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   state.description = null
   state.body = null
   state.closeButton = null
+  state.mountedOptions = null
 }
 
 function buildTitleContent(
@@ -725,19 +942,15 @@ function buildTitleContent(
   const title = state.title
   title.innerHTML = ''
 
-  const proxyTitle =
-    title == null && resolvedContent ? readAccessibleTextFromRoot(resolvedContent, options.ariaLabelledBy) : undefined
-  const proxyDescription =
-    title == null && resolvedContent ? readAccessibleTextFromRoot(resolvedContent, options.ariaDescribedBy) : undefined
+  const hasCustomTitle = findElementByIdInSubtree(resolvedContent ?? null, options.ariaLabelledBy) !== null
 
   const showTitle = options.title !== undefined
   const showDescription = options.description !== undefined
-  const showProxyTitle = !showTitle && Boolean(proxyTitle ?? options.ariaLabel)
-  const showProxyDescription = !showDescription && Boolean(proxyDescription)
+  const showProxyTitle = !showTitle && !hasCustomTitle && Boolean(options.ariaLabel)
 
   // Title
   if (showProxyTitle) {
-    const proxy = proxyTitle ?? options.ariaLabel ?? ''
+    const proxy = options.ariaLabel ?? ''
     title.appendChild(document.createTextNode(proxy))
   }
   if (showTitle) {
@@ -755,9 +968,7 @@ function buildTitleContent(
   if (state.description) {
     const desc = state.description
     desc.innerHTML = ''
-    if (showProxyDescription && proxyDescription) {
-      desc.appendChild(document.createTextNode(proxyDescription))
-    } else if (showDescription) {
+    if (showDescription) {
       const resolved = resolveRenderable(options.description)
       if (resolved.text !== undefined) {
         desc.appendChild(document.createTextNode(resolved.text))
@@ -851,18 +1062,21 @@ function buildCloseButton(
   return button
 }
 
-function buildBodyContent(state: DialogMountState, options: VanillaDrawerOptions) {
+function buildBodyContent(
+  state: DialogMountState,
+  options: VanillaDrawerOptions,
+  resolvedContent = resolveRenderable(options.content)
+) {
   if (!state.body) return
   const body = state.body
   body.innerHTML = ''
   if (options.content === undefined) return
-  const resolved = resolveRenderable(options.content)
-  if (resolved.text !== undefined) {
-    body.appendChild(document.createTextNode(resolved.text))
-  } else if (resolved.element) {
-    body.appendChild(resolved.element)
-  } else if (resolved.container) {
-    body.appendChild(resolved.container)
+  if (resolvedContent.text !== undefined) {
+    body.appendChild(document.createTextNode(resolvedContent.text))
+  } else if (resolvedContent.element) {
+    body.appendChild(resolvedContent.element)
+  } else if (resolvedContent.container) {
+    body.appendChild(resolvedContent.container)
   }
 }
 
@@ -880,18 +1094,18 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   if (state.content) state.content.dataset.drawerDirection = direction
   const snapPoints = getSnapPoints(options)
   const activeSnapPoint = getActiveSnapPoint(options)
-  const fadeFromIndex = options.fadeFromIndex
+  const hasSnapPoints = Boolean(snapPoints?.length)
+  const fadeFromIndex = getFadeFromIndex(options)
   if (state.overlay) {
-    state.overlay.dataset.drawerSnapPoints = snapPoints ? 'true' : 'false'
+    state.overlay.dataset.drawerSnapPoints = open && hasSnapPoints ? 'true' : 'false'
     state.overlay.dataset.drawerSnapPointsOverlay = shouldShowSnapOverlay(snapPoints, fadeFromIndex, activeSnapPoint)
       ? 'true'
       : 'false'
   }
   if (state.content) {
-    state.content.dataset.drawerSnapPoints = snapPoints ? 'true' : 'false'
+    state.content.dataset.drawerSnapPoints = open && hasSnapPoints ? 'true' : 'false'
     state.content.dataset.drawerDelayedSnapPoints = 'false'
-    state.content.dataset.drawerCustomContainer = 'false'
-    state.content.dataset.drawerAnimate = 'true'
+    state.content.dataset.drawerCustomContainer = options.container || options.mountElement ? 'true' : 'false'
   }
   // F4: clear `--initial-transform` on the close path so the
   // `slideToX` keyframe animates to the FULLY closed position
@@ -913,13 +1127,35 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   if (open && state.content) {
     const snapPoints = getSnapPoints(options)
     const activeSnapPoint = getActiveSnapPoint(options)
-    if (
-      snapPoints &&
-      snapPoints.length > 0 &&
-      activeSnapPoint === snapPoints[snapPoints.length - 1]
-    ) {
+    if (snapPoints && snapPoints.length > 0 && activeSnapPoint === snapPoints[snapPoints.length - 1]) {
       state.openedAt = performance.now()
     }
+  }
+}
+
+function updateOpenSnapState(state: DialogMountState, options: VanillaDrawerOptions) {
+  if (!state.content) return
+  const snapPoints = getSnapPoints(options)
+  const activeSnapPoint = getActiveSnapPoint(options)
+  applyOpenState(state, options, true)
+  if (!snapPoints || activeSnapPoint === null) return
+
+  const offset = getSnapPointOffset({
+    snapPoint: activeSnapPoint,
+    direction: getDirection(options),
+    containerSize: getContainerSize(options.container ?? options.mountElement ?? null)
+  })
+  state.content.style.setProperty('--initial-transform', `${offset}px`)
+  set(state.content, {
+    transform: getAxisAwareTranslate(getDirection(options), offset),
+    transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+  })
+
+  if (state.overlay) {
+    set(state.overlay, {
+      opacity: shouldShowSnapOverlay(snapPoints, getFadeFromIndex(options), activeSnapPoint) ? '1' : '0',
+      transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+    })
   }
 }
 
@@ -936,6 +1172,15 @@ function focusFirstElement(content: HTMLElement) {
   }
 }
 
+function isKeyboardInput(element: Element | null): boolean {
+  if (element instanceof HTMLTextAreaElement) return true
+  if (element instanceof HTMLElement && element.isContentEditable) return true
+  if (!(element instanceof HTMLInputElement)) return false
+  return !new Set(['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit']).has(
+    element.type
+  )
+}
+
 function trapFocus(state: DialogMountState, content: HTMLElement, event: KeyboardEvent) {
   if (event.key !== 'Tab') return
   const focusables = Array.from(
@@ -945,12 +1190,16 @@ function trapFocus(state: DialogMountState, content: HTMLElement, event: Keyboar
   )
   if (focusables.length === 0) {
     event.preventDefault()
+    content.focus()
     return
   }
   const first = focusables[0]!
   const last = focusables[focusables.length - 1]!
   const active = document.activeElement
-  if (event.shiftKey && active === first) {
+  if (!active || !content.contains(active)) {
+    event.preventDefault()
+    ;(event.shiftKey ? last : first).focus()
+  } else if (event.shiftKey && active === first) {
     event.preventDefault()
     last.focus()
   } else if (!event.shiftKey && active === last) {
@@ -1018,62 +1267,24 @@ function isInteractiveDragTarget(target: Element): boolean {
   return interactiveAncestor !== null
 }
 
-function attachListeners(
-  state: DialogMountState,
-  options: VanillaDrawerOptions,
-  callbacks: {
-    onOpenChange: VanillaDialogOptions['onOpenChange']
-    onBuiltInTriggerMouseDown?: () => void
-    onBuiltInTriggerClick?: () => void
-    onDragChange?: (percentageDragged: number) => void
-    onReleaseChange?: (open: boolean) => void
-    onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
-  }
-) {
-  if (state.trigger) {
-    const trigger = state.trigger
-    const onMouseDown = (event: MouseEvent) => {
-      if (options.modal === false || options.autoFocus) return
-      event.preventDefault()
-      // `preventDefault` on a synthetic mousedown does not always
-      // remove an already-focused element across DOM environments, so
-      // we blur explicitly to match the Radix behaviour. The runtime
-      // should not depend on the host's focus management.
-      if (typeof trigger.blur === 'function') trigger.blur()
-      callbacks.onBuiltInTriggerMouseDown?.()
-    }
-    const onClick = () => {
-      // The trigger must not be the focused element while the dialog
-      // is open. Blur it synchronously so the runtime that re-mounts
-      // the dialog (and re-applies focus management) sees the trigger
-      // already out of focus, regardless of which DOM environment the
-      // host is running in.
-      if (typeof trigger.blur === 'function') trigger.blur()
-      callbacks.onBuiltInTriggerClick?.()
-      callbacks.onOpenChange(true)
-    }
-    trigger.addEventListener('mousedown', onMouseDown)
-    trigger.addEventListener('click', onClick)
-    state.cleanups.push(() => {
-      trigger.removeEventListener('mousedown', onMouseDown)
-      trigger.removeEventListener('click', onClick)
-    })
-  }
-
-  if (state.content && options.modal !== false) {
+function attachListeners(state: DialogMountState, options: VanillaDrawerOptions, callbacks: DialogCallbacks) {
+  if (state.content) {
     const content = state.content
     const onKeyDown = (event: KeyboardEvent) => {
+      if (openDialogStack[openDialogStack.length - 1] !== state) return
       if (event.key === 'Escape' && options.dismissible !== false) {
+        if (handledEscapeEvents.has(event)) return
+        handledEscapeEvents.add(event)
         event.preventDefault()
         callbacks.onOpenChange(false)
         return
       }
-      if (event.key === 'Tab') {
+      if (event.key === 'Tab' && options.modal !== false) {
         trapFocus(state, content, event)
       }
     }
-    content.addEventListener('keydown', onKeyDown)
-    state.cleanups.push(() => content.removeEventListener('keydown', onKeyDown))
+    document.addEventListener('keydown', onKeyDown)
+    state.cleanups.push(() => document.removeEventListener('keydown', onKeyDown))
   }
 
   if (state.overlay && options.dismissible !== false) {
@@ -1115,47 +1326,16 @@ function attachListeners(
     const content = state.content
     const direction = getDirection(options)
     const isVerticalAxis = isVertical(direction)
-    // G5: 1:1 with vaul upstream — use the drawer's actual
-    // dimensions (captured at `pointerdown` and stored on
-    // `state.drag`) instead of the viewport. The fallback to
-    // the viewport is a defensive no-op for the rare case where
-    // `state.drag` is null (e.g. before the first pointerdown) or
-    // the drawer is not laid out (e.g. jsdom tests where
-    // `getBoundingClientRect` returns 0,0).
-    const initialDrawerRect = content.getBoundingClientRect()
-    const initialDimension = isVerticalAxis ? initialDrawerRect.height : initialDrawerRect.width
-    const viewportDimension = isVerticalAxis ? window.innerHeight : window.innerWidth
-    const drawerDimension = initialDimension > 0 ? initialDimension : viewportDimension
     const closeThreshold = options.closeThreshold ?? CLOSE_THRESHOLD
     const scrollLockTimeout = options.scrollLockTimeout ?? SCROLL_LOCK_TIMEOUT
-    const snapPoints = getSnapPoints(options)
-    const activeSnapPoint = getActiveSnapPoint(options)
-    // G3: 1:1 with vaul upstream — pass `options.container` so
-    // the snap math uses the container's bounding rect (when set)
-    // instead of the viewport.
-    const snapPointsOffset = getSnapPointsOffset({
-      ...(snapPoints !== undefined ? { snapPoints } : {}),
-      direction,
-      containerSize: getContainerSize(options.container ?? null)
-    })
-    const activeSnapPointIndex = getActiveSnapPointIndex({
-      ...(snapPoints !== undefined ? { snapPoints } : {}),
-      activeSnapPoint
-    })
-    const activeSnapPointOffset =
-      activeSnapPointIndex !== null && activeSnapPointIndex >= 0
-        ? (snapPointsOffset[activeSnapPointIndex] ?? null)
-        : null
-    const initialShouldFade = getShouldFade({
-      ...(snapPoints !== undefined ? { snapPoints } : {}),
-      ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
-      activeSnapPoint
-    })
 
     const onPointerDown = (rawEvent: Event) => {
       const event = rawEvent as DragPointerEvent
+      const dragOptions = state.options
+      if (event.button !== undefined && event.button !== 0) return
+      if (state.drag || state.cleanupDragGesture) return
 
-      // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+      // Beta.4 fix: the previous implementation
       // called `setPointerCapture` BEFORE the drag-permission check.
       // Once `content` captured the pointer, all subsequent pointer
       // events for that pointer id were redirected to `content`, so
@@ -1184,17 +1364,23 @@ function attachListeners(
       // child. A drag MUST start when the user grabs the content
       // background.
       const eventTarget = event.target as Element | null
+      if (
+        dragOptions.handleOnly === true &&
+        !(eventTarget instanceof Element && eventTarget.closest('[data-drawer-handle]'))
+      ) {
+        return
+      }
+      if (dragOptions.dismissible === false && !getSnapPoints(dragOptions)?.length) return
       const isInteractiveChild =
         eventTarget instanceof Element &&
         eventTarget !== content &&
-        (isInteractiveDragTarget(eventTarget) ||
-          Boolean(eventTarget.closest('[data-drawer-close]')))
+        (isInteractiveDragTarget(eventTarget) || Boolean(eventTarget.closest('[data-drawer-close]')))
 
       if (isInteractiveChild) {
         return
       }
 
-      const metadata: DragTargetMetadata = getDragTargetMetadata(event.target)
+      const metadata: DragTargetMetadata = getDragTargetMetadata(event.target, content)
       const timeSinceOpenMs = state.openedAt !== null ? performance.now() - state.openedAt : null
       // `swipeAmount: null` lets the drag policy treat this as a
       // fresh pointerdown. The remaining fields (highlighted text,
@@ -1204,60 +1390,21 @@ function attachListeners(
       const permission = getDragPermission({
         targetTagName: metadata.targetTagName,
         hasNoDragAttribute: metadata.hasNoDragAttribute,
-        direction,
+        direction: getDirection(dragOptions),
         timeSinceOpenMs,
         swipeAmount: null,
         hasHighlightedText: false,
         timeSinceLastPreventedMs: null,
-        scrollLockTimeout,
+        scrollLockTimeout: dragOptions.scrollLockTimeout ?? scrollLockTimeout,
         isDraggingInDirection: false,
         ancestors: metadata.ancestors
       })
 
       if (!permission.allow) {
         if (permission.updatePreventedAt) {
-          state.drag = state.drag
-            ? { ...state.drag, lastTimeDragPrevented: performance.now() }
-            : {
-                pointerStart: { x: event.clientX, y: event.clientY },
-                pointerStartTimeStamp: event.timeStamp || performance.now(),
-                startedAt: performance.now(),
-                draggedDistance: 0,
-                isDraggingDown: false,
-                snapPointOffset: 0,
-                lastTimeDragPrevented: performance.now(),
-                pointerId: event.pointerId,
-                activeSnapPointOffset,
-                activeSnapPointIndex,
-                snapPointsOffset,
-                shouldFade: initialShouldFade
-              }
+          state.lastTimeDragPrevented = performance.now()
         }
         return
-      }
-
-      // Capture the pointer only after the drag pipeline has decided
-      // to start a drag. `setPointerCapture` redirects subsequent
-      // pointer events to `event.currentTarget` (the content element)
-      // for the lifetime of the gesture; capturing before the
-      // permission check would suppress `click` events on interactive
-      // children like the close button (mouseup would land on
-      // `content` instead of the original target, and the browser
-      // would not synthesize a click on the button).
-      //
-      // `setPointerCapture` is not implemented in jsdom, so we guard
-      // the call. Real browsers do, so the production drag pipeline
-      // keeps working; the integration test simulates pointer events
-      // directly on the content element.
-      const capture = event.currentTarget?.setPointerCapture
-      if (typeof capture === 'function') {
-        try {
-          capture.call(event.currentTarget, event.pointerId)
-        } catch {
-          // Some browsers throw if the pointer id is no longer active.
-          // The drag pipeline tolerates the loss: `pointermove` /
-          // `pointerup` will fall through to the global listeners.
-        }
       }
 
       // G5: 1:1 with vaul upstream — capture the drawer's actual
@@ -1269,6 +1416,27 @@ function attachListeners(
       // miscalculate the drag-to-close threshold.
       const contentRect = content.getBoundingClientRect()
       const fallbackVertical = isVerticalAxis ? window.innerHeight : window.innerWidth
+      const currentSnapPoints = getSnapPoints(dragOptions)
+      const currentActiveSnapPoint = getActiveSnapPoint(dragOptions)
+      const currentSnapPointsOffset = getSnapPointsOffset({
+        ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
+        direction,
+        containerSize: getContainerSize(dragOptions.container ?? dragOptions.mountElement ?? null)
+      })
+      const currentActiveSnapPointIndex = getActiveSnapPointIndex({
+        ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
+        activeSnapPoint: currentActiveSnapPoint
+      })
+      const currentActiveSnapPointOffset =
+        currentActiveSnapPointIndex !== null && currentActiveSnapPointIndex >= 0
+          ? (currentSnapPointsOffset[currentActiveSnapPointIndex] ?? null)
+          : null
+      const gestureFadeFromIndex = getFadeFromIndex(dragOptions)
+      const currentShouldFade = getShouldFade({
+        ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
+        ...(gestureFadeFromIndex !== undefined ? { fadeFromIndex: gestureFadeFromIndex } : {}),
+        activeSnapPoint: currentActiveSnapPoint
+      })
       state.drag = {
         pointerStart: { x: event.clientX, y: event.clientY },
         pointerStartTimeStamp: event.timeStamp || performance.now(),
@@ -1285,17 +1453,14 @@ function attachListeners(
         // reason.
         drawerHeight: contentRect.height > 0 ? contentRect.height : fallbackVertical,
         drawerWidth: contentRect.width > 0 ? contentRect.width : fallbackVertical,
-        activeSnapPointOffset,
-        activeSnapPointIndex,
-        snapPointsOffset,
-        shouldFade: initialShouldFade
+        activeSnapPointOffset: currentActiveSnapPointOffset,
+        activeSnapPointIndex: currentActiveSnapPointIndex,
+        snapPointsOffset: currentSnapPointsOffset,
+        shouldFade: currentShouldFade,
+        lastPointerEvent: null,
+        reachedIntentBoundary: false,
+        isAllowed: false
       }
-
-      // F10: add the dragging class so consumers can style the
-      // drawer differently while a drag is in progress (e.g.
-      // disable border-radius, dim the content, remove focus
-      // outlines). 1:1 with vaul upstream's `DRAG_CLASS` usage.
-      content.classList.add(DRAG_CLASS)
 
       // F3 / F11: stash the most recent pointermove so the synthetic
       // release listeners (`pointerout`, `contextmenu`,
@@ -1304,12 +1469,14 @@ function attachListeners(
       // the content (cursor off the drawer, OS interruption,
       // long-press context menu, etc.).
       let lastPointerMove: DragPointerEvent | null = null
+      let pointerCaptured = false
 
       const onPointerMove = (moveRaw: Event) => {
         const moveEvent = moveRaw as DragPointerEvent
-        lastPointerMove = moveEvent
         const drag = state.drag
-        if (!drag) return
+        if (!drag || moveEvent.pointerId !== drag.pointerId) return
+        lastPointerMove = moveEvent
+        drag.lastPointerEvent = moveEvent
         const currentPointer = isVerticalAxis ? moveEvent.clientY : moveEvent.clientX
         const draggedDistance = getDraggedDistance({
           pointerStart: isVerticalAxis ? drag.pointerStart.y : drag.pointerStart.x,
@@ -1320,6 +1487,65 @@ function attachListeners(
         const isDraggingDown =
           direction === 'bottom' || direction === 'right' ? draggedDistance < 0 : draggedDistance > 0
 
+        if (!drag.reachedIntentBoundary) {
+          const delta = {
+            x: moveEvent.clientX - drag.pointerStart.x,
+            y: moveEvent.clientY - drag.pointerStart.y
+          }
+          const threshold = moveEvent.pointerType === 'touch' ? 10 : 2
+          const intent = getSwipeIntent({
+            delta,
+            direction,
+            threshold,
+            wasBeyondThePoint: false
+          })
+          if (!intent.isAllowed) {
+            if (Math.abs(delta.x) > threshold || Math.abs(delta.y) > threshold) {
+              state.drag = null
+              cleanupGestureListeners()
+            }
+            return
+          }
+          if (!intent.reachedIntentBoundary) return
+
+          const liveOptions = state.options
+          const timeSinceLastPreventedMs =
+            state.lastTimeDragPrevented === null ? null : performance.now() - state.lastTimeDragPrevented
+          const movePermission = getDragPermission({
+            targetTagName: metadata.targetTagName,
+            hasNoDragAttribute: metadata.hasNoDragAttribute,
+            direction,
+            timeSinceOpenMs: state.openedAt === null ? null : performance.now() - state.openedAt,
+            swipeAmount: getTranslate(content, direction) ?? 0,
+            hasHighlightedText: Boolean(window.getSelection()?.toString()),
+            timeSinceLastPreventedMs,
+            scrollLockTimeout: liveOptions.scrollLockTimeout ?? scrollLockTimeout,
+            isDraggingInDirection: draggedDistance > 0,
+            ancestors: metadata.ancestors
+          })
+          if (!movePermission.allow) {
+            if (movePermission.updatePreventedAt) state.lastTimeDragPrevented = performance.now()
+            state.drag = null
+            cleanupGestureListeners()
+            return
+          }
+
+          drag.reachedIntentBoundary = true
+          drag.isAllowed = true
+          content.classList.add(DRAG_CLASS)
+          const capture = content.setPointerCapture
+          if (typeof capture === 'function') {
+            try {
+              capture.call(content, moveEvent.pointerId)
+              pointerCaptured = true
+            } catch {
+              // The pointer may already have been released by the browser.
+            }
+          }
+        }
+
+        if (!drag.isAllowed) return
+
         // Phase B: when snap points are configured, the inline
         // transform follows `getSnapDragValue` (offset, not value).
         // The percentage reported to the parent is the snap-point
@@ -1328,10 +1554,10 @@ function attachListeners(
         const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
         const snapPointPercentageDragged = hasSnapPoints
           ? getSnapPointPercentageDragged({
-              ...(snapPoints !== undefined ? { snapPoints } : {}),
+              ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
               activeSnapPointIndex: drag.activeSnapPointIndex,
               snapPointsOffset: drag.snapPointsOffset,
-              ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
+              ...(gestureFadeFromIndex !== undefined ? { fadeFromIndex: gestureFadeFromIndex } : {}),
               shouldFade: drag.shouldFade,
               absDraggedDistance,
               isDraggingDown
@@ -1339,7 +1565,7 @@ function attachListeners(
           : null
         const { percentageDragged } = getDragPercentage({
           draggedDistance,
-          drawerDimension,
+          drawerDimension: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth,
           snapPointPercentageDragged
         })
 
@@ -1383,10 +1609,11 @@ function attachListeners(
         // stays in charge.
         if (
           state.overlay &&
-          (drag.shouldFade || drag.activeSnapPointIndex === (options.fadeFromIndex ?? -1) - 1)
+          draggedDistance < 0 &&
+          (drag.shouldFade || drag.activeSnapPointIndex === (gestureFadeFromIndex ?? -1) - 1)
         ) {
           set(state.overlay, {
-            opacity: `${1 - percentageDragged}`,
+            opacity: `${Math.max(0, Math.min(1, 1 - percentageDragged))}`,
             transition: 'none'
           })
         }
@@ -1397,34 +1624,52 @@ function attachListeners(
         // `transition: 'none'` so the inline transform is instant
         // and tracks the finger. The wrapper's CSS transition is
         // re-enabled on release by the release handlers below.
-        if (options.shouldScaleBackground && state.backgroundScale) {
-          const wrapper = getWrapperElement()
-          if (wrapper) {
-            applyWrapperDragState({
-              wrapper,
-              baseScale: state.backgroundScale.baseScale,
-              percentageDragged,
-              direction,
-              setBackgroundColorOnScale:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-            })
-          }
+        const scaleOwner = state.backgroundScale
+        if (scaleOwner && isActiveBackgroundScaleOwner(scaleOwner)) {
+          applyWrapperDragState({
+            wrapper: scaleOwner.group.wrapper,
+            baseScale: scaleOwner.baseScale,
+            percentageDragged,
+            direction,
+            setBackgroundColorOnScale:
+              dragOptions.setBackgroundColorOnScale !== false && dragOptions.noBodyStyles !== true
+          })
         }
 
         callbacks.onDragChange?.(percentageDragged)
       }
 
+      const settleOverlay = () => {
+        if (!state.overlay) return
+        const liveOptions = state.options
+        const overlayVisible = shouldShowSnapOverlay(
+          getSnapPoints(liveOptions),
+          getFadeFromIndex(liveOptions),
+          getActiveSnapPoint(liveOptions)
+        )
+        set(state.overlay, {
+          opacity: overlayVisible ? '1' : '0',
+          transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+        })
+      }
+
+      const settleBackgroundScale = () => {
+        const owner = state.backgroundScale
+        if (owner && isActiveBackgroundScaleOwner(owner)) applyBackgroundScaleOpen(owner)
+      }
+
       const onPointerUp = (upRaw: Event) => {
         const upEvent = upRaw as DragPointerEvent
         const drag = state.drag
+        if (drag && upEvent.pointerId !== undefined && upEvent.pointerId !== drag.pointerId) return
         state.drag = null
-        content.removeEventListener('pointermove', onPointerMove)
-        content.removeEventListener('pointerup', onPointerUp)
-        // F10: remove the dragging class on every release path
-        // (the close path also reaches here). 1:1 with vaul
-        // upstream's `drawerRef.current.classList.remove(DRAG_CLASS)`.
-        content.classList.remove(DRAG_CLASS)
-        if (!drag) return
+        cleanupGestureListeners()
+        if (!drag || !drag.isAllowed) return
+
+        state.suppressHandleClick = true
+        window.setTimeout(() => {
+          state.suppressHandleClick = false
+        }, 0)
 
         const releasedPointer = isVerticalAxis ? upEvent.clientY : upEvent.clientX
         const draggedDistance = getDraggedDistance({
@@ -1464,7 +1709,7 @@ function attachListeners(
           // forwarded so high-velocity flings stay one snap at a
           // time when the consumer opts in.
           const release = getSnapPointReleaseAction({
-            ...(options.fadeFromIndex !== undefined ? { fadeFromIndex: options.fadeFromIndex } : {}),
+            ...(gestureFadeFromIndex !== undefined ? { fadeFromIndex: gestureFadeFromIndex } : {}),
             direction,
             activeSnapPointOffset: drag.activeSnapPointOffset,
             activeSnapPointIndex: drag.activeSnapPointIndex,
@@ -1472,75 +1717,30 @@ function attachListeners(
             snapPointsCount: drag.snapPointsOffset.length,
             draggedDistance,
             velocity,
-            dismissible: options.dismissible !== false,
-            ...(options.snapToSequentialPoint !== undefined
-              ? { snapToSequentialPoint: options.snapToSequentialPoint }
+            dismissible: dragOptions.dismissible !== false,
+            ...(dragOptions.snapToSequentialPoint !== undefined
+              ? { snapToSequentialPoint: dragOptions.snapToSequentialPoint }
               : {}),
             velocityThreshold: VELOCITY_THRESHOLD,
-            viewportSize: drawerDimension
+            viewportSize: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth
           })
 
           if (release.type === 'close') {
             set(content, { transition: 'none' })
-            // Bug fix (v3.0.0-beta.3 → stable, refined 2026-07-27):
-            // The drag pipeline leaves an inline `transform:
-            // translate3d(...)` on the content (the position the
-            // user dragged it to). The previous fix cleared this
-            // inline transform so the `slideToX` animation could
-            // start from a clean open position. That worked for
-            // the close-button path (no inline transform) but the
-            // cascade flip from inline `230px` to CSS `open`
-            // painted a visible "jump back to open" frame on the
-            // drag-release path before the animation could take
-            // control — even with `animation-fill-mode: both` and
-            // the base `transition: transform` removed.
-            //
-            // The refined fix keeps the inline `transform` in place
-            // during the close so the `slideToX` animation picks
-            // it up as the `from` frame directly. The animation
-            // then interpolates from the dragged position to the
-            // closed-position keyframe (e.g. 30 % → 100 % of the
-            // drawer dimension for a 30 % drag) instead of jumping
-            // back to the open position and sliding the full
-            // 0 % → 100 % range. The visible behaviour is exactly
-            // what vaul upstream does: the drawer slides from
-            // wherever the user released it to the closed position.
-            //
-            // The inline `transform` is cleared in the `animationend`
-            // listener (see `mountVanillaDialog#isClosingOnly`) so
-            // the cascade `[data-state='closed']` rule's closed
-            // position (`translate3d(0, 100%, 0)`) takes over
-            // cleanly. If the animation never ends (e.g.
-            // `data-drawer-animate="false"`), the safety timeout
-            // still tears down the DOM and the inline `transform`
-            // is cleared with the node removal.
-            //
-            // Phase C: drive the wrapper back to its rest state
-            // with the CSS transition enabled, then schedule the
-            // deferred inline-style clear. The re-render triggered
-            // by `onOpenChange(false)` will hit `mountVanillaDialog`
-            // which re-asserts the same reset state (the timer
-            // handle is reused so we only clear once).
-            if (options.shouldScaleBackground && state.backgroundScale) {
-              const wrapper = getWrapperElement()
-              if (wrapper) {
-                applyWrapperOpenState({
-                  wrapper,
-                  direction,
-                  baseScale: state.backgroundScale.baseScale,
-                  clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-                })
-                scheduleWrapperClear(wrapper, state)
-              }
-            }
+            // Keep the release transform. The close mount samples the
+            // rendered position, then transitions from there to the
+            // direction's closed endpoint without an open-position jump.
             callbacks.onOpenChange(false)
             callbacks.onReleaseChange?.(false)
             return
           }
 
           if (release.type === 'snap' && typeof release.targetOffset === 'number') {
-            const matchedSnapPoint = findSnapPointByOffset(snapPoints, drag.snapPointsOffset, release.targetOffset)
+            const matchedSnapPoint = findSnapPointByOffset(
+              currentSnapPoints,
+              drag.snapPointsOffset,
+              release.targetOffset
+            )
             if (matchedSnapPoint !== null) {
               // Forward the new active snap to the registry, which
               // calls `controller.setActiveSnapPoint` and re-renders
@@ -1555,18 +1755,7 @@ function attachListeners(
               // Phase C: settle the wrapper on its rest state with
               // the CSS transition enabled so the visual change
               // from the drag state to `baseScale` is animated.
-              if (options.shouldScaleBackground && state.backgroundScale) {
-                const wrapper = getWrapperElement()
-                if (wrapper) {
-                  applyWrapperOpenState({
-                    wrapper,
-                    direction,
-                    baseScale: state.backgroundScale.baseScale,
-                    clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-                  })
-                }
-              }
+              settleBackgroundScale()
               callbacks.onActiveSnapPointChange?.(matchedSnapPoint)
               // G8: 1:1 with vaul upstream — when the user snaps
               // to the LAST snap, extend the post-open grace
@@ -1576,8 +1765,7 @@ function attachListeners(
               // drag-to-close. Without this, the grace period
               // expires 500ms after the initial open and a
               // follow-up scroll can be hijacked as a drag.
-              const snapPoints = getSnapPoints(options)
-              if (snapPoints && matchedSnapPoint === snapPoints[snapPoints.length - 1]) {
+              if (currentSnapPoints && matchedSnapPoint === currentSnapPoints[currentSnapPoints.length - 1]) {
                 state.openedAt = performance.now()
               }
             } else {
@@ -1588,19 +1776,9 @@ function attachListeners(
                 transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
                 transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
               })
-              if (options.shouldScaleBackground && state.backgroundScale) {
-                const wrapper = getWrapperElement()
-                if (wrapper) {
-                  applyWrapperOpenState({
-                    wrapper,
-                    direction,
-                    baseScale: state.backgroundScale.baseScale,
-                    clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-                  })
-                }
-              }
+              settleBackgroundScale()
             }
+            settleOverlay()
             callbacks.onReleaseChange?.(true)
             return
           }
@@ -1612,18 +1790,8 @@ function attachListeners(
             transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
             transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
           })
-          if (options.shouldScaleBackground && state.backgroundScale) {
-            const wrapper = getWrapperElement()
-            if (wrapper) {
-              applyWrapperOpenState({
-                wrapper,
-                direction,
-                baseScale: state.backgroundScale.baseScale,
-                clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-              })
-            }
-          }
+          settleBackgroundScale()
+          settleOverlay()
           callbacks.onReleaseChange?.(true)
           return
         }
@@ -1636,62 +1804,15 @@ function attachListeners(
           velocity,
           velocityThreshold: VELOCITY_THRESHOLD,
           swipeAmount: draggedDistance,
-          drawerDimension,
+          drawerDimension: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth,
           closeThreshold
         })
 
         if (release.action === 'close') {
           set(content, { transition: 'none' })
-          // Bug fix (v3.0.0-beta.3 → stable, refined 2026-07-27):
-          // The drag pipeline leaves an inline `transform:
-          // translate3d(...)` on the content (the position the
-          // user dragged it to). The previous fix cleared this
-          // inline transform so the `slideToX` animation could
-          // start from a clean open position. That worked for
-          // the close-button path (no inline transform) but the
-          // cascade flip from inline `230px` to CSS `open`
-          // painted a visible "jump back to open" frame on the
-          // drag-release path before the animation could take
-          // control — even with `animation-fill-mode: both` and
-          // the base `transition: transform` removed.
-          //
-          // The refined fix keeps the inline `transform` in place
-          // during the close so the `slideToX` animation picks
-          // it up as the `from` frame directly. The animation
-          // then interpolates from the dragged position to the
-          // closed-position keyframe (e.g. 30 % → 100 % of the
-          // drawer dimension for a 30 % drag) instead of jumping
-          // back to the open position and sliding the full
-          // 0 % → 100 % range. The visible behaviour is exactly
-          // what vaul upstream does: the drawer slides from
-          // wherever the user released it to the closed position.
-          //
-          // The inline `transform` is cleared in the `animationend`
-          // listener (see `mountVanillaDialog#isClosingOnly`) so
-          // the cascade `[data-state='closed']` rule's closed
-          // position (`translate3d(0, 100%, 0)`) takes over
-          // cleanly. If the animation never ends (e.g.
-          // `data-drawer-animate="false"`), the safety timeout
-          // still tears down the DOM and the inline `transform`
-          // is cleared with the node removal.
-          // Phase C: drive the wrapper back to its rest state with
-          // the CSS transition enabled, then schedule the deferred
-          // clear. The re-render via `onOpenChange(false)` will
-          // re-enter `mountVanillaDialog` which re-asserts the same
-          // reset state (the timer is reused, so we only clear once).
-          if (options.shouldScaleBackground && state.backgroundScale) {
-            const wrapper = getWrapperElement()
-            if (wrapper) {
-              applyWrapperOpenState({
-                wrapper,
-                direction,
-                baseScale: state.backgroundScale.baseScale,
-                clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-              })
-              scheduleWrapperClear(wrapper, state)
-            }
-          }
+          // Keep the release transform. The close mount samples the
+          // rendered position, then transitions from there to the
+          // direction's closed endpoint without an open-position jump.
           callbacks.onOpenChange(false)
           callbacks.onReleaseChange?.(false)
           return
@@ -1709,18 +1830,8 @@ function attachListeners(
         // Phase C: settle the wrapper on its rest state with the
         // CSS transition enabled so the visual change from the drag
         // state to `baseScale` is animated.
-        if (options.shouldScaleBackground && state.backgroundScale) {
-          const wrapper = getWrapperElement()
-          if (wrapper) {
-            applyWrapperOpenState({
-              wrapper,
-              direction,
-              baseScale: state.backgroundScale.baseScale,
-              clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-            })
-          }
-        }
+        settleBackgroundScale()
+        settleOverlay()
         callbacks.onReleaseChange?.(true)
       }
 
@@ -1734,7 +1845,15 @@ function attachListeners(
       // `contextmenu` / `pointercancel` listeners replay the last
       // known `pointermove` through the same `onPointerUp` handler.
       const onPointerOut = (synthetic: Event) => {
-        if (!state.drag) return
+        const drag = state.drag
+        if (!drag) return
+        const pointerEvent = synthetic as DragPointerEvent
+        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId) return
+        const relatedTarget = pointerEvent.relatedTarget
+        if (relatedTarget instanceof Node && content.contains(relatedTarget)) return
+        if (typeof content.hasPointerCapture === 'function' && content.hasPointerCapture(drag.pointerId)) {
+          return
+        }
         if (typeof synthetic.preventDefault === 'function') {
           synthetic.preventDefault()
         }
@@ -1748,8 +1867,40 @@ function attachListeners(
         onPointerUp(lastPointerMove ?? (synthetic as DragPointerEvent))
       }
       const onPointerCancel = (synthetic: Event) => {
-        if (!state.drag) return
-        onPointerUp(lastPointerMove ?? (synthetic as DragPointerEvent))
+        const drag = state.drag
+        if (!drag) return
+        const pointerEvent = synthetic as DragPointerEvent
+        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId) return
+        const resetEvent = {
+          clientX: drag.pointerStart.x,
+          clientY: drag.pointerStart.y,
+          pointerId: drag.pointerId,
+          target: synthetic.target,
+          currentTarget: content
+        } as unknown as DragPointerEvent
+        onPointerUp(resetEvent as unknown as Event)
+      }
+
+      const cleanupGestureListeners = () => {
+        content.removeEventListener('pointermove', onPointerMove)
+        content.removeEventListener('pointerup', onPointerUp)
+        content.removeEventListener('pointerout', onPointerOut)
+        content.removeEventListener('contextmenu', onContextMenu)
+        content.removeEventListener('pointercancel', onPointerCancel)
+        if (pointerCaptured && typeof content.releasePointerCapture === 'function') {
+          try {
+            if (typeof content.hasPointerCapture !== 'function' || content.hasPointerCapture(event.pointerId)) {
+              content.releasePointerCapture(event.pointerId)
+            }
+          } catch {
+            // Pointer capture may already have been released implicitly.
+          }
+        }
+        pointerCaptured = false
+        content.classList.remove(DRAG_CLASS)
+        if (state.cleanupDragGesture === cleanupGestureListeners) {
+          state.cleanupDragGesture = null
+        }
       }
 
       content.addEventListener('pointermove', onPointerMove)
@@ -1757,13 +1908,7 @@ function attachListeners(
       content.addEventListener('pointerout', onPointerOut)
       content.addEventListener('contextmenu', onContextMenu)
       content.addEventListener('pointercancel', onPointerCancel)
-      state.cleanups.push(() => {
-        content.removeEventListener('pointermove', onPointerMove)
-        content.removeEventListener('pointerup', onPointerUp)
-        content.removeEventListener('pointerout', onPointerOut)
-        content.removeEventListener('contextmenu', onContextMenu)
-        content.removeEventListener('pointercancel', onPointerCancel)
-      })
+      state.cleanupDragGesture = cleanupGestureListeners
     }
 
     content.addEventListener('pointerdown', onPointerDown)
@@ -1797,16 +1942,18 @@ function attachListeners(
     const handle = state.handle
     const onHandleClick = () => {
       if (state.content?.dataset.state !== 'open') return
+      if (state.suppressHandleClick) return
 
-      const handleSnapPoints = getSnapPoints(options)
-      const handleActiveSnapPoint = getActiveSnapPoint(options)
+      const liveOptions = state.options
+      const handleSnapPoints = getSnapPoints(liveOptions)
+      const handleActiveSnapPoint = getActiveSnapPoint(liveOptions)
       const result = getNextHandleState({
         isDragging: state.drag !== null,
-        preventCycle: options.preventCycle === true,
+        preventCycle: liveOptions.preventCycle === true,
         shouldCancelInteraction: false,
         ...(handleSnapPoints !== undefined ? { snapPoints: handleSnapPoints } : {}),
         activeSnapPoint: handleActiveSnapPoint,
-        dismissible: options.dismissible !== false
+        dismissible: liveOptions.dismissible !== false
       })
 
       if (result.type === 'close') {
@@ -1824,7 +1971,7 @@ function attachListeners(
         callbacks.onActiveSnapPointChange?.(result.snapPoint)
         // G8: 1:1 with vaul upstream — handle-cycle that reaches
         // the last snap also extends the post-open grace period.
-        const handleSnapPoints = getSnapPoints(options)
+        const handleSnapPoints = getSnapPoints(liveOptions)
         if (handleSnapPoints && result.snapPoint === handleSnapPoints[handleSnapPoints.length - 1]) {
           state.openedAt = performance.now()
         }
@@ -1852,6 +1999,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     id,
     options,
     open,
+    openOrder,
     hasBeenOpened = false,
     onOpenChange,
     onBuiltInTriggerMouseDown,
@@ -1861,70 +2009,53 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     onActiveSnapPointChange
   } = dialogOptions
   const state = getHostState(host)
+  state.options = options
+  const resolvedOpenOrder = open ? (openOrder ?? (state.openOrder || ++fallbackOpenOrder)) : null
+  const callbacks: DialogCallbacks = {
+    onOpenChange,
+    ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
+    ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
+    ...(onDragChange !== undefined ? { onDragChange } : {}),
+    ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
+    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
+  }
 
-  // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
-  // ALWAYS called `teardownMount` and re-mounted the dialog, even
-  // for the trivial open→close transition. The new elements were
-  // created with `data-state="closed"` from the start (so the
-  // static `transform: translate3d(...)` rule positioned them
-  // off-screen immediately), and the CSS `slideToRight` /
-  // `slideToBottom` / etc. close animations never played. The
-  // drawer just vanished on close.
-  //
-  // For the simple open→close transition we now keep the existing
-  // DOM in place and flip `data-state` to `"closed"` so the CSS
-  // base `transition: transform 0.5s` (added in F1) interpolates
-  // from the open cascade (0) to the closed cascade (100 %). The
-  // DOM removal is scheduled for after the close animation. The
-  // CSS contract is now 1:1 with vaul upstream: no JS-side
-  // `data-drawer-closing` flag, no inline transform clear in the
-  // animationend handler.
-  //
-  // Every other transition (closed→open, open→open on option change,
-  // destroy, etc.) still goes through the standard teardown +
-  // re-mount path because the option set may have changed and the
-  // existing elements no longer reflect the desired DOM contract.
+  // Beta.4 keeps an open mount in place for close, freezes its current
+  // rendered transform, and flips `data-state` so the exit starts from
+  // what the user sees. Other structural option changes still remount.
   const hadOpenMount = state.content !== null && state.content.dataset.state === 'open'
   const isClosingOnly = hadOpenMount && !open
+
+  if (hadOpenMount && open && canUpdateOpenMount(state.mountedOptions, options)) {
+    state.mountedOptions = options
+    updateOpenSnapState(state, options)
+    return
+  }
+
+  if (open) cancelCloseRemoval(state)
+
   if (isClosingOnly) {
-    // Phase C: programmatic close path. When the drawer is being
-    // closed AND the page wrapper still carries any of the inline
-    // styles the drag pipeline wrote, we need to animate the
-    // wrapper back to NORMAL. The drag-release close path in
-    // `onPointerUp` already does this; this branch covers the case
-    // where the consumer closed the drawer via a non-drag path
-    // (e.g. clicking a custom close button that calls
-    // `controller.setOpen(false)`). When the wrapper is already
-    // clean we leave it alone — the spec says programmatic
-    // open/close must not change the wrapper's visual state.
-    if (options.shouldScaleBackground) {
-      const wrapper = getWrapperElement()
-      if (wrapper && wrapperHasInlineStyles(wrapper)) {
-        const baseScale = computeBaseScale(getDirection(options))
-        state.backgroundScale = { baseScale, clearTimeout: null }
-        applyWrapperOpenState({
-          wrapper,
-          direction: getDirection(options),
-          baseScale,
-          clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-        })
-        scheduleWrapperClear(wrapper, state)
+    // Freeze the current visual position before changing state. This
+    // prevents an entrance or snap-back transition from continuing
+    // underneath the exit animation.
+    if (state.content) {
+      const direction = getDirection(options)
+      if (state.content.dataset.drawerAnimate === 'false') {
+        set(state.content, { transform: getClosedTransform(direction), transition: 'none' })
+      } else {
+        const computedTransform = window.getComputedStyle(state.content).transform
+        const currentTransform =
+          computedTransform && computedTransform !== 'none'
+            ? computedTransform
+            : state.content.style.transform || getAxisAwareTranslate(direction, 0)
+        set(state.content, { transform: currentTransform, transition: 'none' })
       }
     }
+    releaseBackgroundScale(state, true)
     // Flip data-state to "closed". The base `transition: transform`
     // (CSS, not JS) interpolates from the open cascade (0) to the
     // closed cascade (100 %). 1:1 with vaul.
     applyOpenState(state, options, false)
-    // G7: 1:1 with vaul upstream — on close, vaul sets
-    // `body.pointerEvents = 'auto'` so the body is clickable as
-    // soon as the close starts (the upstream comment notes "This
-    // will be removed when the exit animation ends (500ms)" —
-    // vaul relies on something else to clean it up, but the
-    // initial write is on close). Must run BEFORE the teardown
-    // so the write survives the teardown's other body-style
-    // restorations.
-    document.body.style.pointerEvents = 'auto'
     // Detach listeners + restore page-level side-effects immediately
     // (matches v2 semantics; the visualViewport listener must come
     // off synchronously so the next `setOpen(true)` re-attaches a
@@ -1942,50 +2073,46 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // setTimeout with the same duration for cross-environment
     // robustness (jsdom + browsers that delay the transitionend
     // event under load).
+    const closingOverlay = state.overlay
+    const closingContent = state.content
     const removeDom = () => {
-      if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
-      if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
-      if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
-      state.trigger = null
-      state.overlay = null
-      state.content = null
-      state.handle = null
-      state.title = null
-      state.description = null
-      state.body = null
-      state.closeButton = null
+      state.closeRemovalTimer = null
+      closingOverlay?.remove()
+      closingContent?.remove()
+      if (state.overlay === closingOverlay) state.overlay = null
+      if (state.content === closingContent) {
+        state.content = null
+        state.handle = null
+        state.title = null
+        state.description = null
+        state.body = null
+        state.closeButton = null
+      }
     }
-    window.setTimeout(removeDom, 600)
+    attachBuiltInTrigger(state, host, options, callbacks)
+    state.closeRemovalTimer = window.setTimeout(removeDom, TRANSITIONS.DURATION * 1000 + 100)
+    state.mountedOptions = options
+    return
+  }
+
+  if (!open && state.closeRemovalTimer !== null) {
+    attachBuiltInTrigger(state, host, options, callbacks)
+    state.mountedOptions = options
     return
   }
 
   // Tear down any prior mount before building the new one.
   teardownMount(state)
+  attachBuiltInTrigger(state, host, options, callbacks)
 
-  // Phase C: programmatic close path. When the drawer is being
-  // mounted with `open=false` AND the page wrapper still carries
-  // any of the inline styles the drag pipeline writes, we need to
-  // animate the wrapper back to NORMAL. The drag-release close
-  // path in `onPointerUp` already does this; this branch covers
-  // the case where the consumer closed the drawer via a non-drag
-  // path (e.g. clicking a custom close button that calls
-  // `controller.setOpen(false)`). When the wrapper is already
-  // clean we leave it alone — the spec says programmatic
-  // open/close must not change the wrapper's visual state.
-  if (!open && options.shouldScaleBackground) {
-    const wrapper = getWrapperElement()
-    if (wrapper && wrapperHasInlineStyles(wrapper)) {
-      const baseScale = computeBaseScale(getDirection(options))
-      state.backgroundScale = { baseScale, clearTimeout: null }
-      applyWrapperOpenState({
-        wrapper,
-        direction: getDirection(options),
-        baseScale,
-        clearBackgroundColor:
-                options.setBackgroundColorOnScale === true && options.noBodyStyles !== true
-      })
-      scheduleWrapperClear(wrapper, state)
-    }
+  // Match Radix Presence: a closed drawer has no overlay/content in
+  // the document. Only the optional trigger persists. This prevents
+  // closed-state keyframes from visibly animating every drawer out on
+  // page load.
+  if (!open) {
+    state.hasMounted = true
+    state.mountedOptions = options
+    return
   }
 
   // Track when the drawer became open so the drag policy can enforce
@@ -1994,47 +2121,47 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     state.openedAt = performance.now()
   }
 
-  // Phase C: capture the baseScale at open time. The drag pipeline
-  // reads `state.backgroundScale.baseScale` on every pointermove, so
-  // we need it populated before the first pointerdown can fire.
-  // Per spec, the dialog stays NORMAL at open (no inline wrapper
-  // styles) — the rest state is applied on the first drag move.
+  // Scale the page wrapper into its open rest state. The original
+  // wrapper/body styles are restored after the drawer closes.
   if (open && options.shouldScaleBackground) {
-    state.backgroundScale = {
-      baseScale: computeBaseScale(getDirection(options)),
-      clearTimeout: null
+    const wrapper = getWrapperElement()
+    if (wrapper) {
+      acquireBackgroundScale(
+        state,
+        wrapper,
+        getDirection(options),
+        options.setBackgroundColorOnScale !== false && options.noBodyStyles !== true,
+        resolvedOpenOrder as number
+      )
     }
   }
 
   const direction = getDirection(options)
   const snapPoints = getSnapPoints(options)
   const activeSnapPoint = getActiveSnapPoint(options)
+  const hasSnapPoints = Boolean(snapPoints?.length)
+  const shouldAnimateEntrance = state.hasMounted && !hadOpenMount
   const shouldRenderHandle = Boolean(options.handleOnly || options.showHandle)
-  const shouldRenderVanillaContent =
-    options.title !== undefined || options.description !== undefined || options.content !== undefined
+  const shouldRenderVanillaContent = true
   const shouldRenderOverlay = options.modal !== false
-
-  // --- Trigger button (inside the host) -------------------------------
-  if (options.triggerText) {
-    const trigger = createEl('button', {
-      type: 'button',
-      'data-drawer-vanilla-trigger': ''
-    })
-    trigger.appendChild(document.createTextNode(options.triggerText))
-    host.appendChild(trigger)
-    state.trigger = trigger
-  }
+  let snapEntranceTransform: string | null = null
+  let snapEntranceOverlayOpacity: string | null = null
 
   // --- Overlay -------------------------------------------------------
   if (shouldRenderOverlay) {
-    const overlayShouldShow = shouldShowSnapOverlay(snapPoints, options.fadeFromIndex, activeSnapPoint)
+    const overlayShouldShow = shouldShowSnapOverlay(snapPoints, getFadeFromIndex(options), activeSnapPoint)
     const overlay = createEl('div', {
       'data-drawer-overlay': '',
       'data-state': open ? 'open' : 'closed',
-      'data-drawer-snap-points': snapPoints ? 'true' : 'false',
+      'data-drawer-snap-points': hasSnapPoints ? 'true' : 'false',
       'data-drawer-snap-points-overlay': overlayShouldShow ? 'true' : 'false',
-      'data-drawer-animate': 'true'
+      'data-drawer-animate': shouldAnimateEntrance ? 'true' : 'false'
     })
+    if (hasSnapPoints && shouldAnimateEntrance) {
+      overlay.style.opacity = '0'
+      overlay.style.transition = 'none'
+      snapEntranceOverlayOpacity = overlayShouldShow ? '1' : '0'
+    }
     if (options.overlayClassName) overlay.className = options.overlayClassName
     host.appendChild(overlay)
     state.overlay = overlay
@@ -2046,16 +2173,16 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       'data-drawer': '',
       'data-state': open ? 'open' : 'closed',
       'data-drawer-direction': direction,
-      'data-drawer-snap-points': snapPoints ? 'true' : 'false',
+      'data-drawer-snap-points': hasSnapPoints ? 'true' : 'false',
       'data-drawer-delayed-snap-points': 'false',
-      'data-drawer-custom-container': 'false',
-      'data-drawer-animate': 'true',
+      'data-drawer-custom-container': options.container || options.mountElement ? 'true' : 'false',
+      'data-drawer-animate': shouldAnimateEntrance ? 'true' : 'false',
       role: 'dialog',
       'aria-modal': options.modal === false ? 'false' : 'true',
       tabIndex: -1
     })
     if (options.contentClassName) content.className = options.contentClassName
-    // Bug fix (v3.0.0-beta.3 → stable): the drawer id used to be
+    // Beta.4 fix: the drawer id used to be
     // placed on the `[data-drawer]` content wrapper so consumers
     // could target the drawer via `#myDrawer` in CSS. That created
     // an id collision when the consumer's content HTML contained
@@ -2092,7 +2219,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     }
     content.setAttribute('data-drawer-id', id)
     if (options.ariaLabel) content.setAttribute('aria-label', options.ariaLabel)
-    if (snapPoints) {
+    if (snapPoints && snapPoints.length > 0) {
       // Write the active snap's RUNTIME offset (the same value the
       // drag pipeline uses for `getSnapDragValue`). The CSS reads
       // `--initial-transform` to drive the open-state transform, so
@@ -2100,16 +2227,25 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       // and the at-rest transform stay in the same coordinate system.
       // The default `100%` in the CSS rule is the closed-state fallback
       // and is harmless when a numeric offset is present.
-      const initialOffset = activeSnapPoint
-        ? getSnapPointOffset({
-            snapPoint: activeSnapPoint,
-            direction,
-            // G3: pass the container so the snap math uses the
-            // container's bounding rect when set.
-            containerSize: getContainerSize(options.container ?? null)
-          })
-        : 0
+      const initialOffset =
+        activeSnapPoint !== null
+          ? getSnapPointOffset({
+              snapPoint: activeSnapPoint,
+              direction,
+              // G3: pass the container so the snap math uses the
+              // container's bounding rect when set.
+              containerSize: getContainerSize(options.container ?? options.mountElement ?? null)
+            })
+          : 0
       content.style.setProperty('--initial-transform', `${initialOffset}px`)
+      const restingTransform = getAxisAwareTranslate(direction, initialOffset)
+      if (shouldAnimateEntrance) {
+        content.style.transform = getClosedTransform(direction)
+        content.style.transition = 'none'
+        snapEntranceTransform = restingTransform
+      } else {
+        content.style.transform = restingTransform
+      }
     }
     host.appendChild(content)
     state.content = content
@@ -2141,11 +2277,15 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     content.appendChild(nodeWrapperEl)
     nodeWrapperEl.appendChild(bodyEl)
 
+    const resolvedBodyContent = resolveRenderable(options.content)
+    const contentRoot = resolvedBodyContent.element
+    const contentHasId = (targetId: string) => findElementByIdInSubtree(contentRoot ?? null, targetId) !== null
+
     // Auto-set id on title/description slots when ariaLabelledBy/ariaDescribedBy
     // is provided but no matching element exists in the caller-supplied HTML.
     // This makes aria-labelledby / aria-describedby point to a real target.
     if (options.ariaLabelledBy) {
-      titleEl.id = options.ariaLabelledBy
+      if (!contentHasId(options.ariaLabelledBy)) titleEl.id = options.ariaLabelledBy
       content.setAttribute('aria-labelledby', options.ariaLabelledBy)
     } else {
       const autoTitleId = `${id}-title`
@@ -2153,7 +2293,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       content.setAttribute('aria-labelledby', autoTitleId)
     }
     if (options.ariaDescribedBy) {
-      descEl.id = options.ariaDescribedBy
+      if (!contentHasId(options.ariaDescribedBy)) descEl.id = options.ariaDescribedBy
       content.setAttribute('aria-describedby', options.ariaDescribedBy)
     } else {
       const autoDescId = `${id}-description`
@@ -2161,14 +2301,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       content.setAttribute('aria-describedby', autoDescId)
     }
 
-    const contentRoot =
-      options.content instanceof HTMLElement
-        ? options.content
-        : typeof options.content === 'function'
-          ? options.content()
-          : undefined
-    buildTitleContent(state, options, contentRoot instanceof HTMLElement ? contentRoot : undefined)
-    buildBodyContent(state, options)
+    buildTitleContent(state, options, contentRoot)
+    buildBodyContent(state, options, resolvedBodyContent)
 
     // Built-in close button. Rendered last so it sits at the
     // end of the dialog tree (between the body and any
@@ -2184,16 +2318,16 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     }
   }
 
-  attachListeners(state, options, {
-    onOpenChange,
-    ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
-    ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
-    ...(onDragChange !== undefined ? { onDragChange } : {}),
-    ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
-    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
-  })
+  registerOpenDialog(state, resolvedOpenOrder)
+  attachListeners(state, options, callbacks)
 
   applyOpenState(state, options, open)
+
+  if (snapPoints && snapPoints.length > 0) {
+    const onWindowResize = () => updateOpenSnapState(state, state.options)
+    window.addEventListener('resize', onWindowResize)
+    state.cleanups.push(() => window.removeEventListener('resize', onWindowResize))
+  }
 
   // Phase E: `preventScrollRestoration`. While the drawer is open we
   // disable the browser's automatic scroll restoration so closing
@@ -2204,14 +2338,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   // (e.g. after `setActiveSnapPoint`) sees the backup already
   // populated and skips the second `scrollRestoration` write, while
   // the prior teardown has already cleared the backup.
-  if (open && options.preventScrollRestoration && typeof window !== 'undefined' && window.history) {
-    if (state.scrollRestorationBackup === null) {
-      const current = window.history.scrollRestoration
-      if (current !== 'manual') {
-        state.scrollRestorationBackup = current
-        window.history.scrollRestoration = 'manual'
-      }
-    }
+  if (open && options.preventScrollRestoration) {
+    state.restoreScrollRestoration = lockScrollRestoration()
   }
 
   // Phase E: viewport / mobile-keyboard pipeline. When the consumer
@@ -2232,7 +2360,12 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   //   - Re-attaches on every mount. The registry re-renders the
   //     dialog on `setActiveSnapPoint` / `setOpen`, so the listener
   //     closure always sees the current `options.activeSnapPoint`.
-  if (open && (options.repositionInputs || options.fixed) && typeof window !== 'undefined' && window.visualViewport) {
+  if (
+    open &&
+    (options.repositionInputs !== false || options.fixed) &&
+    typeof window !== 'undefined' &&
+    window.visualViewport
+  ) {
     const visualViewport = window.visualViewport
     const listenerDirection = getDirection(options)
     // Phase E scope limitation: a dedicated `isMobileFirefox` helper
@@ -2243,6 +2376,10 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     const onVisualViewportResize = () => {
       const contentEl = state.content
       if (!contentEl) return
+      const focusedElement = document.activeElement
+      if (!state.keyboardIsOpen && (!isKeyboardInput(focusedElement) || !contentEl.contains(focusedElement))) {
+        return
+      }
 
       // Re-read the active snap from the closure-captured `options`
       // so a snap change that did not re-render (e.g. the registry
@@ -2250,8 +2387,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       // The registry re-renders on `setActiveSnapPoint`, so a
       // fresh listener is attached with the new value in the
       // common case; this read is the safety net.
-      const snapPoints = getSnapPoints(options)
-      const activeSnapPoint = getActiveSnapPoint(options)
+      const liveOptions = state.options
+      const snapPoints = getSnapPoints(liveOptions)
+      const activeSnapPoint = getActiveSnapPoint(liveOptions)
       let snapPointOffset = 0
       if (snapPoints && activeSnapPoint !== null) {
         // G3: pass the container so the snap math uses the
@@ -2259,7 +2397,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         snapPointOffset = getSnapPointOffset({
           snapPoint: activeSnapPoint,
           direction: listenerDirection,
-          containerSize: getContainerSize(options.container ?? null)
+          containerSize: getContainerSize(liveOptions.container ?? liveOptions.mountElement ?? null)
         })
       }
       state.activeSnapPointOffset = snapPointOffset
@@ -2280,7 +2418,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         totalHeight: totalSize,
         drawerHeight: drawerSize,
         offsetFromTop,
-        fixed: options.fixed === true,
+        fixed: liveOptions.fixed === true,
         previousDiffFromInitial: state.previousDiffFromInitial,
         keyboardIsOpen: state.keyboardIsOpen,
         initialDrawerHeight: state.initialDrawerHeight,
@@ -2300,7 +2438,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       // to forward it. `height` may be `null` (no layout override
       // needed) — in that case we leave the CSS-driven height alone.
       const layoutStyles: Record<string, string> = {}
-      if (options.repositionInputs) {
+      if (liveOptions.repositionInputs !== false) {
         layoutStyles.bottom = layout.bottom
       }
       if (layout.height !== null) {
@@ -2315,19 +2453,6 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     })
   }
 
-  // G7: 1:1 with vaul upstream's onChange callback — for
-  // `modal: false` drawers, vaul explicitly sets
-  // `body.pointerEvents = 'auto'` so the user can click
-  // elements outside the drawer. The drawer is a vanilla port
-  // (no Radix), but the same safety net applies when a consumer
-  // wraps a parent in a `[inert]` or similar. Must run BEFORE
-  // the modal-only branch below (mutually exclusive paths).
-  if (open && options.modal === false) {
-    requestAnimationFrame(() => {
-      document.body.style.pointerEvents = 'auto'
-    })
-  }
-
   if (open && options.modal !== false) {
     state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
     // F6: iOS Safari body-scroll prevention (1:1 with vaul upstream).
@@ -2338,20 +2463,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // - `setPositionFixed` is the separate body-position trick
     //   Safari needs to avoid several jank bugs (vaul#435, vaul#433).
     //   It's a no-op off Safari.
-    // - `trackScrollPosition` keeps the current scroll Y in module
-    //   state so `setPositionFixed` can apply `top: -scrollY` and
-    //   preserve the user's scroll position visually.
-    state.unlockBodyScroll = preventBodyScroll({
-      disablePreventScroll: options.disablePreventScroll === true,
-      isOpen: open,
-      isDragging: state.drag !== null,
-      // We're inside the `options.modal !== false` branch
-      // (line 2104), so `modal` is always `true` here.
-      modal: true,
-      justReleased: state.justReleased,
-      hasBeenOpened,
-      repositionInputs: options.repositionInputs !== false
-    })
+    // Fixed positioning must be acquired before the iOS lock scrolls
+    // the viewport to zero, otherwise it captures the wrong position.
     // G12: 1:1 with vaul upstream — `setPositionFixed` only runs
     // after the drawer has been opened at least once. On the very
     // first open (typically with `defaultOpen: true`), the Safari
@@ -2365,7 +2478,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(display-mode: standalone)').matches
       if (!isStandalone) {
-        setPositionFixed({
+        state.restoreBodyPosition = setPositionFixed({
           isOpen: true,
           // We're inside the `options.modal !== false` branch
           // (line 2104), so this is always `true` here.
@@ -2374,18 +2487,19 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         })
       }
     }
+    state.unlockBodyScroll = preventBodyScroll({
+      disablePreventScroll: options.disablePreventScroll === true,
+      modal: true,
+      isOpen: true
+    })
     // G8: 1:1 with vaul upstream — while the drawer is open, set
     // `html { scroll-behavior: auto }` to override any consumer
     // `html { scroll-behavior: smooth }` (otherwise a hash-change
     // triggered by the drawer would smooth-scroll and fight the
-    // open animation). The pre-open value is captured by `set`
-    // (G5) and restored by `reset` in `teardownMount` (G6).
-    if (typeof document !== 'undefined' && document.documentElement) {
-      set(document.documentElement, { scrollBehavior: 'auto' })
-    }
-    const removeScrollTracker = trackScrollPosition()
-    state.cleanups.push(removeScrollTracker)
-    // Bug fix (v3.0.0-beta.3 → stable): the previous implementation
+    // open animation). Shared ownership restores the original value
+    // after the final modal drawer releases it.
+    state.restoreScrollBehavior = lockDocumentScrollBehavior()
+    // Beta.4 fix: the previous implementation
     // ALWAYS called `focusFirstElement(content)`, which auto-focused
     // the first focusable descendant of the drawer body (a link,
     // a button, a form field). v2's default behaviour was the
@@ -2410,24 +2524,39 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     }
   }
 
-  // F9: vaul upstream's `shouldAnimate` ref. When the consumer uses
-  // `defaultOpen: true` the drawer is mounted already-open; we skip
-  // the entrance animation by writing `data-drawer-animate="false"`
-  // on the very first frame, then flip it back to `"true"` after one
-  // rAF so subsequent state changes (programmatic open, drag-close)
-  // animate normally. The CSS rule
-  // `[data-drawer-animate="false"] { animation: none !important }`
-  // already exists in the source stylesheet (carried over from v2).
-  if (options.defaultOpen === true) {
-    if (state.content) state.content.dataset.drawerAnimate = 'false'
-    if (state.overlay) state.overlay.dataset.drawerAnimate = 'false'
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(() => {
-        if (state.content) state.content.dataset.drawerAnimate = 'true'
-        if (state.overlay) state.overlay.dataset.drawerAnimate = 'true'
-      })
-    }
+  const mountedContent = state.content
+  const mountedOverlay = state.overlay
+  if (snapEntranceTransform !== null || snapEntranceOverlayOpacity !== null) {
+    window.requestAnimationFrame(() => {
+      if (
+        snapEntranceTransform !== null &&
+        mountedContent?.isConnected &&
+        state.content === mountedContent &&
+        mountedContent.dataset.state === 'open'
+      ) {
+        void mountedContent.offsetHeight
+        mountedContent.style.transition = `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+        mountedContent.style.transform = snapEntranceTransform
+      }
+      if (
+        snapEntranceOverlayOpacity !== null &&
+        mountedOverlay?.isConnected &&
+        state.overlay === mountedOverlay &&
+        mountedOverlay.dataset.state === 'open'
+      ) {
+        mountedOverlay.style.transition = `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+        mountedOverlay.style.opacity = snapEntranceOverlayOpacity
+      }
+    })
   }
+  if (mountedContent?.dataset.drawerAnimate === 'false' || mountedOverlay?.dataset.drawerAnimate === 'false') {
+    window.requestAnimationFrame(() => {
+      if (mountedContent?.isConnected) mountedContent.dataset.drawerAnimate = 'true'
+      if (mountedOverlay?.isConnected) mountedOverlay.dataset.drawerAnimate = 'true'
+    })
+  }
+  state.hasMounted = true
+  state.mountedOptions = options
 }
 
 /**

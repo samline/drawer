@@ -6,23 +6,10 @@ import type { CommonDrawerDirection } from '../src/core'
 /**
  * Regression tests for the drag-release close animation.
  *
- * Bug (v3.0.0-beta.3 → stable): closing a drawer via a drag-down
- * release did not visibly play the CSS `slideToBottom` /
- * `slideToRight` / etc. animation. The drawer just disappeared.
- *
- * Root cause: the drag pipeline writes an inline `transform:
- * translate3d(...)` on the content (the position the user dragged
- * it to). The close animation interpolates from the current
- * computed transform to the closed-position keyframe. With the
- * inline transform in place, the animation usually starts at a
- * position already past the closed position, so the slide is
- * invisible — the drawer just disappears.
- *
- * Fix: in the drag-release close path (Phase A and Phase B), the
- * dialog clears the inline `transform` on the content before
- * calling `onOpenChange(false)`. The CSS `data-drawer-closing`
- * rule's `transform: none` then provides the open position as the
- * animation's start frame, matching the close-button path.
+ * Bug fixed in v3.0.0-beta.4: drag-release close either disappeared
+ * or jumped back to open before exiting. The close path now retains
+ * the release transform, samples the rendered position, and
+ * transitions from that position to the directional closed endpoint.
  *
  * jsdom does not run CSS animations, so we assert on the inline
  * `transform` style on the content (which the fix clears) and on
@@ -97,31 +84,14 @@ describe('drag-release close animation', () => {
     dragPastCloseThreshold('bottom')
 
     const content = getContent()
-    // Bug fix (refined 2026-07-27): the inline `transform` is kept
-    // during the close animation so the `slideToBottom` keyframe
-    // interpolates from the dragged position (the `from` frame) to
-    // the closed-position keyframe (the `to` frame). The previous
-    // implementation cleared the inline `transform` synchronously
-    // here; that worked for the cascade but caused a visible
-    // "drawer jumps back to the open position mid-close" flicker
-    // because the cascade flip from the inline dragged position to
-    // the CSS open position was painted for one frame before the
-    // `slideToBottom` animation could take control. The inline
-    // `transform` is now cleared in the `animationend` listener
-    // (and as a fallback in the safety timeout).
-    //
-    // jsdom does not run CSS animations, so the inline `transform`
-    // still carries the dragged position here. The behaviour in a
-    // real browser is: animation plays from the dragged position
-    // to the closed position (visible slide), then the inline
-    // `transform` is cleared on `animationend` and the drawer is
-    // removed from the DOM.
+    // jsdom does not interpolate CSS transitions, so the retained
+    // release transform remains observable until timed DOM removal.
     expect(content.style.transform).toMatch(/translate3d\(/)
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
   })
 
-  it('clears the inline transform on the content before the close animation runs (direction: right)', () => {
+  it('retains the inline transform as the close start frame (direction: right)', () => {
     vi.useFakeTimers()
     const onOpenChange = vi.fn()
     const drawer = createDrawer({
@@ -190,7 +160,7 @@ describe('drag-release close animation', () => {
     expect(drawer.getSnapshot().state.isOpen).toBe(true)
   })
 
-  it('clears the inline transform on the content before the close animation runs (snap-points close path)', () => {
+  it('retains the inline transform on the snap-points close path', () => {
     // The Phase B snap-points release path also has a `close` action
     // (when the user drags in the dismiss direction from the active
     // snap with high velocity). The fix applies to that path too —
@@ -200,10 +170,6 @@ describe('drag-release close animation', () => {
     // close direction is left (negative X). A high-velocity left
     // swipe from the first snap triggers the close action.
     //
-    // `fadeFromIndex` is required: the snap-points release returns
-    // 'noop' when `fadeFromIndex` is undefined (the fade overlay is
-    // the only thing that distinguishes snap-point transitions from
-    // a free drag).
     vi.useFakeTimers()
     const onOpenChange = vi.fn()
     const drawer = createDrawer({
@@ -211,8 +177,8 @@ describe('drag-release close animation', () => {
       direction: 'right',
       title: 'Drag close snap',
       content: 'Body',
-      snapPoints: ['0.25', '0.5', '1'],
-      activeSnapPoint: '0.25',
+      snapPoints: [0.25, 0.5, 1],
+      activeSnapPoint: 0.25,
       fadeFromIndex: 0,
       onOpenChange
     })

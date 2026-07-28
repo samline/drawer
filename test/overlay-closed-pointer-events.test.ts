@@ -71,27 +71,13 @@ describe('overlay closed-state pointer-events', () => {
     expect(openRuleBody).not.toMatch(/pointer-events/)
   })
 
-  it('mounts the overlay with `data-state="closed"` and lets the CSS rule apply', () => {
-    // Mount the package stylesheet in jsdom so we can verify the
-    // static `pointer-events` value is read off the closed-state
-    // rule. jsdom does not process animations / `animation-fill-mode`
-    // end-state, but `pointer-events: none` is a static property
-    // and is applied by the stylesheet parser.
-    const styleEl = document.createElement('style')
-    styleEl.textContent = readSourceStylesheet()
-    document.head.appendChild(styleEl)
-
+  it('does not leave an invisible overlay mounted while closed', () => {
     createDrawer({
       id: 'overlay-closed-pe',
       direction: 'right',
       overlayClassName: 'consumer-overlay'
     })
 
-    const overlay = document.querySelector('[data-drawer-overlay]') as HTMLElement | null
-    expect(overlay).not.toBeNull()
-    expect(overlay!.getAttribute('data-state')).toBe('closed')
-    expect(window.getComputedStyle(overlay!).pointerEvents).toBe('none')
-
-    styleEl.remove()
+    expect(document.querySelector('[data-drawer-overlay]')).toBeNull()
   })
 })

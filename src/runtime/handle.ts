@@ -28,12 +28,15 @@ export function getNextHandleState({
   }
 
   if (!snapPoints || snapPoints.length === 0) {
-    return dismissible ? { type: 'noop' as const } : { type: 'close' as const }
+    return { type: 'noop' as const }
   }
 
   const isLastSnapPoint = activeSnapPoint === snapPoints[snapPoints.length - 1]
   if (isLastSnapPoint && dismissible) {
     return { type: 'close' as const }
+  }
+  if (isLastSnapPoint) {
+    return { type: 'snap' as const, snapPoint: snapPoints[0] ?? null }
   }
 
   const currentSnapIndex = snapPoints.findIndex((point) => point === activeSnapPoint)

@@ -24,10 +24,9 @@ export type VanillaRenderable = string | number | HTMLElement | (() => HTMLEleme
 
 export interface VanillaDrawerOptions extends CommonDrawerOptions {
   /**
-   * Container element the drawer should mount into. 1:1 with vaul
-   * upstream's `container` prop. Defaults to `document.body` (the
-   * host creates a small wrapper `<div data-drawer-vanilla-root>`
-   * there).
+   * Container element the drawer should mount into. Defaults to
+   * `document.body`; the host creates a dedicated wrapper
+   * `<div data-drawer-vanilla-root>` there.
    *
    * Alias for `mountElement`. Use whichever name you prefer; the
    * other is read as a fallback. The alias exists for backward
@@ -37,7 +36,8 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   /**
    * @deprecated Use `container` instead. Kept for backward compat
    * with the v2 / v3 API. The drawer reads `container ?? mountElement`
-   * internally, so passing both is harmless (container wins).
+   * internally, so a non-null container wins and `container: null`
+   * falls through to `mountElement`.
    */
   mountElement?: HTMLElement | null
   triggerElement?: HTMLElement | null
@@ -148,13 +148,8 @@ export function mountVanillaDrawer(options: {
   id: string
   options: VanillaDrawerOptions
   open: boolean
-  /**
-   * G12: 1:1 with vaul upstream's `hasBeenOpened` state. Set to
-   * `true` on the first `setOpen(true)`. Used by the
-   * `preventBodyScroll` gate (G3) to skip the lock on the very
-   * first open (the original vaul semantics: `usePreventScroll`
-   * only kicks in after the first user-driven open).
-   */
+  openOrder?: number | null
+  /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
   onBuiltInTriggerMouseDown?: () => void
   onBuiltInTriggerClick?: () => void
@@ -168,6 +163,7 @@ export function mountVanillaDrawer(options: {
     id: options.id,
     options: options.options,
     open: options.open,
+    ...(options.openOrder !== undefined ? { openOrder: options.openOrder } : {}),
     ...(options.hasBeenOpened !== undefined ? { hasBeenOpened: options.hasBeenOpened } : {}),
     onOpenChange: options.onOpenChange,
     ...(options.onBuiltInTriggerMouseDown !== undefined

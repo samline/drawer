@@ -5,7 +5,7 @@ import { createDrawer, destroyDrawers } from '../src'
 /**
  * Regression test for initial focus on drawer open.
  *
- * Bug (v3.0.0-beta.3 → stable): opening a drawer auto-focused the
+ * Bug fixed in v3.0.0-beta.4: opening a drawer auto-focused the
  * first focusable descendant of the drawer body. For drawers
  * whose first focusable is a link (e.g. the consumer's support
  * drawer, whose WhatsApp phone link is the first anchor), the

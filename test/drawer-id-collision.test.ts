@@ -5,7 +5,7 @@ import { createDrawer, destroyDrawers } from '../src'
 /**
  * Regression tests for the drawer-id / descendant-id collision.
  *
- * Bug (v3.0.0-beta.3 → stable): the runtime used to place the
+ * Bug fixed in v3.0.0-beta.4: the runtime used to place the
  * drawer's `id` on the `[data-drawer]` content element for "CSS/JS
  * selector compat". That created an id collision when the
  * consumer's content HTML contained any element with the same id
@@ -16,13 +16,9 @@ import { createDrawer, destroyDrawers } from '../src'
  * content `<div>` instead of the form, and the form's
  * initialization silently failed.
  *
- * Fix: the runtime id is now placed on the host element (the
- * top-level container — `<div data-drawer-vanilla-root="...">`)
- * rather than on the content. The content gets a `data-drawer-id`
- * attribute alias so CSS / JS can still target it by id-equivalent.
- * The form (or any other descendant with the same id) is now
- * uniquely findable via `document.getElementById` because no
- * ancestor element has the colliding id.
+ * Fix: the runtime id is stored in data attributes on the host and
+ * content, never as an HTML `id`. Consumer descendants therefore
+ * remain uniquely findable through `document.getElementById`.
  *
  * jsdom does not run CSS animations or layout, so these tests are
  * static-source assertions: each one constructs a drawer with a

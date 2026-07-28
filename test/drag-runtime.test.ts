@@ -34,10 +34,11 @@ describe('drag runtime helpers', () => {
     })
   })
 
-  it('detects release direction per axis', () => {
-    expect(isReleaseTowardExpandedState({ direction: 'bottom', distMoved: 50 })).toBe(true)
-    expect(isReleaseTowardExpandedState({ direction: 'left', distMoved: 50 })).toBe(false)
-    expect(isReleaseTowardExpandedState({ direction: 'left', distMoved: -50 })).toBe(true)
+  it('detects release direction from normalized dragged distance', () => {
+    for (const direction of ['bottom', 'top', 'left', 'right'] as const) {
+      expect(isReleaseTowardExpandedState({ direction, distMoved: 50 })).toBe(true)
+      expect(isReleaseTowardExpandedState({ direction, distMoved: -50 })).toBe(false)
+    }
   })
 
   it('closes on velocity or threshold', () => {

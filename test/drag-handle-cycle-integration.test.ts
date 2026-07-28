@@ -115,7 +115,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     expect(getDrawer('handle-cycle-close')?.getSnapshot().state.isOpen).toBe(false)
   })
 
-  it('does NOT close the drawer when the handle is clicked at the LAST snap with dismissible: false (cycles back to nothing)', () => {
+  it('cycles to the first snap at the last snap when dismissible: false', () => {
     const onOpenChange = vi.fn()
     const drawer = createDrawer({
       id: 'handle-cycle-no-close',
@@ -134,14 +134,8 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
 
     dispatchOnHandle(createClickEvent())
 
-    // The helper returns `{ type: 'snap', snapPoint: null }` for the
-    // last-snap + non-dismissible case. The dialog forwards `null`
-    // through `onActiveSnapPointChange`. The registry's `toSnapshot`
-    // derivation falls back to the first snap point when the
-    // active snap is `null` (`options.activeSnapPoint ??
-    // options.snapPoints?.[0] ?? null`), so the snapshot reports
-    // '120px'. The key assertion is that the drawer stays open
-    // (the handle click did NOT call `onOpenChange(false)`).
+    // Non-dismissible means every user gesture keeps the drawer open.
+    // Cycling from the last snap therefore returns to the first snap.
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
     expect(getDrawer('handle-cycle-no-close')?.getSnapshot().state.isOpen).toBe(true)
     expect(getDrawer('handle-cycle-no-close')?.getSnapshot().state.activeSnapPoint).toBe('120px')
@@ -176,9 +170,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     expect(getDrawer('handle-no-snap-dismissible')?.getSnapshot().state.isOpen).toBe(true)
   })
 
-  it('closes the drawer when the handle is clicked without snap points and dismissible: false', () => {
-    // The other branch of the no-snap case: non-dismissible + no snap
-    // points → `{ type: 'close' }`. The handle click closes the drawer.
+  it('does not close without snap points when dismissible: false', () => {
     const onOpenChange = vi.fn()
     const drawer = createDrawer({
       id: 'handle-no-snap-no-dismissible',
@@ -194,8 +186,8 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
 
     dispatchOnHandle(createClickEvent())
 
-    expect(onOpenChange).toHaveBeenCalledWith(false)
-    expect(getDrawer('handle-no-snap-no-dismissible')?.getSnapshot().state.isOpen).toBe(false)
+    expect(onOpenChange).not.toHaveBeenCalledWith(false)
+    expect(getDrawer('handle-no-snap-no-dismissible')?.getSnapshot().state.isOpen).toBe(true)
   })
 
   it('does NOT cycle when the handle is clicked while a drag is in progress', () => {
@@ -253,10 +245,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     expect(getDrawer('handle-prevent-cycle')?.getSnapshot().state.isOpen).toBe(true)
   })
 
-  it('is a no-op when the handle is clicked while the drawer is closed', () => {
-    // The handle element stays in the DOM across open/close cycles
-    // (the CSS does not `display: none` it on close). A click on a
-    // closed drawer's handle must not re-open the drawer.
+  it('does not mount an interactive handle while the drawer is closed', () => {
     const onOpenChange = vi.fn()
     createDrawer({
       id: 'handle-click-closed',
@@ -273,8 +262,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     // Drawer is closed (default).
     expect(getDrawer('handle-click-closed')?.getSnapshot().state.isOpen).toBe(false)
 
-    dispatchOnHandle(createClickEvent())
-
+    expect(document.querySelector('[data-drawer-handle]')).toBeNull()
     expect(onOpenChange).not.toHaveBeenCalled()
     expect(getDrawer('handle-click-closed')?.getSnapshot().state.isOpen).toBe(false)
   })

@@ -6,7 +6,7 @@ This page walks through what `@samline/drawer` is, how the runtime is wired, and
 
 ## When to use this variant
 
-Use the vanilla variant when you work with native HTML pages, embedded scripts, static sites, or applications where you do not need a framework wrapper. This is the primary — and only — runtime entrypoint of `@samline/drawer` since v3.0.0.
+Use the vanilla variant when you work with native HTML pages, embedded scripts, static sites, or applications where you do not need a framework wrapper. The root package is the primary module entrypoint.
 
 If you want a `<script>`-only setup without a bundler, see [docs/browser.md](browser.md).
 
@@ -16,11 +16,11 @@ If you want a `<script>`-only setup without a bundler, see [docs/browser.md](bro
 
 The runtime has three moving parts:
 
-1. **A module-level `drawerInstances` map** (`src/runtime/registry.ts`) — keeps a `Map<id, DrawerRuntimeInstance>` for every drawer you have created. There is exactly one registry shared by every consumer in the page.
-2. **A vanilla host + dialog** (`src/vanilla/host.ts` + `src/vanilla/dialog.ts`) — the host owns the mount element (`<div data-drawer-vanilla-root>`), the dialog owns the actual surface (`<div data-drawer>`, `<div data-drawer-overlay>`, optional `<div data-drawer-handle>`). The runtime re-renders the dialog on every state change.
+1. **A module-level `drawerInstances` map** (`src/runtime/registry.ts`) — keeps a `Map<id, DrawerRuntimeInstance>` for every drawer you create. All helpers from one loaded package instance share that registry.
+2. **A vanilla host + dialog** (`src/vanilla/host.ts` + `src/vanilla/dialog.ts`) — every drawer owns a dedicated `<div data-drawer-vanilla-root>` inside `document.body` or its `container`. The host and optional built-in trigger mount immediately; the dialog surface and overlay use lazy presence and exist only while open or exiting.
 3. **The `createDrawer` factory** (`src/runtime/registry.ts`) — the public surface that the rest of your code talks to. `createDrawer(options?)` and the imperative helpers (`openDrawer`, `closeDrawer`, `getDrawer`, etc.) all hit the registry.
 
-The controller returned by `createDrawer` has a small, focused method surface. Most methods are chainable (mutate the same instance and return it):
+The controller returned by `createDrawer` has a small, focused method surface. State mutators return the new snapshot, `update` returns a controller for the same id, and `destroy` returns `void`:
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -29,6 +29,7 @@ import '@samline/drawer/styles.css'
 const drawer = createDrawer({
   id: 'filters',
   direction: 'bottom',
+  snapPoints: ['180px', '420px'],
   title: 'Filters',
   description: 'Refine the result set',
   content: 'Drawer body'
@@ -39,7 +40,7 @@ drawer.update({ activeSnapPoint: '420px' }) // jump to a snap
 drawer.destroy() // tear it down
 ```
 
-Methods that return data instead of the controller: `drawer.id`, `drawer.options`, `drawer.element`, `drawer.getSnapshot()`.
+Read the current runtime through `drawer.id`, `drawer.options`, `drawer.element`, and `drawer.getSnapshot()`.
 
 ---
 
@@ -47,17 +48,18 @@ Methods that return data instead of the controller: `drawer.id`, `drawer.options
 
 Once a drawer is created, you can rely on the following behaviour:
 
-- **A `<div data-drawer-vanilla-root>` is appended to `document.body`** (or to your `mountElement` if you provided one). The runtime owns this host and re-renders its children on every state change.
-- **A `<div data-drawer>` is mounted inside the host** with the data-attributes the stylesheet reads: `data-state="open" | "closed"`, `data-drawer-direction="top" | "bottom" | "left" | "right"`, `data-drawer-snap-points`, `data-drawer-animate`, plus `role="dialog"`, `aria-modal`, and a `data-drawer-id` attribute matching the drawer's runtime id. (The runtime id itself is placed on the host element — `<div data-drawer-vanilla-root="...">` — to avoid id collisions with the consumer's content HTML. Target the content via `[data-drawer]` or `[data-drawer-vanilla-root="myDrawer"] [data-drawer]`.)
-- **A `<div data-drawer-overlay>` is mounted for modal drawers** (default). It carries `data-state` and `data-drawer-snap-points-overlay` for the fade-from-index behaviour.
+- **A dedicated `<div data-drawer-vanilla-root="id">` is appended immediately** to `document.body` or the preferred `container`. Two drawers in the same custom container receive two independent hosts. The consumer-owned container is never removed by drawer teardown.
+- **Closed drawers use lazy presence.** The host and optional `<button data-drawer-vanilla-trigger>` remain mounted, but `[data-drawer]`, its handle and slots, and `[data-drawer-overlay]` do not mount until open. On close, the visual nodes remain with `data-state="closed"` for the exit transition and are then removed.
+- **An open `<div data-drawer>` carries the visual and accessibility contract:** `data-state`, `data-drawer-direction`, snap and animation flags, `role="dialog"`, `aria-modal`, and `data-drawer-id`. The runtime id is a data-attribute, not an HTML `id`, which avoids collisions with consumer content.
+- **A `<div data-drawer-overlay>` is present for open or exiting modal drawers** (default). It carries `data-state` and `data-drawer-snap-points-overlay` for fade behavior. The runtime does not use `document.body.style.pointerEvents`; the overlay and consumer CSS own hit testing.
 - **An optional `<div data-drawer-handle>`** is mounted when `handleOnly: true` or `showHandle: true`. Clicking it advances the active snap point (see [recipes](recipes.md)).
 - **A built-in `<button data-drawer-vanilla-trigger>`** is mounted when `triggerText` is set. Clicking it opens the drawer.
-- **Drag-to-dismiss is wired for every open drawer.** `pointerdown` on the content element starts a drag; the dialog follows the finger. On release, the gesture either closes the drawer (past the 25 % close threshold or above the 0.4 velocity threshold) or snaps back to the open position. The `onDragChange(percentageDragged)` and `onReleaseChange(open)` callbacks fire.
+- **Eligible open drawers support drag gestures.** A snap-free drawer with `dismissible: false` does not start a drag. Otherwise, pointer capture waits for dominant Y-axis intent on top/bottom drawers or X-axis intent on left/right drawers, leaving perpendicular panning to the page. Snap-free releases use the 25% distance or 0.4 velocity close thresholds; snap drawers use their own release policy.
 - **Snap points are wired when `snapPoints` is set.** The drawer positions itself at the active snap on open, the drag interpolates between snaps, and the release either snaps to the closest point or closes on high velocity.
-- **`shouldScaleBackground: true`** scales the page shell (the element with `data-drawer-wrapper`) while the drawer is dragged. With `setBackgroundColorOnScale: true`, a translucent black background overlays the shell.
+- **`shouldScaleBackground: true`** scales the page shell (the element with `data-drawer-wrapper`). Background color handling is enabled unless `setBackgroundColorOnScale: false` or `noBodyStyles: true` is set.
 - **Nested drawers** declared via `parentId` scale and shift the parent when the child opens (`runtime/nested.ts`). Drag the child and the parent follows along.
-- **`window.history.scrollRestoration` is toggled to `'manual'`** when `preventScrollRestoration: true` and restored to its previous value on destroy.
-- **`prefers-reduced-motion` is honored in CSS.** The JS still runs the math, but the stylesheet suppresses the animations.
+- **Viewport keyboard handling is enabled by default.** While open, a `visualViewport.resize` updates `style.bottom` only when a keyboard-capable input inside that drawer is focused, or while an already-detected keyboard is settling. Set `repositionInputs: false` to disable the offset; `fixed: true` can still apply a height override.
+- **`window.history.scrollRestoration` is toggled to `'manual'`** when `preventScrollRestoration: true` and restored to its previous value on close or destroy after the final owner releases it.
 
 ---
 
@@ -65,12 +67,12 @@ Once a drawer is created, you can rely on the following behaviour:
 
 The recommended flow:
 
-1. **Create** — call [`createDrawer(options?)`](api/create-drawer.md) with the drawer's initial options. The runtime wires the controller, mounts the host, and renders the dialog in its `closed` state.
-2. **Open** — call `drawer.setOpen(true)` or [`openDrawer(id?)`](api/open-drawer.md). The host re-renders the dialog with `data-state="open"`, body scroll is locked if `modal` is not `false`, and the first focusable element receives focus (unless `autoFocus: false`).
+1. **Create** — call [`createDrawer(options?)`](api/create-drawer.md) with the drawer's initial options. The runtime wires the controller and mounts its host and optional trigger. A closed drawer has no overlay or dialog content.
+2. **Open** — call `drawer.setOpen(true)` or [`openDrawer(id?)`](api/open-drawer.md). The overlay and dialog mount with `data-state="open"`, and modal scroll ownership is acquired unless `disablePreventScroll: true`. Auto-focus is off by default; set `autoFocus: true` to focus the first focusable element.
 3. **Interact** — drag the content, click the handle to cycle snap points, press `Escape` to dismiss, click the overlay to dismiss, or call the imperative helpers to drive the state.
 4. **Update** — call `drawer.update(options?)` (or [`updateDrawer(idOrOptions?, options?)`](api/update-drawer.md)) to merge new options into the same instance. The registry re-renders the dialog so the new options take effect.
-5. **Close** — call `drawer.setOpen(false)` or [`closeDrawer(id?)`](api/close-drawer.md). The dialog re-renders with `data-state="closed"` and the CSS close animation runs. `onClose()` fires at the start of the close, `onAnimationEnd(false)` fires after `TRANSITIONS.DURATION` (500 ms).
-6. **Destroy** — call `drawer.destroy()` or [`destroyDrawer(id?)`](api/destroy-drawer.md) to tear down the host and remove the drawer from the registry. Use [`destroyDrawers()`](api/destroy-drawers.md) to clear every live instance at once.
+5. **Close** — call `drawer.setOpen(false)` or [`closeDrawer(id?)`](api/close-drawer.md). The runtime freezes the current rendered transform, flips the visual nodes to `data-state="closed"`, releases listeners and shared side effects, and removes those nodes after the exit transition. `onClose()` fires before the state change; `onAnimationEnd(false)` fires after 500 ms unless superseded.
+6. **Destroy** — call `drawer.destroy()` or [`destroyDrawer(id?)`](api/destroy-drawer.md) to remove that drawer's host immediately and delete its registry entry. Use [`destroyDrawers()`](api/destroy-drawers.md) to clear every live instance.
 
 ---
 
@@ -78,23 +80,23 @@ The recommended flow:
 
 Use this as a quick lookup when you need to know what a method will touch.
 
-| Method                                                                                                                            | DOM mutation                                                                          | Subscribers notified   | Body scroll lock                    | Focus                                      |
-| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------- | ------------------------------------------ |
-| [`createDrawer(options?)`](api/create-drawer.md)                                                                                  | yes (mounts host + dialog)                                                            | yes (initial snapshot) | only if `open: true` on creation    | n/a                                        |
-| [`configureDrawer(options?)`](api/configure-drawer.md)                                                                            | same as `createDrawer`                                                                | yes                    | same                                | same                                       |
-| `drawer.setOpen(true \| false)`                                                                                                   | yes (re-renders dialog with new `data-state`)                                         | yes                    | acquired on open, released on close | first focusable on open, previous on close |
-| `drawer.setActiveSnapPoint(snap)`                                                                                                 | yes (re-renders dialog at the new offset)                                             | yes                    | unchanged                           | unchanged                                  |
-| `drawer.patch(options)` / `drawer.update(options?)`                                                                               | yes (re-renders dialog if anything visible changed)                                   | yes                    | unchanged                           | unchanged                                  |
-| `drawer.subscribe(listener)`                                                                                                      | no (callback fires immediately with the current snapshot, then on every state change) | n/a                    | unchanged                           | unchanged                                  |
-| `drawer.getSnapshot()`                                                                                                            | no (read-only)                                                                        | no                     | unchanged                           | unchanged                                  |
-| `drawer.destroy()`                                                                                                                | yes (removes the host from the DOM)                                                   | n/a                    | released if held                    | released to the previous focus             |
-| [`getDrawer(id?)`](api/get-drawer.md) / [`getDrawers()`](api/get-drawers.md)                                                      | no (read-only)                                                                        | no                     | unchanged                           | unchanged                                  |
-| [`getParentDrawer(id?)`](api/get-parent-drawer.md) / [`getChildDrawers(id?)`](api/get-child-drawers.md)                           | no (read-only)                                                                        | no                     | unchanged                           | unchanged                                  |
-| [`updateDrawer(idOrOptions?, options?)`](api/update-drawer.md)                                                                    | yes (same as `drawer.update`)                                                         | yes                    | unchanged                           | unchanged                                  |
-| [`openDrawer(id?)`](api/open-drawer.md) / [`closeDrawer(id?)`](api/close-drawer.md) / [`toggleDrawer(id?)`](api/toggle-drawer.md) | yes (programmatic open/close)                                                         | yes                    | same as `drawer.setOpen`            | same                                       |
-| [`destroyDrawer(id?)`](api/destroy-drawer.md)                                                                                     | yes (removes the host)                                                                | n/a                    | released                            | released                                   |
-| [`destroyDrawers()`](api/destroy-drawers.md)                                                                                      | yes (removes every host)                                                              | n/a                    | each released per drawer            | each released per drawer                   |
-| [`createDrawerController(options?)`](api/create-drawer-controller.md)                                                             | no (no DOM, no host)                                                                  | no                     | no                                  | no                                         |
+| Method                                                                                                             | DOM mutation                                                             | Subscribers                   | Shared page effects                          | Focus                                                |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ----------------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| [`createDrawer(options?)`](api/create-drawer.md)                                                                   | mounts host and optional trigger; mounts dialog only when initially open | new controller has none yet   | acquired only when initially open            | may blur outside focus; content focus is opt-in      |
+| [`configureDrawer(options?)`](api/configure-drawer.md)                                                             | same as `createDrawer`                                                   | same                          | same                                         | same                                                 |
+| `drawer.setOpen(true \| false)`                                                                                    | mounts on open; marks current nodes closed, then removes them after exit | yes                           | acquired on open, released on close          | may blur on open; stack-aware restoration on close   |
+| `drawer.setActiveSnapPoint(snap)`                                                                                  | updates the open dialog offset                                           | yes                           | active scale owner may re-render             | unchanged                                            |
+| `drawer.patch(options)` / `drawer.update(options?)`                                                                | reconciles host, trigger, presence, and visible options                  | yes                           | follows any changed open/modal/scale options | follows any changed open/focus options               |
+| `drawer.subscribe(listener)`                                                                                       | none; listener fires immediately and on later state changes              | registers the listener        | unchanged                                    | unchanged                                            |
+| `drawer.getSnapshot()`                                                                                             | none                                                                     | no                            | unchanged                                    | unchanged                                            |
+| `drawer.destroy()`                                                                                                 | removes only this drawer's host immediately                              | no destroy notification       | releases only this drawer's ownership        | restores within the remaining open stack             |
+| Registry inspectors                                                                                                | none                                                                     | no                            | unchanged                                    | unchanged                                            |
+| [`openDrawer`](api/open-drawer.md) / [`closeDrawer`](api/close-drawer.md) / [`toggleDrawer`](api/toggle-drawer.md) | same presence behavior as `setOpen`                                      | yes for a live state change   | same as `setOpen`                            | same as `setOpen`                                    |
+| [`destroyDrawer(id?)`](api/destroy-drawer.md)                                                                      | removes that host and recursively removes child hosts                    | no                            | releases only destroyed owners               | restores within the remaining open stack             |
+| [`destroyDrawers()`](api/destroy-drawers.md)                                                                       | removes every owned host                                                 | no                            | original styles return after the final owner | each teardown reconciles against the remaining stack |
+| [`createDrawerController(options?)`](api/create-drawer-controller.md)                                              | none                                                                     | only when `subscribe` is used | none                                         | none                                                 |
+
+The runtime never takes ownership of `document.body.style.pointerEvents`. `noBodyStyles` also does not disable modal scroll locking; use `disablePreventScroll: true` for that specific opt-out.
 
 ---
 
@@ -104,35 +106,38 @@ Use this as a quick lookup when you need to know what a method will touch.
 - Pass `parentId` when this drawer should follow another drawer's lifecycle. Closing the parent closes the registered children; destroying the parent recursively destroys them. See [recipes](recipes.md#nested-drawers).
 - Pass `triggerText` to render a built-in button inside the mounted host. Pass `triggerElement` instead when you want an external button in your own DOM tree.
 - Pass `showHandle: true` to render the built-in handle but still allow drag to start from the full drawer surface. Use `handleOnly: true` to also restrict the drag to the handle.
-- Pass `mountElement` when the host should live inside a specific DOM subtree instead of being appended to `document.body`.
+- Pass `container` when the host should live inside a specific DOM subtree. `mountElement` is deprecated and remains a fallback.
 - Use `title` and `description` for a simple heading block above the body. When your drawer has its own card / panel / header layout, render the heading inside `content` instead.
 - Use `drawer.subscribe(snapshot => …)` when a higher-level component (router, store, view layer) needs to react to the whole drawer state.
 - Use `drawer.patch(options)` (or `drawer.update(options?)`) to merge new options into the same instance without losing the controller.
 - Use `drawer.setOpen(false)` or `closeDrawer(id)` to dismiss, and `drawer.destroy()` to release the host.
 - When `shouldScaleBackground: true`, add `data-drawer-wrapper` to the page shell element that should scale behind the drawer.
 - When a child element should not start a drag, add `data-drawer-no-drag` to it.
-- When `preventScrollRestoration: true`, the runtime flips `history.scrollRestoration` to `'manual'` while the drawer is mounted; the previous value is restored on destroy.
+- When `preventScrollRestoration: true`, the runtime flips `history.scrollRestoration` to `'manual'` while the drawer is open; the previous value is restored on close or destroy after the final owner releases it.
 
 ---
 
-## Browser registry helpers
+## Multiple drawers and ownership
 
-The browser IIFE bundle ships a single global (`window.Drawer`) that wraps the same surface as the named exports. The same shape is available from the vanilla entrypoint as a module-level singleton called `browser`:
+- Open order is assigned when a drawer changes from closed to open. Updating or re-rendering an already-open drawer does not promote it.
+- Escape targets only the most recently opened drawer. If that drawer is not dismissible, an older drawer is not closed instead.
+- Opening a nested child opens its ancestors first, so the child becomes the active top drawer. Closing a parent closes its descendants; closing a child leaves its parent open.
+- Focus restoration, body scroll prevention, `html` scroll behavior, history scroll restoration, Safari body positioning, and scale-background styles track ownership. Closing or destroying one drawer does not restore a shared resource while another owner remains.
+- For one shared scale wrapper, the most recently opened scale owner controls the transform. Closing it reapplies the previous owner's state.
 
-```ts
-import { browser } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+## Browser global helpers
 
-window.MyDrawer = { ...browser }
+The browser IIFE bundle attaches the same method names to `window.Drawer`. The root module does not export a `browser` object; bundled consumers use the named exports directly.
 
-window.MyDrawer.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
-window.MyDrawer.openDrawer('filters')
-window.MyDrawer.destroyDrawers()
+```html
+<script>
+  window.Drawer.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
+  window.Drawer.openDrawer('filters')
+  window.Drawer.destroyDrawers()
+</script>
 ```
 
-`browser` is an object you can spread into your own globals or use directly. Because it shares the same module-level `drawerInstances` map as the named exports, every spread behaves the same — `window.MyDrawer.createDrawer({})` and `createDrawer({})` end up calling the same factory and updating the same DOM host.
-
-If you need multiple independent registries, use the named exports with distinct `id` values.
+Methods on one `window.Drawer` namespace share its id-keyed registry. Use distinct ids for independent drawers.
 
 ```ts
 import { createDrawer, getDrawer } from '@samline/drawer'

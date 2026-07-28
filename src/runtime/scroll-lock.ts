@@ -1,9 +1,10 @@
 /**
  * iOS Safari body-scroll prevention + position:fixed body trick.
  *
- * 1:1 port of vaul upstream's `usePreventScroll.ts` (Adobe
+ * Adapted from vaul upstream's `usePreventScroll.ts` (Adobe
  * react-spectrum) and `usePositionFixed.ts`, with React hooks
- * replaced by plain function calls and module-level refs.
+ * replaced by plain functions and shared ownership for concurrent
+ * drawers.
  *
  * Two pieces:
  *
@@ -25,11 +26,6 @@
  */
 import { isIOS, isSafari } from './browser'
 import { chain } from '../helpers'
-
-// Visual viewport used by the focus-input pipeline. May be
-// undefined in jsdom / SSR; the focus handler short-circuits.
-const visualViewport =
-  typeof document !== 'undefined' && typeof window !== 'undefined' ? window.visualViewport : undefined
 
 // Buffer added to the keyboard height so the focused input is
 // scrolled into view above the iOS software keyboard. Matches the
@@ -55,18 +51,44 @@ const nonTextInputTypes = new Set<string>([
 // scroll position when the LAST drawer unmounts.
 let preventScrollCount = 0
 let mobileSafariRestore: (() => void) | null = null
+let desktopScrollCount = 0
+let desktopScrollRestore: (() => void) | null = null
+
+type InlineStyleSnapshot = { value: string; priority: string }
+type BodyPositionProperty = 'position' | 'top' | 'left' | 'right' | 'height'
+
+function readInlineStyle(element: HTMLElement, property: string): InlineStyleSnapshot {
+  return {
+    value: element.style.getPropertyValue(property),
+    priority: element.style.getPropertyPriority(property)
+  }
+}
+
+function restoreInlineStyle(element: HTMLElement, property: string, snapshot: InlineStyleSnapshot) {
+  if (snapshot.value) element.style.setProperty(property, snapshot.value, snapshot.priority)
+  else element.style.removeProperty(property)
+}
 
 // Saved body position from `setPositionFixed`. `null` when no
 // drawer has set `position: fixed` on the body yet.
-let previousBodyPosition: Record<string, string> | null = null
+let previousBodyPosition: Record<BodyPositionProperty, InlineStyleSnapshot> | null = null
+let savedScrollX = 0
 let savedScrollY = 0
+let fixedPositionCount = 0
+let fixedPositionTimer: number | null = null
+let fixedPositionRestoreFrame: number | null = null
+let scrollBehaviorCount = 0
+let previousScrollBehavior: InlineStyleSnapshot = { value: '', priority: '' }
+let scrollRestorationCount = 0
+let previousScrollRestoration: ScrollRestoration | null = null
 
 /**
  * Lock the page scroll. Returns a function that REVERTS the lock
  * when called.
  *
- * 1:1 with vaul upstream's `usePreventScroll` gates. The lock is
- * suppressed when ANY of the following is true:
+ * This is the vanilla runtime's baseline modal lock. Unlike Vaul,
+ * there is no Radix Dialog underneath to provide a separate lock.
+ * Acquisition is suppressed when any of the following is true:
  * - `isDisabled: true` — short-circuit. Caller can also pass
  *   `disablePreventScroll: true` (the legacy alias).
  * - `!isOpen` — closed drawer.
@@ -76,10 +98,8 @@ let savedScrollY = 0
  * - `!modal` — non-modal drawer, no lock.
  * - `justReleased` — drag was released < 200ms ago, no lock
  *   (avoids focus-input race).
- * - `!hasBeenOpened` — never opened, no lock (skip on initial
- *   mount with `defaultOpen: true`).
- * - `!repositionInputs` — consumer opted out of input repositioning.
- * - `!disablePreventScroll` — consumer disabled, no lock.
+ * `hasBeenOpened` and `repositionInputs` remain accepted for API
+ * compatibility, but do not disable the baseline lock.
  *
  * On `isIOS()`, takes the 6-step Mobile Safari workaround
  * regardless of the gates (the gate only controls whether to
@@ -101,9 +121,7 @@ export function preventBodyScroll(
     options.isOpen === false ||
     options.isDragging === true ||
     options.modal === false ||
-    options.justReleased === true ||
-    options.hasBeenOpened === false ||
-    options.repositionInputs === false
+    options.justReleased === true
 
   if (isDisabled) {
     return () => {}
@@ -114,7 +132,10 @@ export function preventBodyScroll(
     if (preventScrollCount === 1) {
       mobileSafariRestore = preventScrollMobileSafari()
     }
+    let released = false
     return () => {
+      if (released) return
+      released = true
       preventScrollCount--
       if (preventScrollCount === 0) {
         mobileSafariRestore?.()
@@ -132,22 +153,33 @@ export function preventBodyScroll(
 function lockBodyScrollDesktop(): () => void {
   if (typeof document === 'undefined') return () => {}
 
-  const body = document.body
-  const scrollbar = window.innerWidth - document.documentElement.clientWidth
-  const overflowBackup = body.style.overflow
-  const paddingRightBackup = body.style.paddingRight
+  desktopScrollCount++
+  if (desktopScrollCount === 1) {
+    const body = document.body
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth
+    const overflowBackup = readInlineStyle(body, 'overflow')
+    const paddingRightBackup = readInlineStyle(body, 'padding-right')
 
-  if (overflowBackup !== 'hidden') {
-    body.style.overflow = 'hidden'
-  }
-  if (scrollbar > 0) {
-    const existing = window.getComputedStyle(body).paddingRight
-    body.style.paddingRight = `${parseFloat(existing || '0') + scrollbar}px`
+    if (overflowBackup.value !== 'hidden') body.style.overflow = 'hidden'
+    if (scrollbar > 0) {
+      const existing = window.getComputedStyle(body).paddingRight
+      body.style.paddingRight = `${parseFloat(existing || '0') + scrollbar}px`
+    }
+    desktopScrollRestore = () => {
+      restoreInlineStyle(body, 'overflow', overflowBackup)
+      restoreInlineStyle(body, 'padding-right', paddingRightBackup)
+    }
   }
 
+  let released = false
   return () => {
-    body.style.overflow = overflowBackup
-    body.style.paddingRight = paddingRightBackup
+    if (released) return
+    released = true
+    desktopScrollCount = Math.max(0, desktopScrollCount - 1)
+    if (desktopScrollCount === 0) {
+      desktopScrollRestore?.()
+      desktopScrollRestore = null
+    }
   }
 }
 
@@ -198,7 +230,7 @@ function preventScrollMobileSafari(): () => void {
     // Store the nearest scrollable parent element from the
     // element that the user touched.
     scrollable = getScrollParent(e.target as Element)
-    if (scrollable === document.documentElement && scrollable === document.body) {
+    if (scrollable === document.documentElement || scrollable === document.body) {
       return
     }
     const touch = e.changedTouches[0]
@@ -207,11 +239,7 @@ function preventScrollMobileSafari(): () => void {
 
   const onTouchMove = (e: TouchEvent) => {
     // Prevent scrolling the window.
-    if (
-      !scrollable ||
-      scrollable === document.documentElement ||
-      scrollable === document.body
-    ) {
+    if (!scrollable || scrollable === document.documentElement || scrollable === document.body) {
       e.preventDefault()
       return
     }
@@ -265,6 +293,7 @@ function preventScrollMobileSafari(): () => void {
         // focused element into view, so we need to do this
         // ourselves in a way that doesn't cause the whole page
         // to scroll.
+        const visualViewport = window.visualViewport
         if (visualViewport) {
           if (visualViewport.height < window.innerHeight) {
             // If the keyboard is already visible, do this after
@@ -299,7 +328,12 @@ function preventScrollMobileSafari(): () => void {
   const scrollY = window.pageYOffset
 
   const restoreStyles = chain(
-    setStyle(document.documentElement, 'paddingRight', `${window.innerWidth - document.documentElement.clientWidth}px`)
+    setStyle(
+      document.documentElement,
+      'padding-right',
+      `${window.innerWidth - document.documentElement.clientWidth}px`
+    ),
+    document.body.style.position !== 'fixed' ? setStyle(document.body, 'margin-top', `${-scrollY}px`) : undefined
   )
 
   // Scroll to the top. The negative margin on the body will make
@@ -333,68 +367,114 @@ function preventScrollMobileSafari(): () => void {
  * `top: -scrollY` (so the user-visible position does not jump),
  * and stores the current scroll Y in module-level state.
  *
- * `setPositionFixed({ isOpen: false, ... })` restores the
- * original styles and scrolls the page back to where it was.
- *
  * No-op when not on Safari. No-op when `noBodyStyles: true`.
  */
-export function setPositionFixed(options: {
-  isOpen: boolean
-  modal: boolean
-  noBodyStyles: boolean
-}): void {
-  if (isSafari() !== true) return
+export function setPositionFixed(options: { isOpen: boolean; modal: boolean; noBodyStyles: boolean }): () => void {
+  if (isSafari() !== true || options.modal === false || options.noBodyStyles) {
+    return () => {}
+  }
 
-  if (options.isOpen) {
-    if (previousBodyPosition === null && !options.noBodyStyles) {
-      previousBodyPosition = {
-        position: document.body.style.position,
-        top: document.body.style.top,
-        left: document.body.style.left,
-        height: document.body.style.height
-      }
+  const release = () => {
+    if (fixedPositionCount === 0) return
+    fixedPositionCount--
+    if (fixedPositionCount > 0 || previousBodyPosition === null) return
 
-      // Update the DOM inside an animation frame
-      const scrollX = window.pageXOffset ?? window.scrollX
-      const innerHeight = window.innerHeight
-
-      document.body.style.setProperty('position', 'fixed', 'important')
-      Object.assign(document.body.style, {
-        top: `${-savedScrollY}px`,
-        left: `${-scrollX}px`,
-        right: '0px',
-        height: 'auto'
-      })
-
-      // Attempt to check if the bottom bar appeared due to the
-      // position change. After 300 ms (the toolbar collapse
-      // animation), check if the bottom bar appeared and adjust
-      // the top offset so it doesn't hide the content.
-      window.setTimeout(() => {
-        window.requestAnimationFrame(() => {
-          const bottomBarHeight = innerHeight - window.innerHeight
-          if (bottomBarHeight && savedScrollY >= innerHeight) {
-            // Move the content further up so the bottom bar
-            // doesn't hide it.
-            document.body.style.top = `${-(savedScrollY + bottomBarHeight)}px`
-          }
-        })
-      }, 300)
+    if (fixedPositionTimer !== null) {
+      clearTimeout(fixedPositionTimer)
+      fixedPositionTimer = null
     }
-  } else {
-    if (previousBodyPosition !== null && !options.noBodyStyles) {
-      // Convert the position from "px" to Int
-      const y = -parseInt(document.body.style.top, 10)
-      const x = -parseInt(document.body.style.left, 10)
+    const previous = previousBodyPosition
+    previousBodyPosition = null
+    for (const property of ['position', 'top', 'left', 'right', 'height'] as const) {
+      restoreInlineStyle(document.body, property, previous[property])
+    }
+    fixedPositionRestoreFrame = window.requestAnimationFrame(() => {
+      fixedPositionRestoreFrame = null
+      window.scrollTo(savedScrollX, savedScrollY)
+    })
+  }
 
-      // Restore styles
-      Object.assign(document.body.style, previousBodyPosition)
+  if (!options.isOpen) {
+    return () => {}
+  }
 
+  fixedPositionCount++
+  if (fixedPositionCount === 1) {
+    if (fixedPositionRestoreFrame !== null) {
+      cancelAnimationFrame(fixedPositionRestoreFrame)
+      fixedPositionRestoreFrame = null
+    }
+    savedScrollX = window.pageXOffset ?? window.scrollX
+    savedScrollY = window.pageYOffset ?? window.scrollY
+    previousBodyPosition = {
+      position: readInlineStyle(document.body, 'position'),
+      top: readInlineStyle(document.body, 'top'),
+      left: readInlineStyle(document.body, 'left'),
+      right: readInlineStyle(document.body, 'right'),
+      height: readInlineStyle(document.body, 'height')
+    }
+
+    const innerHeight = window.innerHeight
+    document.body.style.setProperty('position', 'fixed', 'important')
+    document.body.style.setProperty('top', `${-savedScrollY}px`, 'important')
+    document.body.style.setProperty('left', `${-savedScrollX}px`, 'important')
+    document.body.style.setProperty('right', '0px', 'important')
+    document.body.style.setProperty('height', 'auto', 'important')
+
+    fixedPositionTimer = window.setTimeout(() => {
+      fixedPositionTimer = null
       window.requestAnimationFrame(() => {
-        window.scrollTo(x, y)
+        if (fixedPositionCount === 0) return
+        const bottomBarHeight = innerHeight - window.innerHeight
+        if (bottomBarHeight && savedScrollY >= innerHeight) {
+          document.body.style.setProperty('top', `${-(savedScrollY + bottomBarHeight)}px`, 'important')
+        }
       })
+    }, 300)
+  }
 
-      previousBodyPosition = null
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    release()
+  }
+}
+
+export function lockDocumentScrollBehavior(): () => void {
+  if (typeof document === 'undefined') return () => {}
+  if (scrollBehaviorCount === 0) {
+    previousScrollBehavior = readInlineStyle(document.documentElement, 'scroll-behavior')
+    document.documentElement.style.scrollBehavior = 'auto'
+  }
+  scrollBehaviorCount++
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    scrollBehaviorCount = Math.max(0, scrollBehaviorCount - 1)
+    if (scrollBehaviorCount === 0) {
+      restoreInlineStyle(document.documentElement, 'scroll-behavior', previousScrollBehavior)
+      previousScrollBehavior = { value: '', priority: '' }
+    }
+  }
+}
+
+export function lockScrollRestoration(): () => void {
+  if (typeof window === 'undefined' || !window.history) return () => {}
+  if (scrollRestorationCount === 0) {
+    previousScrollRestoration = window.history.scrollRestoration
+    window.history.scrollRestoration = 'manual'
+  }
+  scrollRestorationCount++
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    scrollRestorationCount = Math.max(0, scrollRestorationCount - 1)
+    if (scrollRestorationCount === 0 && previousScrollRestoration !== null) {
+      window.history.scrollRestoration = previousScrollRestoration
+      previousScrollRestoration = null
     }
   }
 }
@@ -420,16 +500,11 @@ export function trackScrollPosition(): () => void {
  * Pure helpers used by the two pipelines above.                    *
  * ---------------------------------------------------------------- */
 
-function setStyle(
-  element: HTMLElement,
-  style: string,
-  value: string
-): () => void {
-  const styleRecord = element.style as unknown as Record<string, string>
-  const cur = styleRecord[style] ?? ''
-  styleRecord[style] = value
+function setStyle(element: HTMLElement, style: string, value: string): () => void {
+  const previous = readInlineStyle(element, style)
+  element.style.setProperty(style, value)
   return () => {
-    styleRecord[style] = cur
+    restoreInlineStyle(element, style, previous)
   }
 }
 
@@ -454,11 +529,7 @@ function scrollIntoView(target: Element): void {
     // Find the parent scrollable element and adjust the scroll
     // position if the target is not already in view.
     const scrollable = getScrollParent(current)
-    if (
-      scrollable !== document.documentElement &&
-      scrollable !== document.body &&
-      scrollable !== current
-    ) {
+    if (scrollable !== document.documentElement && scrollable !== document.body && scrollable !== current) {
       const scrollableTop = scrollable.getBoundingClientRect().top
       const targetTop = (current as HTMLElement).getBoundingClientRect().top
       const targetBottom = (current as HTMLElement).getBoundingClientRect().bottom

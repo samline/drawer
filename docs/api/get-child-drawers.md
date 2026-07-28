@@ -10,7 +10,7 @@ function getChildDrawers(id?: string | null): VanillaDrawerController[]
 
 ## Description
 
-`getChildDrawers` walks the registry and returns every drawer whose `parentId` matches the given `id`. The order is the insertion order of the registry. Returns an empty array if the drawer has no children, or if the drawer itself is not in the registry.
+`getChildDrawers` walks the registry and returns every live drawer whose `parentId` matches the given `id`, in registry insertion order. The parent itself does not need to be live; the relationship is read from each child's current options. Returns an empty array when no child matches.
 
 The default `id` is `'default'`. Omit the argument to inspect the children of the default instance.
 

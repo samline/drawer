@@ -216,6 +216,7 @@ describe('vanilla root entry', () => {
   })
 
   it('updates data-state on the dialog when opened programmatically', () => {
+    vi.useFakeTimers()
     const drawer = createDrawer({
       id: 'state-test',
       title: 'State test',
@@ -223,16 +224,20 @@ describe('vanilla root entry', () => {
       direction: 'bottom'
     })
 
-    // mountVanillaDialog tears down and re-mounts the content on every
-    // re-render, so each check has to query the fresh element.
     const getContent = () => document.querySelector('[data-drawer]') as HTMLElement | null
 
-    expect(getContent()?.dataset.state).toBe('closed')
+    expect(getContent()).toBeNull()
 
     drawer.setOpen(true)
-    expect(getContent()?.dataset.state).toBe('open')
+    const mountedContent = getContent()
+    expect(mountedContent?.dataset.state).toBe('open')
 
     drawer.setOpen(false)
-    expect(getContent()?.dataset.state).toBe('closed')
+    expect(getContent()).toBe(mountedContent)
+    expect(mountedContent?.dataset.state).toBe('closed')
+
+    vi.advanceTimersByTime(601)
+    expect(getContent()).toBeNull()
+    vi.useRealTimers()
   })
 })

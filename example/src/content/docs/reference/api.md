@@ -6,12 +6,12 @@ sidebar:
   order: 3
 ---
 
-The public API of `@samline/drawer`. Every entrypoint returns a `VanillaDrawerController` (from `createDrawer`) or a `CommonDrawerController` (from `createDrawerController`), or operates on the module-level registry without returning a controller.
+The public API of `@samline/drawer@3.0.0-beta.4`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
 
-The runtime is built around the `id` — calling any of these with the same `id` updates the same drawer rather than creating a second one.
+The runtime is built around `id`. Reusing an id merges into its registered instance and dedicated host rather than creating another host.
 
 :::tip[Reading the signatures]
-Methods that return data (rather than the controller) end in a different return type — for example `getDrawer()` returns `VanillaDrawerController | null`, `subscribe()` returns an unsubscribe function. Methods that mutate the registry return the controller.
+Most registry mutators return a controller. `destroyDrawer()` and `destroyDrawers()` return `void`; inspectors return controllers or collections, and `subscribe()` returns an unsubscribe function.
 :::
 
 ## Factory
@@ -39,6 +39,16 @@ Methods that return data (rather than the controller) end in a different return 
 
 - [`createDrawerController(options?)`](#createdrawercontrolleroptions) — create a controller without mounting a DOM host. Useful for tests, headless logic, or building a different renderer on top of the same observable state.
 
+## Lifecycle contract
+
+- `createDrawer()` registers the id and creates a dedicated `[data-drawer-vanilla-root="id"]` host immediately in a DOM environment.
+- Closed state uses lazy Presence: no overlay or `[data-drawer]` dialog is mounted initially. An optional built-in trigger remains in the host.
+- Opening mounts overlay/content. A drawer created initially open skips its entrance animation; opening a previously closed registered host animates.
+- Closing keeps overlay/content in `data-state="closed"` for the exit transition, releases focus/scroll/viewport effects immediately, and removes those nodes after the 600 ms safety timeout. The registry entry, host, and trigger remain.
+- Destroying removes the registry entry, trigger listeners, owned host, pending lifecycle timers, and this drawer's effect ownership. It does not call `onClose` first.
+- Shared scroll locks, document scroll behavior, history restoration, focus stack, and scale-background effects compose across ids. A closing drawer cannot restore an effect another open drawer still owns.
+- The runtime never writes `document.body.style.pointerEvents`.
+
 ---
 
 ## Per-method summaries
@@ -59,21 +69,21 @@ function createDrawer(options?: VanillaDrawerOptions): VanillaDrawerController
 
 **Description**
 
-`createDrawer` is the canonical entrypoint. It writes the options into the module-level registry, mounts the host element (`<div data-drawer-vanilla-root>`) and the dialog (overlay + content + optional handle + optional built-in trigger) when `open: true`, and returns a `VanillaDrawerController` that exposes the imperative API.
+`createDrawer` is the canonical entrypoint. It stores options in the module-level registry and resolves one owned host for the id under `container ?? mountElement ?? document.body`. `container` is preferred and `mountElement` is deprecated.
 
-Reusing the same `id` is an update, not a second mount — the existing host is updated in place. The controller returned by `createDrawer` is always the up-to-date controller for that `id`.
+The optional built-in trigger is reconciled in that host even while closed. Overlay and dialog content mount only when open, remain during the exit transition, and are absent again after close. Reusing the same id is an update; option changes may update the open nodes in place or rebuild that id's dialog subtree, but do not add another host.
 
 The default `id` is `'default'`. Omit `id` to use the default instance.
 
 **Parameters**
 
-| Name      | Type                   | Default | Description                                                              |
-| --------- | ---------------------- | ------- | ------------------------------------------------------------------------ |
+| Name      | Type                   | Default | Description                                                             |
+| --------- | ---------------------- | ------- | ----------------------------------------------------------------------- |
 | `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
 
 **Returns**
 
-`VanillaDrawerController` — the controller for the created or updated drawer. See [TypeScript → `VanillaDrawerController`](typescript/#vanilladrawercontroller).
+`VanillaDrawerController` — a controller wrapper for the created or updated id. See [TypeScript → `VanillaDrawerController`](typescript/#vanilladrawercontroller).
 
 **Example**
 
@@ -122,8 +132,8 @@ Both names hit the same module-level registry. The runtime does not track which 
 
 **Parameters**
 
-| Name      | Type                   | Default | Description                                                              |
-| --------- | ---------------------- | ------- | ------------------------------------------------------------------------ |
+| Name      | Type                   | Default | Description                                                             |
+| --------- | ---------------------- | ------- | ----------------------------------------------------------------------- |
 | `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
 
 **Returns**
@@ -143,7 +153,7 @@ getDrawer('filters')?.setOpen(true)
 **Related**
 
 - [`createDrawer(options?)`](#createdraweroptions) — the canonical entrypoint.
-- [`updateDrawer(idOrOptions?, options?)`](#updatedraweridoroptions-options) — patch options without returning a new controller.
+- [`updateDrawer(idOrOptions?, options?)`](#updatedraweridoroptions-options) — patch options and return a controller facade for the same id.
 
 ### Inspectors
 
@@ -159,7 +169,7 @@ function getDrawer(id?: string | null): VanillaDrawerController | null
 
 **Description**
 
-`getDrawer` is a read-only inspector. It does not create a drawer — if the id has not been created, the function returns `null`. Use it to look up a controller from a non-React consumer (event handlers, route guards, promise resolvers) without having to thread the controller reference around.
+`getDrawer` is a read-only inspector. It does not create a drawer — if the id has not been registered, the function returns `null`. The returned wrapper targets the same underlying instance but is not guaranteed to have object identity with a wrapper returned earlier.
 
 The default `id` is `'default'`. Omit the argument to inspect the default instance.
 
@@ -205,7 +215,7 @@ function getDrawers(): Record<string, VanillaDrawerController>
 
 **Description**
 
-`getDrawers` is a read-only inspector. It returns a fresh plain object with one entry per live drawer instance, keyed by `id`. The returned controllers are the same references the registry holds; calling methods on them is the same as calling them on the controllers returned by `createDrawer`.
+`getDrawers` is a read-only inspector. It returns a fresh plain object with one controller wrapper per registered drawer, keyed by `id`. Calling a wrapper targets the same underlying state as `createDrawer`, but wrapper object identity is not stable.
 
 Use it to enumerate every drawer (for example, to close them all on a navigation event) without keeping your own map.
 
@@ -290,7 +300,7 @@ function getChildDrawers(id?: string | null): VanillaDrawerController[]
 
 **Description**
 
-`getChildDrawers` walks the registry and returns every drawer whose `parentId` matches the given `id`. The order is the insertion order of the registry. Returns an empty array if the drawer has no children, or if the drawer itself is not in the registry.
+`getChildDrawers` walks the registry and returns every drawer whose `parentId` matches the given id, in registry insertion order. It can return children even if no parent instance is currently registered; the relationship is stored on each child.
 
 The default `id` is `'default'`. Omit the argument to inspect the children of the default instance.
 
@@ -344,7 +354,7 @@ function updateDrawer(
 - `updateDrawer(options)` — the `options` object includes an `id`. Equivalent to `createDrawer(options)`.
 - `updateDrawer(id, options)` — the `id` is the first argument, the partial options are the second. Equivalent to `createDrawer({ ...options, id })`.
 
-If the drawer already exists, the new options are merged into the existing controller's options. The dialog re-renders so the new options take effect. If the drawer does not exist, the runtime creates it.
+If the drawer already exists, the options are shallow-merged and the host/dialog contract is reconciled. If it does not exist, the runtime registers it and creates its per-id host; overlay/content still follow lazy Presence.
 
 The controller returned is always the up-to-date controller for the resolved `id`.
 
@@ -393,7 +403,7 @@ function openDrawer(id?: string | null): VanillaDrawerController
 
 **Description**
 
-`openDrawer` is a thin wrapper around `createDrawer({ id, open: true })`. It creates the drawer if it does not exist, or merges `{ open: true }` into the existing options, and returns the controller.
+`openDrawer` is a thin wrapper around `createDrawer({ id, open: true })`. It creates the per-id host and open dialog if needed, or merges `{ open: true }` into an existing instance, and returns a controller wrapper.
 
 The default `id` is `'default'`. Omit the argument to open the default instance.
 
@@ -436,9 +446,9 @@ function closeDrawer(id?: string | null): VanillaDrawerController
 
 **Description**
 
-`closeDrawer` is a thin wrapper around `createDrawer({ id, open: false })`. It creates the drawer if it does not exist (closed by default), or merges `{ open: false }` into the existing options, and returns the controller.
+`closeDrawer` is a thin wrapper around `createDrawer({ id, open: false })`. For an unknown id it registers a closed instance with an empty host and no overlay/content. For an open id it starts the close lifecycle and returns a controller wrapper.
 
-The dialog re-renders with `data-state="closed"` and the CSS close animation runs. `onClose()` fires at the start of the close, `onAnimationEnd(false)` fires after `TRANSITIONS.DURATION` (500 ms by default).
+On a real open-to-closed transition, `onClose()` fires before state changes; then the controller updates and `onOpenChange(false)` fires. Scroll/focus/viewport effects release synchronously. Existing overlay/content flip to `data-state="closed"`, `onAnimationEnd(false)` fires from the latest-state timer after 500 ms, and the nodes are removed after the 600 ms safety timeout. With snap points, the active point resets to the first after 500 ms.
 
 The default `id` is `'default'`. Omit the argument to close the default instance.
 
@@ -527,9 +537,9 @@ function destroyDrawer(id?: string | null): void
 
 **Description**
 
-`destroyDrawer` tears down the drawer's host element (if the runtime owns it), removes the drawer from the registry, and recursively destroys any children (drawers whose `parentId` matches the destroyed id).
+`destroyDrawer` recursively destroys children, detaches external and built-in trigger listeners, tears down the dialog and owned per-id host, cancels pending animation/snap timers, and removes the id from the registry.
 
-Body scroll is released if the destroyed drawer held the lock. The `data-drawer-wrapper` page shell is reset to its normal state. `window.history.scrollRestoration` is restored to its previous value if the destroyed drawer had `preventScrollRestoration: true`.
+The drawer releases its body-scroll, document-scroll, history, focus, and scale-background ownership. Global values and a shared `[data-drawer-wrapper]` return to their originals only when no remaining owner still needs them. `body.pointerEvents` is preserved because the runtime never owns it.
 
 After `destroyDrawer`, `getDrawer(id)` returns `null` and the id is free to be reused by a future `createDrawer` call.
 
@@ -543,7 +553,7 @@ The default `id` is `'default'`. Omit the argument to destroy the default instan
 
 **Returns**
 
-`void` — the function is fire-and-forget. There is no signal back from the destroy; the next `getDrawer(id)` will return `null` if the destroy succeeded.
+`void`. The next `getDrawer(id)` returns `null`. Destroy does not synthesize `onClose`, `onOpenChange(false)`, or a pending `onAnimationEnd` callback.
 
 **Example**
 
@@ -573,7 +583,7 @@ function destroyDrawers(): void
 
 **Description**
 
-`destroyDrawers` is a bulk teardown. It iterates the registry in insertion order and calls `destroyDrawer` for each. The order is the reverse of the creation order, so a parent is destroyed after its children. After the call, the registry is empty.
+`destroyDrawers` snapshots registry ids in insertion order and calls `destroyDrawer` for each. Each parent call recursively destroys its children first; later visits to those removed child ids are no-ops. After the call, the registry is empty and shared effects have released their final owners.
 
 Useful for "close everything" hooks (navigation, logout, route change) without enumerating the ids yourself. Pair with `getDrawers()` if you need to inspect before tearing down.
 
@@ -610,7 +620,9 @@ function createDrawerController(options?: CommonDrawerOptions): CommonDrawerCont
 
 **Description**
 
-`createDrawerController` is the same observable state machine that `createDrawer` uses internally, but without the host / dialog / browser-side-effects. The returned controller exposes `getSnapshot`, `setOpen`, `setActiveSnapPoint`, `patch`, and `subscribe` — the full observable surface — but does not own any DOM.
+`createDrawerController` is the observable state machine used internally by registered drawers, without a host, registry entry, dialog, Presence lifecycle, or browser side effects. It exposes `getSnapshot`, `setOpen`, `setActiveSnapPoint`, `patch`, and `subscribe`.
+
+Callbacks stored in `CommonDrawerOptions` are registry lifecycle concerns; the headless controller publishes subscribers but does not invoke `onOpenChange`, `onClose`, `onAnimationEnd`, or drag callbacks itself.
 
 Useful for:
 
@@ -618,12 +630,12 @@ Useful for:
 - **Headless logic** — model drawer state in a server-rendered context or in a worker.
 - **Custom renderers** — build your own dialog primitive on top of the same observable state. Subscribe to the controller and re-render your own host when the snapshot changes.
 
-The default `id` is `'default'`. Pass `id` to namespace multiple controllers.
+Headless controllers are independent objects and do not join the id-based registry. An `id` is retained in `snapshot.options` when supplied, but it has no default and does not namespace or connect separate controllers.
 
 **Parameters**
 
-| Name      | Type                  | Default | Description                                                              |
-| --------- | --------------------- | ------- | ------------------------------------------------------------------------ |
+| Name      | Type                  | Default | Description                                                             |
+| --------- | --------------------- | ------- | ----------------------------------------------------------------------- |
 | `options` | `CommonDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
 
 **Returns**

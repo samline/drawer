@@ -83,24 +83,28 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     removeWrapper()
   })
 
-  it('leaves the wrapper untouched at open time (NORMAL state, no inline transform)', () => {
+  it('applies the wrapper open-rest state when the drawer opens', () => {
     const wrapper = attachWrapper()
+    const direction: CommonDrawerDirection = 'bottom'
+    const baseScale = computeBaseScale(direction)
     const drawer = createDrawer({
       id: 'scale-open',
-      direction: 'bottom',
+      direction,
       shouldScaleBackground: true,
       title: 'Scale open',
       content: 'Body'
     })
     drawer.setOpen(true)
 
-    // Per spec, at open time the wrapper stays in its NORMAL state.
-    // The drag pipeline applies the rest-state inline transform on
-    // the first pointermove, never on mount. This keeps the
-    // programmatic-open animation identical to a non-scaling drawer.
-    expect(wrapper.style.transform).toBe('')
-    expect(wrapper.style.borderRadius).toBe('')
-    expect(wrapper.style.overflow).toBe('')
+    const { borderRadius, overflow, transform, transformOrigin } = getBackgroundResetState({
+      direction,
+      baseScale
+    })
+    expect(wrapper.style.transform).toBe(transform)
+    expect(wrapper.style.borderRadius).toBe(borderRadius)
+    expect(wrapper.style.overflow).toBe(overflow)
+    expect(wrapper.style.transformOrigin).toBe(transformOrigin)
+    expect(document.body.style.backgroundColor).toBe('black')
   })
 
   it('writes the drag-state transform to the wrapper during a mid-drag move', () => {
@@ -179,18 +183,12 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(onReleaseChange).toHaveBeenCalledWith(false)
 
-    // Immediately after the release, the wrapper carries the open-
-    // rest inline transform (the CSS transition will animate the
-    // change from the drag state to the rest state, then the
-    // deferred timer strips the inline styles).
-    const { borderRadius, overflow, transform, transformOrigin } = getBackgroundResetState({
-      direction,
-      baseScale
-    })
-    expect(wrapper.style.transform).toBe(transform)
-    expect(wrapper.style.borderRadius).toBe(borderRadius)
-    expect(wrapper.style.overflow).toBe(overflow)
-    expect(wrapper.style.transformOrigin).toBe(transformOrigin)
+    // Closing targets the page's normal state, not the scaled open
+    // rest state. Overflow/origin remain until the transition ends.
+    expect(wrapper.style.transform).toBe('none')
+    expect(wrapper.style.borderRadius).toBe('0px')
+    expect(wrapper.style.overflow).toBe('hidden')
+    expect(wrapper.style.transformOrigin).toBe('top')
 
     // Advance the fake clock past TRANSITIONS.DURATION so the
     // deferred clear fires. The wrapper should land in its NORMAL
@@ -282,7 +280,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     expect(wrapper.style.overflow).toBe('')
   })
 
-  it('writes a background-color overlay during drag when setBackgroundColorOnScale is true', () => {
+  it('writes a background-color overlay during drag by default', () => {
     const wrapper = attachWrapper()
 
     vi.useFakeTimers()
@@ -290,7 +288,6 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-color',
       direction: 'bottom',
       shouldScaleBackground: true,
-      setBackgroundColorOnScale: true,
       title: 'Scale color',
       content: 'Body'
     })
@@ -328,7 +325,6 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const wrapper = attachWrapper()
     const direction: CommonDrawerDirection = 'right'
     const baseScale = computeBaseScale(direction)
-
     vi.useFakeTimers()
     const drawer = createDrawer({
       id: 'scale-horizontal',
@@ -362,7 +358,6 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
   it('animates the wrapper back to NORMAL on a programmatic close (no drag)', () => {
     const wrapper = attachWrapper()
     const direction: CommonDrawerDirection = 'bottom'
-    const baseScale = computeBaseScale(direction)
 
     vi.useFakeTimers()
     const drawer = createDrawer({
@@ -375,27 +370,12 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
-    // Inject a synthetic drag-state inline transform onto the
-    // wrapper. This simulates a drawer that was previously dragged
-    // and is now being closed via a non-drag path (e.g. a custom
-    // close button that calls `controller.setOpen(false)`).
-    wrapper.style.transform = 'scale(0.99) translate3d(0, 1px, 0)'
-    wrapper.style.borderRadius = '1px'
-    wrapper.style.overflow = 'hidden'
-    wrapper.style.transformOrigin = 'top'
-
     drawer.setOpen(false)
 
-    // The mount pipeline should now drive the wrapper to its rest
-    // state with the CSS transition enabled.
-    const { borderRadius, overflow, transform, transformOrigin } = getBackgroundResetState({
-      direction,
-      baseScale
-    })
-    expect(wrapper.style.transform).toBe(transform)
-    expect(wrapper.style.borderRadius).toBe(borderRadius)
-    expect(wrapper.style.overflow).toBe(overflow)
-    expect(wrapper.style.transformOrigin).toBe(transformOrigin)
+    expect(wrapper.style.transform).toBe('none')
+    expect(wrapper.style.borderRadius).toBe('0px')
+    expect(wrapper.style.overflow).toBe('hidden')
+    expect(wrapper.style.transformOrigin).toBe('top')
 
     // After the transition completes, the wrapper is stripped of
     // every inline style we wrote.
@@ -404,5 +384,192 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     expect(wrapper.style.borderRadius).toBe('')
     expect(wrapper.style.overflow).toBe('')
     expect(wrapper.style.transformOrigin).toBe('')
+  })
+
+  it('keeps the newest scale owner active when an older drawer closes', () => {
+    const wrapper = attachWrapper()
+    vi.useFakeTimers()
+    const first = createDrawer({
+      id: 'scale-owner-first',
+      open: true,
+      direction: 'bottom',
+      shouldScaleBackground: true,
+      content: 'First'
+    })
+    const second = createDrawer({
+      id: 'scale-owner-second',
+      open: true,
+      direction: 'right',
+      shouldScaleBackground: true,
+      content: 'Second'
+    })
+    const secondTransform = getBackgroundResetState({
+      direction: 'right',
+      baseScale: computeBaseScale('right')
+    }).transform
+
+    expect(wrapper.style.transform).toBe(secondTransform)
+    first.setOpen(false)
+    vi.advanceTimersByTime(TRANSITIONS.DURATION * 1000)
+
+    expect(second.getSnapshot().state.isOpen).toBe(true)
+    expect(wrapper.style.transform).toBe(secondTransform)
+    expect(document.body.style.backgroundColor).toBe('black')
+  })
+
+  it('reapplies the previous scale owner when the newest drawer closes', () => {
+    const wrapper = attachWrapper()
+    vi.useFakeTimers()
+    const first = createDrawer({
+      id: 'scale-stack-first',
+      open: true,
+      direction: 'bottom',
+      shouldScaleBackground: true,
+      content: 'First'
+    })
+    const second = createDrawer({
+      id: 'scale-stack-second',
+      open: true,
+      direction: 'right',
+      shouldScaleBackground: true,
+      content: 'Second'
+    })
+    const firstTransform = getBackgroundResetState({
+      direction: 'bottom',
+      baseScale: computeBaseScale('bottom')
+    }).transform
+
+    second.setOpen(false)
+
+    expect(first.getSnapshot().state.isOpen).toBe(true)
+    expect(wrapper.style.transform).toBe(firstTransform)
+    expect(document.body.style.backgroundColor).toBe('black')
+  })
+
+  it('does not promote a background scale owner when it remounts', () => {
+    const wrapper = attachWrapper()
+    const first = createDrawer({
+      id: 'scale-remount-first',
+      open: true,
+      direction: 'bottom',
+      shouldScaleBackground: true,
+      content: 'First'
+    })
+    createDrawer({
+      id: 'scale-remount-second',
+      open: true,
+      direction: 'right',
+      shouldScaleBackground: true,
+      content: 'Second'
+    })
+    const foregroundTransform = getBackgroundResetState({
+      direction: 'right',
+      baseScale: computeBaseScale('right')
+    }).transform
+
+    first.update({ content: 'Updated first' })
+
+    expect(wrapper.style.transform).toBe(foregroundTransform)
+  })
+
+  it('cannot restore a reused scale group from a stale drawer', () => {
+    const wrapper = attachWrapper()
+    vi.useFakeTimers()
+    const first = createDrawer({
+      id: 'scale-stale-first',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'First'
+    })
+    first.setOpen(false)
+    const second = createDrawer({
+      id: 'scale-stale-second',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Second'
+    })
+    second.setOpen(false)
+    vi.advanceTimersByTime(TRANSITIONS.DURATION * 1000)
+
+    const third = createDrawer({
+      id: 'scale-stale-third',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Third'
+    })
+    const activeTransform = wrapper.style.transform
+    first.destroy()
+
+    expect(third.getSnapshot().state.isOpen).toBe(true)
+    expect(wrapper.style.transform).toBe(activeTransform)
+    expect(document.body.style.backgroundColor).toBe('black')
+  })
+
+  it('shares body background ownership across replacement wrappers', () => {
+    const firstWrapper = attachWrapper()
+    const first = createDrawer({
+      id: 'scale-wrapper-first',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'First'
+    })
+    firstWrapper.remove()
+    const secondWrapper = attachWrapper()
+    const second = createDrawer({
+      id: 'scale-wrapper-second',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Second'
+    })
+
+    first.setOpen(false)
+
+    expect(second.getSnapshot().state.isOpen).toBe(true)
+    expect(secondWrapper.style.transform).not.toBe('')
+    expect(document.body.style.backgroundColor).toBe('black')
+  })
+
+  it('releases captured scale styles when the option changes during close', () => {
+    const wrapper = attachWrapper()
+    wrapper.style.cssText = 'color: red; background-color: rgb(1, 2, 3) !important;'
+    const originalCssText = wrapper.style.cssText
+    document.body.style.setProperty('background-color', 'rgb(4, 5, 6)', 'important')
+    const originalBodyCssText = document.body.style.cssText
+    vi.useFakeTimers()
+    const drawer = createDrawer({
+      id: 'scale-option-flip',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Body'
+    })
+
+    drawer.update({ open: false, shouldScaleBackground: false })
+    vi.advanceTimersByTime(TRANSITIONS.DURATION * 1000)
+
+    expect(wrapper.style.cssText).toBe(originalCssText)
+    expect(document.body.style.cssText).toBe(originalBodyCssText)
+  })
+
+  it('restores body styles immediately when the captured wrapper was removed', () => {
+    const wrapper = attachWrapper()
+    document.body.style.backgroundColor = 'navy'
+    const drawer = createDrawer({
+      id: 'scale-removed-wrapper',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Body'
+    })
+
+    wrapper.remove()
+    drawer.setOpen(false)
+
+    expect(document.body.style.backgroundColor).toBe('navy')
+  })
+
+  it('does not change the body when no scale wrapper exists', () => {
+    document.body.style.backgroundColor = 'navy'
+    createDrawer({ id: 'scale-no-wrapper', open: true, shouldScaleBackground: true, content: 'Body' })
+
+    expect(document.body.style.backgroundColor).toBe('navy')
   })
 })

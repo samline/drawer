@@ -14,7 +14,7 @@
 - [Quick Start](#quick-start)
 - [What You Can Build](#what-you-can-build)
 - [API at a Glance](#api-at-a-glance)
-- [Mount-time Lifecycle](#mount-time-lifecycle)
+- [Presence and Mount Lifecycle](#presence-and-mount-lifecycle)
 - [Title and Close Button](#title-and-close-button)
 - [Documentation](#documentation)
 - [License](#license)
@@ -48,10 +48,11 @@ Requires Node 20+ when bundling. Runtime target is ES2020.
 Use the browser build when you do not have a bundler and need to run the package directly in HTML, Shopify, WordPress, or any traditional template.
 
 ```html
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.0.0-beta.3` with the version you ship.
+> Pin the version in production. Replace `3.0.0-beta.4` with the version you ship.
 
 The browser bundle exposes a single global: `window.Drawer`.
 
@@ -60,23 +61,20 @@ The browser bundle exposes a single global: `window.Drawer`.
   <button id="open-drawer" type="button">Open</button>
 </form>
 
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 <script>
-  const drawer = window.Drawer.createDrawer({
+  window.Drawer.createDrawer({
     id: 'demo',
     triggerElement: document.getElementById('open-drawer'),
     direction: 'bottom',
     title: 'Demo',
     content: 'Hello from the browser'
   })
-
-  document.getElementById('open-drawer').addEventListener('click', function () {
-    drawer.setOpen(true)
-  })
 </script>
 ```
 
-The browser surface keeps a small registry under `window.Drawer`, keyed by the `id` you pass to `window.Drawer.createDrawer`. Each successful `createDrawer` call stores the returned controller there, and `window.Drawer.destroyDrawer(id)` calls `destroy()` and removes the entry. Use `window.Drawer.createDrawer` directly when you need the factory without the registry side-effect.
+The methods on `window.Drawer` share a module-level registry keyed by `id`. Controllers are not stored as properties on the namespace; inspect them with `window.Drawer.getDrawer(id)` or `window.Drawer.getDrawers()`. `window.Drawer.destroyDrawer(id)` tears down the matching instance and removes it from that registry.
 
 See [docs/browser.md](docs/browser.md) for the full browser surface.
 
@@ -89,7 +87,7 @@ See [docs/browser.md](docs/browser.md) for the full browser surface.
 | `@samline/drawer`         | Main vanilla API for bundlers, ESM, or CJS consumers.                        |
 | `@samline/drawer/browser` | Pre-bundled IIFE that registers `window.Drawer` for direct `<script>` usage. |
 
-The root entrypoint also exports `browser`, the same `{ createDrawer, openDrawer, … }` surface as the IIFE but as a module-level singleton (no `globalThis` side-effect). Use it from a bundler when you want the registry helpers without the IIFE — see [docs/vanilla.md](docs/vanilla.md#runtime-helpers).
+The root entrypoint does not export a `browser` namespace. Bundled applications should import the named registry helpers from `@samline/drawer`; the browser entry is the IIFE that attaches `window.Drawer`.
 
 ---
 
@@ -117,7 +115,7 @@ What this does:
 - Binds a controller to the id `filters`. Reusing the id is an update, not a second mount.
 - Mounts the dialog in the bottom direction with the open transition.
 - Renders the built-in handle. Clicking the handle advances the active snap point.
-- Positions the content at the `180px` snap on open; the user can drag to `420px` or the full viewport.
+- Positions the content at the `180px` snap on open; the user can drag to `420px` or the zero-offset snap represented by numeric `1`.
 - Locks body scroll while the drawer is open (because `modal` defaults to `true`).
 
 ---
@@ -130,8 +128,8 @@ What this does:
 - Scale-background flows that dim and shift the page shell while the drawer is dragged open.
 - Drawers with a built-in handle, built-in trigger button, or built-in close button — no manual `document.addEventListener` boilerplate.
 - Browser / CDN / Shopify / WordPress embeds via the `window.Drawer` IIFE bundle.
-- HMR-safe SPAs under Vite (use `id` + helper API, not `window.Drawer.available`).
-- Drawers that honour the mobile keyboard (`repositionInputs` + `fixed` + `visualViewport`).
+- HMR-safe SPAs under Vite using stable ids and explicit teardown.
+- Drawers that honour the mobile keyboard through the default-enabled, focus-gated `repositionInputs` pipeline (`fixed` is optional).
 - Drawers that opt out of scroll restoration (`preventScrollRestoration: true`).
 - Test-friendly flows via the headless `createDrawerController` API (no DOM, no side effects).
 
@@ -139,7 +137,7 @@ What this does:
 
 ## API at a Glance
 
-The runtime is built around one factory plus a focused set of helpers. Most methods are chainable; the imperative helpers are fire-and-forget.
+The runtime is built around one factory plus a focused set of helpers. State mutators return snapshots, `update` returns a controller for the same id, and each registry helper's return shape is documented in the per-method reference.
 
 | Group                   | Methods                                                                                                                                                                                   |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -154,15 +152,16 @@ See the full per-method reference in [`docs/api/`](docs/api/index.md).
 
 ---
 
-## Mount-time Lifecycle
+## Presence and Mount Lifecycle
 
-Unlike v2, the v3 package mounts the drawer's overlay **at `createDrawer` time**, not when the drawer is first opened. This is a deliberate change to make the package's behavior more predictable and to support features like the mount-time `mouseup` listener for the overlay.
+`createDrawer` immediately creates a dedicated `<div data-drawer-vanilla-root>` for that drawer in `document.body` or its `container`. An optional built-in trigger is also rendered immediately. Each drawer gets its own host, including drawers that share the same custom container.
 
-**Implications for consumers:**
+The visual dialog uses lazy presence:
 
-1. **The overlay exists on page load**, even if the drawer is closed. The package applies `pointer-events: none` to the closed overlay so it does not capture clicks (see [`src/style.css`](src/style.css) — the `[data-drawer-overlay][data-state="closed"]` rule).
-2. **`open: true` at mount means "drawer is open immediately"** — no mount animation runs, and the drawer is visible on page load. For dialogs that should appear on user interaction (e.g. a modal that opens on click), use `open: false` (or omit it) and call `setOpen(true)` later.
-3. **HMR considerations**: under Vite HMR, the consumer's script re-runs on every save. If the script creates a drawer with `open: true`, the drawer will be re-opened on every HMR cycle, causing a brief flash. For stable HMR behavior, prefer the `open: false` + `setOpen(true)` pattern (deferred with `queueMicrotask` so the open animation still runs).
+1. **Initially closed drawers have no overlay or content in the DOM.** `[data-drawer-overlay]`, `[data-drawer]`, the handle, and the content slots mount only when the drawer opens.
+2. **Closing keeps the overlay and content present for the exit.** Their state changes to `closed`, the animation starts from the current rendered transform, and the nodes are removed after the 500 ms transition plus a 100 ms safety window. The host and optional trigger remain until destroy.
+3. **`open: true` at creation means "open immediately."** The dialog is visible without an entrance animation. For an animated programmatic open, create it closed and call `setOpen(true)` after mount.
+4. **HMR considerations:** if consumer code recreates a drawer with `open: true`, it is opened again on every HMR run. Prefer the closed-then-open pattern when that flash is undesirable.
 
 **Recommended pattern for "open on mount" dialogs:**
 
@@ -171,10 +170,10 @@ import { createDrawer } from '@samline/drawer'
 
 const drawer = createDrawer({
   id: 'my-drawer'
-  // no `open` here — defaults to closed
+  // no `open` here; defaults to closed
 })
 
-// Defer the open to the next microtask so the open animation
+// Defer open to the next microtask so the entrance animation
 // runs after the mount is fully wired.
 queueMicrotask(() => drawer.setOpen(true))
 ```
@@ -230,7 +229,7 @@ const drawer = createDrawer({
 
 The button is removed automatically on re-mount (HMR safety) and on `destroyDrawer`. Its `click` event `stopPropagation()`s so it does not bubble to the drawer's content.
 
-See [`VanillaCloseButtonOptions`](src/vanilla/render.ts) for the full type contract.
+See the [close-button option shape](docs/typescript.md#close-button-option-shape). It is part of `VanillaDrawerOptions`, not a named root type export.
 
 ---
 
@@ -244,7 +243,7 @@ Full API reference, guides, and examples are available in [`docs/`](docs/README.
 | [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                       |
 | [docs/options.md](docs/options.md)                 | Every `CommonDrawerOptions` field, with defaults.                                                    |
 | [docs/css-styling.md](docs/css-styling.md)         | The data-attribute contract the stylesheet expects.                                                  |
-| [docs/typescript.md](docs/typescript.md)           | Every exported type, callback signature, and helper return shape.                                    |
+| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, and non-exported option shapes.           |
 | [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                          |
 | [docs/recipes.md](docs/recipes.md)                 | End-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard. |
 | [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                   |

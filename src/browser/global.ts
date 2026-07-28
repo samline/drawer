@@ -1,17 +1,14 @@
 // Browser entrypoint. Exposes the public API as a single global
 // accessible via `window.Drawer` (or `globalThis.Drawer`).
 //
-// This file is the IIFE bundle's source: tsup compiles it with
-// `format: 'iife'` and `globalName: 'Drawer'`, producing a self-contained
-// `dist/browser/global.global.js` that can be loaded with a plain
-// `<script src="..."></script>` tag.
+// This file is the IIFE bundle's source. tsup uses an internal wrapper
+// name so this module remains the sole owner of `window.Drawer` and can
+// expose the direct API from a plain `<script src="..."></script>` tag.
 //
 // Behavior:
-//   - If a DOM is available, attach the `Drawer` namespace to
-//     `globalThis.Drawer` and mirror it to `window.Drawer` when the two
-//     are separate objects (raw Node + JSDOM).
-//   - If no DOM is available (e.g. server-side import), do NOT touch
-//     `globalThis`; just return the namespace.
+//   - Attach the `Drawer` namespace to `globalThis.Drawer` and mirror
+//     it to `window.Drawer` when the two are separate objects (raw
+//     Node + JSDOM).
 //   - No auto-mount: drawer instances are created lazily by
 //     `createDrawer()` / `configureDrawer()` calls, matching the
 //     documented "loading the script only attaches `window.Drawer`" contract.

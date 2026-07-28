@@ -10,7 +10,7 @@ function getDrawers(): Record<string, VanillaDrawerController>
 
 ## Description
 
-`getDrawers` is a read-only inspector. It returns a fresh plain object with one entry per live drawer instance, keyed by `id`. The returned controllers are the same references the registry holds; calling methods on them is the same as calling them on the controllers returned by `createDrawer`.
+`getDrawers` is a read-only inspector. It returns a fresh plain object with one controller facade per live drawer instance, keyed by `id`. Each facade is bound to the same underlying runtime instance as a controller returned by `createDrawer`, but object identity is not guaranteed across calls.
 
 Use it to enumerate every drawer (for example, to close them all on a navigation event) without keeping your own map.
 

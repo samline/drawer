@@ -1,7 +1,7 @@
 /**
  * Regression test for the initial-mount overlay flicker.
  *
- * Bug (v3.0.0-beta.0 → stable, intermittently reintroduced): on
+ * Bug fixed in v3.0.0-beta.4 (intermittently reintroduced since beta.0): on
  * pages that mount drawers on load (the common eager-mount
  * pattern), the overlay was briefly visible — fading in from
  * opacity:1 to opacity:0 over 0.5s on every page load.
@@ -35,33 +35,21 @@ describe('overlay initial-mount flicker', () => {
     // check because jsdom does not resolve specificity; the runtime
     // behaviour is verified end-to-end in the consumer's browser
     // (Playwright + real Chromium).
-    const css = fs.readFileSync(
-      path.resolve(__dirname, '../src/style.css'),
-      'utf8'
-    )
+    const css = fs.readFileSync(path.resolve(__dirname, '../src/style.css'), 'utf8')
     // The companion must declare a higher-specificity selector
     // for the closed state. `[data-drawer-overlay][data-drawer-overlay][data-state='closed']`
     // is the documented pattern.
-    expect(css).toMatch(
-      /\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]closed['"]/
-    )
+    expect(css).toMatch(/\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]closed['"]/)
   })
 
   it('the snap-points-overlay rule still wins for OPEN state (regression guard)', () => {
     // The same specificity ordering must keep the snap-points
     // overlay rule active when the drawer is open — we don't want
     // the boost to leak into the open state.
-    const css = fs.readFileSync(
-      path.resolve(__dirname, '../src/style.css'),
-      'utf8'
-    )
+    const css = fs.readFileSync(path.resolve(__dirname, '../src/style.css'), 'utf8')
     // The snap-points-overlay rule must remain present.
-    expect(css).toMatch(
-      /\[data-drawer-overlay\]\[data-drawer-snap-points-overlay=['"]true['"]/
-    )
+    expect(css).toMatch(/\[data-drawer-overlay\]\[data-drawer-snap-points-overlay=['"]true['"]/)
     // The boost must NOT include the open state.
-    expect(css).not.toMatch(
-      /\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]open['"]/
-    )
+    expect(css).not.toMatch(/\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]open['"]/)
   })
 })

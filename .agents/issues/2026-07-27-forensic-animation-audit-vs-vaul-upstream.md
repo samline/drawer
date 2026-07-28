@@ -3,11 +3,13 @@
 **Filed**: 2026-07-27
 **Reporter**: samline (consumer-driven review prompted by the user)
 **Status** (2026-07-27, end of session):
+
 - **CLOSED** (17/17): F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17
 
 The user approved a full 1:1 audit ("arréglalo todo"), so all 17 findings
 are in scope. All closed. The commits on the `refactor/drawer-v3-vanilla`
 branch that close each one:
+
 - F1: `b1a5665` + `de4835c` + `e73aeef`
 - F2, F3, F11, F14, F15: `475541a`
 - F6, F7, F13: `7a60451`
@@ -15,28 +17,33 @@ branch that close each one:
 - F4, F5, F8, F10, F12, F16, F17: `330ff2e`
 
 **Severity**: F1 was high (visible bug, user-reported). F2-F17 are mixed.
-**Affected versions**: `@samline/drawer@3.0.0-beta.0` … `3.0.0-beta.3` (current)
+**Affected versions**: `@samline/drawer@3.0.0-beta.0` … `3.0.0-beta.3` (`beta.3` when filed)
 **Upstream reference**: `https://github.com/emilkowalski/vaul` @ `master` (commit `2f5b72d`, vaul 1.1.2)
+
+## Beta.4 correction (2026-07-28)
+
+The `17/17 closed` status in this report applies only to the listed F-series findings as implemented at the end of the 2026-07-27 session. It does not establish package-wide 1:1 parity, and the iterative F1 narrative below contains intermediate implementations that beta.4 has superseded.
+
+The current beta.4 close lifecycle keeps open visual nodes for exit, freezes the currently rendered transform, changes them to `data-state="closed"`, and removes them after the transition window. Initially closed drawers now use lazy presence, so overlay/content do not mount merely to render a closed animation. Pointer capture also waits for dominant-axis intent and drag permission instead of occurring on pointerdown.
+
+The later review added regressions for interrupted entrance/snap transitions, rapid reopen, pointer cleanup, logical drawer stacking, shared scale wrappers, composable scroll locks, and Safari/iOS style/scroll restoration. These cases were not covered by the original 17 findings. The beta.4 suite verifies them in Vitest/jsdom; real Safari/iOS and cross-browser interaction testing remains pending before any claim beyond scoped behavioral similarity.
 
 ---
 
 ## TL;DR
 
-The vanilla port is **functionally complete for the common case** (open,
-close, drag-to-dismiss, snap points, basic a11y) but the migration
-systematically dropped the platform-specific / edge-case behaviors that
-vaul's React hooks used to provide. All **17 functional gaps** are
-CLOSED. The drawer is now 1:1 with vaul upstream in the v3
-`refactor/drawer-v3-vanilla` branch — the only differences are
-the React → vanilla translation (no hooks, no JSX) and the test
-harness (vitest + jsdom instead of jest + @testing-library).
+The vanilla port was considered functionally complete for the common
+case at the end of this audit, and all **17 listed functional gaps** were
+marked closed. That conclusion was scoped to the F-series findings; the
+beta.4 correction above records later lifecycle, multi-drawer, and Safari
+work and explicitly supersedes the original package-wide 1:1 claim.
 
 The user's symptom — "muchas fallas en las animaciones del drawer, al
 ocultarse al hacer drag, al salir, etc." — has three concrete root causes:
 
 1. **The drag-release close animation can be silent** when the inline
    `transform` is left on the content (mostly fixed by `de4835c`, but
-   the edge case where drag ended *just past* the threshold still
+   the edge case where drag ended _just past_ the threshold still
    leaves a non-zero inline transform that the close animation must
    animate through).
 2. **Drag-resistance in the OPPOSITE of the close direction is broken**
@@ -64,7 +71,7 @@ at the bottom. Side-by-side compare with `https://vaul.emilkowal.ski/`.
 "drawer jumps back to open" and the "close feels brusco" symptoms) is
 that the inline `transform` left over from the drag (e.g.
 `translate3d(0, 230px, 0)`) was being cleared synchronously in
-`onPointerUp` *before* the re-mount flipped `data-state` and
+`onPointerUp` _before_ the re-mount flipped `data-state` and
 `data-drawer-closing`. The cascade of `transform` therefore jumped
 from the dragged position to the `transform: none` (= open) of the
 `[data-state='closed'][data-drawer-closing]` CSS rule in a single
@@ -92,6 +99,7 @@ Empirical trace (added as `test/drag-close-detail.test.ts`):
 ```
 
 The cascade of `transform` after `pointerup` is:
+
 - The drag left an inline `transform: translate3d(0, 230px, 0)`.
 - `onPointerUp` cleared it (`content.style.transform = ''`).
 - The re-mount flipped `data-state='closed'` and `data-drawer-closing='true'`.
@@ -115,7 +123,7 @@ Two changes:
      `slideToX` animation explicit per direction, instead of
      relying on `none` (= identity matrix).
    - `both` (= `backwards` + `forwards`) applies the `from` frame
-     *before* the animation-delay and the `to` frame *after* the
+     _before_ the animation-delay and the `to` frame _after_ the
      animation ends. The `backwards` half is what guarantees the
      animation's `from` is applied as soon as the rule matches.
 
@@ -125,7 +133,7 @@ Two changes:
    interpolates from there to the closed-position keyframe
    (`translate3d(100%, 0, 0)` for `direction: 'right'`, etc.), and
    the inline `transform` is cleared in the `animationend` listener
-   *before* the `removeDom` so the cascade `[data-state='closed']`
+   _before_ the `removeDom` so the cascade `[data-state='closed']`
    rule's closed position takes over cleanly.
 
 This is exactly how vaul upstream behaves: the drawer slides from
@@ -192,7 +200,7 @@ const onAnimationEnd = () => {
   value of `transform`, `animation-name`, `animation-fill-mode`, and
   `transition` on the close path for bottom, right, and
   initial-closed states. The polyfill distinguishes between the
-  *cascade* value (CSS rules only) and the *used* value (cascade +
+  _cascade_ value (CSS rules only) and the _used_ value (cascade +
   inline) — the drag-release close path has the dragged position
   as the USED transform (which is what the browser paints) and
   `translate3d(0, 0, 0)` as the CASCADE.
@@ -234,8 +242,12 @@ with the vaul pattern:
 }
 
 @keyframes slideToBottom {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(0, var(--initial-transform, 100%), 0); }
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, var(--initial-transform, 100%), 0);
+  }
 }
 /* (same for slideToTop / slideToLeft / slideToRight) */
 ```
@@ -270,9 +282,10 @@ from 419.6 px → 540.9 px (= off-screen, 100% of drawer height) in
 ```
 
 Tests updated to the new contract:
+
 - `test/close-animation.test.ts` (5 tests) asserts the base rule has
   the `transition`, the keyframes have explicit `from: translate3d(...,
-  0, ...)`, and there are NO `[data-drawer-closing]` rules.
+0, ...)`, and there are NO `[data-drawer-closing]` rules.
 - `test/style-css-contract.test.ts` (5 tests) asserts the same on
   the source AND the compiled `dist/style.css`.
 
@@ -287,6 +300,7 @@ tosco".
 After the refined fix, both directions use the same `slideX` animation
 with the same `cubic-bezier(0.32, 0.72, 0, 1)` curve and the same
 `0.5s` duration:
+
 - Open: `slideFromX` animation, 0.5s, smooth cubic-bezier.
 - Close (close button / click-outside): `slideToX` animation, 0.5s,
   same curve, no competing `transition`.
@@ -307,7 +321,7 @@ matches the open animation.
    (`useScaleBackground`, `usePositionFixed`, `usePreventScroll`,
    `useSnapPoints`, `useControllableState`, `useComposedRefs`).
 2. **Listed every method / function / option in the port** (`src/`
-   + `dist/`) and matched each one against the upstream surface.
+   - `dist/`) and matched each one against the upstream surface.
 3. **Read the commit history of the refactor branch
    `refactor/drawer-v3-vanilla`** (58 commits) and tagged every commit
    that introduced a fix for a regression, looking for the symptom
@@ -341,7 +355,7 @@ sliding.
 `content.style.transform = ''` in the drag-release close path
 (`src/vanilla/dialog.ts#onPointerUp`, both Phase A and Phase B
 branches), so the CSS close animation has the open position as its
-start frame. The fix is correct for the *common* case (drag past
+start frame. The fix is correct for the _common_ case (drag past
 threshold, release with no inline transform, close animation plays).
 
 **Residual case**: when the user releases a drag with the cursor at,
@@ -357,6 +371,7 @@ the branch is entered. `applyOpenState(state, options, false)` sets
 should now play the animation.
 
 **However** — the CSS rule is:
+
 ```css
 [data-drawer][data-drawer-snap-points='false'][data-drawer-direction='bottom'][data-state='closed'][data-drawer-closing] {
   transform: none;
@@ -365,14 +380,14 @@ should now play the animation.
 
 This overrides the static `transform: translate3d(...)` from the
 `[data-state='closed']` rule. So when the close animation starts, the
-inline `transform` (from the prior drag) is *ignored* in favor of
+inline `transform` (from the prior drag) is _ignored_ in favor of
 `transform: none`. The animation goes from `translate3d(0, 0, 0)` to
 `translate3d(0, 100%, 0)`. This is correct.
 
 **But the same scenario with a `close-button` click that comes
 mid-drag** (i.e. the user is dragging and the close button is somehow
 clicked — unlikely, but possible) would race the inline `transform`:
-the close animation has not been *fired* yet, so the new
+the close animation has not been _fired_ yet, so the new
 `data-drawer-closing` rule applies, and the inline `transform` is
 overridden. So that case is fine too.
 
@@ -397,6 +412,7 @@ the animation is lost because the element is gone before the
 animation timer fires.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - In `onPointerUp`, after calling `callbacks.onOpenChange(false)`, do
   **not** rely on the re-mount's `isClosingOnly` detection. Instead,
   set a flag on the `state` (e.g. `state.deferDomCloseUntil = 'animationend'`)
@@ -433,6 +449,7 @@ with a `DRAG_RESISTANCE` multiplier of `0.5` (so the consumer sees a
 50 % reduction on top of the curve).
 
 **Actual code** (`src/runtime/drag.ts`):
+
 ```ts
 export const DRAG_RESISTANCE = 1   // <-- 1, not 0.5
 …
@@ -449,11 +466,12 @@ it('DRAG_RESISTANCE is exported as a multiplier (1 by default; v2 parity comes f
 })
 ```
 
-So the tests were *re-shaped* to match the buggy implementation,
+So the tests were _re-shaped_ to match the buggy implementation,
 instead of asserting the documented behavior. This is a test-driven
 false-green.
 
 **Compare with vaul upstream** (`src/index.tsx`):
+
 ```ts
 if (isDraggingInDirection && !snapPoints) {
   const dampenedDraggedDistance = dampenValue(draggedDistance);
@@ -467,6 +485,7 @@ vaul does **not** use a `DRAG_RESISTANCE` multiplier. The curve
 itself (`dampenValue`) provides the resistance.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Decision A: **remove the `DRAG_RESISTANCE` constant entirely**
   (match vaul upstream, 1:1 curve, no extra multiplier). Update the
   test to expect no `DRAG_RESISTANCE` export.
@@ -503,6 +522,7 @@ was called. Since it wasn't, the `pointerup` doesn't reach the
 content's handler.
 
 **Compare with vaul upstream** (`src/index.tsx`):
+
 ```ts
 onPointerOut={(event) => {
   rest.onPointerOut?.(event);
@@ -524,12 +544,14 @@ ends cleanly, even if the cursor is outside the drawer at release.
 
 **The vanilla port is missing both `pointerout` and `contextmenu`
 listeners** on the content element. Confirmed by `grep`:
+
 ```
 $ grep -n "pointerout\|contextmenu" src/ -r
 (no output)
 ```
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Track the most recent `pointermove` event in `DragState` (already
   a private ref in `vanilla/dialog.ts#onPointerDown`; we just need
   to stash the event itself, not just the position).
@@ -558,9 +580,12 @@ implementation in `vanilla/dialog.ts#onPointerUp` writes
 `content.style.transform = ''` (for the close case) or a fresh
 inline transform (for the snap case), and the CSS animation should
 pick up from there. But the keyframe `slideToBottom` is
+
 ```css
 @keyframes slideToBottom {
-  to { transform: translate3d(0, var(--initial-transform, 100%), 0); }
+  to {
+    transform: translate3d(0, var(--initial-transform, 100%), 0);
+  }
 }
 ```
 
@@ -581,6 +606,7 @@ state. So the close animation is fine for snap-point paths too.
 
 **However**: in `mountVanillaDialog`, when `open: true` AND
 `snapPoints` is set, the code does:
+
 ```ts
 if (snapPoints) {
   const initialOffset = activeSnapPoint
@@ -599,6 +625,7 @@ ends at the snap offset, not the fully-closed position. Result:
 to the fully-closed position** (a visible jump on close).
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - In `mountVanillaDialog`, only set `--initial-transform` to the
   snap offset when `open: true`. On `open: false` (close path),
   let the CSS default (`var(--initial-transform, 100%)`) apply.
@@ -624,6 +651,7 @@ they will fire both cleanups in the wrong order.
 
 **Why it happens** (smoke-tested with the live bundle, see
 `/tablero.html` + jsdom trace):
+
 - `open` at `t=0ms` schedules `onAnimationEnd(true)` at
   `t=500ms` via `setTimeout` in `runtime/registry.ts#notifyOpenStateChange`.
 - `close` at `t=63ms` schedules `onAnimationEnd(false)` at
@@ -636,6 +664,7 @@ inherited, but the consumer is asking for animation correctness
 so it should be fixed.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - In `notifyOpenStateChange`, track the most recent
   `setTimeout` handle and clear it before scheduling a new one.
   This guarantees only the LATEST `onAnimationEnd` fires.
@@ -657,6 +686,7 @@ state change. The `clearTimeout` was moved to `destroyDrawer` only,
 where it belongs.
 
 Tests:
+
 - `test/animation-end-debounce.test.ts` (4 tests) covers the
   debounce, the destroy cancellation, the re-render preservation
   (the subtle bug above), and the `configureDrawer` + `setOpen`
@@ -677,6 +707,7 @@ drawer, which is a well-known UX bug.
 
 **Why it happens**: `lockBodyScroll()` in
 `src/vanilla/dialog.ts` does only:
+
 ```ts
 function lockBodyScroll() {
   const scrollbar = window.innerWidth - document.documentElement.clientWidth
@@ -694,6 +725,7 @@ position, plus `touchmove` event preventDefault on the document
 (only outside scrollable areas).
 
 **Compare with vaul upstream**:
+
 - `usePreventScroll.ts` (300+ lines, from Adobe react-spectrum)
   handles Mobile Safari with the full 6-step workaround
   documented at the top of the file.
@@ -702,6 +734,7 @@ position, plus `touchmove` event preventDefault on the document
 
 **Both files are missing from the port.** Confirmed by directory
 listing:
+
 ```
 $ ls src/runtime/
 drag.ts          handle.ts        pointer.ts       registry.ts
@@ -712,6 +745,7 @@ transforms.ts    viewport.ts
 No `use-prevent-scroll.ts`, no `use-position-fixed.ts`.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Port the 6-step Mobile Safari workaround from
   `vaul-reference/src/use-prevent-scroll.ts` into a new
   `src/runtime/scroll-lock.ts` (pure-DOM, no React hooks).
@@ -765,6 +799,7 @@ check, which is exactly the kind of fragmentation that vaul
 upstream already solved.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Add `src/runtime/browser.ts` with the same exports as
   `vaul-reference/src/browser.ts`.
 - Refactor the existing `isMobileFirefox` inlines to use the
@@ -792,6 +827,7 @@ vaul upstream has a real check: `setBackgroundColorOnScale &&
 !noBodyStyles ? assignStyle(document.body, { background: 'black' }) : noop`.
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Add the `noBodyStyles` short-circuit to the background-scale
   pipeline in `src/vanilla/dialog.ts#applyWrapperDragState` (and
   the open-state counterpart).
@@ -816,6 +852,7 @@ to show the drawer as already-open, no animation.
 mount.
 
 **Compare with vaul upstream**:
+
 ```ts
 const shouldAnimate = React.useRef(!defaultOpen);
 …
@@ -836,6 +873,7 @@ but no `shouldAnimate` ref, and the dialog always sets
 `src/vanilla/dialog.ts#mountVanillaDialog` line ~1788 and ~1811).
 
 **Fix scope (proposed, awaiting user approval)**:
+
 - Add a `shouldAnimate` boolean to `DialogMountState`, initialized
   to `!(options.open ?? options.defaultOpen)`.
 - Set `data-drawer-animate='false'` when the boolean is `false`.
@@ -862,6 +900,7 @@ The CSS rule `[data-drawer-animate='false'] { animation: none
 
 `src/constants.ts` exports `DRAG_CLASS = 'drawer-dragging'` with a
 comment that says:
+
 > Class name the runtime would add to `[data-drawer]` while a drag is
 > in progress. **Reserved for a future enhancement** — the CSS contract
 > currently has no `[data-drawer].drawer-dragging` rule and no code
@@ -869,6 +908,7 @@ comment that says:
 > forward-compatible stylesheet can opt in.
 
 vaul upstream uses it for real:
+
 ```ts
 if (!isAllowedToDrag.current && !shouldDrag(event.target, isDraggingInDirection)) return;
 drawerRef.current.classList.add(DRAG_CLASS);
@@ -988,6 +1028,7 @@ documented for the future F6 `usePreventScroll` wiring.
 vaul upstream has `getTranslate(element, direction)` that reads
 the current computed transform of an element and extracts the
 pixel offset along the drawer's axis. It is used in:
+
 - `shouldDrag` (to check if the drawer is already in a non-zero
   position when the user starts dragging)
 - `onRelease` (to read the current swipe amount at release time)
@@ -1086,33 +1127,34 @@ animation bugs (F1-F5); Wave 2 fixes the platform / API gaps
 
 ### Wave 1: animation correctness (3-5 days)
 
-| #  | Finding  | File(s) touched                                  | Test added                                  | Status |
-| -- | -------- | ------------------------------------------------ | ------------------------------------------- | ------ |
-| F1 | Drag-release close animation | `src/vanilla/dialog.ts`                        | `test/drag-release-close-animation.test.ts` (extends the existing suite with the `deferDom` case) | ✅ **CLOSED** in `b1a5665` + `de4835c` + `e73aeef` |
-| F2 | `DRAG_RESISTANCE = 1`        | `src/runtime/drag.ts`, `test/drag-elastic-resistance.test.ts` | reshape the test to expect no `DRAG_RESISTANCE` multiplier (or `0.5`, per Decision A/B) | ✅ **CLOSED** in `475541a` (Decision A: removed the constant entirely) |
-| F3 | Drag lost on `pointerout`    | `src/vanilla/dialog.ts`                         | new test `test/drag-pointerout-release.test.ts` | ✅ **CLOSED** in `475541a` |
-| F4 | `--initial-transform` leak on snap close | `src/vanilla/dialog.ts#applyOpenState` | new test in `test/snap-release-runtime.test.ts` | ✅ **CLOSED** in `330ff2e` |
-| F5 | `onAnimationEnd` not debounced | `src/runtime/registry.ts`                      | new test `test/animation-end-debounce.test.ts` (4 tests) | ✅ **CLOSED** in `330ff2e` |
+| #   | Finding                                  | File(s) touched                                               | Test added                                                                                        | Status                                                                 |
+| --- | ---------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| F1  | Drag-release close animation             | `src/vanilla/dialog.ts`                                       | `test/drag-release-close-animation.test.ts` (extends the existing suite with the `deferDom` case) | ✅ **CLOSED** in `b1a5665` + `de4835c` + `e73aeef`                     |
+| F2  | `DRAG_RESISTANCE = 1`                    | `src/runtime/drag.ts`, `test/drag-elastic-resistance.test.ts` | reshape the test to expect no `DRAG_RESISTANCE` multiplier (or `0.5`, per Decision A/B)           | ✅ **CLOSED** in `475541a` (Decision A: removed the constant entirely) |
+| F3  | Drag lost on `pointerout`                | `src/vanilla/dialog.ts`                                       | new test `test/drag-pointerout-release.test.ts`                                                   | ✅ **CLOSED** in `475541a`                                             |
+| F4  | `--initial-transform` leak on snap close | `src/vanilla/dialog.ts#applyOpenState`                        | new test in `test/snap-release-runtime.test.ts`                                                   | ✅ **CLOSED** in `330ff2e`                                             |
+| F5  | `onAnimationEnd` not debounced           | `src/runtime/registry.ts`                                     | new test `test/animation-end-debounce.test.ts` (4 tests)                                          | ✅ **CLOSED** in `330ff2e`                                             |
 
 ### Wave 2: platform parity (5-7 days)
 
-| #  | Finding  | File(s) touched                                  | Status |
-| -- | -------- | ------------------------------------------------ | ------ |
-| F6 | iOS Safari scroll lock  | new `src/runtime/scroll-lock.ts` + `src/vanilla/dialog.ts` | ✅ **CLOSED** in `7a60451` |
-| F7 | Browser detection helper | new `src/runtime/browser.ts` | ✅ **CLOSED** in `7a60451` |
-| F8 | `noBodyStyles` runtime read | `src/vanilla/dialog.ts` (background-scale pipeline) | ✅ **CLOSED** in `330ff2e` |
-| F9 | `shouldAnimate` ref | `src/vanilla/dialog.ts` (mount) + `src/style.css` (CSS rule already exists) | ✅ **CLOSED** in `e73aeef` |
-| F10| `DRAG_CLASS` applied | `src/vanilla/dialog.ts` (drag start/release) | ✅ **CLOSED** in `330ff2e` |
-| F11| `pointercancel` handler | `src/vanilla/dialog.ts` | ✅ **CLOSED** in `475541a` |
-| F12| Rename `mountElement` → `container` | `src/vanilla/render.ts` + `src/vanilla/host.ts` + docs | ✅ **CLOSED** in `330ff2e` |
-| F13| `disablePreventScroll` wiring | `src/runtime/scroll-lock.ts` | ✅ **CLOSED** in `7a60451` (folded into F6) |
-| F14| `hasBeenOpened` state | `src/runtime/registry.ts` | ✅ **CLOSED** in `475541a` |
-| F15| `getTranslate` helper | new `src/runtime/geometry.ts` | ✅ **CLOSED** in `475541a` (added to `src/runtime/transforms.ts`) |
-| F16| Extract `chain` / `assignStyle` helpers | `src/helpers.ts` | ✅ **CLOSED** in `330ff2e` |
-| F17| `onAnimationEnd` debounce (folded into F5) | — | ✅ **CLOSED** in `330ff2e` (folded into F5) |
+| #   | Finding                                    | File(s) touched                                                             | Status                                                            |
+| --- | ------------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| F6  | iOS Safari scroll lock                     | new `src/runtime/scroll-lock.ts` + `src/vanilla/dialog.ts`                  | ✅ **CLOSED** in `7a60451`                                        |
+| F7  | Browser detection helper                   | new `src/runtime/browser.ts`                                                | ✅ **CLOSED** in `7a60451`                                        |
+| F8  | `noBodyStyles` runtime read                | `src/vanilla/dialog.ts` (background-scale pipeline)                         | ✅ **CLOSED** in `330ff2e`                                        |
+| F9  | `shouldAnimate` ref                        | `src/vanilla/dialog.ts` (mount) + `src/style.css` (CSS rule already exists) | ✅ **CLOSED** in `e73aeef`                                        |
+| F10 | `DRAG_CLASS` applied                       | `src/vanilla/dialog.ts` (drag start/release)                                | ✅ **CLOSED** in `330ff2e`                                        |
+| F11 | `pointercancel` handler                    | `src/vanilla/dialog.ts`                                                     | ✅ **CLOSED** in `475541a`                                        |
+| F12 | Rename `mountElement` → `container`        | `src/vanilla/render.ts` + `src/vanilla/host.ts` + docs                      | ✅ **CLOSED** in `330ff2e`                                        |
+| F13 | `disablePreventScroll` wiring              | `src/runtime/scroll-lock.ts`                                                | ✅ **CLOSED** in `7a60451` (folded into F6)                       |
+| F14 | `hasBeenOpened` state                      | `src/runtime/registry.ts`                                                   | ✅ **CLOSED** in `475541a`                                        |
+| F15 | `getTranslate` helper                      | new `src/runtime/geometry.ts`                                               | ✅ **CLOSED** in `475541a` (added to `src/runtime/transforms.ts`) |
+| F16 | Extract `chain` / `assignStyle` helpers    | `src/helpers.ts`                                                            | ✅ **CLOSED** in `330ff2e`                                        |
+| F17 | `onAnimationEnd` debounce (folded into F5) | —                                                                           | ✅ **CLOSED** in `330ff2e` (folded into F5)                       |
 
-**Summary**: 17/17 closed. All findings resolved. The drawer is now
-1:1 with vaul upstream on the v3 `refactor/drawer-v3-vanilla` branch.
+**Historical summary**: 17/17 listed findings were marked closed at the
+end of this audit. See the beta.4 correction above for later regressions,
+deliberate differences, and the current parity qualification.
 
 ### Order of execution (recommended)
 

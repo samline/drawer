@@ -1,17 +1,13 @@
 import type { CommonDrawerDirection } from '../core'
 
 /**
- * Pure swipe-intent math. **Planned API, not yet wired into the dialog.**
+ * Pure swipe-intent math used by the dialog before pointer capture.
  *
  * The current drag pipeline in `vanilla/dialog.ts#attachListeners` reads
  * the pointer delta inline and delegates the close decision to
  * `runtime/drag.ts#shouldCloseDrawerOnRelease` + `runtime/release.ts`.
- * `getSwipeIntent` was extracted for a future swipe-to-dismiss variant
- * (e.g. a "swipe past the dismiss threshold even at low velocity"
- * path) and is exercised by the unit tests in `test/pointer-runtime.test.ts`.
- *
- * It is safe to delete if the swipe-to-dismiss feature is dropped —
- * the only consumer today is the test file.
+ * `getSwipeIntent` distinguishes an axis-aligned drawer gesture from a
+ * perpendicular page scroll before the runtime captures the pointer.
  */
 
 export function getSwipeIntent({

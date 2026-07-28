@@ -6,9 +6,9 @@ sidebar:
   order: 1
 ---
 
-import { Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components'
 
-This page walks you through installing `@samline/drawer` and running a working example. By the end you'll have a mounted drawer, a controller you can drive, and a clear picture of the registry that the rest of the API shares.
+This page installs the exact beta.4 release and opens a working drawer. By the end you will have a per-id host, a controller, and the shared registry used by the root named exports.
 
 ## Prerequisites
 
@@ -19,34 +19,35 @@ This page walks you through installing `@samline/drawer` and running a working e
 ## Install
 
 <Tabs syncKey="package-manager">
-	<TabItem label="npm">
+  <TabItem label="npm">
 
-		```bash
-		npm install @samline/drawer
-		```
+    ```bash
+    npm install @samline/drawer@3.0.0-beta.4
+    ```
 
-	</TabItem>
-	<TabItem label="pnpm">
+  </TabItem>
+  <TabItem label="pnpm">
 
-		```bash
-		pnpm add @samline/drawer
-		```
+    ```bash
+    pnpm add @samline/drawer@3.0.0-beta.4
+    ```
 
-	</TabItem>
-	<TabItem label="yarn">
+  </TabItem>
+  <TabItem label="yarn">
 
-		```bash
-		yarn add @samline/drawer
-		```
+    ```bash
+    yarn add @samline/drawer@3.0.0-beta.4
+    ```
 
-	</TabItem>
-	<TabItem label="bun">
+  </TabItem>
+  <TabItem label="bun">
 
-		```bash
-		bun add @samline/drawer
-		```
+    ```bash
+    bun add @samline/drawer@3.0.0-beta.4
+    ```
 
-	</TabItem>
+  </TabItem>
+
 </Tabs>
 
 ## First example
@@ -74,23 +75,28 @@ drawer.setOpen(true)
 
 What this does:
 
-- Mounts the drawer host under a `<div data-drawer-vanilla-root>` in `document.body` (or your `mountElement`).
-- Renders a built-in `<button data-drawer-vanilla-trigger>` because `triggerText` is set.
+- Registers `filters` and creates its dedicated `<div data-drawer-vanilla-root="filters">` under `document.body`.
+- Renders a built-in `<button data-drawer-vanilla-trigger>` because `triggerText` is set. The button stays mounted while the drawer is closed.
 - Renders the built-in handle because `showHandle: true` is set.
-- Opens the drawer.
+- Mounts the overlay and dialog lazily when `setOpen(true)` runs.
 
-The shared stylesheet provides runtime behavior and the built-in handle, not a finished bottom-sheet theme — use `triggerElement`, `overlayClassName`, and `contentClassName` when you want a fully styled visible shell.
+On close, the overlay and dialog remain for the 500 ms exit transition and are then removed by a 600 ms safety timeout. The per-id host and optional trigger remain until `drawer.destroy()` or `destroyDrawer('filters')` runs.
+
+The shared stylesheet provides motion behavior and the built-in handle, not a finished panel theme or directional positioning. Add your own styles through `overlayClassName`, `contentClassName`, or the selectors in the [CSS styling reference](/drawer/reference/css-styling/).
+
+To mount inside a custom target, pass `container`. The old `mountElement` name remains available for compatibility but is deprecated; the target resolves as `container ?? mountElement ?? document.body`. Every id still receives its own host child inside that target.
 
 ## Browser global (no bundler)
 
-If you do not have a bundler, drop a single `<script>` and use the `window.Drawer` global:
+If you do not have a bundler, load the separate beta.4 stylesheet and IIFE, then use the `window.Drawer` global:
 
 ```html title="index.html"
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
 </div>
 
-<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 <script>
   window.Drawer.createDrawer({
     id: 'filters',
@@ -104,55 +110,57 @@ If you do not have a bundler, drop a single `<script>` and use the `window.Drawe
 ```
 
 :::caution[Pin the version in production]
-The CDN URL above uses `@3.0.0`. Replace the version with the one you ship.
+Both URLs intentionally pin `@3.0.0-beta.4`. Keep the CSS and JS on the same exact version when upgrading.
 :::
 
-The IIFE bundle inlines the runtime stylesheet — when the script loads, the runtime injects a `<style data-drawer-runtime-styles>` element into the page. You do not need a separate `<link rel="stylesheet">`.
+The IIFE is JavaScript only. It attaches `window.Drawer`; it does not inline CSS or inject a `<style>` element.
 
-See the [Browser global reference](/drawer/reference/browser/) for the full surface, including `Drawer.createDrawer`, `Drawer.destroyDrawer`, and the same module-level registry.
+See the [Browser global reference](/drawer/reference/browser/) for the full surface, including `Drawer.createDrawer`, `Drawer.destroyDrawer`, and the browser bundle's registry lifecycle.
 
-## Browser registry helpers (bundler)
+## Registry helpers (bundler)
 
-If you have a bundler and want the same `{ createDrawer, destroyDrawer, getDrawer }` ergonomics as the IIFE — but without `window.Drawer` auto-installed — import the `browser` singleton from the vanilla entrypoint:
+Bundler users import the named helpers from the root entrypoint. There is no root `browser` singleton and importing the root package does not install `window.Drawer`:
 
 ```ts title="bundler.ts"
-import { browser } from '@samline/drawer'
+import { createDrawer, destroyDrawers, getDrawer, openDrawer } from '@samline/drawer'
 
-window.MyDrawer = { ...browser }
-
-window.MyDrawer.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
-window.MyDrawer.openDrawer('filters')
-window.MyDrawer.destroyDrawers()
+createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
+openDrawer('filters')
+getDrawer('filters')?.setActiveSnapPoint(null)
+destroyDrawers()
 ```
 
-`browser` is an object you can spread into your own globals or use directly. Because it shares the same module-level `drawerInstances` map as the named exports, every spread behaves the same — `window.MyDrawer.createDrawer({})` and `createDrawer({})` end up calling the same factory and updating the same DOM host.
-
-If you need multiple independent registries, use the named exports with distinct `id` values.
+All root named helpers share one module-level registry. Use distinct `id` values for independent drawers. The standalone IIFE exposes an equivalent API over the registry owned by that loaded browser bundle; do not rely on separately bundled root and CDN copies sharing state.
 
 ## What's next?
 
 <CardGrid>
-	<Card title="Configuration" icon="setting">
-		Every option, default, and rationale — `id`, `parentId`, `direction`, `snapPoints`, `fadeFromIndex`, `closeThreshold`, and the rest.
+  <Card title="Configuration" icon="setting">
+    Every option and beta.4 default, including `container`, focus-gated input repositioning, scale-background ownership, and `closeButton`.
 
-		[Configuration →](/drawer/reference/configuration/)
-	</Card>
+    [Configuration →](/drawer/reference/configuration/)
 
-	<Card title="API reference" icon="open-book">
-		Function-by-function documentation with TypeScript signatures, return shapes, and behaviour tables.
+  </Card>
 
-		[API reference →](/drawer/reference/api/)
-	</Card>
+  <Card title="API reference" icon="open-book">
+    Function-by-function documentation with TypeScript signatures, return shapes, and behaviour tables.
 
-	<Card title="TypeScript" icon="seti:typescript">
-		Every exported type — `CommonDrawerController`, `VanillaDrawerController`, `CommonDrawerOptions`, `VanillaDrawerOptions`, `DrawerApi`.
+    [API reference →](/drawer/reference/api/)
 
-		[TypeScript reference →](/drawer/reference/typescript/)
-	</Card>
+  </Card>
 
-	<Card title="Examples" icon="puzzle">
-		End-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard handling, programmatic open/close, SPA cleanup.
+  <Card title="TypeScript" icon="seti:typescript">
+    Root type exports, snapshot shapes, constants, and the browser-only `DrawerApi` type.
 
-		[Browse examples →](/drawer/reference/examples/)
-	</Card>
+    [TypeScript reference →](/drawer/reference/typescript/)
+
+  </Card>
+
+  <Card title="Examples" icon="puzzle">
+    End-to-end patterns: four directions, nested drawers, snap points, scale background, keyboard handling, triggers, and SPA cleanup.
+
+    [Browse examples →](/drawer/reference/examples/)
+
+  </Card>
+
 </CardGrid>

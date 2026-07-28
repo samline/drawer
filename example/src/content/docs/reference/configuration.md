@@ -6,7 +6,7 @@ sidebar:
   order: 2
 ---
 
-`createDrawer(options?)` (and every other public entrypoint) accepts a `CommonDrawerOptions` object. Every field has a default — pass only what you need.
+`createDrawer(options?)` accepts `VanillaDrawerOptions`, which extends the headless `CommonDrawerOptions` state surface with DOM, content, trigger, and class options. Pass only the fields you need.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -14,14 +14,13 @@ import { createDrawer } from '@samline/drawer'
 const drawer = createDrawer({
   id: 'filters',
   direction: 'bottom',
-  dismissible: true,
-  modal: true,
   title: 'Filters',
-  content: 'Body'
+  content: 'Body',
+  closeButton: true
 })
 ```
 
-## Signature
+## Signatures
 
 ```ts
 interface CommonDrawerOptions {
@@ -32,6 +31,7 @@ interface CommonDrawerOptions {
   onOpenChange?: (open: boolean) => void
   onClose?: () => void
   onAnimationEnd?: (open: boolean) => void
+  onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   dismissible?: boolean
@@ -57,92 +57,94 @@ interface CommonDrawerOptions {
 }
 ```
 
-## Field reference
+## Common fields
 
-| Field                       | Type                                     | Default                 | Behaviour                                                                                                                                                                                                                |
-| --------------------------- | ---------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                        | `string`                                 | `'default'`             | Named runtime instance id. Reusing an `id` updates the same instance rather than creating a second drawer.                                                                                                               |
-| `parentId`                  | `string`                                 | `undefined`             | Parent runtime instance id. Use when one drawer should behave as a child of another (closing the parent closes the registered children, destroying the parent recursively destroys them).                                |
-| `open`                      | `boolean`                                | `undefined`             | Controlled open state. The dialog mounts closed unless `open: true` is set; changes after creation drive `drawer.setOpen` semantics.                                                                                     |
-| `defaultOpen`               | `boolean`                                | `false`                 | Initial open state when the drawer is created without `open`. Skips the enter animation.                                                                                                                                 |
-| `onOpenChange`              | `(open: boolean) => void`                | `undefined`             | Fires when the drawer's open state changes — user-driven (drag, escape, overlay click) or programmatic (`setOpen`, `openDrawer`, etc.).                                                                                  |
-| `onClose`                   | `() => void`                             | `undefined`             | Fires after the drawer's open state goes `true → false` (programmatic or user-driven).                                                                                                                                   |
-| `onAnimationEnd`            | `(open: boolean) => void`                | `undefined`             | Fires after the open or close CSS transition completes (default 500 ms). The argument is the new state.                                                                                                                  |
-| `onDragChange`              | `(percentageDragged: number) => void`    | `undefined`             | Fires continuously while the user drags the content. `percentageDragged` is a value between 0 and 1, where 0 is at-rest and 1 is the full drawer dimension dragged.                                                      |
-| `onReleaseChange`           | `(open: boolean) => void`                | `undefined`             | Fires once when the user releases the drag. The argument is the resolved action — `false` if the drawer closed, `true` if it stayed open (reset or snapped).                                                             |
-| `dismissible`               | `boolean`                                | `true`                  | Whether escape, overlay press, drag-close, and the handle's last-snap cycle can dismiss the drawer. Set `false` to require programmatic open/close.                                                                      |
-| `modal`                     | `boolean`                                | `true`                  | Whether the drawer blocks interaction with the rest of the page. `modal: false` opens a non-modal drawer that coexists with the page.                                                                                    |
-| `nested`                    | `boolean`                                | `false`                 | Marks a drawer as nested inside another. `nested: true` is set automatically when `parentId` is set; you usually do not need to pass it directly.                                                                        |
-| `direction`                 | `'top' \| 'bottom' \| 'left' \| 'right'` | `'bottom'`              | Direction of the drawer. Affects the open animation, the drag axis, and the snap-point math.                                                                                                                             |
-| `snapPoints`                | `Array<number \| string>`                | `[]`                    | Snap positions. Numbers are interpreted as fractions of the viewport (0.5 = 50 %); strings with `'%'` are treated as a percentage and the rest as pixels. See [examples → Snap points](/drawer/reference/examples/#recipe-snap-points) for end-to-end patterns. |
-| `fadeFromIndex`             | `number`                                 | `undefined`             | Index of the snap point at which the overlay starts to fade. When the drawer is at `snapPoints[fadeFromIndex]` or higher, the overlay's opacity transitions from full to transparent.                                    |
-| `activeSnapPoint`           | `number \| string \| null`               | `snapPoints[0] ?? null` | Controlled active snap point. Drive it with `drawer.setActiveSnapPoint(value)`.                                                                                                                                          |
-| `closeThreshold`            | `number`                                 | `0.25`                  | Fraction of the drawer dimension the user must drag past for release to dismiss the drawer.                                                                                                                              |
-| `scrollLockTimeout`         | `number`                                 | `100`                   | Reserved for the scroll-lock interaction. Currently inert — the runtime honors the touch-action / drag-permission policy without scheduling a timeout.                                                                   |
-| `shouldScaleBackground`     | `boolean`                                | `false`                 | When `true`, the page shell (the element with `data-drawer-wrapper`) scales and shifts while the drag is in progress, using the `NESTED_DISPLACEMENT`-based math.                                                        |
-| `setBackgroundColorOnScale` | `boolean`                                | `false`                 | When `true` (and `shouldScaleBackground: true`), a translucent black `background-color` overlays the page shell while the drag is in progress.                                                                           |
-| `handleOnly`                | `boolean`                                | `false`                 | Restricts the drag so it can only start from the built-in handle. The runtime still renders the handle automatically — you do not need to add `showHandle: true` here.                                                   |
-| `fixed`                     | `boolean`                                | `false`                 | When `true`, the drawer height changes (instead of repositioning) when the mobile keyboard opens. Honored by the `repositionInputs` pipeline.                                                                            |
-| `disablePreventScroll`      | `boolean`                                | `false`                 | Reserved. Currently inert — the runtime does not touch the document's scroll behavior beyond the `body.style.overflow = 'hidden'` lock while the drawer is open.                                                         |
-| `repositionInputs`          | `boolean`                                | `false`                 | When `true`, the dialog listens to `window.visualViewport.resize` and applies `style.bottom` so focused inputs stay visible when the mobile keyboard opens.                                                              |
-| `snapToSequentialPoint`     | `boolean`                                | `false`                 | When `true`, a high-velocity swipe can only move to the next snap point (not skip to the last or the first).                                                                                                             |
-| `preventScrollRestoration`  | `boolean`                                | `false`                 | When `true`, the runtime flips `window.history.scrollRestoration` to `'manual'` while the drawer is mounted and restores the previous value on destroy.                                                                  |
-| `noBodyStyles`              | `boolean`                                | `false`                 | When `true`, the runtime does not write `document.body.style.overflow` / `paddingRight` while the drawer is open. Use this when your app manages body styles itself.                                                     |
-| `autoFocus`                 | `boolean`                                | `true`                  | When `true`, the first focusable element inside the dialog receives focus on open. Set `false` to keep the focused element where it was.                                                                                 |
-| `preventCycle`              | `boolean`                                | `false`                 | When `true`, the built-in handle's click-to-cycle behavior is disabled. The handle still renders and is still draggable.                                                                                                 |
+| Field                       | Type                                            | Effective default       | Runtime behavior                                                                                                                                                                                                                         |
+| --------------------------- | ----------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                        | `string`                                        | `'default'`             | Registry key. Reusing an id merges options into its existing instance and per-id host.                                                                                                                                                   |
+| `parentId`                  | `string`                                        | `undefined`             | Relates a child to a registered parent. Opening a child opens its ancestor chain; closing or destroying a parent closes or recursively destroys its children.                                                                            |
+| `open`                      | `boolean`                                       | `undefined`             | Explicit open state. `open` takes precedence over `defaultOpen`. Creating an initially open drawer mounts it without an entrance animation.                                                                                              |
+| `defaultOpen`               | `boolean`                                       | `false`                 | Fallback initial state when `open` is `undefined`. An initially open first render also skips the entrance animation; opening a previously closed host animates.                                                                          |
+| `onOpenChange`              | `(open: boolean) => void`                       | `undefined`             | Fires after a real open-state transition and after the controller contains the new state. No-op writes do not call it.                                                                                                                   |
+| `onClose`                   | `() => void`                                    | `undefined`             | Fires immediately before a `true` to `false` state transition, so the snapshot is still open inside this callback. Destroying an open drawer does not call it.                                                                           |
+| `onAnimationEnd`            | `(open: boolean) => void`                       | `undefined`             | Timer-based notification 500 ms after an open-state transition. A newer transition cancels the prior timer, and destroy cancels it. It is not a DOM `animationend` event.                                                                |
+| `onActiveSnapPointChange`   | `(snapPoint: number \| string \| null) => void` | `undefined`             | Fires after a runtime-driven snap change from drag release, handle cycling, or the post-close reset to the first snap. Direct `setActiveSnapPoint()` calls do not echo this callback.                                                    |
+| `onDragChange`              | `(percentageDragged: number) => void`           | `undefined`             | Fires on accepted pointer moves. The value is normalized against the rendered drawer dimension (or current snap interval) and can exceed `1` when dragged beyond a full dimension.                                                       |
+| `onReleaseChange`           | `(open: boolean) => void`                       | `undefined`             | Fires after an accepted drag release: `false` when release closes, `true` when it resets or settles at a snap. Programmatic close and overlay clicks do not fire it.                                                                     |
+| `dismissible`               | `boolean`                                       | `true`                  | Enables Escape, overlay mouse-up, drag-close, and last-snap handle dismissal. Programmatic methods and the optional built-in close button can still close when `false`.                                                                  |
+| `modal`                     | `boolean`                                       | `true`                  | Modal drawers render an overlay, trap Tab focus, and acquire scroll effects. `false` omits the overlay/focus trap/scroll lock. Neither mode writes `body.style.pointerEvents`.                                                           |
+| `nested`                    | `boolean`                                       | `false`                 | Enables nested behavior. The registry sets it to `true` automatically whenever `parentId` is present.                                                                                                                                    |
+| `direction`                 | `'top' \| 'bottom' \| 'left' \| 'right'`        | `'bottom'`              | Selects entrance/exit side, close gesture, drag axis, snap math, and scale transform axis. All four directions support drag-to-dismiss.                                                                                                  |
+| `snapPoints`                | `Array<number \| string>`                       | `[]`                    | Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'120px'` becomes 120); a percent-suffixed string is not percentage math.                                         |
+| `fadeFromIndex`             | `number`                                        | last snap index         | First snap index where the overlay is visible. If omitted with snap points, beta.4 resolves it to `snapPoints.length - 1`.                                                                                                               |
+| `activeSnapPoint`           | `number \| string \| null`                      | `snapPoints[0] ?? null` | Current snap value. The controller and runtime update it together; close resets it to the first snap after 500 ms.                                                                                                                       |
+| `closeThreshold`            | `number`                                        | `0.25`                  | For snap-free drawers, fraction of the rendered height/width required for a low-velocity release to dismiss. Snap-point releases use the separate snap policy.                                                                           |
+| `scrollLockTimeout`         | `number`                                        | `100`                   | Millisecond cooldown after scrollable content blocks a drag, preventing the next pointer gesture from being captured immediately.                                                                                                        |
+| `shouldScaleBackground`     | `boolean`                                       | `false`                 | Scales, translates, rounds, and clips the first `[data-drawer-wrapper]` as soon as the drawer opens. Dragging toward close moves it back toward normal.                                                                                  |
+| `setBackgroundColorOnScale` | `boolean`                                       | `true`                  | With background scaling, sets the body background black while an owner is open and may write a translucent wrapper background during drag. Pass `false` to opt out of those color writes.                                                |
+| `handleOnly`                | `boolean`                                       | `false`                 | Restricts drag starts to the built-in handle and renders that handle even when `showHandle` is omitted.                                                                                                                                  |
+| `fixed`                     | `boolean`                                       | `false`                 | When the focused-input viewport pipeline runs, also writes a calculated drawer height. Since `repositionInputs` defaults to `true`, `fixed: true` normally writes both height and bottom offset.                                         |
+| `disablePreventScroll`      | `boolean`                                       | `false`                 | Disables the modal body-scroll prevention pipeline (desktop overflow/padding compensation or the iOS touch lock). It does not mean “no body styles”; see `noBodyStyles`.                                                                 |
+| `repositionInputs`          | `boolean`                                       | `true`                  | Attaches an open-only `visualViewport.resize` listener when available. Layout changes are focus-gated: a keyboard-producing input, textarea, or editable element must be focused inside the drawer before the opening resize is handled. |
+| `snapToSequentialPoint`     | `boolean`                                       | `false`                 | For releases under 40% of the drawer dimension, restricts a high-velocity swipe to the adjacent snap. Longer releases still choose the closest snap and can skip points.                                                                 |
+| `preventScrollRestoration`  | `boolean`                                       | `false`                 | Acquires global `history.scrollRestoration = 'manual'` ownership while open. The original value returns after the final owner closes or is destroyed.                                                                                    |
+| `noBodyStyles`              | `boolean`                                       | `false`                 | Suppresses scale-background body color and Safari fixed-body positioning. It does not disable the baseline modal scroll lock; use `disablePreventScroll` for that.                                                                       |
+| `autoFocus`                 | `boolean`                                       | `false`                 | Opt-in initial focus. `true` focuses the first focusable descendant (or dialog itself); the default does not focus drawer content and may blur an outside trigger before a modal opens.                                                  |
+| `preventCycle`              | `boolean`                                       | `false`                 | Disables handle click-to-cycle while retaining handle drag behavior.                                                                                                                                                                     |
 
-## Vanilla-only options
-
-These options are only meaningful from the root vanilla entrypoint (`@samline/drawer`). They are layered on top of `CommonDrawerOptions` by the `VanillaDrawerOptions` interface in `src/vanilla/render.ts`:
-
-| Field                       | Type                  | Default     | Behaviour                                                                                                                       |
-| --------------------------- | --------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `mountElement`              | `HTMLElement \| null` | `undefined` | Mount the host into a specific container instead of appending it to `document.body`.                                            |
-| `triggerElement`            | `HTMLElement \| null` | `undefined` | Attach a `click` listener to an external element so it opens the drawer.                                                        |
-| `triggerText`               | `string`              | `undefined` | Render a built-in `<button data-drawer-vanilla-trigger>` inside the host with the given label.                                  |
-| `showHandle`                | `boolean`             | `false`     | Render the built-in handle inside the dialog.                                                                                   |
-| `handleClassName`           | `string`              | `undefined` | Class name appended to the built-in handle element.                                                                             |
-| `ariaLabel`                 | `string`              | `undefined` | Accessible label for the dialog. Used when no `title` slot is provided.                                                         |
-| `ariaLabelledBy`            | `string`              | `undefined` | ID of an element that labels the dialog. The runtime auto-generates an id on the title slot when this is provided.              |
-| `ariaDescribedBy`           | `string`              | `undefined` | ID of an element that describes the dialog. The runtime auto-generates an id on the description slot when this is provided.     |
-| `title`                     | `VanillaRenderable`   | `undefined` | Drawer title content. Rendered before the body inside the vanilla content wrapper.                                              |
-| `titleVisuallyHidden`       | `boolean`             | `false`     | When `true`, the title slot is rendered with the visually-hidden style (still announced to screen readers).                     |
-| `description`               | `VanillaRenderable`   | `undefined` | Drawer description content. Rendered before the body inside the vanilla content wrapper.                                        |
-| `descriptionVisuallyHidden` | `boolean`             | `false`     | When `true`, the description slot is rendered with the visually-hidden style.                                                   |
-| `content`                   | `VanillaRenderable`   | `undefined` | Main drawer body content. `VanillaRenderable` is `string \| number \| HTMLElement \| (() => HTMLElement) \| null \| undefined`. |
-| `overlayClassName`          | `string`              | `undefined` | Class name appended to the overlay element.                                                                                     |
-| `contentClassName`          | `string`              | `undefined` | Class name appended to the content element.                                                                                     |
-
-`VanillaRenderable` is the value shape accepted by `title`, `description`, and `content`. It is a `string`, `number`, `HTMLElement`, a thunk that returns an `HTMLElement`, or `null` / `undefined`. The runtime mounts pre-built elements directly and invokes thunks once on render.
-
-## Defaults at a glance
+## Vanilla-only fields
 
 ```ts
-const DEFAULT_DRAWER_OPTIONS = {
-  id: 'default',
-  open: undefined,
-  defaultOpen: false,
-  dismissible: true,
-  modal: true,
-  nested: false,
-  direction: 'bottom',
-  snapPoints: [],
-  fadeFromIndex: undefined,
-  activeSnapPoint: null,
-  closeThreshold: 0.25,
-  scrollLockTimeout: 100,
-  shouldScaleBackground: false,
-  setBackgroundColorOnScale: false,
-  handleOnly: false,
-  fixed: false,
-  disablePreventScroll: false,
-  repositionInputs: false,
-  snapToSequentialPoint: false,
-  preventScrollRestoration: false,
-  noBodyStyles: false,
-  autoFocus: true,
-  preventCycle: false
+interface VanillaDrawerOptions extends CommonDrawerOptions {
+  container?: HTMLElement | null
+  /** @deprecated Use container. */
+  mountElement?: HTMLElement | null
+  triggerElement?: HTMLElement | null
+  triggerText?: string
+  showHandle?: boolean
+  handleClassName?: string
+  ariaLabel?: string
+  ariaLabelledBy?: string
+  ariaDescribedBy?: string
+  title?: VanillaRenderable
+  titleVisuallyHidden?: boolean
+  description?: VanillaRenderable
+  descriptionVisuallyHidden?: boolean
+  content?: VanillaRenderable
+  overlayClassName?: string
+  contentClassName?: string
+  closeButton?: boolean | { className?: string; icon?: string | HTMLElement; ariaLabel?: string }
 }
 ```
 
-The numeric defaults are also re-exported as constants from the package — see [TypeScript → Numeric constants](/drawer/reference/typescript/#numeric-constants) for the full list.
+| Field                       | Type                  | Effective default     | Runtime behavior                                                                                                                                                                                                                               |
+| --------------------------- | --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `container`                 | `HTMLElement \| null` | `document.body`       | Preferred mount target. The runtime appends a dedicated per-id host inside it and uses its bounding rect for snap-point fractions. Multiple drawers sharing a container remain isolated.                                                       |
+| `mountElement`              | `HTMLElement \| null` | `undefined`           | Deprecated alias for `container`. `container ?? mountElement ?? document.body` is used, so `container` wins.                                                                                                                                   |
+| `triggerElement`            | `HTMLElement \| null` | `undefined`           | Consumer-owned external element whose click opens the id. Its listener persists while closed, rebinds on update, and is removed on destroy.                                                                                                    |
+| `triggerText`               | `string`              | `undefined`           | Creates a built-in `<button data-drawer-vanilla-trigger>` in the per-id host. It persists while closed and during exit, updates in place, and is removed when cleared or destroyed.                                                            |
+| `showHandle`                | `boolean`             | `false`               | Renders the built-in handle while dialog content is present. `handleOnly` also renders it.                                                                                                                                                     |
+| `handleClassName`           | `string`              | `undefined`           | Class assigned to the built-in handle.                                                                                                                                                                                                         |
+| `ariaLabel`                 | `string`              | `undefined`           | Sets `aria-label`. Without an explicit title or matching custom labelled node, it is also copied into the title slot as an accessibility proxy and hidden by default.                                                                          |
+| `ariaLabelledBy`            | `string`              | `undefined`           | Consumer target id, used unchanged. If `content` does not contain it, the runtime assigns it to the built-in title slot. When omitted, the slot gets `<drawer-id>-title`.                                                                      |
+| `ariaDescribedBy`           | `string`              | `undefined`           | Consumer target id, used unchanged. If `content` does not contain it, the runtime assigns it to the built-in description slot. When omitted, the slot gets `<drawer-id>-description`.                                                          |
+| `title`                     | `VanillaRenderable`   | `undefined`           | Visible title-slot content unless `titleVisuallyHidden` is true.                                                                                                                                                                               |
+| `titleVisuallyHidden`       | `boolean`             | `false` (conditional) | Applies the built-in visually hidden styles. A proxy title promoted from `ariaLabel` auto-hides unless this is explicitly `false`.                                                                                                             |
+| `description`               | `VanillaRenderable`   | `undefined`           | Description-slot content.                                                                                                                                                                                                                      |
+| `descriptionVisuallyHidden` | `boolean`             | `false`               | Applies the built-in visually hidden styles to the description slot.                                                                                                                                                                           |
+| `content`                   | `VanillaRenderable`   | `undefined`           | Main body content. The open dialog skeleton and empty body slot still mount when this is omitted.                                                                                                                                              |
+| `overlayClassName`          | `string`              | `undefined`           | Class assigned to the modal overlay.                                                                                                                                                                                                           |
+| `contentClassName`          | `string`              | `undefined`           | Class assigned to `[data-drawer]`.                                                                                                                                                                                                             |
+| `closeButton`               | `boolean \| object`   | `false`               | Renders `<button data-drawer-close>` after the body. `true` uses class `drawer-close-button`, text icon `xmark`, and label `Close`; an object overrides `className`, `icon`, and `ariaLabel`. Its click stops propagation and closes directly. |
+
+`VanillaRenderable` is `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Elements are moved into the dialog. A thunk is invoked once per dialog DOM build, so an option update that rebuilds the open subtree can invoke it again.
+
+## Presence and ownership
+
+- Calling `createDrawer()` creates one registered host per id even when closed.
+- A closed drawer has no overlay or dialog content. Only the host and optional built-in trigger persist.
+- Closing flips mounted nodes to `data-state="closed"`, releases focus/scroll/viewport effects immediately, and removes overlay/content after the exit safety timeout. It does not unregister the id.
+- Shared scroll lock, document scroll behavior, history restoration, and scale-background effects are reference-counted or owner-stacked. One drawer closing cannot restore an effect still owned by another.
+- The runtime never reads or writes `document.body.style.pointerEvents`.
+
+Numeric defaults are root exports; see [TypeScript → Numeric constants](/drawer/reference/typescript/#numeric-constants).

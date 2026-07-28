@@ -27,9 +27,10 @@ export interface CommonDrawerOptions {
    *   useful when the consumer wants to be clear about the
    *   initial state.
    *
-   * This is a v3 change from v2's `defaultOpen: true` pattern.
-   * The package no longer mounts the overlay lazily, so the open
-   * state is set at create time, not at first open.
+   * The visual surface uses lazy presence: an initially closed drawer
+   * keeps its host and optional trigger, then mounts the overlay and
+   * content on first open. Initial open state is still resolved when
+   * the controller is created.
    */
   open?: boolean
   defaultOpen?: boolean

@@ -27,4 +27,4 @@ getDrawer('filters')?.setOpen(true)
 ## Related
 
 - [`createDrawer(options?)`](create-drawer.md) — the canonical entrypoint.
-- [`updateDrawer(idOrOptions?, options?)`](update-drawer.md) — patch options without returning a new controller.
+- [`updateDrawer(idOrOptions?, options?)`](update-drawer.md) — merge options and return a controller facade for the resolved id.

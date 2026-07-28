@@ -3,7 +3,7 @@ title: '@samline/drawer'
 description: 'A small, framework-free drawer runtime for vanilla JS and direct browser usage.'
 template: doc
 hero:
-  tagline: 'A single drawer factory, a vanilla host, and a stylesheet — no framework required.'
+  tagline: 'Per-id vanilla hosts, lazy dialog Presence, and no framework runtime.'
   actions:
     - text: Get started
       link: /drawer/getting-started
@@ -15,62 +15,70 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components'
 
-`@samline/drawer` exposes a `createDrawer` factory plus a small registry of imperative helpers, renders DOM directly with a vanilla host, ships a typed IIFE bundle for `<script>` tags, and keeps every transition and animation in CSS. It is the only runtime entrypoint since v3.0.0 — no React, Vue, or Svelte wrapper, no virtual DOM, just one factory and a focused method surface.
+These pages document `@samline/drawer@3.0.0-beta.4`. The package exposes a `createDrawer` factory plus a registry of imperative helpers, renders DOM directly into one host per drawer id, and ships both module and browser-global builds. Overlay and dialog content use lazy Presence: they mount only while open (and briefly during the exit transition), while an optional built-in trigger remains in its host when closed.
 
 ## Why @samline/drawer?
 
 - **Vanilla-first** — Works with native HTML pages, embedded scripts, static sites, and server-rendered templates.
-- **Two entrypoints** — Import the ESM factory for bundlers, or drop a single `<script>` for the browser global (`window.Drawer`).
-- **Data-attribute driven** — Every visual state is a CSS rule reading a `data-*` attribute. Theme by overriding CSS variables, no inline JS styles.
+- **Two consumption modes** — Import named exports with a bundler, or link the separate CSS and JS CDN assets to use `window.Drawer`.
+- **CSS contract + live transforms** — Open/close states use documented `data-*` attributes and the shared stylesheet; drag, snap, viewport, and scale-background updates use targeted inline styles.
 - **Observable controllers** — `subscribe(listener)` fires immediately with the current snapshot, then on every state change. Pair with Redux, Zustand, Pinia, or your own view layer.
-- **Same-id updates** — Reusing a drawer `id` updates the existing instance in place. The DOM never grows past the visible stack.
-- **Snap points + scale background** — Snap-point math, drag-to-dismiss, and page-shell scaling are all built in. See the [Examples](/drawer/reference/examples/) for end-to-end patterns.
-- **Zero runtime dependencies** — Tiny footprint, ESM + CJS bundles, ships its own types, and a IIFE for `<script>` tags.
+- **Same-id updates** — Reusing a drawer `id` merges options into the registered instance instead of creating another host. Destroy unused ids to release their hosts and triggers.
+- **Four directions + scale background** — Drag-to-dismiss works for `top`, `bottom`, `left`, and `right`; page-shell scaling starts when the drawer opens and follows the active drag.
+- **Zero runtime dependencies** — ESM + CJS bundles, root TypeScript declarations, a separate stylesheet, and an IIFE for classic `<script>` tags.
 
 ## Next steps
 
 <CardGrid>
-	<Card title="Getting started" icon="pencil-line">
-		Install the package, mount your first drawer, and open it in under five minutes.
+  <Card title="Getting started" icon="pencil-line">
+    Install the exact beta.4 release, load its stylesheet, and open your first drawer.
 
-		[Install @samline/drawer →](/drawer/getting-started)
-	</Card>
+    [Install @samline/drawer →](/drawer/getting-started)
 
-	<Card title="Configuration" icon="setting">
-		Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults and rationale.
+  </Card>
 
-		[Configuration reference →](/drawer/reference/configuration/)
-	</Card>
+  <Card title="Configuration" icon="setting">
+    Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults and rationale.
 
-	<Card title="API reference" icon="open-book">
-		Every public method (`createDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `updateDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `destroyDrawer`, `destroyDrawers`, `configureDrawer`, `createDrawerController`) documented with signatures and runnable examples.
+    [Configuration reference →](/drawer/reference/configuration/)
 
-		[Browse the API →](/drawer/reference/api/)
-	</Card>
+  </Card>
 
-	<Card title="TypeScript" icon="seti:typescript">
-		Every exported type — `CommonDrawerController`, `VanillaDrawerController`, `CommonDrawerOptions`, `VanillaDrawerOptions`, `DrawerApi`, and the rest.
+  <Card title="API reference" icon="open-book">
+    Every public method (`createDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `updateDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `destroyDrawer`, `destroyDrawers`, `configureDrawer`, `createDrawerController`) documented with signatures and runnable examples.
 
-		[TypeScript reference →](/drawer/reference/typescript/)
-	</Card>
+    [Browse the API →](/drawer/reference/api/)
 
-	<Card title="Browser global" icon="seti:html">
-		Use the pre-bundled `window.Drawer` global when you don't have a bundler — perfect for Shopify, WordPress, or classic templates.
+  </Card>
 
-		[window.Drawer reference →](/drawer/reference/browser/)
-	</Card>
+  <Card title="TypeScript" icon="seti:typescript">
+    Root type exports, controller snapshots, the inline close-button shape, and the browser-only `DrawerApi` type.
 
-	<Card title="CSS styling" icon="seti:css">
-		The data-attribute contract the stylesheet expects, and how to theme it with CSS variables.
+    [TypeScript reference →](/drawer/reference/typescript/)
 
-		[CSS styling reference →](/drawer/reference/css-styling/)
-	</Card>
+  </Card>
 
-	<Card title="Recipes" icon="puzzle">
-		End-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard handling, programmatic open/close, and SPA cleanup.
+  <Card title="Browser global" icon="seti:html">
+    Load the separate beta.4 CSS and JS assets, then use `window.Drawer` without a bundler.
 
-		[Browse examples →](/drawer/reference/examples/)
-	</Card>
+    [window.Drawer reference →](/drawer/reference/browser/)
+
+  </Card>
+
+  <Card title="CSS styling" icon="seti:css">
+    The complete data-attribute contract, four-direction positioning, inline writes, and shared effect ownership.
+
+    [CSS styling reference →](/drawer/reference/css-styling/)
+
+  </Card>
+
+  <Card title="Recipes" icon="puzzle">
+    End-to-end patterns: all four directions, nested drawers, snap points, scale background, triggers, keyboard handling, and SPA cleanup.
+
+    [Browse examples →](/drawer/reference/examples/)
+
+  </Card>
+
 </CardGrid>

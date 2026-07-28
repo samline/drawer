@@ -1,6 +1,6 @@
 # CSS styling
 
-`@samline/drawer` ships a single shared stylesheet (`@samline/drawer/styles.css`) that drives every open / close / drag / snap / scale animation. The stylesheet is data-attribute-driven: every visual effect is keyed off a `data-*` attribute the runtime writes on the dialog DOM, so you can theme the drawer by overriding those attributes in your own CSS.
+`@samline/drawer` ships one shared stylesheet (`@samline/drawer/styles.css`) for state transitions, snap selectors, overlay fading, and the built-in handle. Live drag, viewport, and scale-background effects are written inline by the runtime. Theme the drawer through the documented data attributes and consumer class options.
 
 ---
 
@@ -13,8 +13,8 @@ import '@samline/drawer/styles.css'
 The IIFE bundle (`@samline/drawer/browser`) is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately from the browser entry:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.0.0-beta.4/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -27,12 +27,13 @@ The runtime writes the following attributes. They live on the dialog primitives 
 
 ### `[data-drawer-vanilla-root]` — the host
 
-The host element is appended to `document.body` (or to your `mountElement`). The runtime owns its lifecycle. You usually do not need to style it; the children carry the visual contract.
+Every drawer gets a dedicated host appended to `document.body` or its preferred `container` (`mountElement` is deprecated). Multiple drawers in one custom container therefore have separate hosts and mount state. The runtime owns the host, not the consumer's container.
 
 | Attribute                  | Values                                 | When                 |
 | -------------------------- | -------------------------------------- | -------------------- |
 | `data-drawer-vanilla-root` | always present, value is the drawer id | mounts with the host |
-| `id`                       | the drawer id (string)                 | mounts with the host |
+
+The host does not receive an HTML `id`; use `[data-drawer-vanilla-root='my-id']`. This avoids collisions with ids inside consumer content.
 
 ### `[data-drawer-vanilla-trigger]` — the built-in trigger button
 
@@ -40,30 +41,29 @@ When `triggerText` is set, the host renders a `<button>` with this attribute as 
 
 ### `[data-drawer-overlay]` — the modal backdrop
 
-| Attribute                         | Values               | When                                                                                |
-| --------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
-| `data-state`                      | `'open' \| 'closed'` | updated on every `setOpen`                                                          |
-| `data-drawer-snap-points`         | `'true' \| 'false'`  | mirrors the option                                                                  |
-| `data-drawer-snap-points-overlay` | `'true' \| 'false'`  | true when the overlay should fade based on the active snap (`fadeFromIndex` is set) |
-| `data-drawer-animate`             | `'true' \| 'false'`  | `true` by default; set to `false` to disable the CSS animations                     |
+| Attribute                         | Values               | When                                                                                 |
+| --------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
+| `data-state`                      | `'open' \| 'closed'` | open state; `closed` appears only during exit                                        |
+| `data-drawer-snap-points`         | `'true' \| 'false'`  | whether snap styling is active for the current open state                            |
+| `data-drawer-snap-points-overlay` | `'true' \| 'false'`  | whether the active snap is in the visible overlay range                              |
+| `data-drawer-animate`             | `'true' \| 'false'`  | runtime animation gate; initially open content starts false, then changes next frame |
 
-The shipped stylesheet applies `pointer-events: none` to the closed-state overlay (`[data-drawer-overlay][data-state='closed']`). The overlay mounts at `createDrawer` time with `data-state="closed"`, so without this rule the invisible overlay would capture every click on the page. The `auto` default is restored as soon as `data-state="open"`, so the user can still click the overlay to dismiss the drawer.
+An initially closed drawer has no overlay. During close, the overlay remains temporarily with `data-state="closed"` so the exit can finish; the shipped `pointer-events: none` rule prevents that exiting overlay from capturing clicks. Open overlays retain normal hit testing and can dismiss the drawer. The runtime does not write `document.body.style.pointerEvents`.
 
 ### `[data-drawer]` — the dialog surface
 
-| Attribute                         | Values                                   | When                                                                                                        |
-| --------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `data-state`                      | `'open' \| 'closed'`                     | updated on every `setOpen`                                                                                  |
-| `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | mirrors the option                                                                                          |
-| `data-drawer-snap-points`         | `'true' \| 'false'`                      | mirrors the option                                                                                          |
-| `data-drawer-snap-points-overlay` | `'true' \| 'false'`                      | true when the overlay should fade                                                                           |
-| `data-drawer-animate`             | `'true' \| 'false'`                      | `true` by default; set to `false` to disable the CSS animations                                             |
-| `role`                            | `'dialog'`                               | always present                                                                                              |
-| `aria-modal`                      | `'true' \| 'false'`                      | mirrors the `modal` option                                                                                  |
-| `id`                              | the drawer id (string)                   | always present; used as the `aria-labelledby` / `aria-describedby` target if those options are not provided |
-| `aria-label`                      | string                                   | when `ariaLabel` option is set                                                                              |
-| `aria-labelledby`                 | string id                                | auto-generated or mirrored from `ariaLabelledBy`                                                            |
-| `aria-describedby`                | string id                                | auto-generated or mirrored from `ariaDescribedBy`                                                           |
+| Attribute                 | Values                                   | When                                                                                |
+| ------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `data-state`              | `'open' \| 'closed'`                     | open/exit state                                                                     |
+| `data-drawer-direction`   | `'top' \| 'bottom' \| 'left' \| 'right'` | mirrors the option                                                                  |
+| `data-drawer-snap-points` | `'true' \| 'false'`                      | whether snap transforms are active for the current open state                       |
+| `data-drawer-animate`     | `'true' \| 'false'`                      | runtime-controlled CSS animation gate                                               |
+| `role`                    | `'dialog'`                               | always present                                                                      |
+| `aria-modal`              | `'true' \| 'false'`                      | mirrors the `modal` option                                                          |
+| `data-drawer-id`          | the drawer id (string)                   | always present; identifies the runtime drawer without creating an HTML id collision |
+| `aria-label`              | string                                   | when `ariaLabel` option is set                                                      |
+| `aria-labelledby`         | string id                                | auto-generated or mirrored from `ariaLabelledBy`                                    |
+| `aria-describedby`        | string id                                | auto-generated or mirrored from `ariaDescribedBy`                                   |
 
 ### `[data-drawer-handle]` — the built-in handle (optional)
 
@@ -80,28 +80,28 @@ Always mounted alongside `[data-drawer-handle]`. A 44px × 44px (`max(100%, 2.75
 
 ### `[data-drawer-vanilla-node]` — the inner-card wrapper
 
-A wrapper that contains the title, description, close button, and body slots. Mounted inside `[data-drawer]` between the handle and the `[data-drawer-vanilla-body]` body slot. Consumers can use it to style the inner card (e.g. apply `border-radius` / `background` / `box-shadow`).
+A wrapper around `[data-drawer-vanilla-body]`. The title and description slots are siblings before it, and the optional close button is appended to `[data-drawer]`. Consumers can use the node wrapper to style the body card (for example, `border-radius`, `background`, or `box-shadow`).
 
 ### `[data-drawer-title]` and `[data-drawer-description]` — accessible slots
 
-Auto-generated when `ariaLabelledBy` / `ariaDescribedBy` is provided, or always present when `title` / `description` slots are used. The runtime assigns them ids (`<drawer-id>-title` and `<drawer-id>-description` by default) and points the dialog's `aria-labelledby` / `aria-describedby` at them.
+Both slots are created whenever the open or exiting dialog is present, even when empty. The runtime assigns default ids (`<drawer-id>-title` and `<drawer-id>-description`) when those slots are used as ARIA targets; custom `ariaLabelledBy` / `ariaDescribedBy` ids can instead point into consumer content.
 
 The title slot is auto-hidden when the title was promoted from `ariaLabel` (a "proxy" title); pass `titleVisuallyHidden: false` to keep it visible. See [docs/options.md → title](./options.md#vanilla-only-options) for the full contract.
 
 ### `[data-drawer-close]` — built-in close button
 
-Rendered inside `[data-drawer]` when `options.closeButton` is `true` or a `VanillaCloseButtonOptions` object. Default class is `drawer-close-button`, default icon is `xmark` (rendered inside a `<span data-drawer-close-icon aria-hidden="true">`), default `aria-label` is `Close`. The button's `click` event `stopPropagation()`s so it does not bubble to the drawer's content. The button is removed on re-mount and on `destroyDrawer` (HMR-safe).
+Rendered inside `[data-drawer]` when `options.closeButton` is `true` or a close-button options object. Default class is `drawer-close-button`, default icon is `xmark` (rendered inside a `<span data-drawer-close-icon aria-hidden="true">`), default `aria-label` is `Close`. The button's `click` event `stopPropagation()`s so it does not bubble to the drawer's content. The button is removed on re-mount and on `destroyDrawer` (HMR-safe).
 
 ### `[data-drawer-vanilla-body]` — the body slot
 
-Renders the `content` value (string / number / HTMLElement / thunk). Always present when `content`, `title`, or `description` is set.
+Renders the `content` value (string / number / HTMLElement / thunk). The body, title, and description slots are created whenever the open or exiting dialog is present, and may be empty when their options are omitted.
 
 ### `data-drawer-delayed-snap-points` and `data-drawer-custom-container` — runtime-written flags
 
-The runtime sets these to `'false'` on the content wrapper at mount. They exist as part of the contract for parity with the upstream Vaul data-attribute set:
+The runtime writes both compatibility flags on the content wrapper at mount:
 
 - `data-drawer-delayed-snap-points='false'` — the drawer's snap-point math is computed at open time, not deferred. The stylesheet selectors that target the deferred mode (in `src/style.css`) never match in this package; the runtime always writes `'false'`.
-- `data-drawer-custom-container='false'` — the runtime does not allow the consumer to opt out of the `::after` element the stylesheet adds. The selectors in `src/style.css` always apply.
+- `data-drawer-custom-container='true'` when a non-null `container` (or deprecated `mountElement`) is used; otherwise it is `'false'`. The shipped `::after` extension applies only when this flag is false.
 
 These attributes are part of the runtime contract but not user-configurable. Documenting them prevents surprises when consumers inspect the DOM.
 
@@ -125,7 +125,7 @@ This is the only `data-drawer-*` attribute the **consumer** sets on a non-descen
 
 ## Theming
 
-Override any of the data-attribute selectors in your own stylesheet. The runtime does not write inline styles for the visual surface — it only writes the data-attributes and the transform during a drag.
+Override any of the data-attribute selectors in your own stylesheet. The runtime also writes targeted inline transforms, snap offsets, overlay opacity, transition state, and viewport keyboard offsets while those behaviors are active.
 
 ### Bottom sheet with a rounded panel
 
@@ -151,10 +151,6 @@ Override any of the data-attribute selectors in your own stylesheet. The runtime
   position: fixed;
   z-index: 100;
 }
-
-[data-drawer-vanilla-root] [data-drawer-animate='true'][data-state='open'][data-drawer-direction='bottom'] {
-  animation: drawer-slide-from-bottom 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
 ```
 
 ### Disable the close animation
@@ -167,7 +163,7 @@ Override any of the data-attribute selectors in your own stylesheet. The runtime
 
 ### Scale the page shell behind the drawer
 
-When `shouldScaleBackground: true`, the page shell — the element with `data-drawer-wrapper` — receives an inline `transform: scale(...)` while the drag is in progress. Pair it with a transition for a smooth feel:
+When `shouldScaleBackground: true`, the page shell — the element with `data-drawer-wrapper` — receives an inline scale/translate transform while open and follows drag progress. Pair it with a transition for a smooth feel:
 
 ```css
 [data-drawer-wrapper] {
@@ -178,7 +174,7 @@ When `shouldScaleBackground: true`, the page shell — the element with `data-dr
 
 ### Snap-point overlay fade
 
-When `fadeFromIndex` is set, the stylesheet handles the overlay's opacity transition based on the active snap. The runtime writes `data-drawer-snap-points-overlay="true"` on the overlay; the CSS below matches the original Vaul visual:
+With snap points, the stylesheet handles the overlay's opacity transition around `fadeFromIndex`. The option defaults to the final snap index, and the runtime writes `data-drawer-snap-points-overlay="true"` when the active snap is in the visible range:
 
 ```css
 [data-drawer-overlay][data-drawer-snap-points='true'] {
@@ -191,7 +187,7 @@ When `fadeFromIndex` is set, the stylesheet handles the overlay's opacity transi
 
 ## Notes
 
-- The runtime never sets `style.background` or other visual properties on the dialog surface. Theming is always through the data-attribute contract.
-- The shared stylesheet does not ship a finished overlay or panel theme. It only ships the open / close / drag / snap / scale animations. Pair it with your own component CSS for the visual shell.
+- The runtime does not provide a themed background for the dialog surface. It does write inline behavior styles such as transform, transition, snap offset, overlay opacity, and viewport layout.
+- The shared stylesheet does not ship a finished overlay or panel theme. It provides open/close and snap/overlay behavior; live drag and background scaling are runtime inline effects. Pair it with your own component CSS for the visual shell.
 - `animation-fill-mode: forwards` is set on the closed-state animations so the final frame is held (the drawer does not bounce back to open at the end of the close).
-- The drag-pipeline transform is written inline on the content element during a drag. The stylesheet does not need to know about it — the runtime tears the inline transform down on release.
+- The drag transform remains the close animation's start frame when release dismisses the drawer. Programmatic close similarly freezes the current computed transform, so an entrance, snap, or drag in progress closes from its visible position instead of jumping back to fully open.

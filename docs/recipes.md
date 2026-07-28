@@ -9,7 +9,7 @@ End-to-end patterns for the common flows.
 Use `parentId` to relate a child drawer to a parent. The runtime scales and shifts the parent when the child opens, and closes / destroys the child with the parent.
 
 ```ts
-import { createDrawer, getParentDrawer, getChildDrawers, destroyDrawer } from '@samline/drawer'
+import { createDrawer, getDrawer, getParentDrawer, getChildDrawers, destroyDrawer } from '@samline/drawer'
 
 const parent = createDrawer({
   id: 'parent',
@@ -42,7 +42,7 @@ The parent's transform during the child's drag is driven by `runtime/nested.ts#g
 
 ## Snap points
 
-Snap points let the user drag the drawer between pre-defined positions. Numbers are fractions of the viewport (0–1); strings with `'%'` are a percentage; everything else is parsed as pixels.
+Snap points let the user drag the drawer between pre-defined positions. Numbers are fractions of the viewport or custom container (0–1). Every string is parsed as an absolute integer pixel count, so `'420px'` is 420 px and `'50%'` is 50 px rather than 50 percent.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -61,7 +61,7 @@ const drawer = createDrawer({
 drawer.setOpen(true)
 
 // Programmatic snap jump:
-drawer.setActiveSnapPoint(1) // jump to the last snap (1 = 100% of viewport)
+drawer.setActiveSnapPoint(1) // jump to the last snap (1 = zero translation offset)
 drawer.setActiveSnapPoint('420px') // jump to the middle snap
 ```
 
@@ -70,8 +70,8 @@ drawer.setActiveSnapPoint('420px') // jump to the middle snap
 - On open, the content positions itself at the active snap's offset.
 - During drag, the content interpolates between snaps via `getSnapDragValue(activeOffset, draggedDistance, direction)`.
 - On release, `getSnapPointReleaseAction` decides whether to close, snap to a neighbor, or noop (stays put).
-- When `fadeFromIndex` is set, the overlay's opacity transitions from full to transparent at the snap point. The CSS handles the transition; the runtime writes the data-attribute on the overlay.
-- When `snapToSequentialPoint: true`, a high-velocity swipe can only advance one snap at a time. The default is `false`, which lets the user fling to the last snap in one gesture.
+- The overlay is hidden below `fadeFromIndex` and visible at that index or above, with opacity interpolated while dragging across the boundary. When omitted, `fadeFromIndex` defaults to the final snap index.
+- With `snapToSequentialPoint: true`, a high-velocity release that moved less than 40% of the drawer dimension advances at most one snap. A longer release still settles at the closest snap and may skip points. The default is `false`.
 
 ---
 
@@ -93,14 +93,13 @@ const drawer = createDrawer({
   id: 'filters',
   title: 'Filters',
   content: 'Body',
-  shouldScaleBackground: true,
-  setBackgroundColorOnScale: true // optional translucent black overlay
+  shouldScaleBackground: true
 })
 
 drawer.setOpen(true)
 ```
 
-The wrapper is automatically reset to its normal state on close-release. The reset is animated by the stylesheet's `transition: transform 0.5s …` rule on `[data-drawer-wrapper]`.
+Background-color handling is enabled by default while scaling: the body becomes black while a scale owner is open and the wrapper receives a translucent tint during drag. Set `setBackgroundColorOnScale: false` to disable the color writes, or `noBodyStyles: true` to suppress both those writes and the separate Safari fixed-body helper. The wrapper transform is reset after the final scale owner closes.
 
 ---
 
@@ -111,8 +110,7 @@ When `handleOnly: true` or `showHandle: true`, the runtime renders a built-in ha
 - At any non-last snap, the click moves to the next snap.
 - At the last snap with `dismissible: true`, the click closes the drawer.
 - At the last snap with `dismissible: false`, the click cycles back to the first snap.
-- With no `snapPoints` configured and `dismissible: true`, the click is a noop.
-- With no `snapPoints` configured and `dismissible: false`, the click closes the drawer.
+- With no `snapPoints` configured, the click is a noop regardless of `dismissible`.
 - When `preventCycle: true`, the click is a noop.
 - When a drag is in progress, the click is suppressed.
 
@@ -135,11 +133,12 @@ The drag is restricted to the handle when `handleOnly: true`. With `showHandle: 
 
 ## Viewport keyboard handling
 
-When `repositionInputs: true` or `fixed: true`, the dialog listens to `window.visualViewport.resize` and recomputes the layout via `runtime/viewport.ts#getViewportDrivenDrawerLayout`.
+`repositionInputs` is enabled by default. While the drawer is open and `window.visualViewport` exists, the dialog listens for viewport resizes and recomputes layout via `runtime/viewport.ts#getViewportDrivenDrawerLayout`.
 
-- `repositionInputs: true` writes `style.bottom` so the input stays above the mobile keyboard.
-- `fixed: true` writes `style.height` so the drawer height changes (instead of repositioning) when the keyboard opens.
-- `preventScrollRestoration: true` flips `window.history.scrollRestoration` to `'manual'` while the drawer is mounted and restores the previous value on destroy.
+- The first resize is ignored unless a text input, textarea, or editable element inside this drawer has focus. Once the keyboard is considered open, later resizes continue to update or restore the layout while it settles.
+- `repositionInputs` writes `style.bottom` so the focused input stays above the mobile keyboard. Set it to `false` to opt out.
+- `fixed: true` additionally writes `style.height`. Set `repositionInputs: false` when you want the height override without the default offset write.
+- `preventScrollRestoration: true` flips `window.history.scrollRestoration` to `'manual'` while open and restores the previous value on close or destroy after the final owner releases it.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -147,16 +146,11 @@ import { createDrawer } from '@samline/drawer'
 const drawer = createDrawer({
   id: 'composer',
   title: 'Compose',
-  content: /* … */,
-  repositionInputs: true,
+  content: 'Composer form',
   fixed: true,
   preventScrollRestoration: true
 })
 ```
-
-The runtime inlines `isMobileFirefox` (a `navigator.userAgent` regex) where the layout helper needs it. A separate `isMobileFirefox` helper is a follow-up.
-
----
 
 ## Programmatic open / close with a controller
 
@@ -189,7 +183,7 @@ destroyDrawers() // cleanup
 
 ## Imperative helpers (no controller)
 
-For one-off draws where you do not need to keep the controller around, the imperative helpers cover the common cases.
+For one-off drawers where you do not need to keep the controller around, the imperative helpers cover the common cases.
 
 ```ts
 import {
@@ -207,7 +201,7 @@ closeDrawer('filters')
 toggleDrawer('filters')
 
 getDrawer('filters')?.update({ activeSnapPoint: 1 })
-getDrawers() // { filters: <controller>, default: <controller> }
+getDrawers() // { filters: <controller> }
 
 destroyDrawer('filters')
 destroyDrawers() // clear every drawer
@@ -276,7 +270,7 @@ console.log(Object.keys(getDrawers())) // ['a', 'b']
 destroyDrawers()
 ```
 
-Each drawer is independent. The `browser` namespace from the IIFE bundle wraps the same surface and adds a `Drawer` global.
+Each drawer has its own host and lifecycle. If both use the same custom `container`, the runtime appends two `[data-drawer-vanilla-root]` children; destroying one leaves the other intact. Open order, not creation or update order, determines which drawer handles Escape and owns shared scale state. The IIFE exposes these helpers through `window.Drawer`; the root module does not export a `browser` namespace.
 
 ---
 
@@ -303,7 +297,7 @@ destroyDrawer('filters')
 
 ## SPA / dynamic mount and unmount
 
-Pair `createDrawer` with the consumer's mount / unmount lifecycle. The `vanilla` adapter does not auto-mount, so the host only exists while the consumer holds the controller.
+Pair `createDrawer` with the consumer's mount / unmount lifecycle. The runtime does not auto-destroy when a controller reference is dropped; its host remains until `drawer.destroy()`, `destroyDrawer(id)`, or `destroyDrawers()` runs.
 
 ```ts
 function showFilters() {
@@ -318,14 +312,15 @@ const close = showFilters()
 close()
 ```
 
-Pair this with the [browser registry helpers](getting-started.md#browser-registry-helpers) when loading from a `<script>` tag: call `window.Drawer.createDrawer` on show, `window.Drawer.destroyDrawer` on close.
+Pair this with the [browser global helpers](getting-started.md#browser-global-helpers) when loading from a `<script>` tag: call `window.Drawer.createDrawer` on show and `window.Drawer.destroyDrawer` on teardown.
 
 ---
 
 ## Common pitfalls
 
 - **Reusing the same `id` updates the same drawer.** It does not create a second one. If you want a transient second drawer, use a unique id (e.g. `filters-${Date.now()}`) and destroy it on close.
-- **The drag pipeline fires only on the content element.** A child element with `data-drawer-no-drag` does not start a drag (e.g. an input, a button, a scrollable list).
-- **`repositionInputs: true` requires `window.visualViewport`** to be present at runtime. jsdom does not implement it — the runtime guards the attach and skips the listener when absent.
+- **Drag intent is axis-gated in every direction.** Top/bottom drawers wait for dominant Y movement; left/right drawers wait for dominant X movement. A perpendicular gesture is rejected before pointer capture. A child with `data-drawer-no-drag` also never starts a drag.
+- **A close starts at the current transform.** Programmatic and drag-release closes do not reset to the fully open position before animating to the directional endpoint.
+- **Input repositioning requires `window.visualViewport`.** The runtime guards the API and leaves CSS layout alone when it is absent. When present, resize writes remain focus-gated.
 - **`setActiveSnapPoint` re-renders the dialog.** If you call it many times in a tick, debounce or only call it on user-driven events.
-- **`history.scrollRestoration`** is touched when `preventScrollRestoration: true`. The runtime saves the previous value on open and restores it on destroy. If the page already had it set to `'manual'`, the runtime does not change it.
+- **`history.scrollRestoration`** is touched when `preventScrollRestoration: true`. The runtime saves the previous value on open and restores it on close or destroy after the final owner. If it was already `'manual'`, that value remains unchanged.

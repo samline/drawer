@@ -100,11 +100,11 @@ describe('scroll-lock (F6)', () => {
       const beforePosition = document.body.style.position
       const beforeTop = document.body.style.top
 
-      setPositionFixed({ isOpen: true, modal: true, noBodyStyles: false })
+      const restore = setPositionFixed({ isOpen: true, modal: true, noBodyStyles: false })
       // The body should have position: fixed now.
       expect(document.body.style.position).toBe('fixed')
 
-      setPositionFixed({ isOpen: false, modal: true, noBodyStyles: false })
+      restore()
       // After the close call, the body position is restored.
       // (previousBodyPosition was an empty record → styles revert to '')
       expect(document.body.style.position).toBe(beforePosition)
@@ -123,6 +123,75 @@ describe('scroll-lock (F6)', () => {
       expect(document.body.style.position).toBe(beforePosition)
     } finally {
       spy.mockRestore()
+    }
+  })
+
+  it('does not let an unowned close release another fixed-position owner', async () => {
+    const browserModule = await import('../src/runtime/browser')
+    const spy = vi.spyOn(browserModule, 'isSafari').mockReturnValue(true)
+    try {
+      const restore = setPositionFixed({ isOpen: true, modal: true, noBodyStyles: false })
+      setPositionFixed({ isOpen: false, modal: true, noBodyStyles: false })
+
+      expect(document.body.style.position).toBe('fixed')
+      restore()
+      expect(document.body.style.position).toBe('')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('restores fixed body styles with their original priorities', async () => {
+    const browserModule = await import('../src/runtime/browser')
+    const spy = vi.spyOn(browserModule, 'isSafari').mockReturnValue(true)
+    document.body.style.setProperty('position', 'relative', 'important')
+    document.body.style.setProperty('top', '4px', 'important')
+    try {
+      const restore = setPositionFixed({ isOpen: true, modal: true, noBodyStyles: false })
+      restore()
+
+      expect(document.body.style.getPropertyValue('position')).toBe('relative')
+      expect(document.body.style.getPropertyPriority('position')).toBe('important')
+      expect(document.body.style.getPropertyValue('top')).toBe('4px')
+      expect(document.body.style.getPropertyPriority('top')).toBe('important')
+    } finally {
+      document.body.style.removeProperty('position')
+      document.body.style.removeProperty('top')
+      spy.mockRestore()
+    }
+  })
+
+  it('coordinates the Safari fixed body and iOS scroll restore at the captured position', async () => {
+    const browserModule = await import('../src/runtime/browser')
+    const safariSpy = vi.spyOn(browserModule, 'isSafari').mockReturnValue(true)
+    const iosSpy = vi.spyOn(browserModule, 'isIOS').mockReturnValue(true)
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    const pageXOffset = vi.spyOn(window, 'pageXOffset', 'get').mockReturnValue(12)
+    const pageYOffset = vi.spyOn(window, 'pageYOffset', 'get').mockReturnValue(300)
+    const scrollX = vi.spyOn(window, 'scrollX', 'get').mockReturnValue(12)
+    const scrollY = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(300)
+    vi.useFakeTimers()
+    try {
+      const restorePosition = setPositionFixed({ isOpen: true, modal: true, noBodyStyles: false })
+      const restoreScroll = preventBodyScroll({ isOpen: true, modal: true })
+
+      expect(document.body.style.top).toBe('-300px')
+      expect(scrollTo).toHaveBeenCalledWith(0, 0)
+
+      restoreScroll()
+      restorePosition()
+      vi.runAllTimers()
+
+      expect(scrollTo.mock.calls[scrollTo.mock.calls.length - 1]).toEqual([12, 300])
+    } finally {
+      vi.useRealTimers()
+      scrollY.mockRestore()
+      scrollX.mockRestore()
+      pageYOffset.mockRestore()
+      pageXOffset.mockRestore()
+      scrollTo.mockRestore()
+      iosSpy.mockRestore()
+      safariSpy.mockRestore()
     }
   })
 

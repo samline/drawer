@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createDrawer, destroyDrawers } from '../src'
 
@@ -52,6 +52,7 @@ describe('close button does not lose click events to pointer capture', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     destroyDrawers()
     document.body.innerHTML = ''
   })
@@ -71,6 +72,8 @@ describe('close button does not lose click events to pointer capture', () => {
 
     const content = document.querySelector('[data-drawer]') as HTMLElement
     const closeBtn = document.querySelector('[data-drawer-close]') as HTMLButtonElement
+    const setPointerCapture = vi.fn()
+    content.setPointerCapture = setPointerCapture
     expect(content).toBeTruthy()
     expect(closeBtn).toBeTruthy()
 
@@ -78,6 +81,7 @@ describe('close button does not lose click events to pointer capture', () => {
     // user tap). The fix bails out of `onPointerDown` before
     // `setPointerCapture` for interactive children.
     closeBtn.dispatchEvent(new window.Event('pointerdown', { bubbles: true }))
+    expect(setPointerCapture).not.toHaveBeenCalled()
 
     // Dispatch the click that the browser would synthesize after
     // a real mousedown/mouseup sequence. Because the pointer was
@@ -94,6 +98,7 @@ describe('close button does not lose click events to pointer capture', () => {
     // Sanity check: the fix must not regress the drag pipeline.
     // A pointerdown on the content itself (not on a child button)
     // should still capture the pointer and start a drag.
+    vi.useFakeTimers()
     const drawer = createDrawer({
       id: 'drag-still-works',
       direction: 'bottom',
@@ -101,8 +106,14 @@ describe('close button does not lose click events to pointer capture', () => {
       content: el('div', {}, ['Body'])
     })
     drawer.setOpen(true)
+    vi.advanceTimersByTime(600)
 
     const content = document.querySelector('[data-drawer]') as HTMLElement
+    const setPointerCapture = vi.fn()
+    const releasePointerCapture = vi.fn()
+    content.setPointerCapture = setPointerCapture
+    content.hasPointerCapture = vi.fn(() => true)
+    content.releasePointerCapture = releasePointerCapture
     // Dispatch pointerdown directly on the content (background).
     content.dispatchEvent(
       Object.assign(new window.Event('pointerdown', { bubbles: true }), {
@@ -111,6 +122,7 @@ describe('close button does not lose click events to pointer capture', () => {
         pointerId: 7
       })
     )
+    expect(setPointerCapture).not.toHaveBeenCalled()
     // Move down by 10 px (small drag, below close threshold).
     content.dispatchEvent(
       Object.assign(new window.Event('pointermove', { bubbles: true }), {
@@ -119,6 +131,8 @@ describe('close button does not lose click events to pointer capture', () => {
         pointerId: 7
       })
     )
+    expect(setPointerCapture).toHaveBeenCalledWith(7)
+    vi.advanceTimersByTime(1000)
     content.dispatchEvent(
       Object.assign(new window.Event('pointerup', { bubbles: true }), {
         clientY: 110,
@@ -126,9 +140,42 @@ describe('close button does not lose click events to pointer capture', () => {
         pointerId: 7
       })
     )
+    expect(releasePointerCapture).toHaveBeenCalledWith(7)
 
     // The drawer is still open (release below threshold = reset).
     expect(drawer.getSnapshot().state.isOpen).toBe(true)
+  })
+
+  it('releases pointer capture when the drawer closes during a drag', () => {
+    vi.useFakeTimers()
+    const drawer = createDrawer({ id: 'capture-close', open: true, direction: 'bottom', content: 'Body' })
+    vi.advanceTimersByTime(600)
+    const content = document.querySelector('[data-drawer]') as HTMLElement
+    const releasePointerCapture = vi.fn()
+    content.setPointerCapture = vi.fn()
+    content.hasPointerCapture = vi.fn(() => true)
+    content.releasePointerCapture = releasePointerCapture
+
+    content.dispatchEvent(
+      Object.assign(new window.Event('pointerdown', { bubbles: true }), {
+        clientY: 100,
+        clientX: 50,
+        pointerId: 17
+      })
+    )
+    content.dispatchEvent(
+      Object.assign(new window.Event('pointermove', { bubbles: true }), {
+        clientY: 140,
+        clientX: 50,
+        pointerId: 17
+      })
+    )
+    expect(content.classList.contains('drawer-dragging')).toBe(true)
+
+    drawer.setOpen(false)
+
+    expect(releasePointerCapture).toHaveBeenCalledWith(17)
+    expect(content.classList.contains('drawer-dragging')).toBe(false)
   })
 
   it('does not capture the pointer when pointerdown lands on a form input', () => {

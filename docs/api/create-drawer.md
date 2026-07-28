@@ -10,9 +10,11 @@ function createDrawer(options?: VanillaDrawerOptions): VanillaDrawerController
 
 ## Description
 
-`createDrawer` is the canonical entrypoint. It writes the options into the module-level registry, mounts the host element (`<div data-drawer-vanilla-root>`) and the dialog (overlay + content + optional handle + optional built-in trigger) when `open: true`, and returns a `VanillaDrawerController` that exposes the imperative API.
+`createDrawer` is the canonical entrypoint. It writes the options into the module-level registry and immediately mounts a dedicated host (`<div data-drawer-vanilla-root="id">`) in `document.body` or the preferred `container`. An optional built-in trigger also mounts immediately.
 
-Reusing the same `id` is an update, not a second mount — the existing host is updated in place. The controller returned by `createDrawer` is always the up-to-date controller for that `id`.
+Overlay, dialog content, handle, and content slots use lazy presence. They are absent while initially closed, mount on open, remain temporarily with `data-state="closed"` during exit, and are then removed. The host and optional trigger remain until destroy. `open: true` or `defaultOpen: true` mounts the dialog immediately without an entrance animation.
+
+Reusing the same `id` is an update, not a second mount. The host is reused while its mount target is unchanged, and an existing controller facade continues to resolve the current runtime state for that id. Distinct ids always receive distinct hosts, including when they share one custom container.
 
 The default `id` is `'default'`. Omit `id` to use the default instance.
 
@@ -25,6 +27,8 @@ The default `id` is `'default'`. Omit `id` to use the default instance.
 ## Returns
 
 `VanillaDrawerController` — the controller for the created or updated drawer. See [docs/typescript.md](../typescript.md#vanilladrawercontroller).
+
+The controller is bound by id rather than by object identity. Calls such as `createDrawer`, `getDrawer`, and `updateDrawer` may return different facade objects for the same live instance.
 
 ## Example
 

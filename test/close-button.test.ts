@@ -42,6 +42,7 @@ describe('closeButton option', () => {
   it('renders a default close button when closeButton: true', () => {
     createDrawer({
       id: 'cb-default',
+      open: true,
       closeButton: true,
       content: 'body'
     })
@@ -63,6 +64,7 @@ describe('closeButton option', () => {
   it('respects a custom className, icon string, and ariaLabel', () => {
     createDrawer({
       id: 'cb-custom',
+      open: true,
       closeButton: {
         className: 'absolute top-5 right-5 z-10',
         icon: 'x-circle',
@@ -85,6 +87,7 @@ describe('closeButton option', () => {
 
     createDrawer({
       id: 'cb-custom-icon-el',
+      open: true,
       closeButton: { icon: customIcon },
       content: 'body'
     })
@@ -134,6 +137,7 @@ describe('closeButton option', () => {
   it('removes the close button on re-mount (HMR safety)', () => {
     const d1 = createDrawer({
       id: 'cb-hmr',
+      open: true,
       closeButton: true,
       content: 'body'
     })
@@ -143,6 +147,7 @@ describe('closeButton option', () => {
     d1.destroy()
     const d2 = createDrawer({
       id: 'cb-hmr',
+      open: true,
       closeButton: true,
       content: 'body'
     })
@@ -152,7 +157,6 @@ describe('closeButton option', () => {
     expect(document.querySelectorAll('[data-drawer-close]').length).toBe(1)
 
     // The new button's click must close d2, not d1.
-    d2.setOpen(true)
     getCloseButton()!.click()
     expect(d2.getSnapshot().state.isOpen).toBe(false)
   })
@@ -161,6 +165,7 @@ describe('closeButton option', () => {
     let contentClickCount = 0
     createDrawer({
       id: 'cb-no-bubble',
+      open: true,
       closeButton: true,
       content: 'body'
     })

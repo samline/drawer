@@ -1,6 +1,6 @@
 # Drawer docs
 
-This is the markdown reference for `@samline/drawer` v3.0.0-beta.3 — a framework-agnostic, vanilla drawer runtime with a single root entrypoint and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer) once the v3.0.0 stable cuts; the markdown here is the source of truth.
+This is the markdown reference for `@samline/drawer` v3.0.0-beta.4, a framework-agnostic vanilla drawer runtime with a root module entrypoint and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer); the markdown here is the source of truth.
 
 ---
 
@@ -22,7 +22,7 @@ This is the markdown reference for `@samline/drawer` v3.0.0-beta.3 — a framewo
 `@samline/drawer` exposes a single root entrypoint that manages named drawer instances plus a small `window.Drawer` browser bundle. The runtime is built around three ideas:
 
 - **A module-level registry of drawer instances** keyed by `id`. The default instance (no `id`) is the only one most apps need.
-- **A vanilla dialog renderer.** Each open drawer becomes a `<div data-drawer>` inside a single `<div data-drawer-vanilla-root>` that the runtime owns. Every transition is a CSS rule driven by a `data-*` attribute; the JS only sets attributes.
+- **A vanilla dialog renderer.** Every drawer owns a dedicated `<div data-drawer-vanilla-root>`. Its overlay and `<div data-drawer>` mount only while open or exiting; the optional built-in trigger can remain in the host while closed.
 - **Two entrypoints.** `@samline/drawer` (ESM + CJS) for bundlers, and `@samline/drawer/browser` (IIFE) for `<script>` tags. The same surface, no global side-effect from the root entrypoint.
 
 The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, scale background, handle cycle, viewport/keyboard handling, and the dismiss-on-drag threshold.
@@ -31,13 +31,12 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 
 ## When to use each entrypoint
 
-| Situation                                                              | Use                                                                                       |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Modern app with a bundler (Vite, esbuild, Rollup, Webpack, Bun, Astro) | `@samline/drawer`                                                                         |
-| Plain HTML page, WordPress, Shopify, classic templates                 | `@samline/drawer/browser`                                                                 |
-| Type-checking the drawer controller from a CDN script                  | declare `window.Drawer` against `DrawerApi` from `@samline/drawer`                        |
-| You want the IIFE surface from a bundler (no `globalThis` side-effect) | `import { browser } from '@samline/drawer'` (the same shape, as a module-level singleton) |
-| You need multiple independent drawers in the same page                 | `import { createDrawer } from '@samline/drawer'` and pass distinct `id` values            |
+| Situation                                                              | Use                                                                             |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Modern app with a bundler (Vite, esbuild, Rollup, Webpack, Bun, Astro) | Named exports from `@samline/drawer`                                            |
+| Plain HTML page, WordPress, Shopify, classic templates                 | The `@samline/drawer/browser` IIFE through a `<script>` tag                     |
+| Type-checking the drawer controller from a CDN script                  | `DrawerApi` from `@samline/drawer/browser`                                      |
+| You need multiple independent drawers in the same page                 | `createDrawer` with distinct `id` values; each drawer receives a dedicated host |
 
 ---
 
@@ -71,4 +70,4 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 
 ## Versioning
 
-This documentation matches `@samline/drawer` v3.0.0-beta.3. The previous betas 3.0.0-beta.0/1/2 are tracked in [CHANGELOG.md](../CHANGELOG.md) but never published to npm. The package will cut `3.0.0` stable once the docs/AGENTS pass lands.
+This documentation matches `@samline/drawer` v3.0.0-beta.4. Earlier releases are tracked in [CHANGELOG.md](../CHANGELOG.md).

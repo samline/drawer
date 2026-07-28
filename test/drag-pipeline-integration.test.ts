@@ -13,7 +13,7 @@ import type { CommonDrawerDirection } from '../src/core'
  * `DragPointerEvent`. Real browsers supply the same shape natively.
  */
 function createPointerEvent(
-  type: 'pointerdown' | 'pointermove' | 'pointerup',
+  type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointerout' | 'pointercancel',
   init: { clientX: number; clientY: number; pointerId?: number; bubbles?: boolean }
 ) {
   const event = new window.Event(type, { bubbles: init.bubbles ?? true })
@@ -280,5 +280,84 @@ describe('drag pipeline integration (Phase A)', () => {
     const percentages = onDragChange.mock.calls.map(([value]) => value as number)
     expect(percentages.length).toBeGreaterThan(0)
     expect(percentages[percentages.length - 1]).toBeCloseTo(0.4, 2)
+  })
+
+  it('does not drag closed when dismissible is false and snapPoints is empty', () => {
+    vi.useFakeTimers()
+    const onDragChange = vi.fn()
+    const onOpenChange = vi.fn()
+    const drawer = createDrawer({
+      id: 'empty-snap-nondismissible',
+      open: true,
+      dismissible: false,
+      snapPoints: [],
+      content: 'Body',
+      onDragChange,
+      onOpenChange
+    })
+    vi.advanceTimersByTime(600)
+
+    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 61 }))
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 500, pointerId: 61 }))
+    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 500, pointerId: 61 }))
+
+    expect(onDragChange).not.toHaveBeenCalled()
+    expect(onOpenChange).not.toHaveBeenCalledWith(false)
+    expect(drawer.getSnapshot().state.isOpen).toBe(true)
+  })
+
+  it('cleans up a rejected perpendicular gesture before the next drag', () => {
+    vi.useFakeTimers()
+    const onDragChange = vi.fn()
+    const drawer = createDrawer({ id: 'intent-cleanup', open: true, content: 'Body', onDragChange })
+    vi.advanceTimersByTime(600)
+
+    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 71 }))
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 200, clientY: 100, pointerId: 71 }))
+
+    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 72 }))
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 100, clientY: 200, pointerId: 72 }))
+
+    expect(onDragChange).toHaveBeenCalledTimes(1)
+    expect(drawer.getSnapshot().state.isOpen).toBe(true)
+  })
+
+  it('ignores secondary pointer movement during an active drag', () => {
+    vi.useFakeTimers()
+    const onReleaseChange = vi.fn()
+    createDrawer({ id: 'pointer-isolation', open: true, content: 'Body', onReleaseChange })
+    vi.advanceTimersByTime(600)
+
+    const content = getContent()
+    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 81 }))
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 150, pointerId: 81 }))
+    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 600, pointerId: 82 }))
+    vi.advanceTimersByTime(1000)
+    dispatchOnContent(createPointerEvent('pointerout', { clientX: 50, clientY: 150, pointerId: 81 }))
+
+    expect(content.classList.contains('drawer-dragging')).toBe(false)
+    expect(onReleaseChange).toHaveBeenCalledWith(true)
+  })
+
+  it('closes consistently in all four directions', () => {
+    vi.useFakeTimers()
+    for (const direction of ['bottom', 'top', 'right', 'left'] as const) {
+      const drawer = createDrawer({ id: `direction-${direction}`, open: true, direction, content: direction })
+      vi.advanceTimersByTime(600)
+      const horizontal = direction === 'left' || direction === 'right'
+      const closingSign = direction === 'bottom' || direction === 'right' ? 1 : -1
+      const start = 400
+      const end = start + closingSign * (horizontal ? window.innerWidth : window.innerHeight) * 0.3
+      const startPoint = horizontal ? { clientX: start, clientY: 50 } : { clientX: 50, clientY: start }
+      const endPoint = horizontal ? { clientX: end, clientY: 50 } : { clientX: 50, clientY: end }
+
+      dispatchOnContent(createPointerEvent('pointerdown', { ...startPoint, pointerId: 90 }))
+      vi.advanceTimersByTime(30)
+      dispatchOnContent(createPointerEvent('pointermove', { ...endPoint, pointerId: 90 }))
+      dispatchOnContent(createPointerEvent('pointerup', { ...endPoint, pointerId: 90 }))
+
+      expect(drawer.getSnapshot().state.isOpen).toBe(false)
+      drawer.destroy()
+    }
   })
 })

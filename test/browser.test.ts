@@ -263,19 +263,23 @@ describe('browser entry', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const { Drawer } = await importBrowser()
+    const titleId = 'styled:sheet/title'
+    const descriptionId = 'styled:sheet/description'
+    const contentCalls = vi.fn()
 
     try {
       Drawer.destroyDrawers()
       Drawer.createDrawer({
         id: 'browser-custom-a11y',
         open: true,
-        ariaLabelledBy: 'styled-sheet-title',
-        ariaDescribedBy: 'styled-sheet-description',
+        ariaLabelledBy: titleId,
+        ariaDescribedBy: descriptionId,
         content() {
+          contentCalls()
           const wrapper = document.createElement('div')
           wrapper.innerHTML = [
-            '<h2 id="styled-sheet-title">A controlled drawer.</h2>',
-            '<p id="styled-sheet-description">Accessible custom content.</p>'
+            `<h2 id="${titleId}">A controlled drawer.</h2>`,
+            `<p id="${descriptionId}">Accessible custom content.</p>`
           ].join('')
           return wrapper
         }
@@ -285,6 +289,18 @@ describe('browser entry', () => {
 
       expect(messages).not.toContain('DialogContent requires a DialogTitle')
       expect(messages).not.toContain('Missing `Description`')
+      expect(contentCalls).toHaveBeenCalledTimes(1)
+
+      const dialog = document.querySelector('[data-drawer-id="browser-custom-a11y"]')
+      expect(dialog?.getAttribute('aria-labelledby')).toBe(titleId)
+      expect(dialog?.getAttribute('aria-describedby')).toBe(descriptionId)
+      expect(dialog?.querySelectorAll('[id]').length).toBe(2)
+      expect(document.getElementById(titleId)?.textContent).toBe('A controlled drawer.')
+      expect(document.getElementById(descriptionId)?.textContent).toBe('Accessible custom content.')
+      expect(dialog?.querySelector('[data-drawer-title]')?.id).not.toBe(titleId)
+      expect(dialog?.querySelector('[data-drawer-description]')?.id).not.toBe(descriptionId)
+      expect(dialog?.querySelector('[data-drawer-title]')?.textContent).toBe('')
+      expect(dialog?.querySelector('[data-drawer-description]')?.textContent).toBe('')
     } finally {
       Drawer.destroyDrawers()
       errorSpy.mockRestore()

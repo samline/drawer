@@ -22,10 +22,7 @@ export const NESTED_DISPLACEMENT = 16
 export const WINDOW_TOP_OFFSET = 26
 
 /**
- * Class name the runtime would add to `[data-drawer]` while a drag
- * is in progress. **Reserved for a future enhancement** — the CSS
- * contract currently has no `[data-drawer].drawer-dragging` rule
- * and no code path adds the class. Keep the export so consumers
- * writing a forward-compatible stylesheet can opt in.
+ * Class name added to `[data-drawer]` after the gesture crosses its
+ * axis-intent threshold and removed on every release/cancel path.
  */
 export const DRAG_CLASS = 'drawer-dragging'

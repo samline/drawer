@@ -100,30 +100,26 @@ describe('closed-state initial mount (no flicker)', () => {
     })
   })
 
-  describe('runtime: closed drawer is mounted with data-state=closed', () => {
+  describe('runtime: closed drawer uses lazy presence', () => {
     it.each(['top', 'bottom', 'left', 'right'] as const)(
-      'direction=%s mounts the drawer in the closed state',
+      'direction=%s does not mount hidden dialog content',
       (direction) => {
         createDrawer({
           id: `mt-${direction}`,
           direction,
           content: 'body'
         })
-        const el = document.querySelector('[data-drawer]') as HTMLElement
-        expect(el).not.toBeNull()
-        expect(el.getAttribute('data-state')).toBe('closed')
+        expect(document.querySelector('[data-drawer]')).toBeNull()
       }
     )
 
-    it('overlay is mounted with data-state=closed and pointer-events:none', () => {
+    it('does not mount an overlay while closed', () => {
       createDrawer({
         id: 'mt-overlay',
         direction: 'right',
         content: 'body'
       })
-      const overlay = document.querySelector('[data-drawer-overlay]') as HTMLElement
-      expect(overlay).not.toBeNull()
-      expect(overlay.getAttribute('data-state')).toBe('closed')
+      expect(document.querySelector('[data-drawer-overlay]')).toBeNull()
     })
   })
 })

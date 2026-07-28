@@ -6,17 +6,17 @@ sidebar:
   order: 1
 ---
 
-This section documents the complete public surface of `@samline/drawer`. Pages are grouped by concept — configuration, API, types, browser usage, styling, and examples — so you can scan to what you need without diving into the source.
+This section documents the `@samline/drawer@3.0.0-beta.4` public surface and its current runtime behavior. Pages are grouped by configuration, API, types, browser usage, styling, and examples.
 
 :::note
-If you add a new page under `src/content/docs/reference/`, declare its `slug` inside the `sidebar` array in `site.config.mjs` to control its position.
+Each registered id owns a dedicated host. Overlay and dialog content use lazy Presence, while an optional built-in trigger persists when the drawer is closed. Closing preserves the registry entry; destroying releases it.
 :::
 
 ## Sections in this reference
 
-- [Configuration](/drawer/reference/configuration/) — every `CommonDrawerOptions` and `VanillaDrawerOptions` field, with defaults and rationale.
-- [API](/drawer/reference/api/) — method-by-method signatures, parameters, return shapes, and behaviour tables.
-- [TypeScript](/drawer/reference/typescript/) — every exported type, callback signature, and helper return shape.
-- [Browser global](/drawer/reference/browser/) — the `window.Drawer` IIFE for no-bundler setups (Shopify, WordPress, classic templates).
-- [CSS styling](/drawer/reference/css-styling/) — recipes for the data-attribute contract the stylesheet reads.
+- [Configuration](/drawer/reference/configuration/) — every `CommonDrawerOptions` and `VanillaDrawerOptions` field, including beta.4 defaults and deprecated aliases.
+- [API](/drawer/reference/api/) — signatures, registry behavior, lazy mount lifecycle, callbacks, and teardown.
+- [TypeScript](/drawer/reference/typescript/) — root type exports, structural shapes, constants, and the browser-only API type.
+- [Browser global](/drawer/reference/browser/) — separate CSS + JS CDN setup for `window.Drawer`.
+- [CSS styling](/drawer/reference/css-styling/) — the full DOM/data-attribute contract, inline writes, and global effect ownership.
 - [Examples](/drawer/reference/examples/) — end-to-end recipes for common real-world scenarios.

@@ -43,7 +43,7 @@ export function getNestedDrawerTransform({
   viewportSize: number
   displacement: number
 }) {
-  const scale = isOpen ? (viewportSize - displacement) / viewportSize : 1
+  const scale = isOpen && viewportSize > 0 ? (viewportSize - displacement) / viewportSize : 1
   const translate = isOpen ? -displacement : 0
 
   return {
@@ -64,9 +64,10 @@ export function getNestedDragTransform({
   displacement: number
   percentageDragged: number
 }) {
-  const initialScale = (viewportSize - displacement) / viewportSize
-  const scale = initialScale + percentageDragged * (1 - initialScale)
-  const translate = -displacement + percentageDragged * displacement
+  const initialScale = viewportSize > 0 ? (viewportSize - displacement) / viewportSize : 1
+  const progress = Math.max(0, Math.min(1, percentageDragged))
+  const scale = initialScale + progress * (1 - initialScale)
+  const translate = -displacement + progress * displacement
 
   return {
     scale,
@@ -82,9 +83,10 @@ export function getBackgroundDragState({
   baseScale: number
   percentageDragged: number
 }) {
-  const scaleValue = Math.min(baseScale + percentageDragged * (1 - baseScale), 1)
-  const borderRadiusValue = BORDER_RADIUS - percentageDragged * BORDER_RADIUS
-  const translateValue = Math.max(0, 14 - percentageDragged * 14)
+  const progress = Math.max(0, Math.min(1, percentageDragged))
+  const scaleValue = Math.min(baseScale + progress * (1 - baseScale), 1)
+  const borderRadiusValue = BORDER_RADIUS - progress * BORDER_RADIUS
+  const translateValue = Math.max(0, 14 - progress * 14)
 
   return {
     scaleValue,
@@ -120,26 +122,32 @@ export function getBackgroundResetState({
  * detect "the drawer is already in a non-zero position" before
  * allowing a drag in the close direction.
  *
- * Returns `null` when the element has no transform, when the
- * transform does not match the expected matrix shape, or when the
- * `DOMMatrix` API is unavailable (jsdom). Callers should treat
- * `null` as "drawer is at rest" and use their fallback path.
+ * Returns `null` when the element has no transform or the transform
+ * does not match a supported matrix/translate shape. Parsing strings
+ * directly keeps this path available when `DOMMatrix` is absent.
  */
-export function getTranslate(
-  element: HTMLElement | null,
-  direction: CommonDrawerDirection
-): number | null {
+export function getTranslate(element: HTMLElement | null, direction: CommonDrawerDirection): number | null {
   if (!element) return null
-  // `getComputedStyle(...).transform` returns a `matrix(a, b, c, d, tx, ty)`
-  // string when there is a non-trivial transform, or `'none'` for the
-  // identity matrix. Parse with `DOMMatrix` (modern browsers + jsdom
-  // 16+).
-  if (typeof DOMMatrix === 'undefined') return null
   const transform = window.getComputedStyle(element).transform
   if (!transform || transform === 'none') return null
-  const matrix = new DOMMatrix(transform)
-  // The drawer's `translate3d(x, y, 0)` sets `matrix.m41` for the
-  // horizontal axis and `matrix.m42` for the vertical axis. Pick the
-  // one that matches the drawer's axis.
-  return direction === 'top' || direction === 'bottom' ? matrix.m42 : matrix.m41
+
+  const matrix3d = transform.match(/^matrix3d\((.+)\)$/)
+  if (matrix3d?.[1]) {
+    const values = matrix3d[1].split(',').map((value) => Number.parseFloat(value.trim()))
+    return values[direction === 'top' || direction === 'bottom' ? 13 : 12] ?? null
+  }
+
+  const matrix = transform.match(/^matrix\((.+)\)$/)
+  if (matrix?.[1]) {
+    const values = matrix[1].split(',').map((value) => Number.parseFloat(value.trim()))
+    return values[direction === 'top' || direction === 'bottom' ? 5 : 4] ?? null
+  }
+
+  const translate3d = transform.match(/^translate3d\(([^,]+),\s*([^,]+),\s*[^)]+\)$/)
+  if (translate3d) {
+    const value = direction === 'top' || direction === 'bottom' ? translate3d[2] : translate3d[1]
+    return value ? Number.parseFloat(value) : null
+  }
+
+  return null
 }

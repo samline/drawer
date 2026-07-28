@@ -47,6 +47,7 @@ describe('title slot visibility (proxy from ariaLabel vs explicit title)', () =>
   it('hides the title slot when only ariaLabel is provided (proxy case)', () => {
     createDrawer({
       id: 'proxy-only',
+      open: true,
       ariaLabel: 'Accessibility-only title',
       content: 'body'
     })
@@ -67,6 +68,7 @@ describe('title slot visibility (proxy from ariaLabel vs explicit title)', () =>
   it('does NOT hide the title slot when an explicit title is provided', () => {
     createDrawer({
       id: 'visible-title',
+      open: true,
       title: 'Visible title',
       content: 'body'
     })
@@ -83,6 +85,7 @@ describe('title slot visibility (proxy from ariaLabel vs explicit title)', () =>
   it('does NOT hide the title slot when both title and ariaLabel are provided (explicit title wins)', () => {
     createDrawer({
       id: 'both-provided',
+      open: true,
       title: 'Visible title',
       ariaLabel: 'A11y label',
       content: 'body'
@@ -98,6 +101,7 @@ describe('title slot visibility (proxy from ariaLabel vs explicit title)', () =>
   it('respects titleVisuallyHidden: true even with an explicit title', () => {
     createDrawer({
       id: 'force-hidden',
+      open: true,
       title: 'Visible title (forced hidden)',
       titleVisuallyHidden: true,
       content: 'body'
@@ -113,6 +117,7 @@ describe('title slot visibility (proxy from ariaLabel vs explicit title)', () =>
   it('overrides the auto-hide with titleVisuallyHidden: false (proxy + opt-out)', () => {
     createDrawer({
       id: 'opt-out',
+      open: true,
       ariaLabel: 'A11y label visible by opt-out',
       titleVisuallyHidden: false,
       content: 'body'

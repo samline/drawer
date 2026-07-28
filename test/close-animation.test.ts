@@ -9,9 +9,9 @@ import { createDrawer, destroyDrawers } from '../src'
  * transform during the close animation. The new approach is 1:1
  * with vaul: the close path drives the cascade `transform` from 0
  * (open) to 100 % (closed) and the base `transition: transform 0.5s`
- * interpolates between them. The CSS `slideTo{X}` animation now has
- * an explicit `from: 0` so it acts as a `forwards` fill-mode anchor
- * for the post-transition cascade, not the dynamic slide.
+ * interpolates between them. The CSS `slideTo{X}` animation leaves
+ * its `from` frame implicit so a drag-close starts at the actual
+ * release position instead of jumping back to fully open.
  *
  * The DOM stays in the tree for 600 ms (animation duration + 100 ms
  * safety) and is removed by a setTimeout. No JS-side flag, no inline
@@ -62,9 +62,8 @@ describe('close animation', () => {
     })
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
 
-    const content = document.querySelector('[data-drawer]') as HTMLElement
-    expect(content.dataset.state).toBe('closed')
-    expect(content.dataset.drawerClosing).toBeUndefined()
+    expect(document.querySelector('[data-drawer]')).toBeNull()
+    expect(document.querySelector('[data-drawer-overlay]')).toBeNull()
   })
 
   it('the open animation (slideFromRight) still plays on the initial mount', () => {
@@ -75,9 +74,7 @@ describe('close animation', () => {
       content: 'Body'
     })
 
-    const before = document.querySelector('[data-drawer]') as HTMLElement
-    expect(before.dataset.state).toBe('closed')
-    expect(before.dataset.drawerClosing).toBeUndefined()
+    expect(document.querySelector('[data-drawer]')).toBeNull()
 
     drawer.setOpen(true)
     // setOpen(true) goes through a teardown + re-mount, so we
@@ -105,7 +102,7 @@ describe('close animation', () => {
     // animation + 100 ms safety) the drawer is fully removed.
     expect(document.querySelector('[data-drawer]')).not.toBeNull()
 
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       window.setTimeout(() => {
         expect(document.querySelector('[data-drawer]')).toBeNull()
         resolve()
@@ -113,26 +110,7 @@ describe('close animation', () => {
     })
   })
 
-  it('clears the inline drag transform on the open→close transition so the cascade takes over', () => {
-    // F1: the F1b fix kept the inline `transform: translate3d(0,
-    // dragY, 0)` during the close animation so `slideToX` would
-    // pick it up as the `from` frame. The new approach is 1:1 with
-    // vaul: we clear the inline transform on the open→close
-    // transition so the cascade `transform: translate3d(0, 100 %, 0)`
-    // is the only thing the base `transition: transform` has to
-    // interpolate from. The `slideToX` keyframe is a static
-    // `from: 0 → to: 100 %` and acts as a `forwards` fill-mode
-    // anchor for the post-transition cascade.
-    //
-    // For the drag-release path, the inline transform clear happens
-    // BEFORE the data-state flip in `onPointerUp` (this is the
-    // new "release resets the drag transform" step — the previous
-    // F1b kept it). After the clear, the cascade `transform: 100 %`
-    // is what the transition interpolates against.
-    //
-    // We test the programmatic (non-drag) close path here, which is
-    // simpler: the close path flips `data-state` to "closed" and
-    // never had an inline `transform` to clear in the first place.
+  it('seeds the open transform for a programmatic close animation', () => {
     const drawer = createDrawer({
       id: 'cascade-takes-over',
       direction: 'bottom',
@@ -144,7 +122,18 @@ describe('close animation', () => {
     expect(content.style.transform).toBe('')
     drawer.setOpen(false)
     expect(content.dataset.state).toBe('closed')
-    // Programmatic close: no inline transform was ever written.
-    expect(content.style.transform).toBe('')
+    expect(content.style.transform).toBe('translate3d(0, 0px, 0)')
+    expect(content.style.transition).toBe('none')
+  })
+
+  it('moves directly to the closed endpoint when animation is disabled', () => {
+    const drawer = createDrawer({ id: 'close-no-animation', open: true, direction: 'left', content: 'Body' })
+    const content = document.querySelector('[data-drawer]') as HTMLElement
+    content.dataset.drawerAnimate = 'false'
+
+    drawer.setOpen(false)
+
+    expect(content.style.transform).toBe('translate3d(-100%, 0, 0)')
+    expect(content.style.transition).toBe('none')
   })
 })

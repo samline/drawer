@@ -4,8 +4,9 @@ import { createDrawer, destroyDrawers } from '../src'
 import { reset, set } from '../src/helpers'
 
 /**
- * G7: `body.pointerEvents = 'auto'` on open (modal: false) and
- * on close.
+ * The vanilla runtime does not own `body.pointerEvents`, so opening
+ * or closing a drawer must preserve values written by application
+ * code or another modal implementation.
  *
  * G8: `documentElement.scrollBehavior` is set to `auto` while the
  * drawer is open and restored on close (via the `set` + `reset`
@@ -26,7 +27,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
     document.documentElement.style.scrollBehavior = ''
   })
 
-  describe('G7: body.pointerEvents', () => {
+  describe('body.pointerEvents ownership', () => {
     it('modal: true does NOT explicitly write pointerEvents on open', () => {
       const drawer = createDrawer({
         id: 'g7-modal-true',
@@ -42,7 +43,8 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       expect(document.body.style.pointerEvents).toBe('')
     })
 
-    it('modal: false writes pointerEvents = auto on open (via rAF)', () => {
+    it('preserves pointerEvents when a non-modal drawer opens', async () => {
+      document.body.style.pointerEvents = 'none'
       const drawer = createDrawer({
         id: 'g7-modal-false',
         modal: false,
@@ -50,17 +52,13 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
         content: 'Body'
       })
       drawer.setOpen(true)
-      // The write is deferred to requestAnimationFrame.
-      return new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          expect(document.body.style.pointerEvents).toBe('auto')
-          resolve()
-        })
-      })
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+      expect(document.body.style.pointerEvents).toBe('none')
     })
 
-    it('always writes pointerEvents = auto on close', () => {
+    it('preserves pointerEvents on close', () => {
       vi.useFakeTimers()
+      document.body.style.pointerEvents = 'none'
       const drawer = createDrawer({
         id: 'g7-close',
         modal: true,
@@ -69,11 +67,10 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       })
       drawer.setOpen(true)
       vi.advanceTimersByTime(100)
-      // Pre-condition: drawer did not write pointerEvents.
-      expect(document.body.style.pointerEvents).toBe('')
+      expect(document.body.style.pointerEvents).toBe('none')
 
       drawer.setOpen(false)
-      expect(document.body.style.pointerEvents).toBe('auto')
+      expect(document.body.style.pointerEvents).toBe('none')
     })
   })
 
@@ -124,6 +121,18 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       expect(document.documentElement.style.scrollBehavior).toBe('smooth')
       // touch the variable so eslint doesn't complain about unused
       drawer.getSnapshot()
+    })
+
+    it('restores scrollBehavior only after the final drawer closes', () => {
+      document.documentElement.style.scrollBehavior = 'smooth'
+      const first = createDrawer({ id: 'g8-first', open: true, content: 'First' })
+      const second = createDrawer({ id: 'g8-second', open: true, content: 'Second' })
+
+      expect(document.documentElement.style.scrollBehavior).toBe('auto')
+      first.setOpen(false)
+      expect(document.documentElement.style.scrollBehavior).toBe('auto')
+      second.setOpen(false)
+      expect(document.documentElement.style.scrollBehavior).toBe('smooth')
     })
   })
 })

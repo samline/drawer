@@ -3,8 +3,23 @@
 **Filed**: 2026-07-27
 **Scope**: Behavioral + API parity audit (NOT animations; those were audited separately on 2026-07-27 in `2026-07-27-forensic-animation-audit-vs-vaul-upstream.md`).
 **Upstream reference**: `https://github.com/emilkowalski/vaul` @ `master` (commit `2f5b72d`, vaul 1.1.2), cloned at `/tmp/vaul-reference`.
-**Affected versions**: `@samline/drawer@3.0.0-beta.x` (current `beta.3`).
+**Affected versions**: `@samline/drawer@3.0.0-beta.x` (`beta.3` when filed).
 **Auditor**: general agent (1:1 review of every feature and behavior of vaul against the drawer).
+
+## Beta.4 correction (2026-07-28)
+
+This report is a historical, point-in-time audit against one Vaul commit. Its per-finding comparisons remain useful, but it must not be read as proof of package-wide 1:1 parity. The vanilla renderer has deliberate API and lifecycle differences, and a later multi-drawer/Safari review found edge cases outside this audit's scope.
+
+The beta.4 work supersedes several statuses and conclusions below:
+
+- G4's proposed `document.body.style.pointerEvents = 'auto'` writes were intentionally removed. This package does not use Radix, never sets body pointer events to `none`, and now preserves values owned by the application or another modal library.
+- G14 is closed: `getTranslate` parses matrix and translate strings directly without requiring `DOMMatrix`.
+- G16 is closed: `set`, `reset`, `chain`, and `assignStyle` exist, while global side-effect managers additionally preserve inline values and CSS priorities across multiple owners.
+- The gesture state now explicitly gates dominant-axis intent before pointer capture, ignores unrelated pointer ids, and releases capture/listeners on cancel or teardown. This supersedes the assumptions in G15 and G20 without making the vanilla event model identical to React Vaul.
+- G22's `html` scroll-behavior handling is implemented as a shared lock and restores the original value after the final owner releases it.
+- G13, G17, G18, G19, and G24 remain deliberate public or lifecycle differences. The PWA-specific G23 check is not claimed as closed.
+
+Beta.4 also adds lazy visual presence, logical open ordering, stack-aware focus/Escape behavior, and shared scale/scroll/Safari ownership. Those areas were not established by the original audit. Automated coverage is green, but real Chrome, Firefox, Safari, and iOS validation remains necessary before any broader parity claim.
 
 ## TL;DR
 
@@ -53,6 +68,7 @@ The audit was a line-by-line comparison:
 7. **Cross-checked** the F-series findings (animation audit) to ensure no overlap and to mark areas as "already covered".
 
 The audit explicitly does NOT cover:
+
 - **Animation regression bugs** — F1–F17 in `2026-07-27-forensic-animation-audit-vs-vaul-upstream.md`.
 - **Implementation differences that are deliberate** — vanilla has no React hooks, no JSX, no Radix Dialog, so the `useXxx` hook shape is replaced by module-level state + per-mount closure state. The audit accepts this as a translation choice and only flags it if the **observable behavior** differs.
 - **TypeScript types that are stricter in the drawer** — the drawer has more precise types (e.g. `CommonDrawerSnapshot` exposes a structured state). This is a type-system win, not a behavioral difference.
@@ -150,6 +166,7 @@ The 24 findings below are **observable differences** — either visible to the u
 ### Resolution (G4)
 
 **Status: CLOSED** in the 1:1 audit wave 1 commit. Two write sites:
+
 - `mountVanillaDialog` writes `body.pointerEvents = 'auto'` (via rAF) when `open && options.modal === false`. Mirrors vaul `index.tsx:187`.
 - The `isClosingOnly` branch in `mountVanillaDialog` writes `body.pointerEvents = 'auto'` synchronously. Mirrors vaul `index.tsx:194`.
 
@@ -158,19 +175,25 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G5. Drag math uses `window.innerHeight/innerWidth` instead of drawer dimensions — Severity: **HIGH**
 
 - **vaul**: `index.tsx:213-214`:
+
   ```js
-  const drawerHeightRef = React.useRef(drawerRef.current?.getBoundingClientRect().height || 0);
-  const drawerWidthRef = React.useRef(drawerRef.current?.getBoundingClientRect().width || 0);
+  const drawerHeightRef = React.useRef(drawerRef.current?.getBoundingClientRect().height || 0)
+  const drawerWidthRef = React.useRef(drawerRef.current?.getBoundingClientRect().width || 0)
   ```
+
   And `index.tsx:266-267`: updated on every `onPress` (the pointerdown handler). `index.tsx:378-379`: used in `onDrag`:
+
   ```js
-  const drawerDimension = direction === 'bottom' || direction === 'top' ? drawerHeightRef.current : drawerWidthRef.current;
+  const drawerDimension =
+    direction === 'bottom' || direction === 'top' ? drawerHeightRef.current : drawerWidthRef.current
   ```
 
 - **drawer**: `vanilla/dialog.ts:1010`:
+
   ```ts
   const drawerDimension = isVerticalAxis ? window.innerHeight : window.innerWidth
   ```
+
   And the consumer's `drawerHeight` / `drawerWidth` is never captured.
 
 - **Diff**: vaul uses the **actual** drawer element dimensions. The drawer uses the **viewport** dimensions. For a `direction: 'bottom'` drawer that is 100% of viewport height, the values are the same. For any consumer-styled drawer (e.g. `height: 50vh` or `max-height: 600px` or `fixed: true` with a constrained height), the values differ.
@@ -188,6 +211,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G6. `onClose` and `onOpenChange` fire in the opposite order — Severity: **MEDIUM**
 
 - **vaul**: `index.tsx:536-549` (closeDrawer):
+
   ```js
   function closeDrawer(fromWithin?: boolean) {
     cancelDrag();
@@ -198,9 +222,11 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     ...
   }
   ```
+
   The `setIsOpen(false)` call (when `!fromWithin`) fires the `useControllableState` `onChange` which is the consumer's `onOpenChange`. So the order is: **`onClose` → `onOpenChange(false)`**.
 
 - **drawer**: `runtime/registry.ts:147, 176` (notifyOpenStateChange):
+
   ```ts
   function notifyOpenStateChange(runtime, open) {
     runtime.options.onOpenChange?.(open)            // ← onOpenChange first
@@ -212,6 +238,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     ...
   }
   ```
+
   The order is: **`onOpenChange(false)` → `onClose`**.
 
 - **Diff**: Two callbacks fire in opposite order. For consumers who do cleanup in `onClose` and want to know the drawer's `isOpen` is still `true` (to compare with a previous state, or to read a still-mounted DOM), vaul's order supports that. For consumers who do cleanup in `onOpenChange` and want to know the close is happening NOW, the drawer's order supports that.
@@ -227,13 +254,15 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G7. Active snap point is not reset to the first after close — Severity: **MEDIUM**
 
 - **vaul**: `index.tsx:544-548` (closeDrawer):
+
   ```js
   setTimeout(() => {
     if (snapPoints) {
-      setActiveSnapPoint(snapPoints[0]);
+      setActiveSnapPoint(snapPoints[0])
     }
-  }, TRANSITIONS.DURATION * 1000);
+  }, TRANSITIONS.DURATION * 1000)
   ```
+
   After the close animation finishes, the active snap is reset to the first one. Next time the user opens, they start at the first snap.
 
 - **drawer**: No equivalent. The active snap point persists across open/close cycles. `runtime/registry.ts:393-408` (setActiveSnapPoint) is never called automatically.
@@ -251,20 +280,25 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G8. `openTime` is not updated on snap change — Severity: **MEDIUM**
 
 - **vaul**: `index.tsx:217-220` (onSnapPointChange):
+
   ```js
   const onSnapPointChange = React.useCallback((activeSnapPointIndex: number) => {
     if (snapPoints && activeSnapPointIndex === snapPointsOffset.length - 1) openTime.current = new Date();
   }, []);
   ```
+
   And `index.tsx:301-303` (shouldDrag):
+
   ```js
   if (openTime.current && date.getTime() - openTime.current.getTime() < 500) {
-    return false;
+    return false
   }
   ```
+
   When the active snap reaches the LAST snap (i.e. the user expanded the drawer to full height), `openTime` is reset. For the next 500ms, `shouldDrag` returns `false` — the user can't start a drag-to-close because they just expanded the drawer, and they're probably scrolling the content.
 
 - **drawer**: `vanilla/dialog.ts:1812`: `state.openedAt = performance.now()` is set on dialog open. It is NEVER updated on snap change. The drag-permission check at `runtime/drag-policy.ts:143-145` only compares against the original open time:
+
   ```ts
   if (timeSinceOpenMs !== null && timeSinceOpenMs < POST_OPEN_GRACE_MS) {
     return { allow: false, updatePreventedAt: false }
@@ -284,16 +318,23 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G9. `onActiveSnapPointChange` (controlled-prop pattern) is not implemented — Severity: **MEDIUM**
 
 - **vaul**: `index.tsx:154`: `setActiveSnapPoint: setActiveSnapPointProp` (the consumer's setter callback). Wired to `useSnapPoints` at `index.tsx:234`. `use-snap-points.ts:30-34`:
+
   ```js
-  const [activeSnapPoint, setActiveSnapPoint] = useControllableState<string | number | null>({
-    prop: activeSnapPointProp,
-    defaultProp: snapPoints?.[0],
-    onChange: setActiveSnapPointProp,
-  });
+  const [activeSnapPoint, setActiveSnapPoint] =
+    (useControllableState < string) |
+    number |
+    (null >
+      {
+        prop: activeSnapPointProp,
+        defaultProp: snapPoints?.[0],
+        onChange: setActiveSnapPointProp
+      })
   ```
+
   When the internal `setActiveSnapPoint(...)` is called (from the drag-release snap-target pipeline), the `useControllableState` pattern calls the consumer's `setActiveSnapPointProp`. The consumer's external state is the source of truth.
 
 - **drawer**: `core/index.ts:88`: `setActiveSnapPoint: (snapPoint) => CommonDrawerSnapshot` on the controller. The controller is the source of truth. The drawer's drag pipeline calls `onActiveSnapPointChange` (a separate callback) which is wired in `runtime/registry.ts:324-333` to:
+
   ```ts
   onActiveSnapPointChange: (snapPoint) => {
     runtime.options = { ...runtime.options, activeSnapPoint: snapPoint }
@@ -301,6 +342,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     renderVanillaDrawer(id)
   }
   ```
+
   The consumer is NOT notified. The consumer can subscribe to `controller.subscribe` to observe changes, but the API is fundamentally different.
 
 - **Diff**: vaul's API: `activeSnapPoint` prop + `setActiveSnapPoint` callback. The drawer has: `activeSnapPoint` in `options` + `controller.setActiveSnapPoint(snapPoint)` + `controller.subscribe(listener)`. The semantics are different — the drawer does not fire any callback when the internal state changes, the consumer must explicitly call `controller.getSnapshot()` or subscribe.
@@ -322,28 +364,35 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G10. `justReleased` mechanism is not implemented — Severity: **MEDIUM**
 
 - **vaul**: `index.tsx:200`: `const [justReleased, setJustReleased] = React.useState<boolean>(false);`. `index.tsx:618-624` (onRelease):
+
   ```js
   if (velocity > 0.05) {
-    setJustReleased(true);
+    setJustReleased(true)
     setTimeout(() => {
-      setJustReleased(false);
-    }, 200);
+      setJustReleased(false)
+    }, 200)
   }
   ```
+
   And `index.tsx:246` (usePreventScroll):
+
   ```js
   usePreventScroll({
-    isDisabled: !isOpen || isDragging || !modal || justReleased || !hasBeenOpened || !repositionInputs || !disablePreventScroll,
-  });
+    isDisabled:
+      !isOpen || isDragging || !modal || justReleased || !hasBeenOpened || !repositionInputs || !disablePreventScroll
+  })
   ```
+
   When the user releases a drag with velocity > 0.05, `justReleased` is set to `true` for 200ms. During this time, the iOS focus-input trick is DISABLED — preventing the input under the finger from getting focused (which would be a bad UX — the user wanted to dismiss, not to focus).
 
 - **drawer**: `runtime/release.ts:15-17`: `shouldPreventFocusOnRelease` is computed:
+
   ```ts
   export function shouldPreventFocusOnRelease(velocity: number, threshold = 0.05) {
     return velocity > threshold
   }
   ```
+
   But this is **only used in tests** (`test/release-runtime.test.ts`) — never in the dialog or runtime. The drawer's `preventBodyScroll` is always active while the drawer is open (regardless of release state). On iOS, if the user drags over an input and releases with high velocity, the iOS scroll-trick might focus the input.
 
 - **Impact**: Minor — only matters on iOS Safari. The drawer's iOS scroll-trick applies `target.style.transform = 'translateY(-2000px)'` then `target.focus()` on `touchend`. If the user releases a drag over an input, the input might get focused (which is a minor UX glitch, not a crash). vaul prevents this with `justReleased`.
@@ -359,6 +408,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 - **vaul**: `index.tsx:817` (Overlay): `<DialogPrimitive.Overlay onMouseUp={onMouseUp} ref={composedRef} ... />` where `onMouseUp = (event) => onRelease(event)`. So the overlay's mouseup goes through the same `onRelease` pipeline as the content's pointerup. The release pipeline checks `isDragging` and returns early if not dragging, or processes the drag release if a drag is in progress.
 
 - **drawer**: `vanilla/dialog.ts:988-995`:
+
   ```ts
   if (state.overlay && options.dismissible !== false) {
     const overlay = state.overlay
@@ -369,6 +419,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     ...
   }
   ```
+
   The overlay mouseup calls `onOpenChange(false)` directly. It does NOT go through the drag-release pipeline.
 
 - **Diff**: If the user is in the middle of a drag and somehow releases on the overlay (e.g. the overlay is wider than the content and the user dragged out of the content bounds), vaul's pipeline would call `onRelease(event)`, which would check `if (!isDragging || !drawerRef.current) return` and process the drag release. The drawer would call `onOpenChange(false)` directly, bypassing all the drag math.
@@ -394,14 +445,17 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G13. `onAnimationEnd` debounce cancels prior timer — Severity: **MEDIUM** (intentional)
 
 - **vaul**: `index.tsx:180-182` (useControllableState.onChange):
+
   ```js
   setTimeout(() => {
-    onAnimationEnd?.(o);
-  }, TRANSITIONS.DURATION * 1000);
+    onAnimationEnd?.(o)
+  }, TRANSITIONS.DURATION * 1000)
   ```
+
   No cancellation. If a state change happens within 500ms, the previous `setTimeout` is NOT cancelled — both will fire, in order.
 
 - **drawer**: `runtime/registry.ts:183-190` (notifyOpenStateChange):
+
   ```ts
   if (runtime.pendingAnimationEndTimer !== null) {
     clearTimeout(runtime.pendingAnimationEndTimer)
@@ -412,6 +466,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     runtime.options.onAnimationEnd?.(open)
   }, TRANSITIONS.DURATION * 1000)
   ```
+
   Cancels the prior timer.
 
 - **Diff**: Open → close → open within 500ms:
@@ -425,17 +480,20 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G14. `getTranslate` returns `null` for missing `DOMMatrix` — Severity: **MEDIUM**
 
 - **vaul**: `helpers.ts:72-88`: parses the matrix string manually using regex:
+
   ```js
-  let mat = transform.match(/^matrix3d\((.+)\)$/);
+  let mat = transform.match(/^matrix3d\((.+)\)$/)
   if (mat) {
-    return parseFloat(mat[1].split(', ')[isVertical(direction) ? 13 : 12]);
+    return parseFloat(mat[1].split(', ')[isVertical(direction) ? 13 : 12])
   }
-  mat = transform.match(/^matrix\((.+)\)$/);
-  return mat ? parseFloat(mat[1].split(', ')[isVertical(direction) ? 5 : 4]) : null;
+  mat = transform.match(/^matrix\((.+)\)$/)
+  return mat ? parseFloat(mat[1].split(', ')[isVertical(direction) ? 5 : 4]) : null
   ```
+
   Works in any JS environment with regex (no `DOMMatrix` required).
 
 - **drawer**: `runtime/transforms.ts:128-145`:
+
   ```ts
   if (typeof DOMMatrix === 'undefined') return null
   const transform = window.getComputedStyle(element).transform
@@ -443,12 +501,15 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
   const matrix = new DOMMatrix(transform)
   return direction === 'top' || direction === 'bottom' ? matrix.m42 : matrix.m41
   ```
+
   Returns `null` if `DOMMatrix` is undefined (jsdom 15 and earlier, very old browsers). When `null`, the drag permission gate at `runtime/drag-policy.ts:131-134` short-circuits to `allow: true`:
+
   ```ts
   if (swipeAmount === null) {
     return { allow: true, updatePreventedAt: false }
   }
   ```
+
   This means: on a platform without `DOMMatrix`, ANY drag is allowed (the close-direction check is skipped). vaul would correctly check the swipe direction.
 
 - **Impact**: Only matters on very old browsers or test environments without `DOMMatrix`. jsdom 16+ has it. Real browsers since 2017 have it. In practice, this is fine — but it's a behavioral divergence.
@@ -458,27 +519,30 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G15. Horizontal drag permission is stricter than vaul — Severity: **MEDIUM** (deliberate)
 
 - **vaul**: `index.tsx:296-298` (shouldDrag):
+
   ```js
   if (direction === 'right' || direction === 'left') {
-    return true;
+    return true
   }
   ```
+
   Returns `true` for any drag in horizontal directions. The drag math (`dampenValue`) resists the non-close direction.
 
 - **drawer**: `runtime/drag-policy.ts:113-141`:
+
   ```ts
   if (direction === 'left' || direction === 'right') {
     if (swipeAmount === null) {
       return { allow: true, updatePreventedAt: false }
     }
-    const isClosingSwipeOffset =
-      direction === 'right' ? swipeAmount < 0 : swipeAmount > 0
+    const isClosingSwipeOffset = direction === 'right' ? swipeAmount < 0 : swipeAmount > 0
     if (isClosingSwipeOffset) {
       return { allow: true, updatePreventedAt: false }
     }
     return { allow: false, updatePreventedAt: false }
   }
   ```
+
   Rejects non-close-direction drags on horizontal axes at the permission gate.
 
 - **Diff**: vaul allows any drag; the drawer only allows the close direction.
@@ -506,17 +570,21 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G17. `onDrag` and `onRelease` callback signatures differ — Severity: **LOW** (intentional)
 
 - **vaul**: `index.tsx:92-93`:
+
   ```ts
   onDrag?: (event: React.PointerEvent<HTMLDivElement>, percentageDragged: number) => void;
   onRelease?: (event: React.PointerEvent<HTMLDivElement>, open: boolean) => void;
   ```
+
   The event is a React synthetic `PointerEvent`.
 
 - **drawer**: `core/index.ts:39-40`:
+
   ```ts
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   ```
+
   No event. The names are also different (`onDrag` vs `onDragChange`, `onRelease` vs `onReleaseChange`).
 
 - **Diff**: Different signature and different name. Intentional (vanilla has no `PointerEvent` to pass through, and the `Change` suffix matches the controller's `subscribe(listener)` pattern).
@@ -547,9 +615,11 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 - **drawer**: `vanilla/dialog.ts:1868`: hardcoded `'data-drawer-delayed-snap-points': 'false'`. The CSS rules for `'true'` are present in `style.css:76-90` but never applied.
 
 - **Diff**: The drawer's snap-point positioning uses a different mechanism — `--initial-transform` is written inline in `mountVanillaDialog` (line 1928):
+
   ```ts
   content.style.setProperty('--initial-transform', `${initialOffset}px`)
   ```
+
   This subsumes the `delayed-snap-points` mechanism.
 
 - **Impact**: None — the drawer's mechanism works correctly. The CSS rules for `[data-drawer-delayed-snap-points='true']` are dead code.
@@ -559,11 +629,13 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G20. `isAllowedToDrag` ref is missing — Severity: **LOW** (intentional)
 
 - **vaul**: `index.tsx:206`: `const isAllowedToDrag = React.useRef<boolean>(false);`. Set to `true` in `onDrag` (line 397) when `shouldDrag` returns true. Reset to `false` in `cancelDrag` (line 595) and `onRelease` (line 604). The iOS-specific reset: `index.tsx:272-274`:
+
   ```js
   if (isIOS()) {
-    window.addEventListener('touchend', () => (isAllowedToDrag.current = false), { once: true });
+    window.addEventListener('touchend', () => (isAllowedToDrag.current = false), { once: true })
   }
   ```
+
   This handles the case where iOS's `touchend` fires before the drag pipeline's `pointerup` (e.g. when the user scrolls a nested element).
 
 - **drawer**: `runtime/drag-policy.ts:108-141` and `vanilla/dialog.ts:1142-1155`: the drag state is tracked via `state.drag`. Once a drag starts, the drag is "active" until `onPointerUp`. The iOS `touchend` reset is implicit — when `setPointerCapture` releases (on the next pointerup), the listeners are detached.
@@ -589,17 +661,19 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G22. `useEffect` for `isOpen` (openTime / documentElement scrollBehavior) — Severity: **LOW** (informational)
 
 - **vaul**: `index.tsx:665-678`:
+
   ```js
   React.useEffect(() => {
     if (isOpen) {
-      set(document.documentElement, { scrollBehavior: 'auto' });
-      openTime.current = new Date();
+      set(document.documentElement, { scrollBehavior: 'auto' })
+      openTime.current = new Date()
     }
     return () => {
-      reset(document.documentElement, 'scrollBehavior');
-    };
-  }, [isOpen]);
+      reset(document.documentElement, 'scrollBehavior')
+    }
+  }, [isOpen])
   ```
+
   Sets `document.documentElement.scrollBehavior = 'auto'` on open, restores on close.
 
 - **drawer**: No equivalent. The `state.openedAt` is set in `mountVanillaDialog` (line 1812), and the `documentElement.scrollBehavior` is never touched.
@@ -613,6 +687,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 ### G23. PWA standalone-mode check is missing — Severity: **LOW**
 
 - **vaul**: `index.tsx:130-138` (usePositionFixed):
+
   ```js
   if (isOpen) {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -620,6 +695,7 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
     ...
   }
   ```
+
   In PWA standalone mode, the body-position trick is skipped (because PWAs don't have a Safari toolbar collapse issue).
 
 - **drawer**: `runtime/scroll-lock.ts:312-371` (`setPositionFixed`): no PWA check. The body-position trick runs for all Safari browsers, including PWA.
@@ -669,39 +745,41 @@ Subtle: the write is in the `isClosingOnly` branch (not in `teardownMount`) beca
 
 ## Summary
 
-| ID | Severity | Title | vaul ref | drawer ref | Status |
-|----|----------|-------|----------|------------|--------|
-| G1 | HIGH | `direction: 'left'` and `'right'` CSS uses Y-axis | `style.css:46-66, 230-240` | `style.css:46-58, 68-74, 84-90, 302-336` | ✅ **CLOSED** in `e73aeef` (initial fix) + re-verified in 1:1 audit |
-| G2 | HIGH | `TRANSITIONS.EASE` is Material, not vaul | `constants.ts:3` | `constants.ts:3`; `style.css:11-13, 94-95, 146` | ✅ **CLOSED** in `9ee35ad` |
-| G3 | HIGH | Snap-point offsets ignore the `container` prop | `use-snap-points.ts:75-109` | `runtime/snap-points.ts:74-84`; `vanilla/dialog.ts` (3 call sites) | ✅ **CLOSED** in `9ee35ad` |
-| G4 | HIGH | `document.body.style.pointerEvents` is never set | `index.tsx:187, 194, 743` | MISSING → `vanilla/dialog.ts` (open + close paths) | ✅ **CLOSED** in 1:1 audit wave 1 |
-| G5 | HIGH | Drag math uses `window.innerHeight/innerWidth` instead of drawer dimensions | `index.tsx:213-214, 266-267, 378-379` | `vanilla/dialog.ts:1010` | ✅ **CLOSED** in `9ee35ad` |
-| G6 | MEDIUM | `onClose` and `onOpenChange` fire in the opposite order | `index.tsx:536-549` | `runtime/registry.ts:147, 176` | ✅ **CLOSED** in `65b01c7` |
-| G7 | MEDIUM | Active snap point is not reset to the first after close | `index.tsx:544-548` | MISSING → `runtime/registry.ts` (G7 setTimeout) | ✅ **CLOSED** in `65b01c7` |
-| G8 | MEDIUM | `openTime` is not updated on snap change | `index.tsx:217-220, 301-303` | `vanilla/dialog.ts:1812` (read once) | ✅ **CLOSED** in `65b01c7` |
-| G9 | MEDIUM | `onActiveSnapPointChange` (controlled-prop pattern) is not implemented | `index.tsx:154, 234`; `use-snap-points.ts:30-34` | `core/index.ts:88` (controller API, different shape) | ✅ **CLOSED** in `65b01c7` |
-| G10 | MEDIUM | `justReleased` mechanism is not implemented | `index.tsx:200, 246, 618-624` | `runtime/release.ts:15-17` (computed but unused) | ✅ **CLOSED** in 1:1 audit wave 1 |
-| G11 | MEDIUM | Overlay click-outside bypasses the drag-release pipeline | `index.tsx:817` | `vanilla/dialog.ts` (overlay mouseup) | ✅ **CLOSED** in `65b01c7` |
-| G12 | LOW (info) | `useComposedRefs` analogue is fine (multi-ref pattern) | `use-composed-refs.ts:31-34` | N/A (vanilla) | N/A |
-| G13 | MEDIUM | `onAnimationEnd` debounce cancels prior timer | `index.tsx:180-182` | `runtime/registry.ts:183-190` | OPEN (intentional) |
-| G14 | MEDIUM | `getTranslate` returns `null` for missing `DOMMatrix` | `helpers.ts:72-88` | `runtime/transforms.ts:128-145` | OPEN |
-| G15 | MEDIUM (deliberate) | Horizontal drag permission is stricter than vaul | `index.tsx:296-298` | `runtime/drag-policy.ts:113-141` | OPEN (intentional) |
-| G16 | MEDIUM | `assignStyle` and `reset` from vaul's `helpers.ts` are missing | `helpers.ts:42-57, 94-103` | `helpers.ts:14-25` (only `set`) | OPEN (optional) |
-| G17 | LOW | `onDrag` / `onRelease` callback signatures differ | `index.tsx:92-93` | `core/index.ts:39-40` | OPEN (intentional) |
-| G18 | LOW | `NestedRoot` component pattern → `parentId: string` option | `index.tsx:1098-1126` | `core/index.ts:9`; `runtime/registry.ts:447-481` | OPEN (intentional) |
-| G19 | LOW | `data-drawer-delayed-snap-points` is hardcoded to `'false'` | `index.tsx:855-893` | `vanilla/dialog.ts:1868` | OPEN (intentional) |
-| G20 | LOW | `isAllowedToDrag` ref is missing (iOS touchend reset) | `index.tsx:206, 272-274` | implicit via `setPointerCapture` | OPEN (defensive) |
-| G21 | LOW | `cancelDrag()` is not a separate function | `index.tsx:591-598` | `vanilla/dialog.ts:1280-1300, 613` | OPEN (optional) |
-| G22 | LOW | `useEffect` for `isOpen` (openTime / documentElement scrollBehavior) | `index.tsx:665-678` | `vanilla/dialog.ts:1812` (openTime only, no scrollBehavior) | OPEN |
-| G23 | LOW | PWA standalone-mode check is missing | `index.tsx:130-138` | `runtime/scroll-lock.ts:312-371` | OPEN |
-| G24 | LOW | Extra options not in vaul (additive, not bugs) | N/A | `vanilla/render.ts:25-123` | OPEN (intentional) |
+| ID  | Severity            | Title                                                                       | vaul ref                                         | drawer ref                                                         | Status                                                              |
+| --- | ------------------- | --------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| G1  | HIGH                | `direction: 'left'` and `'right'` CSS uses Y-axis                           | `style.css:46-66, 230-240`                       | `style.css:46-58, 68-74, 84-90, 302-336`                           | ✅ **CLOSED** in `e73aeef` (initial fix) + re-verified in 1:1 audit |
+| G2  | HIGH                | `TRANSITIONS.EASE` is Material, not vaul                                    | `constants.ts:3`                                 | `constants.ts:3`; `style.css:11-13, 94-95, 146`                    | ✅ **CLOSED** in `9ee35ad`                                          |
+| G3  | HIGH                | Snap-point offsets ignore the `container` prop                              | `use-snap-points.ts:75-109`                      | `runtime/snap-points.ts:74-84`; `vanilla/dialog.ts` (3 call sites) | ✅ **CLOSED** in `9ee35ad`                                          |
+| G4  | HIGH                | `document.body.style.pointerEvents` is never set                            | `index.tsx:187, 194, 743`                        | MISSING → `vanilla/dialog.ts` (open + close paths)                 | ✅ **CLOSED** in 1:1 audit wave 1                                   |
+| G5  | HIGH                | Drag math uses `window.innerHeight/innerWidth` instead of drawer dimensions | `index.tsx:213-214, 266-267, 378-379`            | `vanilla/dialog.ts:1010`                                           | ✅ **CLOSED** in `9ee35ad`                                          |
+| G6  | MEDIUM              | `onClose` and `onOpenChange` fire in the opposite order                     | `index.tsx:536-549`                              | `runtime/registry.ts:147, 176`                                     | ✅ **CLOSED** in `65b01c7`                                          |
+| G7  | MEDIUM              | Active snap point is not reset to the first after close                     | `index.tsx:544-548`                              | MISSING → `runtime/registry.ts` (G7 setTimeout)                    | ✅ **CLOSED** in `65b01c7`                                          |
+| G8  | MEDIUM              | `openTime` is not updated on snap change                                    | `index.tsx:217-220, 301-303`                     | `vanilla/dialog.ts:1812` (read once)                               | ✅ **CLOSED** in `65b01c7`                                          |
+| G9  | MEDIUM              | `onActiveSnapPointChange` (controlled-prop pattern) is not implemented      | `index.tsx:154, 234`; `use-snap-points.ts:30-34` | `core/index.ts:88` (controller API, different shape)               | ✅ **CLOSED** in `65b01c7`                                          |
+| G10 | MEDIUM              | `justReleased` mechanism is not implemented                                 | `index.tsx:200, 246, 618-624`                    | `runtime/release.ts:15-17` (computed but unused)                   | ✅ **CLOSED** in 1:1 audit wave 1                                   |
+| G11 | MEDIUM              | Overlay click-outside bypasses the drag-release pipeline                    | `index.tsx:817`                                  | `vanilla/dialog.ts` (overlay mouseup)                              | ✅ **CLOSED** in `65b01c7`                                          |
+| G12 | LOW (info)          | `useComposedRefs` analogue is fine (multi-ref pattern)                      | `use-composed-refs.ts:31-34`                     | N/A (vanilla)                                                      | N/A                                                                 |
+| G13 | MEDIUM              | `onAnimationEnd` debounce cancels prior timer                               | `index.tsx:180-182`                              | `runtime/registry.ts:183-190`                                      | OPEN (intentional)                                                  |
+| G14 | MEDIUM              | `getTranslate` returns `null` for missing `DOMMatrix`                       | `helpers.ts:72-88`                               | `runtime/transforms.ts:128-145`                                    | OPEN                                                                |
+| G15 | MEDIUM (deliberate) | Horizontal drag permission is stricter than vaul                            | `index.tsx:296-298`                              | `runtime/drag-policy.ts:113-141`                                   | OPEN (intentional)                                                  |
+| G16 | MEDIUM              | `assignStyle` and `reset` from vaul's `helpers.ts` are missing              | `helpers.ts:42-57, 94-103`                       | `helpers.ts:14-25` (only `set`)                                    | OPEN (optional)                                                     |
+| G17 | LOW                 | `onDrag` / `onRelease` callback signatures differ                           | `index.tsx:92-93`                                | `core/index.ts:39-40`                                              | OPEN (intentional)                                                  |
+| G18 | LOW                 | `NestedRoot` component pattern → `parentId: string` option                  | `index.tsx:1098-1126`                            | `core/index.ts:9`; `runtime/registry.ts:447-481`                   | OPEN (intentional)                                                  |
+| G19 | LOW                 | `data-drawer-delayed-snap-points` is hardcoded to `'false'`                 | `index.tsx:855-893`                              | `vanilla/dialog.ts:1868`                                           | OPEN (intentional)                                                  |
+| G20 | LOW                 | `isAllowedToDrag` ref is missing (iOS touchend reset)                       | `index.tsx:206, 272-274`                         | implicit via `setPointerCapture`                                   | OPEN (defensive)                                                    |
+| G21 | LOW                 | `cancelDrag()` is not a separate function                                   | `index.tsx:591-598`                              | `vanilla/dialog.ts:1280-1300, 613`                                 | OPEN (optional)                                                     |
+| G22 | LOW                 | `useEffect` for `isOpen` (openTime / documentElement scrollBehavior)        | `index.tsx:665-678`                              | `vanilla/dialog.ts:1812` (openTime only, no scrollBehavior)        | OPEN                                                                |
+| G23 | LOW                 | PWA standalone-mode check is missing                                        | `index.tsx:130-138`                              | `runtime/scroll-lock.ts:312-371`                                   | OPEN                                                                |
+| G24 | LOW                 | Extra options not in vaul (additive, not bugs)                              | N/A                                              | `vanilla/render.ts:25-123`                                         | OPEN (intentional)                                                  |
 
 **Totals** (as of 2026-07-27, end of 1:1 audit session):
+
 - 24 findings
 - 11 CLOSED: G1, G2, G3, G4, G5 (all 5 HIGH), G6, G7, G8, G9, G10, G11 (6 MEDIUM)
 - 13 OPEN: G12, G13, G14, G15, G16 (5 MEDIUM, mostly documentation/edge-case) + G17, G18, G19, G20, G21, G22, G23, G24 (8 LOW, mostly intentional)
 
 **Top 5 most impactful** (for the user's porting-from-vaul use case):
+
 1. ~~**G1** — `direction: 'left'` and `'right'` CSS is broken (visible bug).~~ ✅ CLOSED
 2. ~~**G2** — `TRANSITIONS.EASE` divergence (every animation feels different).~~ ✅ CLOSED
 3. ~~**G5** — Drag math uses viewport instead of drawer (broken for non-full-height drawers).~~ ✅ CLOSED

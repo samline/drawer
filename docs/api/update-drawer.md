@@ -18,9 +18,13 @@ function updateDrawer(
 - `updateDrawer(options)` — the `options` object includes an `id`. Equivalent to `createDrawer(options)`.
 - `updateDrawer(id, options)` — the `id` is the first argument, the partial options are the second. Equivalent to `createDrawer({ ...options, id })`.
 
-If the drawer already exists, the new options are merged into the existing controller's options. The dialog re-renders so the new options take effect. If the drawer does not exist, the runtime creates it.
+If the drawer already exists, the new options are merged into its current options and the host is reconciled. Closed drawers still contain only their host and optional trigger. Open drawers update or remount their visual nodes as needed without changing their open order.
 
-The controller returned is always the up-to-date controller for the resolved `id`.
+Changing `open` follows the same presence and ownership behavior as [`openDrawer`](open-drawer.md) or [`closeDrawer`](close-drawer.md). Changing `container` moves this drawer to a new dedicated host in that target and removes only its old host; consumer-owned containers and sibling drawer hosts are preserved. `mountElement` is the deprecated fallback when `container` is not supplied.
+
+If the drawer does not exist, the runtime creates it. The default is closed unless the merged options request `open: true` or `defaultOpen: true`.
+
+The returned facade is bound to the resolved id and reads the current runtime state. Do not rely on controller object identity across helper calls.
 
 ## Parameters
 

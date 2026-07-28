@@ -2,25 +2,47 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: pre-`3.0.0` — the package is in **beta** until the drag pipeline ships in full. Pre-release versions of `3.0.0-beta.*` are tracking-only tags (no npm release) until the v3.0.0 stable cuts.
+> **Status**: pre-`3.0.0` — the package remains in **beta** while the interaction and browser matrix is validated before the stable release.
 
 ## [Unreleased]
 
-### Changed (docs)
+## [3.0.0-beta.4] — 2026-07-28
 
-- Aligns `docs/` with the `@samline/forms` and `@samline/notify` documentation conventions.
-  - `docs/README.md` rewritten as the index with a per-file map.
-  - `docs/getting-started.md` — anatomy, observable contract, lifecycle, registry helpers, side-effect table.
-  - `docs/options.md` — full `CommonDrawerOptions` field reference (defaults, behaviour, vanilla-only options).
-  - `docs/css-styling.md` — the data-attribute contract the stylesheet reads and theming recipes.
-  - `docs/typescript.md` — every exported type, callback, helper shape, and numeric constant.
-  - `docs/recipes.md` — end-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open / close, multiple independent drawers, SPA / dynamic mount.
-  - `docs/api/index.md` — overview, plus one page per public method:
-    `create-drawer`, `configure-drawer`, `get-drawer`, `get-drawers`, `get-parent-drawer`, `get-child-drawers`, `update-drawer`, `open-drawer`, `close-drawer`, `toggle-drawer`, `destroy-drawer`, `destroy-drawers`, `create-drawer-controller`.
-  - `docs/vanilla.md` and `docs/browser.md` rewritten to reference the new structure; CDN URLs point to `dist/browser/global.global.js` and `@3.0.0-beta.3`.
-  - The `docs/{react,vue,svelte}.md` files are removed. The `react`, `vue`, and `svelte` subpaths were already deleted from `package.json#exports` in `v3.0.0-beta.3`; the docs now reflect that.
-  - The monolithic `docs/api.md` is removed. Its content is split across the per-method pages under `docs/api/`.
-- The root `README.md` is rewritten to the forms / notify convention: TOC, CDN / browser section, entrypoints table, quick start, API at a glance, documentation index, license.
+The fourth beta hardens the vanilla renderer after the Vaul parity audits. It focuses on presence, gesture intent, multi-drawer ownership, Safari/iOS restoration, and documentation that describes the shipped vanilla behavior without claiming package-wide 1:1 parity.
+
+### Added
+
+- Lazy visual presence: a closed drawer keeps only its per-id host and optional trigger. Overlay, content, handle, and slots mount on open, remain through the exit transition, and are then removed.
+- Logical open-order tracking for Escape handling, focus restoration, nested drawers, reentrant opens, and multiple drawers that share a custom container.
+- Shared ownership for background scaling, body colors, modal scroll locks, `html` scroll behavior, Safari fixed-body positioning, and optional history scroll restoration.
+- Regression coverage for multi-drawer lifecycle, Safari/iOS side-effect restoration, snap entrance, and the built IIFE contract. The suite now covers 44 files and 297 passing tests, with one pre-existing intentional skip.
+
+### Changed
+
+- Pointer capture now waits until dominant-axis intent and drag permission are confirmed. Perpendicular gestures remain available to page scrolling, and teardown releases capture and ignores secondary pointer ids.
+- Programmatic and drag-release closes start from the currently rendered transform, including an entrance, snap-back, or snap transition already in progress.
+- A missing `fadeFromIndex` now resolves to the final snap index when snap points are configured. Snap strings remain pixel values; numeric values remain container-relative fractions.
+- Every drawer owns a private host even when several drawers use the same `container`; `mountElement` remains a deprecated nullish fallback.
+- The vanilla runtime no longer writes `document.body.style.pointerEvents`. Overlay hit testing is owned by the stylesheet, while existing application or modal-library body styles remain untouched.
+
+### Fixed
+
+- Corrected drag behavior across all four directions, including `handleOnly`, `dismissible: false`, empty snap arrays, handle cycling, scrollable descendants, pointer cancellation, and computed-transform parsing without `DOMMatrix`.
+- Prevented stale close timers, viewport listeners, pointer capture, scale transitions, and snap resets from mutating a reopened, remounted, or destroyed drawer.
+- Made shared wrapper/body effects composable across multiple drawers and restored original inline values plus CSS priorities only after the final owner releases them.
+- Preserved Safari fixed-body offsets, scroll positions, negative margins, style priorities, and initial-open compensation without allowing one drawer to unlock another.
+- Corrected focus trapping and restoration for stacked drawers, topmost-only Escape handling, ARIA ids containing selector-special characters, and duplicate custom title/description targets.
+- Kept controller snapshots and runtime options synchronized for active snap changes, option patches, and no-op state writes.
+
+### Documentation
+
+- Rebuilt `README.md` and `docs/` around the current module, browser-global, lifecycle, options, CSS, TypeScript, recipes, and per-method API contracts.
+- Populated the Starlight site under `example/src/content/docs/` with the same beta.4 behavior and exact CDN entrypoints.
+- Recorded the deliberate vanilla API differences and corrected the historical audit reports so scoped Vaul comparisons are not presented as package-wide parity guarantees.
+
+### Versioning note
+
+`3.0.0-beta.4` remains a pre-release. Automated coverage runs in Vitest/jsdom; final interaction validation in real Chrome, Firefox, Safari, and iOS browsers remains part of the stable-release checklist.
 
 ## [3.0.0-beta.3] — 2026-07-25
 
@@ -88,7 +110,7 @@ The third beta of the v3.0.0 line. This release focuses on completing the drag p
 
 ### Versioning note
 
-`3.0.0-beta.3` is a **pre-release** of the v3.0.0 line. The previous `3.0.0-beta.0` (React→vanilla baseline, `af932e3`), `3.0.0-beta.1` (version bump on the pre-Phase-A vanilla build, `e1b91fa`), and `3.0.0-beta.2` (memory-leak / CSS / a11y fixes, `6e2dc55`) are all retroactive tags — none of them was published to npm. The next npm release will be `3.0.0` once the remaining docs/AGENTS pass lands (see [Unreleased]).
+`3.0.0-beta.3` is a **pre-release** of the v3.0.0 line. The previous `3.0.0-beta.0` (React→vanilla baseline, `af932e3`), `3.0.0-beta.1` (version bump on the pre-Phase-A vanilla build, `e1b91fa`), and `3.0.0-beta.2` (memory-leak / CSS / a11y fixes, `6e2dc55`) are all retroactive tags that were not published to npm. `3.0.0-beta.4` later superseded the planned direct jump from beta.3 to stable.
 
 ## [3.0.0-beta.2] — 2026-07-15
 
