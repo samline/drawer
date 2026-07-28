@@ -10,38 +10,40 @@ function destroyDrawer(id?: string | null): void
 
 ## Description
 
-`destroyDrawer` immediately tears down the drawer's dedicated host, removes the drawer from the registry, and recursively destroys any children whose `parentId` matches the destroyed id. Destroy is immediate teardown, not a close transition: it does not keep exit nodes mounted or initiate open/close lifecycle callbacks.
+`destroyDrawer` removes the host, the optional built-in trigger, the registry entry, and any owned side effects for one id. Destroying a parent recursively destroys its registered children. Destroying an id that has not been registered is a no-op.
 
-For a custom `container`, only the per-drawer host is removed. The consumer-owned container and hosts belonging to other drawer ids remain intact.
+Unlike `closeDrawer(id)`, `destroyDrawer(id)` does not call `onClose()` first. Pending lifecycle timers (`onAnimationEnd`, post-close snap reset) for that id are cancelled. Owned side effects — scale-background transform, scroll lock, history restoration, focus restoration, Safari fixed-body helper — are released only when their final owner is destroyed.
 
-Focus and page effects are ownership-aware. Destroy releases only this drawer's body-scroll, `html` scroll-behavior, history restoration, Safari body-position, and scale-background ownership. Shared styles are restored only after the final owner releases them; when the newest scale owner is destroyed, the previous owner's state is reapplied. The runtime does not own `document.body.style.pointerEvents`.
-
-After `destroyDrawer`, `getDrawer(id)` returns `null` and the id is free to be reused by a future `createDrawer` call.
+`destroyDrawer` does not write `document.body.style.pointerEvents`. Any values the runtime writes there are app-owned.
 
 The default `id` is `'default'`. Omit the argument to destroy the default instance.
 
 ## Parameters
 
-| Name | Type             | Default     | Description                         |
-| ---- | ---------------- | ----------- | ----------------------------------- |
-| `id` | `string \| null` | `'default'` | The runtime instance id to destroy. |
+| Name | Type             | Default     | Description              |
+| ---- | ---------------- | ----------- | ------------------------ |
+| `id` | `string \| null` | `'default'` | The runtime instance id. |
 
 ## Returns
 
-`void` — the function is fire-and-forget. Destroying an unknown id is a no-op; after a live instance is destroyed, `getDrawer(id)` returns `null`.
+`void`.
 
 ## Example
 
 ```ts
 import { createDrawer, destroyDrawer, getDrawer } from '@samline/drawer'
 
-createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
-getDrawer('filters') // <controller>
+const drawer = createDrawer({ id: 'filters', title: 'Filters' })
+drawer.setOpen(true)
+
+// Tear down the drawer.
 destroyDrawer('filters')
+
 getDrawer('filters') // null
 ```
 
 ## Related
 
 - [`destroyDrawers()`](destroy-drawers.md) — destroy every live drawer.
-- [`drawer.destroy()`](../typescript.md#vanilladrawercontroller) — the same teardown on an already-held controller.
+- [`closeDrawer(id?)`](close-drawer.md) — close a drawer but keep the registry entry.
+- [Recipes → SPA / dynamic mount and unmount](../recipes.md#spa--dynamic-mount-and-unmount).

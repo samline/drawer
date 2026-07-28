@@ -13,48 +13,50 @@ function updateDrawer(
 
 ## Description
 
-`updateDrawer` accepts two calling conventions:
+`updateDrawer` accepts the new options in two ways:
 
-- `updateDrawer(options)` — the `options` object includes an `id`. Equivalent to `createDrawer(options)`.
-- `updateDrawer(id, options)` — the `id` is the first argument, the partial options are the second. Equivalent to `createDrawer({ ...options, id })`.
+- `updateDrawer(options)` — shorthand for `updateDrawer(undefined, options)`. Updates the default instance.
+- `updateDrawer(id, options)` — updates the drawer for that id.
+- `updateDrawer()` — no-op on the default instance.
 
-If the drawer already exists, the new options are merged into its current options and the host is reconciled. Closed drawers still contain only their host and optional trigger. Open drawers update or remount their visual nodes as needed without changing their open order.
+If the id is not registered, `updateDrawer` is equivalent to `createDrawer` and creates a new drawer. If the id is already registered, the new options are shallow-merged into the existing options and the dialog subtree is reconciled. Closed drawers reconcile the host, the optional built-in trigger, and their presence model. Open drawers reconcile the dialog content (including the body slot, the title slot, the description slot, and the close button) and may rebuild the open subtree when the renderable slots change.
 
-Changing `open` follows the same presence and ownership behavior as [`openDrawer`](open-drawer.md) or [`closeDrawer`](close-drawer.md). Changing `container` moves this drawer to a new dedicated host in that target and removes only its old host; consumer-owned containers and sibling drawer hosts are preserved. `mountElement` is the deprecated fallback when `container` is not supplied.
+The function always returns a controller facade for the affected id. The facade is bound by id; object identity is not preserved across calls.
 
-If the drawer does not exist, the runtime creates it. The default is closed unless the merged options request `open: true` or `defaultOpen: true`.
-
-The returned facade is bound to the resolved id and reads the current runtime state. Do not rely on controller object identity across helper calls.
+The default `id` is `'default'`. Omit the id to update the default instance.
 
 ## Parameters
 
-| Name          | Type                                     | Default     | Description                                                            |
-| ------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------------- |
-| `idOrOptions` | `string \| VanillaDrawerOptions \| null` | `'default'` | The id (string) or the full options (object) for the drawer to update. |
-| `options`     | `VanillaDrawerOptions`                   | `{}`        | The partial options to merge when the first argument is a string id.   |
+| Name           | Type                              | Default     | Description                                                                                  |
+| -------------- | --------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| `idOrOptions?` | `string \| VanillaDrawerOptions \| null` | `undefined` | Either the drawer id (with `options` in the second argument) or the full options object. |
+| `options?`     | `VanillaDrawerOptions`            | `undefined` | The options to merge. Only used when `idOrOptions` is a string id.                           |
 
 ## Returns
 
-`VanillaDrawerController` — the controller for the updated drawer.
+`VanillaDrawerController` — a controller facade for the created or updated drawer.
 
 ## Example
 
 ```ts
-import { createDrawer, updateDrawer, getDrawer } from '@samline/drawer'
+import { updateDrawer, getDrawer } from '@samline/drawer'
 
-// Two-argument form: id first, options second.
-createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
-updateDrawer('filters', { activeSnapPoint: 1, direction: 'right' })
+// Update the default instance.
+updateDrawer({ activeSnapPoint: '420px' })
 
-// Single-argument form: options with id inside.
-updateDrawer({ id: 'filters', dismissible: false })
+// Update a named instance by id.
+updateDrawer('filters', { title: 'Filters', content: 'Body' })
 
-// Single-argument on the default instance (id is 'default').
-updateDrawer({ open: true })
-getDrawer()?.getSnapshot().state.isOpen // true
+// Use the return value to read state immediately.
+const next = updateDrawer('filters', { activeSnapPoint: 1 })
+next.getSnapshot().state.activeSnapPoint // 1
+
+// Equivalent via the controller.
+getDrawer('filters')?.update({ activeSnapPoint: 1 })
 ```
 
 ## Related
 
-- [`createDrawer(options?)`](create-drawer.md) — the canonical entrypoint.
-- [`drawer.update(options?)`](../typescript.md#vanilladrawercontroller) — the same merge on an already-held controller.
+- [`createDrawer(options?)`](create-drawer.md) — the canonical factory.
+- [`configureDrawer(options?)`](configure-drawer.md) — alias of `createDrawer`.
+- [`getDrawer(id?)`](get-drawer.md) — read the controller for an id.

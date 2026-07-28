@@ -131,6 +131,23 @@ interface CommonDrawerController {
 - `patch(options)` shallow-merges options, publishes, and returns the snapshot.
 - `subscribe(listener)` invokes the listener immediately and returns an unsubscribe function.
 
+```ts
+import { createDrawerController } from '@samline/drawer'
+
+const controller = createDrawerController({
+  id: 'filters',
+  direction: 'bottom',
+  defaultOpen: true
+})
+
+controller.getSnapshot().state.isOpen // true
+controller.setOpen(false)
+const unsubscribe = controller.subscribe((snapshot) => {
+  console.log(snapshot.state.isOpen)
+})
+unsubscribe()
+```
+
 ### `VanillaDrawerController`
 
 ```ts
@@ -149,9 +166,24 @@ interface VanillaDrawerController extends CommonDrawerController {
 - `update(options?)` delegates to `createDrawer({ ...options, id })` and returns a controller wrapper for the same underlying instance.
 - `destroy()` delegates to `destroyDrawer(id)`.
 
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'filters', title: 'Filters' })
+drawer.element // <div data-drawer-vanilla-root="filters">
+drawer.id // 'filters'
+drawer.options // { id: 'filters', title: 'Filters', ... }
+
+drawer.update({ activeSnapPoint: '420px' })
+drawer.destroy()
+drawer.element // null
+```
+
 `getDrawer()` and `getDrawers()` can return fresh controller wrapper objects. Compare ids or state, not object identity; all wrappers for one live id target the same underlying controller.
 
 ### `VanillaDrawerOptions`
+
+`CommonDrawerOptions` extended with the vanilla-only host / trigger / handle / content / className options. See [Configuration → Vanilla-only fields](/drawer/reference/configuration/#vanilla-only-fields) for the full list with examples.
 
 ```ts
 interface VanillaDrawerOptions extends CommonDrawerOptions {
@@ -210,6 +242,33 @@ type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | n
 
 Strings and numbers become text nodes. An element is moved into the dialog. A thunk is invoked once per dialog DOM build and must return an `HTMLElement`; lazy Presence means closing removes that element and reopening builds the slots again.
 
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// 1. String
+createDrawer({ id: 'a', content: 'Hello' })
+
+// 2. Number
+createDrawer({ id: 'b', title: 3 })
+
+// 3. Pre-built element
+const form = document.createElement('form')
+createDrawer({ id: 'c', content: form })
+
+// 4. Lazy thunk
+createDrawer({
+  id: 'd',
+  content: () => {
+    const node = document.createElement('div')
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  }
+})
+
+// 5. Empty
+createDrawer({ id: 'e' })
+```
+
 ## Factory returns
 
 ```ts
@@ -239,6 +298,7 @@ These values are root runtime exports, not type-only declarations:
 import { CLOSE_THRESHOLD, TRANSITIONS, VELOCITY_THRESHOLD } from '@samline/drawer'
 
 console.log(TRANSITIONS.DURATION) // 0.5
+console.log(TRANSITIONS.EASE) // [0.32, 0.72, 0, 1]
 console.log(VELOCITY_THRESHOLD) // 0.4
 console.log(CLOSE_THRESHOLD) // 0.25
 ```
@@ -276,3 +336,23 @@ unsubscribe()
 ```
 
 The listener runs immediately and on each controller publication. Use `getSnapshot()` for a synchronous read without subscribing.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'filters' })
+const snap = drawer.getSnapshot()
+if (snap.state.isOpen) {
+  // safe to read state synchronously
+}
+```
+
+`setOpen()`, `setActiveSnapPoint()`, and `patch()` all return the new snapshot, so you can chain state changes without an extra `getSnapshot()` call.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'filters' })
+const next = drawer.patch({ title: 'Filters', activeSnapPoint: '420px' }).setOpen(true)
+console.log(next.state.isOpen) // true
+```

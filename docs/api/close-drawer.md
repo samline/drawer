@@ -10,13 +10,11 @@ function closeDrawer(id?: string | null): VanillaDrawerController
 
 ## Description
 
-`closeDrawer` is a thin wrapper around `createDrawer({ id, open: false })`. It creates the drawer if it does not exist (closed by default), or merges `{ open: false }` into the existing options, and returns the controller.
+`closeDrawer` is a thin wrapper around `drawer.setOpen(false)`. It creates the drawer if it does not exist (in the closed state) or merges `{ open: false }` into the existing options, and returns the controller.
 
-Closing an open drawer freezes its current computed or inline transform, changes its overlay and content to `data-state="closed"`, and animates from that visible position to the directional closed endpoint. This applies during entrance, at a snap point, and after a drag, so the drawer does not jump back to fully open before exiting. Visual nodes are removed after the 500 ms transition plus a 100 ms safety window; the host and optional trigger remain.
+For an open drawer, closing flips the visual nodes to `data-state="closed"`, releases shared scroll / focus / viewport effects immediately, and removes overlay and content after the exit transition. The registry entry, host, and optional built-in trigger remain. The runtime fires `onClose()` before the state change and `onAnimationEnd(false)` 500 ms later, unless a newer transition supersedes the timer.
 
-Listeners, focus, and shared page-effect ownership are released when close begins. Another open drawer keeps any scroll lock, `html` scroll behavior, history restoration, Safari positioning, or scale state it still owns. `document.body.style.pointerEvents` is never changed.
-
-Closing a parent also closes its registered descendants. Closing a child leaves its parent open. `onClose()` fires before the state change, and `onAnimationEnd(false)` fires after 500 ms unless a newer transition cancels it.
+Closing a parent closes its registered children. Closing a child leaves its parent open. Closing a drawer with `dismissible: false` is allowed — programmatic methods and the optional built-in close button can still close it; only user-driven dismissal (Escape, overlay release, drag-close, last-snap handle cycle) is blocked.
 
 The default `id` is `'default'`. Omit the argument to close the default instance.
 
@@ -28,7 +26,7 @@ The default `id` is `'default'`. Omit the argument to close the default instance
 
 ## Returns
 
-`VanillaDrawerController` — a controller facade for the closed drawer (created if needed). For a previously unknown id, only the dedicated host is mounted; there is no hidden overlay or content.
+`VanillaDrawerController` — a controller facade for the closed drawer (created if needed).
 
 ## Example
 
@@ -45,4 +43,4 @@ closeDrawer() // close the default instance
 
 - [`openDrawer(id?)`](open-drawer.md) — open a drawer.
 - [`toggleDrawer(id?)`](toggle-drawer.md) — flip a drawer's open state.
-- [`destroyDrawer(id?)`](destroy-drawer.md) — full teardown.
+- [`destroyDrawer(id?)`](destroy-drawer.md) — remove the drawer from the registry.

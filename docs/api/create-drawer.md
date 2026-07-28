@@ -58,3 +58,5 @@ destroyDrawers()
 - [`updateDrawer(idOrOptions?, options?)`](update-drawer.md) — patch an existing drawer's options.
 - [`destroyDrawer(id?)`](destroy-drawer.md) — tear down a single drawer.
 - [`destroyDrawers()`](destroy-drawers.md) — tear down every live drawer.
+- [Options](../options.md) — every field with defaults and examples.
+- [Recipes → Custom HTML content](../recipes.md#custom-html-content) — string / element / thunk patterns for `content`.

@@ -10,7 +10,14 @@ function getDrawer(id?: string | null): VanillaDrawerController | null
 
 ## Description
 
-`getDrawer` is a read-only inspector. It does not create a drawer — if the id has not been created, the function returns `null`. Use it to look up a controller from a non-React consumer (event handlers, route guards, promise resolvers) without having to thread the controller reference around.
+`getDrawer` is a read-only inspector. It does not create a drawer — if the id has not been registered, the function returns `null`. The returned wrapper targets the same underlying instance but is not guaranteed to have object identity with a wrapper returned earlier.
+
+Use `getDrawer` to:
+
+- Read the current snapshot (`getSnapshot()`).
+- Subscribe to state changes (`subscribe()`).
+- Update the drawer (`update()`) without first reaching for `createDrawer`.
+- Destroy the drawer (`destroy()`).
 
 The default `id` is `'default'`. Omit the argument to inspect the default instance.
 
@@ -22,24 +29,29 @@ The default `id` is `'default'`. Omit the argument to inspect the default instan
 
 ## Returns
 
-`VanillaDrawerController | null` — the controller for the live instance, or `null` if the drawer has not been created (or has been destroyed).
+`VanillaDrawerController | null` — a controller facade for the id, or `null` if it has not been registered.
 
 ## Example
 
 ```ts
-import { getDrawer } from '@samline/drawer'
+import { createDrawer, getDrawer, destroyDrawer } from '@samline/drawer'
 
-const drawer = getDrawer('filters')
-if (drawer) {
-  drawer.setOpen(true)
-}
+// Returns null when the id has not been registered.
+getDrawer('filters') // null
 
-// The default instance:
-const fallback = getDrawer() // same as getDrawer('default')
+createDrawer({ id: 'filters', title: 'Filters' })
+
+// Returns a controller facade.
+getDrawer('filters')?.getSnapshot().state.isOpen // false
+getDrawer('filters')?.setOpen(true)
+getDrawer('filters')?.update({ title: 'Filters (updated)' })
+getDrawer('filters')?.destroy()
+
+getDrawer('filters') // null again
 ```
 
 ## Related
 
-- [`getDrawers()`](get-drawers.md) — return every live drawer keyed by id.
-- [`getParentDrawer(id?)`](get-parent-drawer.md) — return the parent of a nested drawer.
-- [`getChildDrawers(id?)`](get-child-drawers.md) — return the children of a nested drawer.
+- [`getDrawers()`](get-drawers.md) — return every live drawer.
+- [`createDrawer(options?)`](create-drawer.md) — create or update a drawer.
+- [`destroyDrawer(id?)`](destroy-drawer.md) — remove a drawer from the registry.

@@ -10,34 +10,42 @@ function getChildDrawers(id?: string | null): VanillaDrawerController[]
 
 ## Description
 
-`getChildDrawers` walks the registry and returns every live drawer whose `parentId` matches the given `id`, in registry insertion order. The parent itself does not need to be live; the relationship is read from each child's current options. Returns an empty array when no child matches.
+`getChildDrawers` resolves the children of a drawer by scanning the live registry for instances whose `parentId` matches the queried id. It returns an empty array when:
 
-The default `id` is `'default'`. Omit the argument to inspect the children of the default instance.
+- The id has not been registered.
+- The id has no registered children.
+
+The default `id` is `'default'`. Omit the argument to inspect the default instance.
+
+The returned array is a fresh snapshot. Adding or removing children after the call does not mutate the array.
 
 ## Parameters
 
-| Name | Type             | Default     | Description                                      |
-| ---- | ---------------- | ----------- | ------------------------------------------------ |
-| `id` | `string \| null` | `'default'` | The runtime instance id whose children you want. |
+| Name | Type             | Default     | Description              |
+| ---- | ---------------- | ----------- | ------------------------ |
+| `id` | `string \| null` | `'default'` | The runtime instance id. |
 
 ## Returns
 
-`VanillaDrawerController[]` — the live children controllers in insertion order. The array is freshly allocated on every call; mutating it does not affect the registry.
+`VanillaDrawerController[]` — controller facades for the direct children, or `[]` when there are none.
 
 ## Example
 
 ```ts
-import { createDrawer, getChildDrawers, getParentDrawer } from '@samline/drawer'
+import { createDrawer, getChildDrawers } from '@samline/drawer'
 
-createDrawer({ id: 'parent', title: 'Parent', content: 'Primary' })
-createDrawer({ id: 'child-a', parentId: 'parent', title: 'A', content: 'A' })
-createDrawer({ id: 'child-b', parentId: 'parent', title: 'B', content: 'B' })
+createDrawer({ id: 'account', title: 'Account' })
+createDrawer({ id: 'security', parentId: 'account', title: 'Security' })
+createDrawer({ id: 'billing', parentId: 'account', title: 'Billing' })
+createDrawer({ id: 'free', parentId: 'security', title: 'Free' })
 
-getChildDrawers('parent').map((d) => d.id) // ['child-a', 'child-b']
-getChildDrawers('parent').map((d) => getParentDrawer(d.id)?.id) // ['parent', 'parent']
+getChildDrawers('account').map((d) => d.id) // ['security', 'billing']
+getChildDrawers('security').map((d) => d.id) // ['free']
+getChildDrawers('free') // []
+getChildDrawers('missing') // []
 ```
 
 ## Related
 
-- [`getParentDrawer(id?)`](get-parent-drawer.md) — return the parent of a nested drawer.
-- [`destroyDrawer(id?)`](destroy-drawer.md) — destroying a parent recursively destroys its children.
+- [`getParentDrawer(id?)`](get-parent-drawer.md) — return the parent of a drawer.
+- [Recipes → Nested drawers](../recipes.md#nested-drawers).

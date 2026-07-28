@@ -32,3 +32,15 @@ Each id owns a dedicated host. Closed drawers keep only that host and an optiona
 ## Headless
 
 - [`createDrawerController(options?)`](create-drawer-controller.md) — create a controller without mounting a DOM host. Useful for tests, headless logic, or building a different renderer on top of the same observable state.
+
+---
+
+## Lifecycle contract
+
+- `createDrawer()` registers the id and creates a dedicated `[data-drawer-vanilla-root="id"]` host immediately in a DOM environment.
+- Closed state uses lazy Presence: no overlay or `[data-drawer]` dialog is mounted initially. An optional built-in trigger remains in the host.
+- Opening mounts overlay/content. A drawer created initially open skips its entrance animation; opening a previously closed registered host animates.
+- Closing keeps overlay/content in `data-state="closed"` for the exit transition, releases focus/scroll/viewport effects immediately, and removes those nodes after the exit safety timeout. The registry entry, host, and trigger remain.
+- Destroying removes the registry entry, trigger listeners, owned host, pending lifecycle timers, and this drawer's effect ownership. It does not call `onClose` first.
+- Shared scroll locks, document scroll behavior, history restoration, focus stack, and scale-background effects compose across ids. A closing drawer cannot restore an effect another open drawer still owns.
+- The runtime never writes `document.body.style.pointerEvents`.

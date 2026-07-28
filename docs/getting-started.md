@@ -44,6 +44,36 @@ Read the current runtime through `drawer.id`, `drawer.options`, `drawer.element`
 
 ---
 
+## Custom HTML content
+
+The `content` slot (and `title`, `description`) accept `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Pick the form that matches how you build your UI.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// String.
+createDrawer({ id: 'a', content: 'Hello' })
+
+// Pre-built element (the runtime moves it into the body slot).
+const form = document.createElement('form')
+form.innerHTML = '<input name="q" /><button>Search</button>'
+createDrawer({ id: 'b', title: 'Search', content: form })
+
+// Lazy thunk (re-invoked every time the dialog subtree is rebuilt).
+createDrawer({
+  id: 'c',
+  content: () => {
+    const node = document.createElement('p')
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  }
+})
+```
+
+See [Options → Renderable content](options.md#renderable-content) and [Recipes → Custom HTML content](recipes.md#custom-html-content) for the full contract and end-to-end patterns.
+
+---
+
 ## Observable contract
 
 Once a drawer is created, you can rely on the following behaviour:
@@ -52,8 +82,9 @@ Once a drawer is created, you can rely on the following behaviour:
 - **Closed drawers use lazy presence.** The host and optional `<button data-drawer-vanilla-trigger>` remain mounted, but `[data-drawer]`, its handle and slots, and `[data-drawer-overlay]` do not mount until open. On close, the visual nodes remain with `data-state="closed"` for the exit transition and are then removed.
 - **An open `<div data-drawer>` carries the visual and accessibility contract:** `data-state`, `data-drawer-direction`, snap and animation flags, `role="dialog"`, `aria-modal`, and `data-drawer-id`. The runtime id is a data-attribute, not an HTML `id`, which avoids collisions with consumer content.
 - **A `<div data-drawer-overlay>` is present for open or exiting modal drawers** (default). It carries `data-state` and `data-drawer-snap-points-overlay` for fade behavior. The runtime does not use `document.body.style.pointerEvents`; the overlay and consumer CSS own hit testing.
-- **An optional `<div data-drawer-handle>`** is mounted when `handleOnly: true` or `showHandle: true`. Clicking it advances the active snap point (see [recipes](recipes.md)).
+- **An optional `<div data-drawer-handle>`** is mounted when `handleOnly: true` or `showHandle: true`. Clicking it advances the active snap point (see [recipes](recipes.md#handle-cycle)).
 - **A built-in `<button data-drawer-vanilla-trigger>`** is mounted when `triggerText` is set. Clicking it opens the drawer.
+- **A built-in `<button data-drawer-close>`** is mounted when `closeButton` is set. Clicking it closes the drawer. See [Recipes → Built-in close button](recipes.md#built-in-close-button).
 - **Eligible open drawers support drag gestures.** A snap-free drawer with `dismissible: false` does not start a drag. Otherwise, pointer capture waits for dominant Y-axis intent on top/bottom drawers or X-axis intent on left/right drawers, leaving perpendicular panning to the page. Snap-free releases use the 25% distance or 0.4 velocity close thresholds; snap drawers use their own release policy.
 - **Snap points are wired when `snapPoints` is set.** The drawer positions itself at the active snap on open, the drag interpolates between snaps, and the release either snaps to the closest point or closes on high velocity.
 - **`shouldScaleBackground: true`** scales the page shell (the element with `data-drawer-wrapper`). Background color handling is enabled unless `setBackgroundColorOnScale: false` or `noBodyStyles: true` is set.
@@ -73,6 +104,46 @@ The recommended flow:
 4. **Update** — call `drawer.update(options?)` (or [`updateDrawer(idOrOptions?, options?)`](api/update-drawer.md)) to merge new options into the same instance. The registry re-renders the dialog so the new options take effect.
 5. **Close** — call `drawer.setOpen(false)` or [`closeDrawer(id?)`](api/close-drawer.md). The runtime freezes the current rendered transform, flips the visual nodes to `data-state="closed"`, releases listeners and shared side effects, and removes those nodes after the exit transition. `onClose()` fires before the state change; `onAnimationEnd(false)` fires after 500 ms unless superseded.
 6. **Destroy** — call `drawer.destroy()` or [`destroyDrawer(id?)`](api/destroy-drawer.md) to remove that drawer's host immediately and delete its registry entry. Use [`destroyDrawers()`](api/destroy-drawers.md) to clear every live instance.
+
+### Lifecycle example with all callbacks
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'profile',
+  title: 'Profile',
+  content: 'Drawer body',
+  showHandle: true,
+  snapPoints: ['120px', '320px', 1],
+  activeSnapPoint: '120px',
+
+  onOpenChange(open) {
+    console.log('open state changed:', open)
+  },
+  onClose() {
+    console.log('about to close — snapshot still shows isOpen: true')
+  },
+  onAnimationEnd(open) {
+    console.log('500 ms after the latest transition. isOpen =', open)
+  },
+  onActiveSnapPointChange(snapPoint) {
+    console.log('runtime changed the active snap:', snapPoint)
+  },
+  onDragChange(percentageDragged) {
+    console.log('drag progress:', percentageDragged.toFixed(2))
+  },
+  onReleaseChange(keptOpen) {
+    console.log('release kept the drawer open:', keptOpen)
+  }
+})
+
+drawer.setOpen(true)
+// ... user interacts ...
+drawer.setActiveSnapPoint(1)
+drawer.setOpen(false)
+destroyDrawer('profile')
+```
 
 ---
 
@@ -105,15 +176,17 @@ The runtime never takes ownership of `document.body.style.pointerEvents`. `noBod
 - Pass `id` when you need more than the default runtime instance. Reusing an `id` updates the same instance; it does not create a second drawer.
 - Pass `parentId` when this drawer should follow another drawer's lifecycle. Closing the parent closes the registered children; destroying the parent recursively destroys them. See [recipes](recipes.md#nested-drawers).
 - Pass `triggerText` to render a built-in button inside the mounted host. Pass `triggerElement` instead when you want an external button in your own DOM tree.
+- Pass `closeButton: true` (or an object) to render a built-in in-drawer close control. See [Recipes → Built-in close button](recipes.md#built-in-close-button).
 - Pass `showHandle: true` to render the built-in handle but still allow drag to start from the full drawer surface. Use `handleOnly: true` to also restrict the drag to the handle.
 - Pass `container` when the host should live inside a specific DOM subtree. `mountElement` is deprecated and remains a fallback.
-- Use `title` and `description` for a simple heading block above the body. When your drawer has its own card / panel / header layout, render the heading inside `content` instead.
+- Pass `content`, `title`, and `description` as `string`, `number`, `HTMLElement`, or `() => HTMLElement` depending on how you build your UI. See [Renderable content](options.md#renderable-content).
 - Use `drawer.subscribe(snapshot => …)` when a higher-level component (router, store, view layer) needs to react to the whole drawer state.
 - Use `drawer.patch(options)` (or `drawer.update(options?)`) to merge new options into the same instance without losing the controller.
 - Use `drawer.setOpen(false)` or `closeDrawer(id)` to dismiss, and `drawer.destroy()` to release the host.
 - When `shouldScaleBackground: true`, add `data-drawer-wrapper` to the page shell element that should scale behind the drawer.
 - When a child element should not start a drag, add `data-drawer-no-drag` to it.
 - When `preventScrollRestoration: true`, the runtime flips `history.scrollRestoration` to `'manual'` while the drawer is open; the previous value is restored on close or destroy after the final owner releases it.
+- For SPA / dynamic lifecycles, return a destroy cleanup from your mount function so each created instance is released on unmount.
 
 ---
 
@@ -195,6 +268,22 @@ const child = createDrawer({
 
 console.log(getParentDrawer('child')?.id) // 'parent'
 console.log(getChildDrawers('parent').map((d) => d.id)) // ['child']
+```
+
+### Custom HTML content
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const form = document.createElement('form')
+form.innerHTML = '<input name="q" /><button>Search</button>'
+
+createDrawer({
+  id: 'search',
+  title: 'Search',
+  content: form,
+  closeButton: true
+})
 ```
 
 ---

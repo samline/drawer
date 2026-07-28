@@ -1,6 +1,6 @@
 # `createDrawerController(options?)`
 
-Create a headless controller without mounting any DOM.
+Create a headless controller without mounting a DOM host.
 
 ## Signature
 
@@ -10,21 +10,22 @@ function createDrawerController(options?: CommonDrawerOptions): CommonDrawerCont
 
 ## Description
 
-`createDrawerController` is the same observable state machine that `createDrawer` uses internally, but without the host / dialog / browser-side-effects. The returned controller exposes `getSnapshot`, `setOpen`, `setActiveSnapPoint`, `patch`, and `subscribe` — the full observable surface — but does not own any DOM.
+`createDrawerController` builds a `CommonDrawerController` for the supplied options. It is the headless counterpart to `createDrawer`: same observable state, same mutators, same snapshot shape, but no DOM, no built-in trigger, no scale-background, no scroll lock, no history restoration, no focus trap, no body styles.
 
-Useful for:
+The factory is useful for:
 
-- **Tests** — assert state transitions without a real DOM.
-- **Headless logic** — model drawer state in a server-rendered context or in a worker.
+- **Tests** — drive the controller synchronously and assert on snapshots without a DOM environment.
+- **Server-rendered contexts** — model drawer state without a browser.
 - **Custom renderers** — build your own dialog primitive on top of the same observable state. Subscribe to the controller and re-render your own host when the snapshot changes.
+- **Workers** — share the same `CommonDrawerOptions` surface without the runtime side effects.
 
-Headless controllers are independent objects and do not join the id-based registry. An `id` is retained in `snapshot.options` when supplied, but it has no default and does not namespace or connect separate controllers.
+`createDrawerController` does not register the id in the module-level registry and is not affected by `getDrawer` / `getDrawers` / `destroyDrawer`. It is also not affected by DOM-only options: `content`, `title`, `description`, `container`, `triggerElement`, `triggerText`, `closeButton`, and every `*ClassName` option are ignored. Pass them only when you want a single options object that can be shared with `createDrawer` later; they will not produce DOM.
 
 ## Parameters
 
-| Name      | Type                  | Default | Description                                                              |
-| --------- | --------------------- | ------- | ------------------------------------------------------------------------ |
-| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full options surface. See [docs/options.md](../options.md). |
+| Name      | Type                   | Default | Description                                                                 |
+| --------- | ---------------------- | ------- | --------------------------------------------------------------------------- |
+| `options` | `CommonDrawerOptions`  | `{}`    | The drawer's full state surface. See [docs/options.md](../options.md).      |
 
 ## Returns
 
@@ -36,22 +37,28 @@ Headless controllers are independent objects and do not join the id-based regist
 import { createDrawerController } from '@samline/drawer'
 
 const controller = createDrawerController({
-  id: 'headless',
+  id: 'filters',
   direction: 'bottom',
-  snapPoints: ['120px', '320px', 1]
+  defaultOpen: true,
+  snapPoints: ['180px', '420px', 1]
 })
+
+controller.getSnapshot().state.isOpen // true
+controller.getSnapshot().state.activeSnapPoint // '180px'
+
+const next = controller.setActiveSnapPoint(1)
+next.state.activeSnapPoint // 1
 
 const unsubscribe = controller.subscribe((snapshot) => {
-  console.log('state changed:', snapshot.state.isOpen, snapshot.state.activeSnapPoint)
+  console.log('changed:', snapshot.state.isOpen)
 })
 
-controller.setOpen(true)
-controller.setActiveSnapPoint(1)
-
+controller.setOpen(false)
 unsubscribe()
 ```
 
 ## Related
 
-- [`createDrawer(options?)`](create-drawer.md) — the DOM-aware entrypoint.
-- [`CommonDrawerController`](../typescript.md#commondrawercontroller) — the type returned here.
+- [`createDrawer(options?)`](create-drawer.md) — the DOM-aware factory.
+- [TypeScript → CommonDrawerController](../typescript.md#commondrawercontroller).
+- [Options → Common fields](../options.md#common-fields) — every field accepted by `createDrawerController`.

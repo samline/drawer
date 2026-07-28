@@ -1,6 +1,240 @@
 # Recipes
 
-End-to-end patterns for the common flows.
+End-to-end patterns for the common flows. Every recipe is a runnable TypeScript snippet unless otherwise noted.
+
+- [Custom HTML content](#custom-html-content)
+- [Render a pre-built form in a drawer](#render-a-pre-built-form-in-a-drawer)
+- [Update content after creation](#update-content-after-creation)
+- [Listen to lifecycle callbacks](#listen-to-lifecycle-callbacks)
+- [Nested drawers](#nested-drawers)
+- [Snap points](#snap-points)
+- [Scale background](#scale-background)
+- [Handle cycle](#handle-cycle)
+- [Viewport keyboard handling](#viewport-keyboard-handling)
+- [Built-in close button](#built-in-close-button)
+- [Built-in trigger button (no external element)](#built-in-trigger-button-no-external-element)
+- [Triggered by an external button](#triggered-by-an-external-button)
+- [Programmatic open / close with a controller](#programmatic-open--close-with-a-controller)
+- [Imperative helpers (no controller)](#imperative-helpers-no-controller)
+- [Custom container](#custom-container)
+- [Multiple independent drawers](#multiple-independent-drawers)
+- [Subscribe to state changes from a higher-level component](#subscribe-to-state-changes-from-a-higher-level-component)
+- [SPA / dynamic mount and unmount](#spa--dynamic-mount-and-unmount)
+- [Open immediately on mount with animation](#open-immediately-on-mount-with-animation)
+- [Build a sidebar panel with the right direction](#build-a-sidebar-panel-with-the-right-direction)
+- [Common pitfalls](#common-pitfalls)
+
+---
+
+## Custom HTML content
+
+The `content` slot accepts strings, numbers, `HTMLElement` instances, and thunks. Pick the form that matches how you build your UI.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// 1. Plain text.
+createDrawer({ id: 'a', content: 'Hello' })
+
+// 2. Numeric badge as the title.
+createDrawer({ id: 'b', title: 3, content: 'Tag' })
+```
+
+### Pre-built element
+
+When the consumer already owns the DOM, pass the element directly. The runtime moves it into the dialog body slot.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const form = document.createElement('form')
+form.id = 'filters'
+form.innerHTML = `
+  <label>Search <input name="q" /></label>
+  <button type="submit">Apply</button>
+`
+
+createDrawer({
+  id: 'filters',
+  title: 'Filters',
+  content: form
+})
+```
+
+> **Move semantics**: the runtime adopts the element. After `destroyDrawer`, the element stays in its previous location and you can keep using it. The same element instance cannot be passed to a second `content` while the first drawer still owns it.
+
+### Lazy thunk
+
+Use a function when the content depends on state that may change, or when you want the runtime to rebuild it every time the dialog subtree is rebuilt (mount on open, rebuild on option-driven remount, re-invoke on every reopen).
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+createDrawer({
+  id: 'clock',
+  title: 'Current time',
+  content: () => {
+    const node = document.createElement('p')
+    node.className = 'clock'
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  }
+})
+```
+
+### Mixed slots
+
+The same rules apply to `title` and `description`. Mix and match per slot.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const heading = document.createElement('h2')
+heading.textContent = 'Filters'
+
+const helpText = document.createElement('p')
+helpText.className = 'hint'
+helpText.textContent = 'Refine the result set.'
+
+createDrawer({
+  id: 'filters',
+  title: heading,
+  description: helpText,
+  content: () => {
+    const body = document.createElement('div')
+    body.append(buildFormFields())
+    return body
+  }
+})
+```
+
+### Opt descendants out of drag
+
+Add `data-drawer-no-drag` to any element inside `content` that should not start a drawer drag (inputs, scrollable lists, buttons). See [CSS styling](css-styling.md#data-drawer-no-drag--opt-out-marker-for-descendants-consumer-set) for the full marker contract.
+
+```ts
+const scrollList = document.createElement('ul')
+scrollList.setAttribute('data-drawer-no-drag', '')
+scrollList.innerHTML = '<li>One</li><li>Two</li><li>Three</li>'
+
+createDrawer({ id: 'list', content: scrollList })
+```
+
+---
+
+## Render a pre-built form in a drawer
+
+This is the typical "drawer that wraps an existing form" pattern. Build the form once, hand the element to the drawer, and let the runtime own the lifecycle.
+
+```html
+<button id="open-feedback" type="button">Send feedback</button>
+```
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const form = document.createElement('form')
+form.id = 'feedback'
+form.innerHTML = `
+  <label>Subject <input name="subject" required /></label>
+  <label>Message <textarea name="message" required></textarea></label>
+  <button type="submit">Send</button>
+`
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault()
+  const data = new FormData(form)
+  console.log('submitted', Object.fromEntries(data))
+  destroyDrawer('feedback')
+})
+
+createDrawer({
+  id: 'feedback',
+  title: 'Send feedback',
+  content: form,
+  triggerElement: document.getElementById('open-feedback'),
+  closeButton: true
+})
+```
+
+---
+
+## Update content after creation
+
+Use `update()` (or `updateDrawer(id, options)`) to merge new options into a live drawer. The runtime rebuilds the dialog subtree when the renderable slots change, which re-invokes thunks and re-mounts elements.
+
+```ts
+import { createDrawer, getDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'list', title: 'List' })
+
+// Replace the body with a new pre-built element.
+const listA = document.createElement('ul')
+listA.innerHTML = '<li>A</li><li>B</li>'
+
+drawer.update({ content: listA })
+
+// Or via the registry helper.
+const newBody = document.createElement('div')
+newBody.textContent = 'Now showing something else.'
+getDrawer('list')?.update({ content: newBody })
+```
+
+See [API → updateDrawer](api/update-drawer.md).
+
+---
+
+## Listen to lifecycle callbacks
+
+The runtime exposes seven callbacks. Wire them when you need to mirror the drawer's state into your own store, log, or analytics pipeline.
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'profile',
+  title: 'Profile',
+
+  // Open state changed.
+  onOpenChange(open) {
+    console.log('isOpen:', open)
+  },
+
+  // About to close (snapshot still shows isOpen: true).
+  onClose() {
+    console.log('about to close')
+  },
+
+  // 500 ms after the latest open/close transition.
+  onAnimationEnd(open) {
+    console.log('animation finished, open:', open)
+  },
+
+  // Runtime changed the active snap (drag, handle cycle, post-close reset).
+  onActiveSnapPointChange(snapPoint) {
+    console.log('snap:', snapPoint)
+  },
+
+  // Continuous drag progress.
+  onDragChange(percentageDragged) {
+    console.log('drag:', percentageDragged.toFixed(2))
+  },
+
+  // One-shot after a drag release.
+  onReleaseChange(keptOpen) {
+    console.log('release kept open:', keptOpen)
+  }
+})
+
+drawer.setOpen(true)
+```
+
+Notes:
+
+- `onClose` only fires on a `true → false` transition; destroying an open drawer does not call it.
+- `onAnimationEnd` is a timer-based notification 500 ms after the latest open/close transition, not a `DOM animationend` event.
+- `onActiveSnapPointChange` does not echo direct `setActiveSnapPoint()` calls.
+- `onReleaseChange` does not fire for programmatic closes or overlay clicks.
 
 ---
 
@@ -152,6 +386,83 @@ const drawer = createDrawer({
 })
 ```
 
+---
+
+## Built-in close button
+
+`closeButton: true` (or an object) renders an in-drawer close control. The button is HMR-safe: the runtime cleans it up on every re-mount.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+createDrawer({
+  id: 'filters',
+  content: 'Body',
+  closeButton: true
+})
+
+// With overrides.
+createDrawer({
+  id: 'settings',
+  content: 'Body',
+  closeButton: {
+    className: 'absolute top-5 right-5',
+    icon: '\u2715', // rendered inside a <span aria-hidden="true">
+    ariaLabel: 'Close settings'
+  }
+})
+```
+
+The button's `click` event `stopPropagation()`s so it does not bubble to the content. The defaults are class `drawer-close-button`, icon text `xmark`, and label `Close`. See [TypeScript → Close-button option shape](typescript.md#close-button-option-shape) for the full object contract.
+
+---
+
+## Built-in trigger button (no external element)
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerText: 'Open filters',
+  title: 'Filters',
+  content: 'Body'
+})
+```
+
+The runtime mounts a `<button data-drawer-vanilla-trigger>` inside the host. The button is removed when the drawer is destroyed.
+
+---
+
+## Triggered by an external button
+
+```html
+<button id="open-filters">Open filters</button>
+```
+
+```ts
+import { createDrawer, destroyDrawer } from '@samline/drawer'
+
+const trigger = document.getElementById('open-filters')
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerElement: trigger,
+  title: 'Filters',
+  content: 'Body'
+})
+
+// Replace the trigger later (the runtime rebinds the click listener):
+drawer.update({ triggerElement: document.getElementById('open-filters-2') })
+
+// Tear down:
+destroyDrawer('filters')
+```
+
+The runtime attaches a `click` listener on the trigger element when the drawer is created, and detaches / rebinds it on `update` and `destroy`.
+
+---
+
 ## Programmatic open / close with a controller
 
 ```ts
@@ -211,49 +522,25 @@ The helpers all target the same module-level registry as `createDrawer`. Reusing
 
 ---
 
-## Triggered by an external button
+## Custom container
+
+Prefer `container` when a drawer belongs inside a specific DOM region. The deprecated `mountElement` alias remains a nullish fallback only.
 
 ```html
-<button id="open-filters">Open filters</button>
+<div id="drawer-region"></div>
 ```
-
-```ts
-import { createDrawer, destroyDrawer } from '@samline/drawer'
-
-const trigger = document.getElementById('open-filters')
-
-const drawer = createDrawer({
-  id: 'filters',
-  triggerElement: trigger,
-  title: 'Filters',
-  content: 'Body'
-})
-
-// Replace the trigger later (the runtime rebinds the click listener):
-drawer.update({ triggerElement: document.getElementById('open-filters-2') })
-
-// Tear down:
-destroyDrawer('filters')
-```
-
-The runtime attaches a `click` listener on the trigger element when the drawer is created, and detaches / rebinds it on `update` and `destroy`.
-
----
-
-## Built-in trigger button (no external element)
 
 ```ts
 import { createDrawer } from '@samline/drawer'
 
-const drawer = createDrawer({
-  id: 'filters',
-  triggerText: 'Open filters',
-  title: 'Filters',
-  content: 'Body'
-})
+const container = document.getElementById('drawer-region')
+if (!container) throw new Error('Missing drawer region')
+
+createDrawer({ id: 'region-a', container, content: 'A' })
+createDrawer({ id: 'region-b', container, content: 'B' })
 ```
 
-The runtime mounts a `<button data-drawer-vanilla-trigger>` inside the host. The button is removed when the drawer is destroyed.
+The container receives two dedicated `[data-drawer-vanilla-root]` children, one per id. Fractional snap points use `container.getBoundingClientRect()` rather than the full viewport.
 
 ---
 
@@ -316,6 +603,60 @@ Pair this with the [browser global helpers](getting-started.md#browser-global-he
 
 ---
 
+## Open immediately on mount with animation
+
+Creating a drawer with `open: true` mounts the dialog and skips the entrance animation. To get an animated "open on mount" instead, create the drawer closed and call `setOpen(true)` after the mount is fully wired.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'flash',
+  title: 'New message',
+  content: 'You have a new reply.'
+  // no `open`; the drawer is initially closed and host-only
+})
+
+// Defer the open to the next microtask so the runtime can
+// finish wiring the dialog subtree before the animation runs.
+queueMicrotask(() => drawer.setOpen(true))
+```
+
+`defaultOpen: true` is the equivalent when you want to skip the animation entirely (e.g. a flash message that should be visible on every page load).
+
+---
+
+## Build a sidebar panel with the right direction
+
+The runtime owns the slide and drag axis, but the consumer still positions the panel. Use `direction: 'left'` or `'right'` and pair it with a width in your own CSS.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+createDrawer({
+  id: 'side-panel',
+  direction: 'right',
+  title: 'Filters',
+  content: 'Body',
+  modal: true,
+  dismissible: true,
+  showHandle: false
+})
+```
+
+```css
+[data-drawer-direction='right'] {
+  width: min(24rem, 90vw);
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+```
+
+The drag axis is `x` for `left` / `right` drawers. Perpendicular page scrolls will not start a drawer drag. See [CSS styling → Position all four directions](css-styling.md#position-all-four-directions) for the full CSS shell.
+
+---
+
 ## Common pitfalls
 
 - **Reusing the same `id` updates the same drawer.** It does not create a second one. If you want a transient second drawer, use a unique id (e.g. `filters-${Date.now()}`) and destroy it on close.
@@ -324,3 +665,9 @@ Pair this with the [browser global helpers](getting-started.md#browser-global-he
 - **Input repositioning requires `window.visualViewport`.** The runtime guards the API and leaves CSS layout alone when it is absent. When present, resize writes remain focus-gated.
 - **`setActiveSnapPoint` re-renders the dialog.** If you call it many times in a tick, debounce or only call it on user-driven events.
 - **`history.scrollRestoration`** is touched when `preventScrollRestoration: true`. The runtime saves the previous value on open and restores it on close or destroy after the final owner. If it was already `'manual'`, that value remains unchanged.
+- **`HTMLElement` content is moved, not cloned.** Do not append the same element to a second `content` while the first drawer still owns it. Use a thunk if you need a fresh node per open.
+- **Thunks re-run on every reopen.** Lazy presence unmounts the dialog subtree on close, so any `() => HTMLElement` is invoked again on the next open. Cache expensive work outside the thunk.
+- **Closing is not destroying.** `closeDrawer(id)` keeps the id, host, and trigger; only `destroyDrawer(id)` / `destroyDrawers()` removes the entry.
+- **Body pointer events are application-owned.** Drawer open, non-modal open, close, and destroy never write `document.body.style.pointerEvents`.
+- **`createDrawerController` is headless.** It publishes snapshots but does not mount DOM and ignores DOM-only options such as `content`, `container`, `triggerElement`, `closeButton`, or class names. Use `createDrawer` for the full vanilla API.
+- **Auto-focus is opt-in.** The default is `false`. If your UX depends on focusing an input on open, set `autoFocus: true` or focus the element yourself in `onOpenChange(true)`.

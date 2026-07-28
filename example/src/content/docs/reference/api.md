@@ -171,6 +171,13 @@ function getDrawer(id?: string | null): VanillaDrawerController | null
 
 `getDrawer` is a read-only inspector. It does not create a drawer — if the id has not been registered, the function returns `null`. The returned wrapper targets the same underlying instance but is not guaranteed to have object identity with a wrapper returned earlier.
 
+Use `getDrawer` to:
+
+- Read the current snapshot (`getSnapshot()`).
+- Subscribe to state changes (`subscribe()`).
+- Update the drawer (`update()`) without first reaching for `createDrawer`.
+- Destroy the drawer (`destroy()`).
+
 The default `id` is `'default'`. Omit the argument to inspect the default instance.
 
 **Parameters**
@@ -181,27 +188,32 @@ The default `id` is `'default'`. Omit the argument to inspect the default instan
 
 **Returns**
 
-`VanillaDrawerController | null` — the controller for the live instance, or `null` if the drawer has not been created (or has been destroyed).
+`VanillaDrawerController | null` — a controller facade for the id, or `null` if it has not been registered.
 
 **Example**
 
 ```ts
-import { getDrawer } from '@samline/drawer'
+import { createDrawer, getDrawer, destroyDrawer } from '@samline/drawer'
 
-const drawer = getDrawer('filters')
-if (drawer) {
-  drawer.setOpen(true)
-}
+// Returns null when the id has not been registered.
+getDrawer('filters') // null
 
-// The default instance:
-const fallback = getDrawer() // same as getDrawer('default')
+createDrawer({ id: 'filters', title: 'Filters' })
+
+// Returns a controller facade.
+getDrawer('filters')?.getSnapshot().state.isOpen // false
+getDrawer('filters')?.setOpen(true)
+getDrawer('filters')?.update({ title: 'Filters (updated)' })
+getDrawer('filters')?.destroy()
+
+getDrawer('filters') // null again
 ```
 
 **Related**
 
-- [`getDrawers()`](#getdrawers) — return every live drawer keyed by id.
-- [`getParentDrawer(id?)`](#getparentdrawerid) — return the parent of a nested drawer.
-- [`getChildDrawers(id?)`](#getchilddrawersid) — return the children of a nested drawer.
+- [`getDrawers()`](#getdrawers) — return every live drawer.
+- [`createDrawer(options?)`](#createdraweroptions) — create or update a drawer.
+- [`destroyDrawer(id?)`](#destroydrawerid) — remove a drawer from the registry.
 
 #### `getDrawers()`
 
@@ -405,6 +417,8 @@ function openDrawer(id?: string | null): VanillaDrawerController
 
 `openDrawer` is a thin wrapper around `createDrawer({ id, open: true })`. It creates the per-id host and open dialog if needed, or merges `{ open: true }` into an existing instance, and returns a controller wrapper.
 
+For an existing closed drawer, opening mounts its overlay and content and runs the entrance animation. A newly created drawer is initially open and skips that entrance animation. Opening a nested drawer first opens its registered ancestor chain, then places the child above those ancestors in open order.
+
 The default `id` is `'default'`. Omit the argument to open the default instance.
 
 **Parameters**
@@ -499,23 +513,22 @@ The default `id` is `'default'`. Omit the argument to toggle the default instanc
 
 **Parameters**
 
-| Name | Type             | Default     | Description                        |
-| ---- | ---------------- | ----------- | ---------------------------------- |
-| `id` | `string \| null` | `'default'` | The runtime instance id to toggle. |
+| Name | Type             | Default     | Description                          |
+| ---- | ---------------- | ----------- | ------------------------------------ |
+| `id` | `string \| null` | `'default'` | The runtime instance id to toggle.   |
 
 **Returns**
 
-`VanillaDrawerController` — the controller for the toggled drawer (created if needed).
+`VanillaDrawerController` — a controller facade for the toggled drawer (created if needed).
 
 **Example**
 
 ```ts
-import { toggleDrawer, getDrawer } from '@samline/drawer'
+import { toggleDrawer } from '@samline/drawer'
 
-toggleDrawer('filters')
-getDrawer('filters')?.getSnapshot().state.isOpen // true
-toggleDrawer('filters')
-getDrawer('filters')?.getSnapshot().state.isOpen // false
+document.getElementById('toggle-filters')?.addEventListener('click', () => {
+  toggleDrawer('filters')
+})
 
 toggleDrawer() // toggle the default instance
 ```
@@ -524,6 +537,7 @@ toggleDrawer() // toggle the default instance
 
 - [`openDrawer(id?)`](#opendrawerid) — open a drawer.
 - [`closeDrawer(id?)`](#closedrawerid) — close a drawer.
+- [`getDrawer(id?)`](#getdrawerid) — read the current snapshot before deciding.
 
 #### `destroyDrawer(id?)`
 
@@ -537,39 +551,42 @@ function destroyDrawer(id?: string | null): void
 
 **Description**
 
-`destroyDrawer` recursively destroys children, detaches external and built-in trigger listeners, tears down the dialog and owned per-id host, cancels pending animation/snap timers, and removes the id from the registry.
+`destroyDrawer` removes the host, the optional built-in trigger, the registry entry, and any owned side effects for one id. Destroying a parent recursively destroys its registered children. Destroying an id that has not been registered is a no-op.
 
-The drawer releases its body-scroll, document-scroll, history, focus, and scale-background ownership. Global values and a shared `[data-drawer-wrapper]` return to their originals only when no remaining owner still needs them. `body.pointerEvents` is preserved because the runtime never owns it.
+Unlike `closeDrawer(id)`, `destroyDrawer(id)` does not call `onClose()` first. Pending lifecycle timers (`onAnimationEnd`, post-close snap reset) for that id are cancelled. Owned side effects — scale-background transform, scroll lock, history restoration, focus restoration, Safari fixed-body helper — are released only when their final owner is destroyed.
 
-After `destroyDrawer`, `getDrawer(id)` returns `null` and the id is free to be reused by a future `createDrawer` call.
+`destroyDrawer` does not write `document.body.style.pointerEvents`. Any values the runtime writes there are app-owned.
 
 The default `id` is `'default'`. Omit the argument to destroy the default instance.
 
 **Parameters**
 
-| Name | Type             | Default     | Description                         |
-| ---- | ---------------- | ----------- | ----------------------------------- |
-| `id` | `string \| null` | `'default'` | The runtime instance id to destroy. |
+| Name | Type             | Default     | Description              |
+| ---- | ---------------- | ----------- | ------------------------ |
+| `id` | `string \| null` | `'default'` | The runtime instance id. |
 
 **Returns**
 
-`void`. The next `getDrawer(id)` returns `null`. Destroy does not synthesize `onClose`, `onOpenChange(false)`, or a pending `onAnimationEnd` callback.
+`void`.
 
 **Example**
 
 ```ts
 import { createDrawer, destroyDrawer, getDrawer } from '@samline/drawer'
 
-createDrawer({ id: 'filters', title: 'Filters', content: 'Body' })
-getDrawer('filters') // <controller>
+const drawer = createDrawer({ id: 'filters', title: 'Filters' })
+drawer.setOpen(true)
+
+// Tear down the drawer.
 destroyDrawer('filters')
+
 getDrawer('filters') // null
 ```
 
 **Related**
 
 - [`destroyDrawers()`](#destroydrawers) — destroy every live drawer.
-- [`drawer.destroy()`](typescript/#vanilladrawercontroller) — the same teardown on an already-held controller.
+- [`closeDrawer(id?)`](#closedrawerid) — close a drawer but keep the registry entry.
 
 #### `destroyDrawers()`
 
@@ -583,34 +600,37 @@ function destroyDrawers(): void
 
 **Description**
 
-`destroyDrawers` snapshots registry ids in insertion order and calls `destroyDrawer` for each. Each parent call recursively destroys its children first; later visits to those removed child ids are no-ops. After the call, the registry is empty and shared effects have released their final owners.
+`destroyDrawers` removes the host, the optional built-in trigger, the registry entry, and any owned side effects for every registered id. The runtime iterates the live registry, so newly created drawers between calls are not affected (the recommended pattern is to call `destroyDrawers` once at the end of a session).
 
-Useful for "close everything" hooks (navigation, logout, route change) without enumerating the ids yourself. Pair with `getDrawers()` if you need to inspect before tearing down.
+Each teardown reconciles against the remaining stack. Scale-background, scroll lock, history restoration, focus restoration, and the Safari fixed-body helper release only when their final owner is destroyed.
+
+`destroyDrawers` does not call `onClose()` for any drawer. Pending lifecycle timers for every id are cancelled. The function does not write `document.body.style.pointerEvents`.
 
 **Returns**
 
-`void` — the function is fire-and-forget. After the call, `getDrawers()` returns `{}`.
+`void`.
 
 **Example**
 
 ```ts
-import { destroyDrawers, getDrawers } from '@samline/drawer'
+import { createDrawer, destroyDrawers } from '@samline/drawer'
 
-console.log(Object.keys(getDrawers())) // ['a', 'b', 'c']
-destroyDrawers()
-console.log(Object.keys(getDrawers())) // []
+createDrawer({ id: 'a', content: 'A' })
+createDrawer({ id: 'b', content: 'B' })
+
+destroyDrawers() // removes both ids
 ```
 
 **Related**
 
 - [`destroyDrawer(id?)`](#destroydrawerid) — destroy a single drawer.
-- [`getDrawers()`](#getdrawers) — read the live drawers.
+- [`closeDrawer(id?)`](#closedrawerid) — close a drawer but keep the registry entry.
 
 ### Headless
 
 #### `createDrawerController(options?)`
 
-Create a headless controller without mounting any DOM.
+Create a headless controller without mounting a DOM host.
 
 **Signature**
 
@@ -620,27 +640,26 @@ function createDrawerController(options?: CommonDrawerOptions): CommonDrawerCont
 
 **Description**
 
-`createDrawerController` is the observable state machine used internally by registered drawers, without a host, registry entry, dialog, Presence lifecycle, or browser side effects. It exposes `getSnapshot`, `setOpen`, `setActiveSnapPoint`, `patch`, and `subscribe`.
+`createDrawerController` builds a `CommonDrawerController` for the supplied options. It is the headless counterpart to `createDrawer`: same observable state, same mutators, same snapshot shape, but no DOM, no built-in trigger, no scale-background, no scroll lock, no history restoration, no focus trap, no body styles.
 
-Callbacks stored in `CommonDrawerOptions` are registry lifecycle concerns; the headless controller publishes subscribers but does not invoke `onOpenChange`, `onClose`, `onAnimationEnd`, or drag callbacks itself.
+The factory is useful for:
 
-Useful for:
-
-- **Tests** — assert state transitions without a real DOM.
-- **Headless logic** — model drawer state in a server-rendered context or in a worker.
+- **Tests** — drive the controller synchronously and assert on snapshots without a DOM environment.
+- **Server-rendered contexts** — model drawer state without a browser.
 - **Custom renderers** — build your own dialog primitive on top of the same observable state. Subscribe to the controller and re-render your own host when the snapshot changes.
+- **Workers** — share the same `CommonDrawerOptions` surface without the runtime side effects.
 
-Headless controllers are independent objects and do not join the id-based registry. An `id` is retained in `snapshot.options` when supplied, but it has no default and does not namespace or connect separate controllers.
+`createDrawerController` does not register the id in the module-level registry and is not affected by `getDrawer` / `getDrawers` / `destroyDrawer`. It is also not affected by DOM-only options: `content`, `title`, `description`, `container`, `triggerElement`, `triggerText`, `closeButton`, and every `*ClassName` option are ignored. Pass them only when you want a single options object that can be shared with `createDrawer` later; they will not produce DOM.
 
 **Parameters**
 
-| Name      | Type                  | Default | Description                                                             |
-| --------- | --------------------- | ------- | ----------------------------------------------------------------------- |
-| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
+| Name      | Type                   | Default | Description                                                                 |
+| --------- | ---------------------- | ------- | --------------------------------------------------------------------------- |
+| `options` | `CommonDrawerOptions`  | `{}`    | The drawer's full state surface. See [Configuration](configuration/).      |
 
 **Returns**
 
-`CommonDrawerController` — the headless controller. See [TypeScript → `CommonDrawerController`](typescript/#commondrawercontroller).
+`CommonDrawerController` — the headless controller. See [TypeScript → CommonDrawerController](typescript/#commondrawercontroller).
 
 **Example**
 
@@ -648,22 +667,28 @@ Headless controllers are independent objects and do not join the id-based regist
 import { createDrawerController } from '@samline/drawer'
 
 const controller = createDrawerController({
-  id: 'headless',
+  id: 'filters',
   direction: 'bottom',
-  snapPoints: ['120px', '320px', 1]
+  defaultOpen: true,
+  snapPoints: ['180px', '420px', 1]
 })
+
+controller.getSnapshot().state.isOpen // true
+controller.getSnapshot().state.activeSnapPoint // '180px'
+
+const next = controller.setActiveSnapPoint(1)
+next.state.activeSnapPoint // 1
 
 const unsubscribe = controller.subscribe((snapshot) => {
-  console.log('state changed:', snapshot.state.isOpen, snapshot.state.activeSnapPoint)
+  console.log('changed:', snapshot.state.isOpen)
 })
 
-controller.setOpen(true)
-controller.setActiveSnapPoint(1)
-
+controller.setOpen(false)
 unsubscribe()
 ```
 
 **Related**
 
-- [`createDrawer(options?)`](#createdraweroptions) — the DOM-aware entrypoint.
-- [`CommonDrawerController`](typescript/#commondrawercontroller) — the type returned here.
+- [`createDrawer(options?)`](#createdraweroptions) — the DOM-aware factory.
+- [TypeScript → CommonDrawerController](typescript/#commondrawercontroller).
+- [Configuration → Common fields](configuration/#common-fields) — every field accepted by `createDrawerController`.

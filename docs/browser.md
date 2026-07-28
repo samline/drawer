@@ -70,12 +70,99 @@ That is the same basic drawer used across the other entrypoints. The browser bun
 
 ---
 
+## Custom HTML content
+
+`title`, `description`, and `content` accept the same `VanillaRenderable` shape as the bundler entry. Build the elements with `document.createElement` and pass them in.
+
+```html
+<script>
+  const form = document.createElement('form')
+  form.id = 'feedback'
+  form.innerHTML = `
+    <label>Subject <input name="subject" required /></label>
+    <label>Message <textarea name="message" required></textarea></label>
+    <button type="submit">Send</button>
+  `
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const data = new FormData(form)
+    console.log('submitted', Object.fromEntries(data))
+    window.Drawer.closeDrawer('feedback')
+  })
+
+  window.Drawer.createDrawer({
+    id: 'feedback',
+    title: 'Send feedback',
+    content: form,
+    closeButton: true
+  })
+</script>
+```
+
+> The browser bundle exposes the same option surface as the root entry. See [Options → Renderable content](options.md#renderable-content) for every accepted form.
+
+---
+
+## All methods at a glance
+
+```ts
+// Equivalent TypeScript signature of window.Drawer.
+interface DrawerApi {
+  getParentDrawer: (id?: string | null) => VanillaDrawerController | null
+  getChildDrawers: (id?: string | null) => VanillaDrawerController[]
+  openDrawer: (id?: string | null) => VanillaDrawerController
+  closeDrawer: (id?: string | null) => VanillaDrawerController
+  toggleDrawer: (id?: string | null) => VanillaDrawerController
+  updateDrawer: (
+    idOrOptions?: string | VanillaDrawerOptions | null,
+    options?: VanillaDrawerOptions
+  ) => VanillaDrawerController
+  createDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
+  configureDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
+  getDrawer: (id?: string | null) => VanillaDrawerController | null
+  getDrawers: () => Record<string, VanillaDrawerController>
+  destroyDrawer: (id?: string | null) => void
+  destroyDrawers: () => void
+  createDrawerController: (options?: CommonDrawerOptions) => CommonDrawerController
+}
+```
+
+Every method on `window.Drawer` mirrors the named export on the root entry. See [API reference](api/index.md) for full per-method documentation.
+
+```html
+<script>
+  const Drawer = window.Drawer
+
+  // Inspectors.
+  const account = Drawer.getDrawer('account') // null until createDrawer runs
+
+  // Mutators.
+  Drawer.createDrawer({ id: 'account', content: 'Hello' })
+  Drawer.openDrawer('account')
+  Drawer.closeDrawer('account')
+  Drawer.toggleDrawer('account')
+  Drawer.updateDrawer('account', { activeSnapPoint: '420px' })
+
+  // Teardown.
+  Drawer.destroyDrawer('account')
+  Drawer.destroyDrawers()
+
+  // Headless controller.
+  const headless = Drawer.createDrawerController({ id: 'h', defaultOpen: true })
+  headless.getSnapshot().state.isOpen // true
+</script>
+```
+
+---
+
 ## Notes
 
 - All methods on one `window.Drawer` namespace use the same registry. The namespace does not expose controllers as keyed properties; use `getDrawer(id)` or `getDrawers()`.
 - Loading the script only attaches `window.Drawer`. Calling `createDrawer()` or `configureDrawer()` creates that drawer's dedicated host and optional trigger immediately; overlay and content mount only while open or exiting.
 - Treat each browser drawer id as an owned runtime instance. If your page removes that flow, swaps to a new id, or rebuilds the integration dynamically, call `destroyDrawer(id)` or `destroyDrawers()` so the shared registry can release the instance.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
+- Pass `closeButton: true` to render an in-drawer close control.
 - Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
 - Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
 - Browser usage is the same mounted-host runtime exposed through `window.Drawer`, so shared options keep the same user-facing drawer behavior as the module entrypoints.
@@ -104,6 +191,24 @@ When browser usage is long-lived, the most important lifecycle rule is that `cre
 ```
 
 Use `destroyDrawer(id)` when a specific integration is being replaced. Use `destroyDrawers()` when the whole page shell is being torn down or rebuilt.
+
+---
+
+## TypeScript global type
+
+`DrawerApi` comes from the browser subpath, not the root type exports. A type-only import is erased from emitted JavaScript and does not pull the IIFE into the bundle:
+
+```ts
+import type { DrawerApi } from '@samline/drawer/browser'
+
+declare global {
+  interface Window {
+    Drawer?: DrawerApi
+  }
+}
+```
+
+There is no `browser` singleton exported from the root entrypoint. Importing `@samline/drawer/browser` for the type only does not load the IIFE.
 
 ---
 

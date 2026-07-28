@@ -17,12 +17,13 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components'
 
-These pages document `@samline/drawer@3.0.0-beta.4`. The package exposes a `createDrawer` factory plus a registry of imperative helpers, renders DOM directly into one host per drawer id, and ships both module and browser-global builds. Overlay and dialog content use lazy Presence: they mount only while open (and briefly during the exit transition), while an optional built-in trigger remains in its host when closed.
+These pages document `@samline/drawer@3.0.0`. The package exposes a `createDrawer` factory plus a registry of imperative helpers, renders DOM directly into one host per drawer id, and ships both module and browser-global builds. Overlay and dialog content use lazy Presence: they mount only while open (and briefly during the exit transition), while an optional built-in trigger remains in its host when closed.
 
 ## Why @samline/drawer?
 
 - **Vanilla-first** — Works with native HTML pages, embedded scripts, static sites, and server-rendered templates.
 - **Two consumption modes** — Import named exports with a bundler, or link the separate CSS and JS CDN assets to use `window.Drawer`.
+- **Custom HTML content** — `content`, `title`, and `description` accept `string | number | HTMLElement | (() => HTMLElement)` so you can pass pre-built DOM, lazy thunks, or plain text.
 - **CSS contract + live transforms** — Open/close states use documented `data-*` attributes and the shared stylesheet; drag, snap, viewport, and scale-background updates use targeted inline styles.
 - **Observable controllers** — `subscribe(listener)` fires immediately with the current snapshot, then on every state change. Pair with Redux, Zustand, Pinia, or your own view layer.
 - **Same-id updates** — Reusing a drawer `id` merges options into the registered instance instead of creating another host. Destroy unused ids to release their hosts and triggers.
@@ -33,14 +34,14 @@ These pages document `@samline/drawer@3.0.0-beta.4`. The package exposes a `crea
 
 <CardGrid>
   <Card title="Getting started" icon="pencil-line">
-    Install the exact beta.4 release, load its stylesheet, and open your first drawer.
+    Install the stable 3.0.0 release, load its stylesheet, and open your first drawer.
 
     [Install @samline/drawer →](/drawer/getting-started)
 
   </Card>
 
   <Card title="Configuration" icon="setting">
-    Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults and rationale.
+    Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row. Includes the dedicated Renderable content section for `string` / `number` / `HTMLElement` / `() => HTMLElement` slots.
 
     [Configuration reference →](/drawer/reference/configuration/)
 
@@ -61,7 +62,7 @@ These pages document `@samline/drawer@3.0.0-beta.4`. The package exposes a `crea
   </Card>
 
   <Card title="Browser global" icon="seti:html">
-    Load the separate beta.4 CSS and JS assets, then use `window.Drawer` without a bundler.
+    Load the separate 3.0.0 CSS and JS assets, then use `window.Drawer` without a bundler.
 
     [window.Drawer reference →](/drawer/reference/browser/)
 
@@ -75,7 +76,7 @@ These pages document `@samline/drawer@3.0.0-beta.4`. The package exposes a `crea
   </Card>
 
   <Card title="Recipes" icon="puzzle">
-    End-to-end patterns: all four directions, nested drawers, snap points, scale background, triggers, keyboard handling, and SPA cleanup.
+    End-to-end patterns: custom HTML content, renderable slots, lifecycle callbacks, all four directions, nested drawers, snap points, scale background, triggers, keyboard handling, and SPA cleanup.
 
     [Browse examples →](/drawer/reference/examples/)
 

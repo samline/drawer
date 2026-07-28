@@ -14,6 +14,16 @@ function configureDrawer(options?: VanillaDrawerOptions): VanillaDrawerControlle
 
 Both names hit the same module-level registry. The runtime does not track which name was used to create the drawer.
 
+## Parameters
+
+| Name      | Type                   | Default | Description                                                              |
+| --------- | ---------------------- | ------- | ------------------------------------------------------------------------ |
+| `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [docs/options.md](../options.md). |
+
+## Returns
+
+`VanillaDrawerController` — the controller for the created or updated drawer.
+
 ## Example
 
 ```ts
@@ -27,4 +37,4 @@ getDrawer('filters')?.setOpen(true)
 ## Related
 
 - [`createDrawer(options?)`](create-drawer.md) — the canonical entrypoint.
-- [`updateDrawer(idOrOptions?, options?)`](update-drawer.md) — merge options and return a controller facade for the resolved id.
+- [`updateDrawer(idOrOptions?, options?)`](update-drawer.md) — patch options and return a controller facade for the same id.

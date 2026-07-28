@@ -10,35 +10,40 @@ function getParentDrawer(id?: string | null): VanillaDrawerController | null
 
 ## Description
 
-`getParentDrawer` walks the registry by `id`, reads the drawer's `parentId`, and returns the controller for that parent. Returns `null` if the drawer has no parent, if the parent is not in the registry, or if the drawer itself is not in the registry.
+`getParentDrawer` resolves the parent of a nested drawer by looking up the `parentId` option against the live registry. It returns `null` when:
 
-Useful for driving a child's lifecycle from the parent's lifecycle (close / open in lockstep) without threading references.
+- The id has not been registered.
+- The id has no `parentId` option.
+- The id has a `parentId` that does not match a registered drawer.
 
-The default `id` is `'default'`. Omit the argument to inspect the parent of the default instance.
+The default `id` is `'default'`. Omit the argument to inspect the default instance.
+
+Use this helper to walk the nested hierarchy from the child upward.
 
 ## Parameters
 
-| Name | Type             | Default     | Description                                    |
-| ---- | ---------------- | ----------- | ---------------------------------------------- |
-| `id` | `string \| null` | `'default'` | The runtime instance id whose parent you want. |
+| Name | Type             | Default     | Description              |
+| ---- | ---------------- | ----------- | ------------------------ |
+| `id` | `string \| null` | `'default'` | The runtime instance id. |
 
 ## Returns
 
-`VanillaDrawerController | null` — the parent's controller, or `null` if there is no parent or the parent is not live.
+`VanillaDrawerController | null` — a controller facade for the parent, or `null` when there is none.
 
 ## Example
 
 ```ts
-import { createDrawer, getParentDrawer, getChildDrawers } from '@samline/drawer'
+import { createDrawer, getParentDrawer } from '@samline/drawer'
 
-createDrawer({ id: 'parent', title: 'Parent', content: 'Primary' })
-createDrawer({ id: 'child', parentId: 'parent', title: 'Child', content: 'Nested' })
+createDrawer({ id: 'account', title: 'Account' })
+createDrawer({ id: 'security', parentId: 'account', title: 'Security' })
 
-getParentDrawer('child')?.id // 'parent'
-getParentDrawer('parent') // null
+getParentDrawer('security')?.id // 'account'
+getParentDrawer('account') // null — top-level drawer
+getParentDrawer('missing') // null — id not registered
 ```
 
 ## Related
 
-- [`getChildDrawers(id?)`](get-child-drawers.md) — return the children of a nested drawer.
-- [`getDrawer(id?)`](get-drawer.md) — return the controller for a single drawer.
+- [`getChildDrawers(id?)`](get-child-drawers.md) — return the children of a drawer.
+- [Recipes → Nested drawers](../recipes.md#nested-drawers).

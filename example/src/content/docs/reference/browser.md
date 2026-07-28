@@ -71,6 +71,92 @@ Keep the CSS and JS URLs pinned to the same exact version. These docs intentiona
 
 ---
 
+## Custom HTML content
+
+`title`, `description`, and `content` accept the same `VanillaRenderable` shape as the bundler entry. Build the elements with `document.createElement` and pass them in.
+
+```html
+<script>
+  const form = document.createElement('form')
+  form.id = 'feedback'
+  form.innerHTML = `
+    <label>Subject <input name="subject" required /></label>
+    <label>Message <textarea name="message" required></textarea></label>
+    <button type="submit">Send</button>
+  `
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const data = new FormData(form)
+    console.log('submitted', Object.fromEntries(data))
+    window.Drawer.closeDrawer('feedback')
+  })
+
+  window.Drawer.createDrawer({
+    id: 'feedback',
+    title: 'Send feedback',
+    content: form,
+    closeButton: true
+  })
+</script>
+```
+
+> The browser bundle exposes the same option surface as the root entry. See [Configuration → Renderable content](/drawer/reference/configuration/#renderable-content) for every accepted form.
+
+---
+
+## All methods at a glance
+
+```ts
+// Equivalent TypeScript signature of window.Drawer.
+interface DrawerApi {
+  getParentDrawer: (id?: string | null) => VanillaDrawerController | null
+  getChildDrawers: (id?: string | null) => VanillaDrawerController[]
+  openDrawer: (id?: string | null) => VanillaDrawerController
+  closeDrawer: (id?: string | null) => VanillaDrawerController
+  toggleDrawer: (id?: string | null) => VanillaDrawerController
+  updateDrawer: (
+    idOrOptions?: string | VanillaDrawerOptions | null,
+    options?: VanillaDrawerOptions
+  ) => VanillaDrawerController
+  createDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
+  configureDrawer: (options?: VanillaDrawerOptions) => VanillaDrawerController
+  getDrawer: (id?: string | null) => VanillaDrawerController | null
+  getDrawers: () => Record<string, VanillaDrawerController>
+  destroyDrawer: (id?: string | null) => void
+  destroyDrawers: () => void
+  createDrawerController: (options?: CommonDrawerOptions) => CommonDrawerController
+}
+```
+
+Every method on `window.Drawer` mirrors the named export on the root entry. See [API reference](/drawer/reference/api/) for full per-method documentation.
+
+```html
+<script>
+  const Drawer = window.Drawer
+
+  // Inspectors.
+  const account = Drawer.getDrawer('account') // null until createDrawer runs
+
+  // Mutators.
+  Drawer.createDrawer({ id: 'account', content: 'Hello' })
+  Drawer.openDrawer('account')
+  Drawer.closeDrawer('account')
+  Drawer.toggleDrawer('account')
+  Drawer.updateDrawer('account', { activeSnapPoint: '420px' })
+
+  // Teardown.
+  Drawer.destroyDrawer('account')
+  Drawer.destroyDrawers()
+
+  // Headless controller.
+  const headless = Drawer.createDrawerController({ id: 'h', defaultOpen: true })
+  headless.getSnapshot().state.isOpen // true
+</script>
+```
+
+---
+
 ## Notes
 
 - Loading the script only attaches `window.Drawer`; it does not create a drawer.
@@ -80,6 +166,7 @@ Keep the CSS and JS URLs pinned to the same exact version. These docs intentiona
 - A built-in `triggerText` button persists while closed. An external `triggerElement` listener also remains bound until it is replaced or the drawer is destroyed.
 - `closeDrawer(id)` changes open state but keeps the registry entry, host, and trigger. `destroyDrawer(id)` removes the entry, listeners, host, and owned effects.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.
+- Pass `closeButton: true` to render an in-drawer close control.
 - Add `data-drawer-wrapper` to the page shell element if `shouldScaleBackground` should scale the app behind the drawer.
 - Add `data-drawer-no-drag` to interactive descendants inside custom content when those elements should not start a drawer drag.
 - Reusing the same `id` merges options into that registered instance rather than adding another host.
@@ -125,7 +212,7 @@ The browser entry retains each id until you destroy it. Use explicit teardown wh
 </script>
 ```
 
-Use `destroyDrawer(id)` for one integration and `destroyDrawers()` when the bundle's entire page shell is being torn down. Shared scroll, history, focus, and scale effects restore only when their final owning drawer releases them.
+Use `destroyDrawer(id)` for one integration and `destroyDrawers()` when the bundle's entire page shell is being torn down or rebuilt. Shared scroll, history, focus, and scale effects restore only when their final owning drawer releases them.
 
 ---
 

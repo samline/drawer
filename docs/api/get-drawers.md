@@ -10,30 +10,38 @@ function getDrawers(): Record<string, VanillaDrawerController>
 
 ## Description
 
-`getDrawers` is a read-only inspector. It returns a fresh plain object with one controller facade per live drawer instance, keyed by `id`. Each facade is bound to the same underlying runtime instance as a controller returned by `createDrawer`, but object identity is not guaranteed across calls.
+`getDrawers` is a read-only inspector. It returns a fresh object whose keys are the registered ids and whose values are controller facades. Adding or removing ids after the call does not mutate the returned object.
 
-Use it to enumerate every drawer (for example, to close them all on a navigation event) without keeping your own map.
+The returned facades target the same underlying instances but are not guaranteed to have object identity with each other or with wrappers from `createDrawer` / `getDrawer` / `updateDrawer`.
 
 ## Returns
 
-`Record<string, VanillaDrawerController>` — a plain object with one entry per live drawer. The object is freshly allocated on every call; mutations to the object do not affect the registry.
+`Record<string, VanillaDrawerController>` — every live drawer keyed by id. The object is a snapshot; later `createDrawer` / `destroyDrawer` calls do not mutate it.
 
 ## Example
 
 ```ts
-import { getDrawers } from '@samline/drawer'
+import { createDrawer, getDrawers, destroyDrawers } from '@samline/drawer'
 
-for (const [id, drawer] of Object.entries(getDrawers())) {
-  console.log(id, drawer.getSnapshot().state.isOpen)
-}
+createDrawer({ id: 'a', content: 'A' })
+createDrawer({ id: 'b', content: 'B' })
 
-// Close every drawer at once (use destroyDrawers for the full teardown).
-for (const drawer of Object.values(getDrawers())) {
-  drawer.setOpen(false)
-}
+const live = getDrawers()
+console.log(Object.keys(live)) // ['a', 'b']
+
+live.a.setOpen(true)
+live.b.setOpen(true)
+
+destroyDrawers()
+
+// The previously returned object still resolves through `setOpen` /
+// `getSnapshot` calls on each facade, but the registry is empty:
+// a fresh `getDrawers()` returns `{}`.
+getDrawers() // {}
 ```
 
 ## Related
 
-- [`getDrawer(id?)`](get-drawer.md) — return a single controller.
-- [`destroyDrawers()`](destroy-drawers.md) — full teardown.
+- [`getDrawer(id?)`](get-drawer.md) — return a single controller by id.
+- [`createDrawer(options?)`](create-drawer.md) — create or update a drawer.
+- [`destroyDrawers()`](destroy-drawers.md) — clear the registry.

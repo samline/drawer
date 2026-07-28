@@ -7,12 +7,12 @@ This is the markdown reference for `@samline/drawer` v3.0.0, a framework-agnosti
 ## Index
 
 - [Getting started](getting-started.md) — anatomy of the runtime, observable contract, lifecycle, side-effects, registry helpers.
-- [Options](options.md) — every `CommonDrawerOptions` field, with defaults.
-- [CSS styling](css-styling.md) — the data-attributes the stylesheet expects, and how to theme it.
-- [TypeScript reference](typescript.md) — every exported type, callback signature, and helper return shape.
-- [API reference](api/index.md) — one page per public method.
-- [Recipes](recipes.md) — end-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard.
-- [Vanilla](vanilla.md) — the root entrypoint in depth, with the `vanilla` host / dialog / trigger / handle contract.
+- [Options](options.md) — every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example for every row. Includes the dedicated [Renderable content](options.md#renderable-content) section for `string` / `number` / `HTMLElement` / `() => HTMLElement` slots.
+- [Recipes](recipes.md) — end-to-end patterns: custom HTML content, nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open/close, multiple drawers, SPA lifecycle, common pitfalls.
+- [CSS styling](css-styling.md) — every runtime data-attribute, the consumer markers (`data-drawer-wrapper`, `data-drawer-no-drag`), inline writes, scale ownership, position all four directions.
+- [TypeScript reference](typescript.md) — every exported type, callback signature, helper return shape, numeric constant, browser global type.
+- [API reference](api/index.md) — one page per public method (`createDrawer`, `configureDrawer`, `createDrawerController`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `updateDrawer`, `getDrawer`, `getDrawers`, `getParentDrawer`, `getChildDrawers`, `destroyDrawer`, `destroyDrawers`).
+- [Vanilla](vanilla.md) — the root entrypoint in depth, with the `vanilla` host / dialog / trigger / handle / close-button contract.
 - [Browser](browser.md) — using `window.Drawer` from a plain `<script>` tag.
 
 ---
@@ -45,9 +45,10 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 | File                                                               | What is in it                                                                                            |
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | [getting-started.md](getting-started.md)                           | Concepts, observable contract, lifecycle, registry helpers, side-effect table.                           |
-| [options.md](options.md)                                           | Every `CommonDrawerOptions` field with defaults.                                                         |
-| [css-styling.md](css-styling.md)                                   | The data-attribute contract the stylesheet expects; theming with CSS variables.                          |
-| [typescript.md](typescript.md)                                     | Every exported type, callback signature, helper return shape.                                            |
+| [options.md](options.md)                                           | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row. |
+| [recipes.md](recipes.md)                                           | Custom HTML content, renderable slots, lifecycle callbacks, nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open/close, multiple drawers, SPA lifecycle, common pitfalls. |
+| [css-styling.md](css-styling.md)                                   | The data-attribute contract the stylesheet expects; theming with CSS variables; inline writes; scale ownership; position all four directions. |
+| [typescript.md](typescript.md)                                     | Every exported type, callback signature, helper return shape, numeric constant, browser global type.      |
 | [api/index.md](api/index.md)                                       | Overview of the public API.                                                                              |
 | [api/create-drawer.md](api/create-drawer.md)                       | The `createDrawer()` factory and the `VanillaDrawerController` it returns.                               |
 | [api/configure-drawer.md](api/configure-drawer.md)                 | The `createDrawer` alias.                                                                                |
@@ -62,7 +63,6 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 | [api/destroy-drawer.md](api/destroy-drawer.md)                     | The `destroyDrawer(id?)` teardown.                                                                       |
 | [api/destroy-drawers.md](api/destroy-drawers.md)                   | The `destroyDrawers()` full clear.                                                                       |
 | [api/create-drawer-controller.md](api/create-drawer-controller.md) | The `createDrawerController(options?)` headless controller factory.                                      |
-| [recipes.md](recipes.md)                                           | Nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open/close. |
 | [vanilla.md](vanilla.md)                                           | The root entrypoint in depth, with the vanilla host / dialog / trigger / handle / close-button contract. |
 | [browser.md](browser.md)                                           | Using `window.Drawer` from a plain `<script>` tag.                                                       |
 

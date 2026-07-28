@@ -13,9 +13,10 @@
 - [Entrypoints](#entrypoints)
 - [Quick Start](#quick-start)
 - [What You Can Build](#what-you-can-build)
+- [Custom Content](#custom-content)
+- [Title and Close Button](#title-and-close-button)
 - [API at a Glance](#api-at-a-glance)
 - [Presence and Mount Lifecycle](#presence-and-mount-lifecycle)
-- [Title and Close Button](#title-and-close-button)
 - [Documentation](#documentation)
 - [License](#license)
 
@@ -135,50 +136,39 @@ What this does:
 
 ---
 
-## API at a Glance
+## Custom Content
 
-The runtime is built around one factory plus a focused set of helpers. State mutators return snapshots, `update` returns a controller for the same id, and each registry helper's return shape is documented in the per-method reference.
-
-| Group                   | Methods                                                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Factory                 | [`createDrawer`](docs/api/create-drawer.md) · [`configureDrawer`](docs/api/configure-drawer.md) · [`createDrawerController`](docs/api/create-drawer-controller.md)                        |
-| Inspectors              | [`getDrawer`](docs/api/get-drawer.md) · [`getDrawers`](docs/api/get-drawers.md) · [`getParentDrawer`](docs/api/get-parent-drawer.md) · [`getChildDrawers`](docs/api/get-child-drawers.md) |
-| Mutators                | [`updateDrawer`](docs/api/update-drawer.md) · [`openDrawer`](docs/api/open-drawer.md) · [`closeDrawer`](docs/api/close-drawer.md) · [`toggleDrawer`](docs/api/toggle-drawer.md)           |
-| Teardown                | [`destroyDrawer`](docs/api/destroy-drawer.md) · [`destroyDrawers`](docs/api/destroy-drawers.md)                                                                                           |
-| Properties (controller) | `id` · `element` · `options`                                                                                                                                                              |
-| Lifecycle (controller)  | `setOpen` · `setActiveSnapPoint` · `patch` · `update` · `subscribe` · `getSnapshot` · `destroy`                                                                                           |
-
-See the full per-method reference in [`docs/api/`](docs/api/index.md).
-
----
-
-## Presence and Mount Lifecycle
-
-`createDrawer` immediately creates a dedicated `<div data-drawer-vanilla-root>` for that drawer in `document.body` or its `container`. An optional built-in trigger is also rendered immediately. Each drawer gets its own host, including drawers that share the same custom container.
-
-The visual dialog uses lazy presence:
-
-1. **Initially closed drawers have no overlay or content in the DOM.** `[data-drawer-overlay]`, `[data-drawer]`, the handle, and the content slots mount only when the drawer opens.
-2. **Closing keeps the overlay and content present for the exit.** Their state changes to `closed`, the animation starts from the current rendered transform, and the nodes are removed after the 500 ms transition plus a 100 ms safety window. The host and optional trigger remain until destroy.
-3. **`open: true` at creation means "open immediately."** The dialog is visible without an entrance animation. For an animated programmatic open, create it closed and call `setOpen(true)` after mount.
-4. **HMR considerations:** if consumer code recreates a drawer with `open: true`, it is opened again on every HMR run. Prefer the closed-then-open pattern when that flash is undesirable.
-
-**Recommended pattern for "open on mount" dialogs:**
+The `content` slot (and the `title` / `description` slots) accept the same `VanillaRenderable` shape: `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Pick the form that matches how you build your UI.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
 
-const drawer = createDrawer({
-  id: 'my-drawer'
-  // no `open` here; defaults to closed
-})
+// 1. Plain text.
+createDrawer({ id: 'a', content: 'Hello' })
 
-// Defer open to the next microtask so the entrance animation
-// runs after the mount is fully wired.
-queueMicrotask(() => drawer.setOpen(true))
+// 2. Pre-built element (the runtime moves it into the body slot).
+const form = document.createElement('form')
+form.innerHTML = '<input name="q" /><button>Search</button>'
+createDrawer({ id: 'b', title: 'Search', content: form })
+
+// 3. Lazy thunk (re-invoked every time the dialog subtree is rebuilt).
+createDrawer({
+  id: 'c',
+  content: () => {
+    const node = document.createElement('p')
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  }
+})
 ```
 
-See [`CommonDrawerOptions.open`](src/core/index.ts) for the full type contract.
+> **Move semantics**: when you pass an `HTMLElement`, the runtime adopts it. Do not append the same element to a second `content` while the first drawer still owns it. Use a thunk if you need a fresh node per open.
+>
+> **Lazy presence**: the dialog subtree unmounts on close, so any `() => HTMLElement` is invoked again on the next open. Use this to refresh dynamic content, or cache expensive work outside the thunk.
+
+For the full contract, end-to-end patterns, and how `content` lands in the DOM, see [docs/options.md → Renderable content](docs/options.md#renderable-content) and [docs/recipes.md → Custom HTML content](docs/recipes.md#custom-html-content).
+
+---
 
 ## Title and Close Button
 
@@ -233,22 +223,69 @@ See the [close-button option shape](docs/typescript.md#close-button-option-shape
 
 ---
 
+## API at a Glance
+
+The runtime is built around one factory plus a focused set of helpers. State mutators return snapshots, `update` returns a controller for the same id, and each registry helper's return shape is documented in the per-method reference.
+
+| Group                   | Methods                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Factory                 | [`createDrawer`](docs/api/create-drawer.md) · [`configureDrawer`](docs/api/configure-drawer.md) · [`createDrawerController`](docs/api/create-drawer-controller.md)                        |
+| Inspectors              | [`getDrawer`](docs/api/get-drawer.md) · [`getDrawers`](docs/api/get-drawers.md) · [`getParentDrawer`](docs/api/get-parent-drawer.md) · [`getChildDrawers`](docs/api/get-child-drawers.md) |
+| Mutators                | [`updateDrawer`](docs/api/update-drawer.md) · [`openDrawer`](docs/api/open-drawer.md) · [`closeDrawer`](docs/api/close-drawer.md) · [`toggleDrawer`](docs/api/toggle-drawer.md)           |
+| Teardown                | [`destroyDrawer`](docs/api/destroy-drawer.md) · [`destroyDrawers`](docs/api/destroy-drawers.md)                                                                                           |
+| Properties (controller) | `id` · `element` · `options`                                                                                                                                                              |
+| Lifecycle (controller)  | `setOpen` · `setActiveSnapPoint` · `patch` · `update` · `subscribe` · `getSnapshot` · `destroy`                                                                                           |
+
+See the full per-method reference in [`docs/api/`](docs/api/index.md).
+
+---
+
+## Presence and Mount Lifecycle
+
+`createDrawer` immediately creates a dedicated `<div data-drawer-vanilla-root>` for that drawer in `document.body` or its `container`. An optional built-in trigger is also rendered immediately. Each drawer gets its own host, including drawers that share the same custom container.
+
+The visual dialog uses lazy presence:
+
+1. **Initially closed drawers have no overlay or content in the DOM.** `[data-drawer-overlay]`, `[data-drawer]`, the handle, and the content slots mount only when the drawer opens.
+2. **Closing keeps the overlay and content present for the exit.** Their state changes to `closed`, the animation starts from the current rendered transform, and the nodes are removed after the 500 ms transition plus a 100 ms safety window. The host and optional trigger remain until destroy.
+3. **`open: true` at creation means "open immediately."** The dialog is visible without an entrance animation. For an animated programmatic open, create it closed and call `setOpen(true)` after mount.
+4. **HMR considerations:** if consumer code recreates a drawer with `open: true`, it is opened again on every HMR run. Prefer the closed-then-open pattern when that flash is undesirable.
+
+**Recommended pattern for "open on mount" dialogs:**
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({
+  id: 'my-drawer'
+  // no `open` here; defaults to closed
+})
+
+// Defer open to the next microtask so the entrance animation
+// runs after the mount is fully wired.
+queueMicrotask(() => drawer.setOpen(true))
+```
+
+See [`CommonDrawerOptions.open`](src/core/index.ts) for the full type contract.
+
+---
+
 ## Documentation
 
 Full API reference, guides, and examples are available at **[samline.github.io/drawer](https://samline.github.io/drawer)**.
 
-| Doc                                                | Purpose                                                                                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [docs/README.md](docs/README.md)                   | Overview, anatomy, and entrypoint selection.                                                         |
-| [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                       |
-| [docs/options.md](docs/options.md)                 | Every `CommonDrawerOptions` field, with defaults.                                                    |
-| [docs/css-styling.md](docs/css-styling.md)         | The data-attribute contract the stylesheet expects.                                                  |
-| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, and non-exported option shapes.           |
-| [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                          |
-| [docs/recipes.md](docs/recipes.md)                 | End-to-end patterns: nested drawers, snap points, scale background, handle cycle, viewport keyboard. |
-| [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                   |
-| [docs/vanilla.md](docs/vanilla.md)                 | The root entrypoint (vanilla JS) in depth.                                                           |
-| [CHANGELOG.md](CHANGELOG.md)                       | Version history.                                                                                     |
+| Doc                                                | Purpose                                                                                                                          |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/README.md](docs/README.md)                   | Overview, anatomy, and entrypoint selection.                                                                                     |
+| [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                                                   |
+| [docs/options.md](docs/options.md)                 | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row.                  |
+| [docs/recipes.md](docs/recipes.md)                 | End-to-end patterns: custom HTML content, renderable slots, lifecycle callbacks, nested drawers, snap points, scale background. |
+| [docs/css-styling.md](docs/css-styling.md)         | The data-attribute contract the stylesheet expects; inline writes; scale ownership; position all four directions.               |
+| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, numeric constants, browser global type.                               |
+| [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                                                      |
+| [docs/vanilla.md](docs/vanilla.md)                 | The root entrypoint (vanilla JS) in depth.                                                                                       |
+| [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                                               |
+| [CHANGELOG.md](CHANGELOG.md)                       | Version history.                                                                                                                 |
 
 ---
 

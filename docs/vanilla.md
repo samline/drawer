@@ -79,12 +79,15 @@ The full per-method reference is under [`docs/api/`](api/index.md).
 
 ## Common Patterns
 
+### Identity and lifecycle
+
 - Pass `id` when you need more than the default runtime instance.
 - Pass `parentId` when this drawer should follow another drawer's lifecycle.
 - Pass `triggerText` to render a built-in button inside the mounted host.
 - Pass `triggerElement` when you want an external button and the same custom shell used in the styled example below.
 - Pass `showHandle` to render the built-in handle in the mounted host.
 - `showHandle` is optional when `handleOnly` is enabled. `handleOnly` already renders the built-in handle and also restricts dragging to that handle.
+- Pass `closeButton: true` to render an in-drawer close control. Pass an object to override class / icon / aria-label.
 - Pass `container` when the host should live inside a specific DOM subtree instead of being appended to `document.body`. `mountElement` is a deprecated nullish fallback (`container ?? mountElement ?? document.body`).
 - Pass `overlayClassName`, `contentClassName`, and `handleClassName` when you want a visible shell instead of only the shared runtime styles.
 - If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance.
@@ -94,6 +97,39 @@ The full per-method reference is under [`docs/api/`](api/index.md).
 - If the surface should not show top-level title or description content, provide `ariaLabel` or `ariaLabelledBy` for its accessible name and `ariaDescribedBy` when custom content supplies the description. The renderer still creates its title and description target slots while the dialog is present; omitted values leave those slots empty.
 - When you point `ariaLabelledBy` or `ariaDescribedBy` at custom content, make those ids unique per drawer instance. Deriving them from the drawer `id` is a good default.
 - Use `update()` or `updateDrawer()` when you want to merge new options into the same instance.
+
+### Renderable content
+
+The `title`, `description`, and `content` slots all accept `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Pick the form that matches how you build your UI.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// 1. Plain text.
+createDrawer({ id: 'a', content: 'Hello' })
+
+// 2. Pre-built element (the runtime moves it into the body slot).
+const form = document.createElement('form')
+form.innerHTML = '<input name="q" /><button>Search</button>'
+createDrawer({ id: 'b', title: 'Search', content: form })
+
+// 3. Lazy thunk (re-invoked every time the dialog subtree is rebuilt).
+createDrawer({
+  id: 'c',
+  content: () => {
+    const node = document.createElement('p')
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  }
+})
+
+// 4. Mixed slots.
+const heading = document.createElement('h2')
+heading.textContent = 'Filters'
+createDrawer({ id: 'd', title: heading, content: 'Body' })
+```
+
+See [Options → Renderable content](options.md#renderable-content) and [Recipes → Custom HTML content](recipes.md#custom-html-content) for the full contract.
 
 ---
 
@@ -131,12 +167,42 @@ Treat the vanilla API as an owned lifecycle. If an app creates drawers dynamical
 
 ---
 
+## Listening to state
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'profile', title: 'Profile' })
+
+const unsubscribe = drawer.subscribe((snapshot) => {
+  console.log('isOpen:', snapshot.state.isOpen)
+  console.log('snap:', snapshot.state.activeSnapPoint)
+})
+
+// Read once without subscribing.
+console.log(drawer.getSnapshot().state.direction) // 'bottom'
+
+// Later:
+unsubscribe()
+```
+
+`setOpen`, `setActiveSnapPoint`, and `patch` all return the new snapshot, so you can chain state changes.
+
+```ts
+const next = drawer.patch({ activeSnapPoint: '420px' }).setOpen(true)
+console.log(next.state.isOpen) // true
+```
+
+---
+
 ## Integration Notes
 
-- `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`.
+- `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`. See [Renderable content](options.md#renderable-content) for the full rules.
 - Use `ariaLabel` or `ariaLabelledBy` for drawers like galleries or custom shells that should not render a top-level title node.
 - `title` and `description` are rendered before `content` inside the shared vanilla content wrapper.
 - `@samline/drawer/styles.css` provides the shared runtime animations, transforms, and handle styles. It does not provide a complete overlay or panel theme for your app.
 - When `container` is omitted, a dedicated vanilla host is created automatically and appended to `document.body`. Closed drawers retain this host and an optional trigger, but not an overlay or dialog surface.
 - The root entry exposes per-drawer hosts through a programmatic API instead of framework-specific component composition.
 - Reusing the same `id` updates the same runtime instance. It does not create a second drawer.
+
+See [CSS styling](css-styling.md) for the data-attribute contract and [Options](options.md) for the full field reference.
