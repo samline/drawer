@@ -235,7 +235,7 @@ See the [close-button option shape](docs/typescript.md#close-button-option-shape
 
 ## Documentation
 
-Full API reference, guides, and examples are available in [`docs/`](docs/README.md).
+Full API reference, guides, and examples are available at **[samline.github.io/drawer](https://samline.github.io/drawer)**.
 
 | Doc                                                | Purpose                                                                                              |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
