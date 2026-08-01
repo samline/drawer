@@ -849,11 +849,45 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   // pointermove, pointerup, handle click, etc.) and clears the
   // cleanup array. After this returns, no listener owned by this
   // dialog will fire on subsequent events.
-  for (const cleanup of state.cleanups) cleanup()
+  //
+  // F18 (memory hygiene): each cleanup runs inside its own try-catch.
+  // A `removeEventListener` on a null or detached element throws
+  // `TypeError: Cannot read properties of null`; in a partial-teardown
+  // race (e.g. close + reopen during the 600 ms removeDom safety
+  // window), one such throw used to abort the for-loop, leave the
+  // remaining cleanups un-run, AND prevent the `state.cleanups = []`
+  // write. The orphaned listeners retained `state` via closure
+  // capture until the next `destroyDrawer` or page reload.
+  for (const cleanup of state.cleanups) {
+    try {
+      cleanup()
+    } catch (error) {
+      // F18: log in development for consumer-side diagnostics; the
+      // bug is usually an external DOM removal racing the teardown.
+      // Production swallows to avoid breaking the rest of the
+      // teardown path (which still has to release the body scroll
+      // lock, focus, and history.scrollRestoration below).
+      if (typeof console !== 'undefined') {
+        console.warn('[@samline/drawer] cleanup threw during teardownMount:', error)
+      }
+    }
+  }
   state.cleanups = []
-  state.cleanupDragGesture?.()
+  try {
+    state.cleanupDragGesture?.()
+  } catch (error) {
+    if (typeof console !== 'undefined') {
+      console.warn('[@samline/drawer] cleanupDragGesture threw during teardownMount:', error)
+    }
+  }
   state.cleanupDragGesture = null
-  state.cleanupBuiltInTrigger?.()
+  try {
+    state.cleanupBuiltInTrigger?.()
+  } catch (error) {
+    if (typeof console !== 'undefined') {
+      console.warn('[@samline/drawer] cleanupBuiltInTrigger threw during teardownMount:', error)
+    }
+  }
   state.cleanupBuiltInTrigger = null
 
   // Step 2 — restore the page-level side-effects we own (focus,
