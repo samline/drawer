@@ -225,6 +225,16 @@ function lockBodyScrollDesktop(): () => void {
 function preventScrollMobileSafari(): () => void {
   let scrollable: Element | undefined
   let lastY = 0
+  // F18 (memory hygiene): the `onFocus` path adds a
+  // `visualViewport.resize` listener for each input focus,
+  // waiting for the mobile keyboard to appear before scrolling
+  // the input into view. The previous version used `{ once:
+  // true }` to auto-remove the listener, but if the viewport
+  // never resizes (desktop, or keyboard already closed), the
+  // listener stays attached and retains the focused input via
+  // closure capture. We track each pending listener so the
+  // teardown chain can remove it explicitly.
+  const pendingViewportResizeCleanups: Array<() => void> = []
 
   const onTouchStart = (e: TouchEvent) => {
     // Store the nearest scrollable parent element from the
@@ -306,7 +316,34 @@ function preventScrollMobileSafari(): () => void {
             // Otherwise, wait for the visual viewport to resize
             // before scrolling so we can measure the correct
             // position to scroll to.
-            visualViewport.addEventListener('resize', () => scrollIntoView(target), { once: true })
+            //
+            // F18 (memory hygiene): capture the listener so the
+            // teardown can remove it. The previous implementation
+            // relied on `{ once: true }` to auto-remove the
+            // listener when it fires — but if the visual viewport
+            // never resizes (e.g. desktop, or the keyboard
+            // already closed), the listener never fires and never
+            // self-removes. It holds `target` (the focused input)
+            // via closure capture, leaking the input until the
+            // page reload. Each focus on an input leaks one
+            // listener; a long form with N inputs + a session
+            // of M drawer opens leaks up to N*M listeners.
+            const onViewportResize = () => {
+              visualViewport.removeEventListener('resize', onViewportResize)
+              removeViewportResizeListener = null
+              scrollIntoView(target)
+            }
+            let removeViewportResizeListener: (() => void) | null = () => {
+              visualViewport.removeEventListener('resize', onViewportResize)
+              removeViewportResizeListener = null
+            }
+            visualViewport.addEventListener('resize', onViewportResize, { once: true })
+            pendingViewportResizeCleanups.push(() => {
+              if (removeViewportResizeListener) {
+                removeViewportResizeListener()
+                removeViewportResizeListener = null
+              }
+            })
           }
         }
       })
@@ -345,7 +382,22 @@ function preventScrollMobileSafari(): () => void {
     addEvent(document, 'touchmove', onTouchMove, { passive: false, capture: true }),
     addEvent(document, 'touchend', onTouchEnd, { passive: false, capture: true }),
     addEvent(document, 'focus', onFocus, true),
-    addEvent(window, 'scroll', onWindowScroll)
+    addEvent(window, 'scroll', onWindowScroll),
+    // F18: drain any pending `visualViewport.resize` listeners
+    // that were never fired. Each entry removes its own listener
+    // and nulls its reference; the array is then cleared.
+    () => {
+      while (pendingViewportResizeCleanups.length > 0) {
+        const cleanup = pendingViewportResizeCleanups.pop()
+        try {
+          cleanup?.()
+        } catch (error) {
+          if (typeof console !== 'undefined') {
+            console.warn('[@samline/drawer] visualViewport listener cleanup threw:', error)
+          }
+        }
+      }
+    }
   )
 
   return () => {
