@@ -50,6 +50,12 @@ export function set(
  * vaul upstream's `reset` helper. When `prop` is provided, only
  * that property is restored; otherwise every captured property
  * is restored. Audit G6.
+ *
+ * @internal
+ * Not part of the public API — exported only so the test
+ * suite can verify the G6 contract (the `set` cache round-trip).
+ * The `set`/`reset` pair is an implementation detail of the
+ * drawer runtime; consumers never need to call either.
  */
 export function reset(el: Element | HTMLElement | null, prop?: string) {
   if (!el || !(el instanceof HTMLElement)) return
