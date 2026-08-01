@@ -8,7 +8,7 @@ sidebar:
 
 import { Tabs, TabItem } from '@astrojs/starlight/components'
 
-These examples target `@samline/drawer@3.0.0` and its lazy-Presence lifecycle. Each registered id owns a host; overlay/content exist only while open or exiting.
+These examples target `@samline/drawer@3.1.0` and its lazy-Presence lifecycle. Each registered id owns a host; overlay/content exist only while open or exiting.
 
 <Tabs syncKey="runtime">
   <TabItem label="Bundler / TS">
@@ -39,8 +39,8 @@ These examples target `@samline/drawer@3.0.0` and its lazy-Presence lifecycle. E
       <main>App shell</main>
     </div>
 
-    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
-    <script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
+    <script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
     <script>
       window.Drawer.createDrawer({
         id: 'filters',
@@ -311,7 +311,7 @@ The parent's transform during the child's drag is driven by `runtime/nested.ts#g
 
 ## Recipe: Snap points
 
-Snap points let the user drag between predefined positions. Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'180px'` is 180); percent-suffixed strings do not use percentage math in 3.0.0.
+Snap points let the user drag between predefined positions. Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'180px'` is 180); percent-suffixed strings do not use percentage math in 3.1.0.
 
 ```ts
 import { createDrawer } from '@samline/drawer'

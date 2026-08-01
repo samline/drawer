@@ -13,8 +13,8 @@ import '@samline/drawer/styles.css'
 The IIFE bundle (`@samline/drawer/browser`) is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately from the browser entry:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.

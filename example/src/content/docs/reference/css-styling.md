@@ -16,11 +16,11 @@ With a bundler:
 import '@samline/drawer/styles.css'
 ```
 
-With the 3.0.0 browser bundle, CSS and JavaScript are separate assets:
+With the 3.1.0 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -107,7 +107,7 @@ The dialog surface has no HTML `id`. Select one instance with `[data-drawer-id="
 | `data-state`                      | `'open' \| 'closed'`                     | Open/exit state.                                                                                                                                |
 | `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | Motion, drag, and snap direction.                                                                                                               |
 | `data-drawer-snap-points`         | `'true' \| 'false'`                      | Whether snap-point transforms are active.                                                                                                       |
-| `data-drawer-delayed-snap-points` | `'false'`                                | 3.0.0 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.                                |
+| `data-drawer-delayed-snap-points` | `'false'`                                | 3.1.0 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.                                |
 | `data-drawer-custom-container`    | `'true' \| 'false'`                      | `true` when a non-null `container` or deprecated `mountElement` is used. The default-only `::after` extension is omitted for custom containers. |
 | `data-drawer-animate`             | `'true' \| 'false'`                      | Shared CSS animation gate.                                                                                                                      |
 | `role`                            | `'dialog'`                               | Always present while the dialog is mounted.                                                                                                     |
@@ -202,7 +202,7 @@ The shared keyframes use the Y axis for `top`/`bottom` and X axis for `left`/`ri
 
 ## Inline writes
 
-Not every live effect can be expressed by static CSS. 3.0.0 writes and later restores these values:
+Not every live effect can be expressed by static CSS. 3.1.0 writes and later restores these values:
 
 | Target                     | Runtime writes                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -226,7 +226,7 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 ## Notes
 
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
-- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 3.0.0 JavaScript does not write it.
+- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 3.1.0 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
 - The runtime adds the exported `drawer-dragging` class to `[data-drawer]` while a drag is in progress. Target it from your stylesheet to disable selection or change the cursor.

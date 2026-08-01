@@ -2,7 +2,31 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `3.0.0` is the first **stable** release of the v3 line. The v3 series drops React/Vue/Svelte as peer dependencies and goes pure vanilla. The package is published under the `latest` npm tag.
+> **Status**: `3.1.0` is the current **stable** release of the v3 line. The v3 series drops React/Vue/Svelte as peer dependencies and goes pure vanilla. The package is published under the `latest` npm tag.
+
+## [3.1.0] — 2026-07-31
+
+Memory hygiene hardening release. No public API change. No behavioral change for the happy path. All fixes are defensive: cleanup callbacks that throw are isolated so the teardown completes its downstream responsibilities, and event listeners that depend on a one-shot contract are now also reachable from the explicit teardown path.
+
+### Fixed (F18 — memory hygiene)
+
+- **`teardownMount` cleanup exception isolation** (`src/vanilla/dialog.ts`). The `state.cleanups` for-loop, the `state.cleanupDragGesture?.()` call, and the `state.cleanupBuiltInTrigger?.()` call are each wrapped in their own try-catch. A thrown `removeEventListener` (e.g. on a null or detached element during a partial-teardown race: open → close → reopen inside the 600 ms `removeDom` safety window) used to abort the for-loop, skip the remaining cleanups, and prevent `state.cleanups = []` from being written. The orphaned listeners (`mouseup`, `pointerdown`, `click`, `resize`, `visualViewport.resize`) held the per-mount state alive via closure capture until the next `destroyDrawer` or page reload. The fix logs a `console.warn` in dev and lets the teardown continue. Body scroll lock release, focus restoration, and `history.scrollRestoration` still run after a thrown cleanup.
+- **`chain()` exception isolation** (`src/helpers.ts`). The for-loop that runs each callback is wrapped in a try-catch with the same dev-warn + swallow pattern. This is the underlying primitive that `teardownMount`'s cleanup array and `preventScrollMobileSafari`'s `removeEvents` chain both depend on, so the isolation is applied at the source.
+- **`visualViewport.resize` listener cleanup in the mobile-safari scroll-lock pipeline** (`src/runtime/scroll-lock.ts`). The `onFocus` path that waits for the keyboard to appear now tracks each pending listener in a `pendingViewportResizeCleanups` array. The previous implementation used `{ once: true }` and relied on the listener self-removing when fired — but if the visual viewport never resizes (desktop, or the keyboard already closed), the listener never fired and was never removed, holding the focused input via closure. The teardown chain drains the array on close.
+
+### Documentation
+
+- Marked `reset()` (`src/helpers.ts`) and `trackScrollPosition()` (`src/runtime/scroll-lock.ts`) as `@internal`. Both are exported only for the test suite (verifying the G6 cache contract and the scroll listener cleanup) and are not re-exported from the public `index.ts`. The `@internal` JSDoc tag makes the intent explicit for IDE tooling and future audits.
+
+### Investigated, no change required
+
+- **`bindTriggerElement` closure retention** (`src/runtime/registry.ts`). Initial audit flagged the `triggerElement` capture in the external-trigger cleanup as a potential leak. Re-analysis showed the retention is redundant: `runtime.options.triggerElement` holds a strong reference to the same element via the options object. If the consumer does not call `destroyDrawer`, both the options and the cleanup hold the element — fixing the cleanup alone would not change the lifetime. The actual fix is the consumer contract: call `destroyDrawer` when done. The normal `update({ triggerElement: ... })` flow already nulls the old cleanup correctly.
+- **Monotonically-increasing open-order counters** (`nextOpenOrder`, `fallbackOpenOrder`). Bounded by `Number.MAX_SAFE_INTEGER`; no realistic overflow path.
+- **`drawerInstances` Map growth**. By design: the map is keyed by consumer-supplied ids and only `destroyDrawer(id)` removes entries. Consumers that create many dynamic ids are responsible for cleanup (or for calling `destroyDrawers` on page unload).
+
+### Tests
+
+319 tests passing (+14 new across `test/cleanup-exception-safety.test.ts`, `test/visual-viewport-listener-cleanup.test.ts`, and the new `chain` cases in `test/helpers.test.ts`).
 
 ## [3.0.0] — 2026-07-28
 
