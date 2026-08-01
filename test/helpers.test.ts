@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { assignStyle, isInView, reset, set } from '../src/helpers'
+import { assignStyle, chain, isInView, reset, set } from '../src/helpers'
 
 /**
  * G5 + G6 + G9: 1:1 with vaul upstream's `helpers.ts` exports.
@@ -112,6 +112,60 @@ describe('helpers (G5 + G6 + G9)', () => {
     it('returns false when window.visualViewport is missing', () => {
       // No setup needed; the jsdom default has no visualViewport.
       expect(isInView(el)).toBe(false)
+    })
+  })
+
+  describe('chain (F18 exception isolation)', () => {
+    it('runs every callback in order when none throw', () => {
+      const order: string[] = []
+      const cleanup = chain(
+        () => order.push('a'),
+        () => order.push('b'),
+        () => order.push('c')
+      )
+      cleanup()
+      expect(order).toEqual(['a', 'b', 'c'])
+    })
+
+    it('runs every callback even when one throws (F18)', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const order: string[] = []
+      const cleanup = chain(
+        () => order.push('a'),
+        () => {
+          throw new TypeError('simulated')
+        },
+        () => order.push('c')
+      )
+      expect(() => cleanup()).not.toThrow()
+      expect(order).toEqual(['a', 'c'])
+      vi.restoreAllMocks()
+    })
+
+    it('continues past a throw in the FIRST callback', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const order: string[] = []
+      const cleanup = chain(
+        () => {
+          throw new TypeError('first')
+        },
+        () => order.push('second')
+      )
+      expect(() => cleanup()).not.toThrow()
+      expect(order).toEqual(['second'])
+      vi.restoreAllMocks()
+    })
+
+    it('skips non-function entries (null / undefined)', () => {
+      const order: string[] = []
+      const cleanup = chain(
+        () => order.push('a'),
+        null,
+        undefined,
+        () => order.push('b')
+      )
+      cleanup()
+      expect(order).toEqual(['a', 'b'])
     })
   })
 })

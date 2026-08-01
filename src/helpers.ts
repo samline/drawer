@@ -81,13 +81,32 @@ export function reset(el: Element | HTMLElement | null, prop?: string) {
  * `removeEventListener` cleanups and the style restore callbacks
  * into a single teardown function.
  *
+ * F18 (memory hygiene): each callback runs inside its own
+ * try-catch. The previous implementation aborted the chain on
+ * the first throw, leaving subsequent cleanups un-run and
+ * holding their captured state alive via closure. This is the
+ * same pattern as the teardownMount cleanup loop (F18 commit
+ * 2); the chain helper is the underlying primitive that
+ * `teardownMount` and `removeEvents` both depend on, so the
+ * isolation is applied at the source.
+ *
  * Mirrors vaul upstream's `chain` helper in `src/helpers.ts`.
  */
 export function chain(...callbacks: Array<(() => void) | undefined | null>): () => void {
   return () => {
     for (const callback of callbacks) {
       if (typeof callback === 'function') {
-        callback()
+        try {
+          callback()
+        } catch (error) {
+          // F18: log in dev for consumer-side diagnostics; the
+          // bug is usually an external DOM removal racing the
+          // cleanup. Production swallows to keep the rest of
+          // the chain running.
+          if (typeof console !== 'undefined') {
+            console.warn('[@samline/drawer] chain() callback threw:', error)
+          }
+        }
       }
     }
   }
