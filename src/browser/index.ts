@@ -1,11 +1,50 @@
-// Module barrel for the browser entrypoint.
-//
-// Pure re-exports — NO `globalThis` / `window` side-effects here. This
-// module is the bundler-friendly entry; consumers who want `window.Drawer`
-// should import `@samline/drawer/browser` (the IIFE bundle) instead.
-//
-// The IIFE bundle is produced from `./global.ts`, which is the single
-// source of truth for the `window.Drawer` assignment.
+import {
+  closeDrawer,
+  configureDrawer,
+  createDrawer,
+  createDrawerController,
+  destroyDrawer,
+  destroyDrawers,
+  getChildDrawers,
+  getDrawer,
+  getDrawers,
+  getParentDrawer,
+  openDrawer,
+  toggleDrawer,
+  updateDrawer
+} from '../index'
+
+export interface DrawerApi {
+  getParentDrawer: typeof getParentDrawer
+  getChildDrawers: typeof getChildDrawers
+  openDrawer: typeof openDrawer
+  closeDrawer: typeof closeDrawer
+  toggleDrawer: typeof toggleDrawer
+  updateDrawer: typeof updateDrawer
+  createDrawer: typeof createDrawer
+  configureDrawer: typeof configureDrawer
+  getDrawer: typeof getDrawer
+  getDrawers: typeof getDrawers
+  destroyDrawer: typeof destroyDrawer
+  destroyDrawers: typeof destroyDrawers
+  createDrawerController: typeof createDrawerController
+}
+
+export const Drawer: DrawerApi = {
+  getParentDrawer,
+  getChildDrawers,
+  openDrawer,
+  closeDrawer,
+  toggleDrawer,
+  updateDrawer,
+  createDrawer,
+  configureDrawer,
+  getDrawer,
+  getDrawers,
+  destroyDrawer,
+  destroyDrawers,
+  createDrawerController
+}
 
 export {
   closeDrawer,
@@ -21,4 +60,6 @@ export {
   openDrawer,
   toggleDrawer,
   updateDrawer
-} from '../index'
+}
+
+export default Drawer

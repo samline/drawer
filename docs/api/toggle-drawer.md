@@ -18,9 +18,9 @@ The default `id` is `'default'`. Omit the argument to toggle the default instanc
 
 ## Parameters
 
-| Name | Type             | Default     | Description                          |
-| ---- | ---------------- | ----------- | ------------------------------------ |
-| `id` | `string \| null` | `'default'` | The runtime instance id to toggle.   |
+| Name | Type             | Default     | Description                        |
+| ---- | ---------------- | ----------- | ---------------------------------- |
+| `id` | `string \| null` | `'default'` | The runtime instance id to toggle. |
 
 ## Returns
 

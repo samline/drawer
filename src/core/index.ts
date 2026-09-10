@@ -39,8 +39,9 @@ export interface CommonDrawerOptions {
   onAnimationEnd?: (open: boolean) => void
   /**
    * G9: 1:1 with vaul upstream — fires when the internal active
-   * snap point changes (drag release, handle cycle, or
-   * programmatic `setActiveSnapPoint`). The callback signature
+   * snap point changes (drag release, handle cycle, or the
+   * post-close reset). Direct `setActiveSnapPoint` calls do not echo
+   * the callback. The callback signature
    * matches vaul's `setActiveSnapPoint` controlled-prop pattern
    * but flipped: the drawer calls this when it changes the
    * active snap, and the consumer can use it to keep external

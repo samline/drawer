@@ -10,16 +10,16 @@
  */
 
 :root {
-	/* Tweak the brand accent here. Default is Starlight's purple. */
-	--sl-color-accent-low: #2a1e3f;
-	--sl-color-accent: #7556d4;
-	--sl-color-accent-high: #cbc2ff;
+  /* Tweak the brand accent here. Default is Starlight's purple. */
+  --sl-color-accent-low: #2a1e3f;
+  --sl-color-accent: #7556d4;
+  --sl-color-accent-high: #cbc2ff;
 
-	/* A subtle radius bump. */
-	--sl-radius-medium: 0.5rem;
+  /* A subtle radius bump. */
+  --sl-radius-medium: 0.5rem;
 }
 
 /* "Built with Starlight" pill colour */
 starlight-menu-button + a {
-	font-weight: 600;
+  font-weight: 600;
 }

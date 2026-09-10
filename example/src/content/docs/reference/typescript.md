@@ -194,6 +194,7 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
   triggerText?: string
   showHandle?: boolean
   handleClassName?: string
+  handleAriaLabel?: string
   ariaLabel?: string
   ariaLabelledBy?: string
   ariaDescribedBy?: string

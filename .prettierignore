@@ -17,3 +17,7 @@ Thumbs.db
 # not part of the package's source — see AGENTS.md and the .agents/skills/
 # directory layout in the monorepo convention).
 .agents/skills/
+
+# Generated documentation-site state
+example/.astro/
+example/dist/

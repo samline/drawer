@@ -21,11 +21,7 @@ const setCache = new WeakMap<HTMLElement, Style>()
  * Audit G5 fixed the previous `helpers.ts#set` which had no
  * cache and no `ignoreCache` parameter.
  */
-export function set(
-  el: Element | HTMLElement | null | undefined,
-  styles: Style,
-  ignoreCache = false
-) {
+export function set(el: Element | HTMLElement | null | undefined, styles: Style, ignoreCache = false) {
   if (!el || !(el instanceof HTMLElement)) return
 
   const originalStyles: Style = {}
@@ -119,10 +115,7 @@ export function chain(...callbacks: Array<(() => void) | undefined | null>): () 
  * `useScaleBackground` cleanup to restore the wrapper's prior
  * inline styles.
  */
-export function assignStyle(
-  element: HTMLElement | null | undefined,
-  style: Partial<CSSStyleDeclaration>
-): () => void {
+export function assignStyle(element: HTMLElement | null | undefined, style: Partial<CSSStyleDeclaration>): () => void {
   if (!element) return () => {}
 
   const prevStyle = element.style.cssText
@@ -154,4 +147,3 @@ export function isInView(el: HTMLElement): boolean {
 export function isVertical(direction: CommonDrawerDirection): boolean {
   return direction === 'top' || direction === 'bottom'
 }
-

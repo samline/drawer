@@ -14,8 +14,9 @@ describe('package metadata', () => {
     expect(packageJson.exports).toMatchObject({
       '.': expect.any(Object),
       './browser': {
-        types: './dist/browser/global.d.ts',
-        default: './dist/browser/global.global.js'
+        types: './dist/browser/index.d.ts',
+        import: './dist/browser/index.js',
+        require: './dist/browser/index.cjs'
       },
       './styles.css': './dist/style.css',
       './style.css': './dist/style.css'
@@ -24,7 +25,7 @@ describe('package metadata', () => {
     expect(packageJson.files).toEqual(['dist'])
   })
 
-  it('declares sideEffects: false at the root entrypoint', () => {
-    expect(packageJson.sideEffects).toBe(false)
+  it('preserves the CSS and global bundle side effects', () => {
+    expect(packageJson.sideEffects).toEqual(['./dist/browser/global.global.js', './dist/style.css'])
   })
 })

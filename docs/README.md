@@ -1,6 +1,6 @@
 # Drawer docs
 
-This is the markdown reference for `@samline/drawer` v3.1.0, a framework-agnostic vanilla drawer runtime with a root module entrypoint and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer); the markdown here is the source of truth.
+This is the markdown reference for `@samline/drawer` v4.0.0, a framework-agnostic vanilla drawer runtime with module entrypoints and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer); the markdown here is the source of truth.
 
 ---
 
@@ -23,7 +23,7 @@ This is the markdown reference for `@samline/drawer` v3.1.0, a framework-agnosti
 
 - **A module-level registry of drawer instances** keyed by `id`. The default instance (no `id`) is the only one most apps need.
 - **A vanilla dialog renderer.** Every drawer owns a dedicated `<div data-drawer-vanilla-root>`. Its overlay and `<div data-drawer>` mount only while open or exiting; the optional built-in trigger can remain in the host while closed.
-- **Two entrypoints.** `@samline/drawer` (ESM + CJS) for bundlers, and `@samline/drawer/browser` (IIFE) for `<script>` tags. The same surface, no global side-effect from the root entrypoint.
+- **Module and CDN entrypoints.** `@samline/drawer` exposes individual ESM/CJS helpers, `@samline/drawer/browser` exposes an ESM/CJS namespace, and `dist/browser/global.global.js` is the IIFE for classic `<script>` tags.
 
 The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, scale background, handle cycle, viewport/keyboard handling, and the dismiss-on-drag threshold.
 
@@ -34,7 +34,7 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 | Situation                                                              | Use                                                                             |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Modern app with a bundler (Vite, esbuild, Rollup, Webpack, Bun, Astro) | Named exports from `@samline/drawer`                                            |
-| Plain HTML page, WordPress, Shopify, classic templates                 | The `@samline/drawer/browser` IIFE through a `<script>` tag                     |
+| Plain HTML page, WordPress, Shopify, classic templates                 | The `dist/browser/global.global.js` IIFE through a `<script>` tag               |
 | Type-checking the drawer controller from a CDN script                  | `DrawerApi` from `@samline/drawer/browser`                                      |
 | You need multiple independent drawers in the same page                 | `createDrawer` with distinct `id` values; each drawer receives a dedicated host |
 
@@ -42,32 +42,32 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 
 ## File-by-file map
 
-| File                                                               | What is in it                                                                                            |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [getting-started.md](getting-started.md)                           | Concepts, observable contract, lifecycle, registry helpers, side-effect table.                           |
-| [options.md](options.md)                                           | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row. |
+| File                                                               | What is in it                                                                                                                                                                                                          |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [getting-started.md](getting-started.md)                           | Concepts, observable contract, lifecycle, registry helpers, side-effect table.                                                                                                                                         |
+| [options.md](options.md)                                           | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row.                                                                                                         |
 | [recipes.md](recipes.md)                                           | Custom HTML content, renderable slots, lifecycle callbacks, nested drawers, snap points, scale background, handle cycle, viewport keyboard, programmatic open/close, multiple drawers, SPA lifecycle, common pitfalls. |
-| [css-styling.md](css-styling.md)                                   | The data-attribute contract the stylesheet expects; theming with CSS variables; inline writes; scale ownership; position all four directions. |
-| [typescript.md](typescript.md)                                     | Every exported type, callback signature, helper return shape, numeric constant, browser global type.      |
-| [api/index.md](api/index.md)                                       | Overview of the public API.                                                                              |
-| [api/create-drawer.md](api/create-drawer.md)                       | The `createDrawer()` factory and the `VanillaDrawerController` it returns.                               |
-| [api/configure-drawer.md](api/configure-drawer.md)                 | The `createDrawer` alias.                                                                                |
-| [api/get-drawer.md](api/get-drawer.md)                             | The `getDrawer(id?)` inspector.                                                                          |
-| [api/get-drawers.md](api/get-drawers.md)                           | The `getDrawers()` registry dump.                                                                        |
-| [api/get-parent-drawer.md](api/get-parent-drawer.md)               | The `getParentDrawer(id?)` parent inspector.                                                             |
-| [api/get-child-drawers.md](api/get-child-drawers.md)               | The `getChildDrawers(id?)` children inspector.                                                           |
-| [api/update-drawer.md](api/update-drawer.md)                       | The `updateDrawer()` patcher.                                                                            |
-| [api/open-drawer.md](api/open-drawer.md)                           | The `openDrawer(id?)` helper.                                                                            |
-| [api/close-drawer.md](api/close-drawer.md)                         | The `closeDrawer(id?)` helper.                                                                           |
-| [api/toggle-drawer.md](api/toggle-drawer.md)                       | The `toggleDrawer(id?)` helper.                                                                          |
-| [api/destroy-drawer.md](api/destroy-drawer.md)                     | The `destroyDrawer(id?)` teardown.                                                                       |
-| [api/destroy-drawers.md](api/destroy-drawers.md)                   | The `destroyDrawers()` full clear.                                                                       |
-| [api/create-drawer-controller.md](api/create-drawer-controller.md) | The `createDrawerController(options?)` headless controller factory.                                      |
-| [vanilla.md](vanilla.md)                                           | The root entrypoint in depth, with the vanilla host / dialog / trigger / handle / close-button contract. |
-| [browser.md](browser.md)                                           | Using `window.Drawer` from a plain `<script>` tag.                                                       |
+| [css-styling.md](css-styling.md)                                   | The data-attribute contract the stylesheet expects; theming with CSS variables; inline writes; scale ownership; position all four directions.                                                                          |
+| [typescript.md](typescript.md)                                     | Every exported type, callback signature, helper return shape, numeric constant, browser global type.                                                                                                                   |
+| [api/index.md](api/index.md)                                       | Overview of the public API.                                                                                                                                                                                            |
+| [api/create-drawer.md](api/create-drawer.md)                       | The `createDrawer()` factory and the `VanillaDrawerController` it returns.                                                                                                                                             |
+| [api/configure-drawer.md](api/configure-drawer.md)                 | The `createDrawer` alias.                                                                                                                                                                                              |
+| [api/get-drawer.md](api/get-drawer.md)                             | The `getDrawer(id?)` inspector.                                                                                                                                                                                        |
+| [api/get-drawers.md](api/get-drawers.md)                           | The `getDrawers()` registry dump.                                                                                                                                                                                      |
+| [api/get-parent-drawer.md](api/get-parent-drawer.md)               | The `getParentDrawer(id?)` parent inspector.                                                                                                                                                                           |
+| [api/get-child-drawers.md](api/get-child-drawers.md)               | The `getChildDrawers(id?)` children inspector.                                                                                                                                                                         |
+| [api/update-drawer.md](api/update-drawer.md)                       | The `updateDrawer()` patcher.                                                                                                                                                                                          |
+| [api/open-drawer.md](api/open-drawer.md)                           | The `openDrawer(id?)` helper.                                                                                                                                                                                          |
+| [api/close-drawer.md](api/close-drawer.md)                         | The `closeDrawer(id?)` helper.                                                                                                                                                                                         |
+| [api/toggle-drawer.md](api/toggle-drawer.md)                       | The `toggleDrawer(id?)` helper.                                                                                                                                                                                        |
+| [api/destroy-drawer.md](api/destroy-drawer.md)                     | The `destroyDrawer(id?)` teardown.                                                                                                                                                                                     |
+| [api/destroy-drawers.md](api/destroy-drawers.md)                   | The `destroyDrawers()` full clear.                                                                                                                                                                                     |
+| [api/create-drawer-controller.md](api/create-drawer-controller.md) | The `createDrawerController(options?)` headless controller factory.                                                                                                                                                    |
+| [vanilla.md](vanilla.md)                                           | The root entrypoint in depth, with the vanilla host / dialog / trigger / handle / close-button contract.                                                                                                               |
+| [browser.md](browser.md)                                           | Using `window.Drawer` from a plain `<script>` tag.                                                                                                                                                                     |
 
 ---
 
 ## Versioning
 
-This documentation matches `@samline/drawer` v3.1.0. Earlier releases are tracked in [CHANGELOG.md](../CHANGELOG.md).
+This documentation matches `@samline/drawer` v4.0.0. Earlier releases and the v3-to-v4 migration notes are tracked in [CHANGELOG.md](../CHANGELOG.md).

@@ -6,7 +6,7 @@ sidebar:
   order: 3
 ---
 
-The public API of `@samline/drawer@3.1.0`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
+The public API of `@samline/drawer@4.0.0`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
 
 The runtime is built around `id`. Reusing an id merges into its registered instance and dedicated host rather than creating another host.
 
@@ -513,9 +513,9 @@ The default `id` is `'default'`. Omit the argument to toggle the default instanc
 
 **Parameters**
 
-| Name | Type             | Default     | Description                          |
-| ---- | ---------------- | ----------- | ------------------------------------ |
-| `id` | `string \| null` | `'default'` | The runtime instance id to toggle.   |
+| Name | Type             | Default     | Description                        |
+| ---- | ---------------- | ----------- | ---------------------------------- |
+| `id` | `string \| null` | `'default'` | The runtime instance id to toggle. |
 
 **Returns**
 
@@ -653,9 +653,9 @@ The factory is useful for:
 
 **Parameters**
 
-| Name      | Type                   | Default | Description                                                                 |
-| --------- | ---------------------- | ------- | --------------------------------------------------------------------------- |
-| `options` | `CommonDrawerOptions`  | `{}`    | The drawer's full state surface. See [Configuration](configuration/).      |
+| Name      | Type                  | Default | Description                                                           |
+| --------- | --------------------- | ------- | --------------------------------------------------------------------- |
+| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full state surface. See [Configuration](configuration/). |
 
 **Returns**
 

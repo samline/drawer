@@ -182,7 +182,7 @@ interface DialogMountState {
   cleanupBuiltInTrigger: (() => void) | null
   overlay: HTMLDivElement | null
   content: HTMLDivElement | null
-  handle: HTMLDivElement | null
+  handle: HTMLButtonElement | null
   title: HTMLDivElement | null
   description: HTMLDivElement | null
   body: HTMLDivElement | null
@@ -257,12 +257,74 @@ interface DialogMountState {
    */
   justReleased: boolean
   justReleasedTimer: ReturnType<typeof setTimeout> | null
+  releaseModalIsolation: (() => void) | null
 }
 
 const hostState = new WeakMap<HTMLElement, DialogMountState>()
 const openDialogStack: DialogMountState[] = []
 const handledEscapeEvents = new WeakSet<Event>()
 let fallbackOpenOrder = 0
+
+interface ModalIsolationSnapshot {
+  ariaHidden: string | null
+  inert: boolean
+}
+
+const modalIsolationOwners: Array<{ state: DialogMountState; host: HTMLElement }> = []
+const modalIsolationSnapshots = new Map<HTMLElement, ModalIsolationSnapshot>()
+
+function getModalIsolationTargets(host: HTMLElement) {
+  const targets = new Set<HTMLElement>()
+  let current: HTMLElement | null = host
+  while (current?.parentElement) {
+    for (const sibling of current.parentElement.children) {
+      if (sibling !== current && sibling instanceof HTMLElement) targets.add(sibling)
+    }
+    if (current.parentElement === document.body) break
+    current = current.parentElement
+  }
+  return targets
+}
+
+function updateModalIsolation() {
+  const topOwner = modalIsolationOwners[modalIsolationOwners.length - 1]
+  const targets = topOwner ? getModalIsolationTargets(topOwner.host) : new Set<HTMLElement>()
+
+  for (const [element, snapshot] of modalIsolationSnapshots) {
+    if (targets.has(element)) continue
+    if (snapshot.ariaHidden === null) element.removeAttribute('aria-hidden')
+    else element.setAttribute('aria-hidden', snapshot.ariaHidden)
+    element.inert = snapshot.inert
+    modalIsolationSnapshots.delete(element)
+  }
+
+  for (const element of targets) {
+    if (!modalIsolationSnapshots.has(element)) {
+      modalIsolationSnapshots.set(element, {
+        ariaHidden: element.getAttribute('aria-hidden'),
+        inert: Boolean(element.inert)
+      })
+    }
+    element.setAttribute('aria-hidden', 'true')
+    element.inert = true
+  }
+}
+
+function acquireModalIsolation(state: DialogMountState, host: HTMLElement) {
+  const existingIndex = modalIsolationOwners.findIndex((owner) => owner.state === state)
+  if (existingIndex !== -1) modalIsolationOwners.splice(existingIndex, 1)
+  modalIsolationOwners.push({ state, host })
+  updateModalIsolation()
+
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    const index = modalIsolationOwners.findIndex((owner) => owner.state === state)
+    if (index !== -1) modalIsolationOwners.splice(index, 1)
+    updateModalIsolation()
+  }
+}
 
 function removeFromOpenDialogStack(state: DialogMountState) {
   const index = openDialogStack.indexOf(state)
@@ -313,7 +375,8 @@ function getHostState(host: HTMLElement): DialogMountState {
       activeSnapPointOffset: 0,
       restoreScrollRestoration: null,
       justReleased: false,
-      justReleasedTimer: null
+      justReleasedTimer: null,
+      releaseModalIsolation: null
     }
     hostState.set(host, state)
   }
@@ -390,12 +453,10 @@ function attachBuiltInTrigger(
 
   const onMouseDown = (event: MouseEvent) => {
     if (options.modal === false || options.autoFocus) return
-    event.preventDefault()
-    trigger?.blur()
+    void event
     callbacks.onBuiltInTriggerMouseDown?.()
   }
   const onClick = () => {
-    trigger?.blur()
     callbacks.onBuiltInTriggerClick?.()
     callbacks.onOpenChange(true)
   }
@@ -843,6 +904,8 @@ function shouldShowSnapOverlay(
 function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {}) {
   if (!opts.deferDom) cancelCloseRemoval(state)
   removeFromOpenDialogStack(state)
+  state.releaseModalIsolation?.()
+  state.releaseModalIsolation = null
   // Step 1 — run every cleanup callback registered on the state.
   // This detaches every event listener the mount installed (visualViewport
   // resize, scroll restoration, overlay mouseup, keydown, pointerdown,
@@ -1186,11 +1249,20 @@ function updateOpenSnapState(state: DialogMountState, options: VanillaDrawerOpti
   }
 }
 
-function focusFirstElement(content: HTMLElement) {
-  const focusables = content.querySelectorAll<HTMLElement>(
-    'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
+function getFocusableElements(content: HTMLElement) {
+  return Array.from(
+    content.querySelectorAll<HTMLElement>(
+      'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(
+    (element) =>
+      !(element instanceof HTMLInputElement && element.type === 'hidden') &&
+      !element.closest('[hidden], [aria-hidden="true"], [inert]')
   )
-  const first = focusables[0]
+}
+
+function focusFirstElement(content: HTMLElement) {
+  const first = getFocusableElements(content)[0]
   if (first instanceof HTMLElement) {
     first.focus()
   } else {
@@ -1210,11 +1282,7 @@ function isKeyboardInput(element: Element | null): boolean {
 
 function trapFocus(state: DialogMountState, content: HTMLElement, event: KeyboardEvent) {
   if (event.key !== 'Tab') return
-  const focusables = Array.from(
-    content.querySelectorAll<HTMLElement>(
-      'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
-    )
-  )
+  const focusables = getFocusableElements(content)
   if (focusables.length === 0) {
     event.preventDefault()
     content.focus()
@@ -1401,6 +1469,7 @@ function attachListeners(state: DialogMountState, options: VanillaDrawerOptions,
       const isInteractiveChild =
         eventTarget instanceof Element &&
         eventTarget !== content &&
+        !eventTarget.closest('[data-drawer-handle]') &&
         (isInteractiveDragTarget(eventTarget) || Boolean(eventTarget.closest('[data-drawer-close]')))
 
       if (isInteractiveChild) {
@@ -2277,10 +2346,11 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     state.content = content
 
     if (shouldRenderHandle) {
-      const handle = createEl('div', {
+      const handle = createEl('button', {
+        type: 'button',
         'data-drawer-handle': '',
         'data-drawer-visible': open ? 'true' : 'false',
-        'aria-hidden': 'true'
+        'aria-label': options.handleAriaLabel ?? 'Change drawer position'
       })
       if (options.handleClassName) handle.className = options.handleClassName
       const hitArea = createEl('span', { 'data-drawer-handle-hitarea': '', 'aria-hidden': 'true' })
@@ -2397,6 +2467,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   }
 
   registerOpenDialog(state, resolvedOpenOrder)
+  if (options.modal !== false) {
+    state.releaseModalIsolation = acquireModalIsolation(state, host)
+  }
   attachListeners(state, options, callbacks)
 
   applyOpenState(state, options, open)
@@ -2577,28 +2650,12 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // open animation). Shared ownership restores the original value
     // after the final modal drawer releases it.
     state.restoreScrollBehavior = lockDocumentScrollBehavior()
-    // Beta.4 fix: the previous implementation
-    // ALWAYS called `focusFirstElement(content)`, which auto-focused
-    // the first focusable descendant of the drawer body (a link,
-    // a button, a form field). v2's default behaviour was the
-    // opposite: by default (`autoFocus: false`) the trigger was
-    // blurred before opening and the dialog body was NOT auto-
-    // focused — focus stayed on the trigger (or fell back to
-    // `document.body` for keyboard / screen-reader users). The
-    // consumer (easytrip) reported the regression: opening the
-    // support drawer auto-focused the WhatsApp link, which looks
-    // like a stray hover/focus state.
-    //
-    // The fix preserves v2's default: only auto-focus when the
-    // consumer explicitly opts in via `autoFocus: true`. The
-    // `releaseHiddenFocusBeforeOpen` helper (called from the
-    // registry BEFORE this mount, gated on `!options.autoFocus`)
-    // already blurs the trigger so the dialog never appears
-    // focused inside. Screen-reader and keyboard users can still
-    // Tab into the content; the focus trap in `trapFocus` keeps
-    // focus inside the dialog while it is open.
-    if (options.autoFocus === true && state.content) {
-      focusFirstElement(state.content)
+    // Modal dialogs always receive initial focus so assistive
+    // technology announces them. `autoFocus` controls whether that
+    // focus advances to the first control or stays on the dialog.
+    if (state.content) {
+      if (options.autoFocus === true) focusFirstElement(state.content)
+      else state.content.focus()
     }
   }
 

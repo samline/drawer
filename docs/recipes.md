@@ -670,4 +670,4 @@ The drag axis is `x` for `left` / `right` drawers. Perpendicular page scrolls wi
 - **Closing is not destroying.** `closeDrawer(id)` keeps the id, host, and trigger; only `destroyDrawer(id)` / `destroyDrawers()` removes the entry.
 - **Body pointer events are application-owned.** Drawer open, non-modal open, close, and destroy never write `document.body.style.pointerEvents`.
 - **`createDrawerController` is headless.** It publishes snapshots but does not mount DOM and ignores DOM-only options such as `content`, `container`, `triggerElement`, `closeButton`, or class names. Use `createDrawer` for the full vanilla API.
-- **Auto-focus is opt-in.** The default is `false`. If your UX depends on focusing an input on open, set `autoFocus: true` or focus the element yourself in `onOpenChange(true)`.
+- **Child auto-focus is opt-in.** Modal focus always moves inside the drawer. The default `autoFocus: false` focuses the dialog container; set `autoFocus: true` to focus its first visible control.

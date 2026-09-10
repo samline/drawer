@@ -13,8 +13,8 @@ import '@samline/drawer/styles.css'
 The IIFE bundle (`@samline/drawer/browser`) is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately from the browser entry:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -27,28 +27,37 @@ Each registered id owns a dedicated host. Closed overlay/content are absent; onl
 
 ```html
 <div data-drawer-vanilla-root="filters">
-  <button data-drawer-vanilla-trigger>Open filters</button>     <!-- only if triggerText -->
-  <div data-drawer-overlay data-state="open"></div>             <!-- only if modal -->
-  <div data-drawer
-       data-drawer-id="filters"
-       data-state="open"
-       data-drawer-direction="bottom"
-       data-drawer-snap-points="false"
-       data-drawer-delayed-snap-points="false"
-       data-drawer-custom-container="false"
-       data-drawer-animate="true"
-       role="dialog"
-       aria-modal="true"
-       aria-label="Filters">
-    <div data-drawer-handle data-drawer-visible="true">         <!-- only if showHandle or handleOnly -->
+  <button data-drawer-vanilla-trigger>Open filters</button>
+  <!-- only if triggerText -->
+  <div data-drawer-overlay data-state="open"></div>
+  <!-- only if modal -->
+  <div
+    data-drawer
+    data-drawer-id="filters"
+    data-state="open"
+    data-drawer-direction="bottom"
+    data-drawer-snap-points="false"
+    data-drawer-delayed-snap-points="false"
+    data-drawer-custom-container="false"
+    data-drawer-animate="true"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Filters"
+  >
+    <div data-drawer-handle data-drawer-visible="true">
+      <!-- only if showHandle or handleOnly -->
       <span data-drawer-handle-hitarea></span>
     </div>
-    <div data-drawer-title id="filters-title">…</div>          <!-- only if title / ariaLabel -->
-    <div data-drawer-description id="filters-description" hidden>…</div> <!-- only if description -->
+    <div data-drawer-title id="filters-title">…</div>
+    <!-- only if title / ariaLabel -->
+    <div data-drawer-description id="filters-description" hidden>…</div>
+    <!-- only if description -->
     <div data-drawer-vanilla-node>
-      <div data-drawer-vanilla-body data-drawer-body>…</div>   <!-- content slot -->
+      <div data-drawer-vanilla-body data-drawer-body>…</div>
+      <!-- content slot -->
     </div>
-    <button data-drawer-close>                                 <!-- only if closeButton -->
+    <button data-drawer-close>
+      <!-- only if closeButton -->
       <span data-drawer-close-icon aria-hidden="true">xmark</span>
     </button>
   </div>
@@ -98,21 +107,21 @@ An initially closed drawer has no overlay. During close, the overlay remains tem
 
 ### `[data-drawer]` — the dialog surface
 
-| Attribute                         | Values                                   | When                                                                                |
-| --------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `data-state`                      | `'open' \| 'closed'`                     | open/exit state                                                                     |
-| `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | mirrors the option                                                                  |
-| `data-drawer-snap-points`         | `'true' \| 'false'`                      | whether snap transforms are active for the current open state                       |
-| `data-drawer-delayed-snap-points` | `'false'`                                | the runtime always writes `'false'`; delayed-snap CSS selectors are not enabled    |
-| `data-drawer-custom-container`    | `'true' \| 'false'`                      | `'true'` when a non-null `container` or deprecated `mountElement` is used         |
-| `data-drawer-animate`             | `'true' \| 'false'`                      | runtime-controlled CSS animation gate                                               |
-| `data-drawer-id`                  | the drawer id (string)                   | always present; identifies the runtime drawer without creating an HTML id collision |
-| `role`                            | `'dialog'`                               | always present                                                                      |
-| `aria-modal`                      | `'true' \| 'false'`                      | mirrors the `modal` option                                                          |
+| Attribute                         | Values                                   | When                                                                                                                                      |
+| --------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-state`                      | `'open' \| 'closed'`                     | open/exit state                                                                                                                           |
+| `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | mirrors the option                                                                                                                        |
+| `data-drawer-snap-points`         | `'true' \| 'false'`                      | whether snap transforms are active for the current open state                                                                             |
+| `data-drawer-delayed-snap-points` | `'false'`                                | the runtime always writes `'false'`; delayed-snap CSS selectors are not enabled                                                           |
+| `data-drawer-custom-container`    | `'true' \| 'false'`                      | `'true'` when a non-null `container` or deprecated `mountElement` is used                                                                 |
+| `data-drawer-animate`             | `'true' \| 'false'`                      | runtime-controlled CSS animation gate                                                                                                     |
+| `data-drawer-id`                  | the drawer id (string)                   | always present; identifies the runtime drawer without creating an HTML id collision                                                       |
+| `role`                            | `'dialog'`                               | always present                                                                                                                            |
+| `aria-modal`                      | `'true' \| 'false'`                      | mirrors the `modal` option                                                                                                                |
 | `aria-label`                      | string                                   | mirrors `ariaLabel` (or the `id` fallback in the minimalist case); omitted when the consumer passes a visible `title` without `ariaLabel` |
-| `aria-labelledby`                 | element id                               | only set when the title slot is mounted (consumer passed a `title`) or when the consumer provides `ariaLabelledBy` |
-| `aria-describedby`                | element id                               | only set when the description slot is mounted (consumer passed a `description`) or when the consumer provides `ariaDescribedBy` |
-| class `drawer-dragging`           | present while a drag is in progress      | added after axis intent is accepted; removed on release or cancellation            |
+| `aria-labelledby`                 | element id                               | only set when the title slot is mounted (consumer passed a `title`) or when the consumer provides `ariaLabelledBy`                        |
+| `aria-describedby`                | element id                               | only set when the description slot is mounted (consumer passed a `description`) or when the consumer provides `ariaDescribedBy`           |
+| class `drawer-dragging`           | present while a drag is in progress      | added after axis intent is accepted; removed on release or cancellation                                                                   |
 
 Select a single drawer with `[data-drawer-id='my-id']`; the dialog surface has no HTML `id` to avoid collisions with consumer content.
 
@@ -307,14 +316,14 @@ The shared keyframes use the Y axis for `top`/`bottom` and X axis for `left`/`ri
 
 Not every live effect can be expressed by static CSS. The runtime writes and later restores these values:
 
-| Target                     | Runtime writes                                                                                                                  |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Target                     | Runtime writes                                                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `[data-drawer]`            | `transform` / `transition` during drag, snap changes, and exit seeding; `--initial-transform`; keyboard-driven `bottom` / `height`. |
-| `[data-drawer-overlay]`    | Inline `opacity` / `transition` while dragging across the fade range and while settling.                                          |
-| `[data-drawer-wrapper]`    | Scale / translate, border radius, overflow, transform origin, transition properties, and optional drag background color.          |
-| `document.body`            | Modal scroll-lock styles; Safari fixed-position styles; black scale-background color by default.                                |
-| `document.documentElement` | `scroll-behavior: auto` while a modal owner is open.                                                                            |
-| `window.history`           | `scrollRestoration = 'manual'` when requested.                                                                                  |
+| `[data-drawer-overlay]`    | Inline `opacity` / `transition` while dragging across the fade range and while settling.                                            |
+| `[data-drawer-wrapper]`    | Scale / translate, border radius, overflow, transform origin, transition properties, and optional drag background color.            |
+| `document.body`            | Modal scroll-lock styles; Safari fixed-position styles; black scale-background color by default.                                    |
+| `document.documentElement` | `scroll-behavior: auto` while a modal owner is open.                                                                                |
+| `window.history`           | `scrollRestoration = 'manual'` when requested.                                                                                      |
 
 The runtime never writes `document.body.style.pointerEvents`. Existing application or modal-library values remain untouched.
 

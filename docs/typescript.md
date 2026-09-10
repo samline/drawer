@@ -204,6 +204,7 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
   triggerText?: string
   showHandle?: boolean
   handleClassName?: string
+  handleAriaLabel?: string
   ariaLabel?: string
   ariaLabelledBy?: string
   ariaDescribedBy?: string
@@ -378,7 +379,7 @@ interface DrawerApi {
 }
 ```
 
-There is no root runtime export named `browser` and no root type export named `DrawerApi`. Importing `@samline/drawer/browser` for the type only does not pull the IIFE into the bundle.
+There is no root runtime export named `browser` and no root type export named `DrawerApi`. The `@samline/drawer/browser` module exports `Drawer` as both a named and default namespace; a type-only import is erased from emitted JavaScript. The classic IIFE remains a separate CDN asset.
 
 ---
 

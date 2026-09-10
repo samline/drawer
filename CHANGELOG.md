@@ -2,7 +2,29 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `3.1.0` is the current **stable** release of the v3 line. The v3 series drops React/Vue/Svelte as peer dependencies and goes pure vanilla. The package is published under the `latest` npm tag.
+> **Status**: `4.0.0` is the current stable release. The package is published under the `latest` npm tag.
+
+## [4.0.0] — 2026-09-10
+
+Accessibility, package-entrypoint, and lifecycle-safety release. This is a major release because modal focus behavior, handle markup, and the `@samline/drawer/browser` module contract change.
+
+### Breaking changes
+
+- Modal drawers now move initial focus inside the dialog. With `autoFocus: false`, focus lands on the dialog container; with `autoFocus: true`, it lands on the first visible focusable descendant.
+- The built-in `[data-drawer-handle]` is now a `<button>` instead of a `<div>`. CSS selectors based on the data attribute continue to work, but element-name selectors must be updated.
+- `@samline/drawer/browser` is now a real ESM/CJS namespace module. Classic scripts must keep using the explicit `dist/browser/global.global.js` IIFE URL.
+
+### Changed
+
+- Modal drawers now move focus inside, isolate background branches with `inert` and `aria-hidden`, restore trigger focus on close, and expose the snap handle as a named button.
+- `@samline/drawer/browser` is now a real ESM/CJS module namespace; the classic global remains available at `dist/browser/global.global.js`.
+- Parent relationships reject direct and indirect cycles before mutating the registry.
+- CI now verifies formatting, types, build output, tests, dependency advisories, and package contents.
+
+### Fixed
+
+- Preserved the CSS and global IIFE as package side effects so bundlers do not tree-shake them.
+- Updated vulnerable development dependencies and added a reproducible lockfile for the documentation site.
 
 ## [3.1.0] — 2026-07-31
 

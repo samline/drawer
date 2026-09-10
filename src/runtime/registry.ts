@@ -81,6 +81,20 @@ function getChildDrawerIds(parentId: CommonDrawerId) {
     .map(([id]) => id)
 }
 
+function assertValidParent(id: CommonDrawerId, parentId?: CommonDrawerId) {
+  if (!parentId) return
+
+  const visited = new Set<CommonDrawerId>()
+  let currentId: CommonDrawerId | undefined = parentId
+  while (currentId) {
+    if (currentId === id || visited.has(currentId)) {
+      throw new TypeError(`Drawer parentId creates a cycle involving "${id}"`)
+    }
+    visited.add(currentId)
+    currentId = drawerInstances.get(currentId)?.options.parentId
+  }
+}
+
 function openAncestorChain(parentId: CommonDrawerId) {
   const parentRuntime = drawerInstances.get(parentId)
   if (!parentRuntime) {
@@ -93,7 +107,6 @@ function openAncestorChain(parentId: CommonDrawerId) {
   }
 
   if (!parentRuntime.controller.getSnapshot().state.isOpen) {
-    releaseHiddenFocusBeforeOpen(parentRuntime.options, getRuntimeDrawerElement(parentRuntime))
     setRuntimeOpen(parentRuntime, true, { openAncestors: false })
   }
 }
@@ -119,7 +132,6 @@ function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
 function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   cleanupRuntimeTrigger(runtime)
 
-  const drawerElement = getRuntimeDrawerElement(runtime)
   const cleanups: Array<() => void> = []
 
   if (!runtime.options.triggerElement) {
@@ -133,7 +145,6 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
 
   const triggerElement = runtime.options.triggerElement
   const handleClick = () => {
-    releaseHiddenFocusBeforeOpen(runtime.options, drawerElement)
     setRuntimeOpen(runtime, true)
   }
 
@@ -241,43 +252,6 @@ function canUseDOM() {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
-function isElementInsideDrawer(element: Element | null) {
-  let currentElement = element
-
-  while (currentElement) {
-    if (currentElement instanceof HTMLElement && currentElement.hasAttribute('data-drawer')) {
-      return true
-    }
-
-    currentElement = currentElement.parentElement
-  }
-
-  return false
-}
-
-function releaseHiddenFocusBeforeOpen(options: VanillaDrawerOptions, drawerElement?: HTMLElement | null) {
-  if (!canUseDOM() || options.modal === false || options.autoFocus) {
-    return
-  }
-
-  const activeElement = document.activeElement
-  if (!activeElement || activeElement === document.body) {
-    return
-  }
-
-  const activeElementNode = activeElement as Element & { blur?: () => void }
-
-  if (drawerElement?.contains(activeElementNode) || isElementInsideDrawer(activeElementNode)) {
-    return
-  }
-
-  if (typeof activeElementNode.blur !== 'function') {
-    return
-  }
-
-  activeElementNode.blur()
-}
-
 function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
   if (!runtime.element) {
     return null
@@ -341,12 +315,6 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     open: snapshot.state.isOpen,
     openOrder: runtime.openOrder,
     hasBeenOpened: runtime.hasBeenOpened,
-    onBuiltInTriggerMouseDown: () => {
-      releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
-    },
-    onBuiltInTriggerClick: () => {
-      releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
-    },
     onOpenChange: (open: boolean) => {
       setRuntimeOpen(runtime, open)
     },
@@ -422,10 +390,6 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
         return createDrawer({ id, open }).getSnapshot()
       }
 
-      if (open) {
-        releaseHiddenFocusBeforeOpen(runtime.options, getRuntimeDrawerElement(runtime))
-      }
-
       return setRuntimeOpen(runtime, open)
     },
     setActiveSnapPoint(snapPoint) {
@@ -456,7 +420,9 @@ function buildVanillaController(id: CommonDrawerId): VanillaDrawerController {
       }
 
       const previousOpen = runtime.controller.getSnapshot().state.isOpen
-      runtime.options = { ...runtime.options, ...options, id }
+      const nextOptions = { ...runtime.options, ...options, id }
+      assertValidParent(id, nextOptions.parentId)
+      runtime.options = nextOptions
       const requestedOpen = Boolean(runtime.options.open ?? runtime.options.defaultOpen)
       if (previousOpen && !requestedOpen) runtime.options.onClose?.()
       if (!previousOpen && requestedOpen && runtime.options.parentId) {
@@ -493,6 +459,7 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
   const existing = drawerInstances.get(id)
   const previousOpen = existing?.controller.getSnapshot().state.isOpen
   const nextOptions = { ...existing?.options, ...options, id }
+  assertValidParent(id, nextOptions.parentId)
 
   if (nextOptions.parentId) {
     nextOptions.nested = true
@@ -534,10 +501,6 @@ export function createDrawer(options: VanillaDrawerOptions = {}) {
     openAncestorChain(nextOptions.parentId)
   }
   if (nextOpen && runtime) assignOpenOrder(runtime)
-  if (nextOpen && !previousOpen) {
-    releaseHiddenFocusBeforeOpen(nextOptions, existing ? getRuntimeDrawerElement(existing) : null)
-  }
-
   renderVanillaDrawer(id)
 
   if (runtime && nextOpen) runtime.hasBeenOpened = true
@@ -606,8 +569,10 @@ export function toggleDrawer(id?: CommonDrawerId | null) {
   return createDrawer({ id: drawerId, open: nextOpen })
 }
 
-export function destroyDrawer(id?: CommonDrawerId | null) {
-  const drawerId = normalizeDrawerId(id)
+function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId>) {
+  if (visited.has(drawerId)) return
+  visited.add(drawerId)
+
   const runtime = drawerInstances.get(drawerId)
   if (!runtime) {
     return
@@ -616,7 +581,7 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   const parentId = runtime.options.parentId
 
   getChildDrawerIds(drawerId).forEach((childId) => {
-    destroyDrawer(childId)
+    destroyDrawerTree(childId, visited)
   })
 
   cleanupRuntimeTrigger(runtime)
@@ -650,6 +615,10 @@ export function destroyDrawer(id?: CommonDrawerId | null) {
   if (parentId) {
     syncParentNestedTransform(parentId)
   }
+}
+
+export function destroyDrawer(id?: CommonDrawerId | null) {
+  destroyDrawerTree(normalizeDrawerId(id), new Set())
 }
 
 export function destroyDrawers() {

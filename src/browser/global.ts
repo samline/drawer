@@ -13,53 +13,10 @@
 //     `createDrawer()` / `configureDrawer()` calls, matching the
 //     documented "loading the script only attaches `window.Drawer`" contract.
 
-import {
-  closeDrawer,
-  configureDrawer,
-  createDrawer,
-  createDrawerController,
-  destroyDrawer,
-  destroyDrawers,
-  getChildDrawers,
-  getDrawer,
-  getDrawers,
-  getParentDrawer,
-  openDrawer,
-  toggleDrawer,
-  updateDrawer
-} from '../index'
+import Drawer, { type DrawerApi } from './index'
 
-export interface DrawerApi {
-  getParentDrawer: typeof getParentDrawer
-  getChildDrawers: typeof getChildDrawers
-  openDrawer: typeof openDrawer
-  closeDrawer: typeof closeDrawer
-  toggleDrawer: typeof toggleDrawer
-  updateDrawer: typeof updateDrawer
-  createDrawer: typeof createDrawer
-  configureDrawer: typeof configureDrawer
-  getDrawer: typeof getDrawer
-  getDrawers: typeof getDrawers
-  destroyDrawer: typeof destroyDrawer
-  destroyDrawers: typeof destroyDrawers
-  createDrawerController: typeof createDrawerController
-}
-
-export const Drawer: DrawerApi = {
-  getParentDrawer,
-  getChildDrawers,
-  openDrawer,
-  closeDrawer,
-  toggleDrawer,
-  updateDrawer,
-  createDrawer,
-  configureDrawer,
-  getDrawer,
-  getDrawers,
-  destroyDrawer,
-  destroyDrawers,
-  createDrawerController
-}
+export { Drawer }
+export type { DrawerApi }
 
 declare global {
   interface Window {

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  dampenValue,
-  getDraggableOffset,
-  isDraggingInCloseDirection
-} from '../src/runtime/drag'
+import { dampenValue, getDraggableOffset, isDraggingInCloseDirection } from '../src/runtime/drag'
 
 /**
  * Regression tests for the opposite-direction drag resistance
@@ -157,10 +153,7 @@ describe('drag elastic resistance (opposite direction)', () => {
       // the dampened magnitude with the sign of the base offset
       // (negative, because the drawer is dragged up).
       const expected = -(8 * (Math.log(101) - 2))
-      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: 100 })).toBeCloseTo(
-        expected,
-        5
-      )
+      expect(getDraggableOffset({ direction: 'bottom', draggedDistance: 100 })).toBeCloseTo(expected, 5)
     })
 
     it('opposite-direction resistance matches v2 ratio (~21% at 100 px)', () => {

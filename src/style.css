@@ -207,6 +207,9 @@
   width: 32px;
   border-radius: 1rem;
   touch-action: inherit;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
 }
 
 [data-drawer-handle]:hover,

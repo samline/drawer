@@ -40,7 +40,7 @@ describe('Safari drawer lifecycle', () => {
     const pageYOffset = vi.spyOn(window, 'pageYOffset', 'get').mockImplementation(() => currentY)
     const scrollX = vi.spyOn(window, 'scrollX', 'get').mockImplementation(() => currentX)
     const scrollY = vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => currentY)
-    scrollToSpy.mockImplementation((x, y) => {
+    scrollToSpy.mockImplementation((x: number | ScrollToOptions, y?: number) => {
       currentX = Number(x)
       currentY = Number(y)
     })

@@ -1,6 +1,10 @@
 # Browser / CDN
 
-Use the browser entry when you want a browser-facing global API from a CDN or plain HTML page. The browser bundle is designed for environments without a bundler and without `script type="module"`.
+Use the IIFE bundle when you want a browser-facing global API from a CDN or plain HTML page. The separate `@samline/drawer/browser` subpath is a real ESM/CJS module for applications that prefer a `Drawer` namespace.
+
+```ts
+import Drawer, { createDrawer } from '@samline/drawer/browser'
+```
 
 ---
 
@@ -25,8 +29,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 The IIFE bundle is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -36,19 +40,19 @@ The browser bundle only attaches `window.Drawer`. It does not inject any `<style
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.1.0` with the version you ship.
+> Pin the version in production. Replace `4.0.0` with the version you ship.
 
 ---
 
 ## Basic Usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
@@ -196,7 +200,7 @@ Use `destroyDrawer(id)` when a specific integration is being replaced. Use `dest
 
 ## TypeScript global type
 
-`DrawerApi` comes from the browser subpath, not the root type exports. A type-only import is erased from emitted JavaScript and does not pull the IIFE into the bundle:
+`DrawerApi` comes from the browser module subpath, not the root type exports. A type-only import is erased from emitted JavaScript:
 
 ```ts
 import type { DrawerApi } from '@samline/drawer/browser'
@@ -208,7 +212,7 @@ declare global {
 }
 ```
 
-There is no `browser` singleton exported from the root entrypoint. Importing `@samline/drawer/browser` for the type only does not load the IIFE.
+There is no `browser` singleton exported from the root entrypoint. `@samline/drawer/browser` exports the `Drawer` namespace as both a named and default module export; the IIFE is loaded only through its explicit CDN asset.
 
 ---
 
@@ -216,4 +220,4 @@ There is no `browser` singleton exported from the root entrypoint. Importing `@s
 
 - Use it when you need a browser global API.
 - Use it for plain HTML pages, embeds, CMS integrations, or demos where a CDN script is simpler than a bundler.
-- Use named exports from the root package if you already control the module graph and do not need a browser global. The root does not export a `browser` namespace.
+- Use named exports from the root package, or the `Drawer` namespace from `@samline/drawer/browser`, when you control the module graph and do not need a browser global.

@@ -53,14 +53,14 @@ exact order:
 If the user did not already give you the values, **ask** for them.
 Required fields:
 
-| Field              | Example                                  |
-| ------------------ | ---------------------------------------- |
-| `title`            | `Cleave Zen`                             |
-| `description`      | `Lightweight input mask library`         |
-| `tagline`          | `Mask numbers, dates & more in 1KB`      |
-| `github owner`     | `sam`                                    |
-| `github repo`      | `cleave-zen`                             |
-| branch name        | `main` (default)                         |
+| Field          | Example                             |
+| -------------- | ----------------------------------- |
+| `title`        | `Cleave Zen`                        |
+| `description`  | `Lightweight input mask library`    |
+| `tagline`      | `Mask numbers, dates & more in 1KB` |
+| `github owner` | `sam`                               |
+| `github repo`  | `cleave-zen`                        |
+| branch name    | `main` (default)                    |
 
 ### Step 2 — Edit `site.config.mjs` only
 
@@ -89,7 +89,7 @@ contains the placeholder markers `PACKAGE_NAME_HERE`,
 - In `.md` files the marker is plain text (`PACKAGE_NAME_HERE`).
 - In `.mdx` files we deliberately avoid `{NAME}` because MDX parses
   every `{ … }` as a JavaScript expression. Use `PACKAGE_NAME_HERE`
-  instead, or wrap the literal in ``{'{'}NAME{'}'}`` if you really
+  instead, or wrap the literal in `{'{'}NAME{'}'}` if you really
   need braces.
 
 Then recreate the following structure with real content for the
@@ -98,14 +98,14 @@ placeholder already shows — only the actual content changes.
 
 **Required pages:**
 
-| File path (under `src/content/docs/`) | Purpose                                                       |
-| ------------------------------------- | ------------------------------------------------------------- |
-| `index.mdx`                           | Homepage with `<CardGrid>` linking to docs.                   |
-| `getting-started.mdx`                 | Installation + first runnable example.                        |
-| `reference/index.md`                  | Auto-collected in `Reference` sidebar group.                  |
-| `reference/configuration.md`         | Every option / default / reason.                              |
-| `reference/api.md`                    | Function-by-function reference with signatures and examples.  |
-| `reference/examples.mdx`              | End-to-end recipes for common scenarios.                      |
+| File path (under `src/content/docs/`) | Purpose                                                      |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `index.mdx`                           | Homepage with `<CardGrid>` linking to docs.                  |
+| `getting-started.mdx`                 | Installation + first runnable example.                       |
+| `reference/index.md`                  | Auto-collected in `Reference` sidebar group.                 |
+| `reference/configuration.md`          | Every option / default / reason.                             |
+| `reference/api.md`                    | Function-by-function reference with signatures and examples. |
+| `reference/examples.mdx`              | End-to-end recipes for common scenarios.                     |
 
 > **`.md` vs `.mdx`** — use `.md` for prose + tables only, `.mdx` the
 > moment you need any Starlight component (`<Card>`, `<CardGrid>`,
@@ -122,9 +122,9 @@ Every `.md` / `.mdx` file MUST start with frontmatter:
 
 ```yaml
 ---
-title: 'Short title'                    # → sidebar & browser tab
+title: 'Short title' # → sidebar & browser tab
 description: 'One-sentence description' # → <meta> + search snippets
-template: doc                           # uses Starlight's doc layout
+template: doc # uses Starlight's doc layout
 ---
 ```
 
@@ -135,7 +135,7 @@ Optional but recommended:
 title: 'Getting started'
 description: 'Install and run a first example in 5 minutes.'
 sidebar:
-  order: 1       # explicit position; lower = higher in sidebar
+  order: 1 # explicit position; lower = higher in sidebar
   badge:
     text: New
     variant: tip
@@ -150,16 +150,16 @@ The full schema lives at
 The agent is encouraged to use these inline components — they are
 already installed and rendered by Starlight:
 
-| Component                              | Purpose                                     |
-| -------------------------------------- | ------------------------------------------- |
-| `:::note` / `:::tip` / `:::caution`    | Callouts (also bare `:::` variants).         |
-| `<Card>` + `<CardGrid>`                | Feature/linking grids.                       |
-| `<Tabs>` + `<TabItem>`                 | Side-by-side variants (e.g. npm/pnpm/yarn). |
-| `<Steps>`                              | Numbered tutorials.                          |
-| `<Aside>`                              | Long callouts without the colon syntax.      |
-| `<Badge text="WIP" variant="caution"/>`| Compact labels in tables or sentences.       |
-| `<FileTree>`                           | Nested directory trees.                      |
-| `<Icon name="..." />`                  | Icon glyphs — names: <https://starlight.astro.build/reference/icons/> |
+| Component                               | Purpose                                                               |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| `:::note` / `:::tip` / `:::caution`     | Callouts (also bare `:::` variants).                                  |
+| `<Card>` + `<CardGrid>`                 | Feature/linking grids.                                                |
+| `<Tabs>` + `<TabItem>`                  | Side-by-side variants (e.g. npm/pnpm/yarn).                           |
+| `<Steps>`                               | Numbered tutorials.                                                   |
+| `<Aside>`                               | Long callouts without the colon syntax.                               |
+| `<Badge text="WIP" variant="caution"/>` | Compact labels in tables or sentences.                                |
+| `<FileTree>`                            | Nested directory trees.                                               |
+| `<Icon name="..." />`                   | Icon glyphs — names: <https://starlight.astro.build/reference/icons/> |
 
 **Every `.mdx` file that uses these components MUST import them** at
 the top (below the frontmatter):
@@ -169,7 +169,7 @@ the top (below the frontmatter):
 title: ...
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components'
 
 // now you can use <Card>, <CardGrid>, …
 ```
@@ -180,7 +180,7 @@ inside a `<code>` block.
 Use the tabbed content helper when showing the same code in multiple
 package managers:
 
-````md
+```md
 :::tabs key="package-manager"
 --- npm ---
 \`\`\`bash
@@ -195,7 +195,7 @@ pnpm add cleave-zen
 yarn add cleave-zen
 \`\`\`
 :::
-````
+```
 
 ### Step 6 — Verify locally before committing
 
@@ -242,7 +242,7 @@ GitHub Actions will deploy automatically. Confirm via:
 | `src/content.config.ts` | ❌    | Starlight frontmatter schema.                  |
 | `package.json`          | ❌*   | Only if a new dependency is required.          |
 | `tsconfig.json`         | ❌    | Strict TS — keep.                              |
-| `.gitignore`            | ❌    |                                              |
+| `.gitignore`            | ❌    |                                                |
 | `.github/workflows/*`   | ❌    | Auto-deploys; don't break the workflow.        |
 
 ---
@@ -274,7 +274,7 @@ GitHub Actions will deploy automatically. Confirm via:
    will let bugs ship.
 
 7. **Wrong repo for the GitHub Action.** Per-package the repo owner
-   is the same, but the *repo* changes. Always edit `editLinkBaseUrl`
+   is the same, but the _repo_ changes. Always edit `editLinkBaseUrl`
    in `site.config.mjs`.
 
 ---
@@ -289,7 +289,7 @@ GitHub Actions will deploy automatically. Confirm via:
 - **i18n** — add entries to `locales` in `site.config.mjs`, then
   add a parallel `src/content/docs/{locale}/...` tree.
 - **Dark-mode logo override** — replace `logo.src` with `{ light,
-  dark }`.
+dark }`.
 
 Before adding any of these, confirm with the user.
 

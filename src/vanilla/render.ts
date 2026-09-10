@@ -44,6 +44,8 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   triggerText?: string
   showHandle?: boolean
   handleClassName?: string
+  /** Accessible name for the built-in snap-point handle button. */
+  handleAriaLabel?: string
   /**
    * Accessible name for the dialog. Three cases:
    *

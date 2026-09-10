@@ -23,9 +23,9 @@ The factory is useful for:
 
 ## Parameters
 
-| Name      | Type                   | Default | Description                                                                 |
-| --------- | ---------------------- | ------- | --------------------------------------------------------------------------- |
-| `options` | `CommonDrawerOptions`  | `{}`    | The drawer's full state surface. See [docs/options.md](../options.md).      |
+| Name      | Type                  | Default | Description                                                            |
+| --------- | --------------------- | ------- | ---------------------------------------------------------------------- |
+| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full state surface. See [docs/options.md](../options.md). |
 
 ## Returns
 

@@ -91,30 +91,30 @@ https://samline.github.io/drawer/
 
 ## File-by-file tour
 
-| Path                                       | What it is                                                  |
-| ------------------------------------------ | ----------------------------------------------------------- |
-| `site.config.mjs`                          | ⭐ The only per-package config. **Edit this.**              |
-| `site.schema.mjs`                          | Runtime validator for `site.config.mjs`.                    |
-| `astro.config.mjs`                         | Astro + Starlight glue. Reads everything from above.        |
-| `src/content.config.ts`                    | Frontmatter schema for the docs content collection.         |
-| `src/content/docs/`                        | The documentation content. Add `.md`/`.mdx` here.           |
-| `public/`                                  | Static assets served as-is (favicon, screenshots).          |
-| `src/styles/custom.css`                    | Free-form CSS that layers on top of Starlight's theme.      |
-| `.github/workflows/deploy.yml`             | Auto-deploys `dist/` to GitHub Pages on every push to main. |
-| `AGENTS.md`                                | AI-agent instructions (use this if you delegate to an AI).  |
-| `README.md`                                | The file you are reading right now.                         |
+| Path                           | What it is                                                  |
+| ------------------------------ | ----------------------------------------------------------- |
+| `site.config.mjs`              | ⭐ The only per-package config. **Edit this.**              |
+| `site.schema.mjs`              | Runtime validator for `site.config.mjs`.                    |
+| `astro.config.mjs`             | Astro + Starlight glue. Reads everything from above.        |
+| `src/content.config.ts`        | Frontmatter schema for the docs content collection.         |
+| `src/content/docs/`            | The documentation content. Add `.md`/`.mdx` here.           |
+| `public/`                      | Static assets served as-is (favicon, screenshots).          |
+| `src/styles/custom.css`        | Free-form CSS that layers on top of Starlight's theme.      |
+| `.github/workflows/deploy.yml` | Auto-deploys `dist/` to GitHub Pages on every push to main. |
+| `AGENTS.md`                    | AI-agent instructions (use this if you delegate to an AI).  |
+| `README.md`                    | The file you are reading right now.                         |
 
 ---
 
 ## NPM scripts
 
-| Script           | What it does                                           |
-| ---------------- | ------------------------------------------------------ |
-| `npm run dev`    | Start the dev server with HMR at `http://localhost:4321/drawer`. |
-| `npm run build`  | Build the production site to `./dist/`.                |
-| `npm run preview`| Preview the built site locally.                        |
-| `npm run check`  | Type-check frontmatter and TS sources.                 |
-| `npm run astro`  | Pass-through to the `astro` CLI.                       |
+| Script            | What it does                                                     |
+| ----------------- | ---------------------------------------------------------------- |
+| `npm run dev`     | Start the dev server with HMR at `http://localhost:4321/drawer`. |
+| `npm run build`   | Build the production site to `./dist/`.                          |
+| `npm run preview` | Preview the built site locally.                                  |
+| `npm run check`   | Type-check frontmatter and TS sources.                           |
+| `npm run astro`   | Pass-through to the `astro` CLI.                                 |
 
 ---
 

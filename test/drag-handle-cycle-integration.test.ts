@@ -71,6 +71,21 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     document.body.innerHTML = ''
   })
 
+  it('renders the handle as a named keyboard-operable button', () => {
+    const drawer = createDrawer({
+      id: 'accessible-handle',
+      snapPoints: ['120px', '320px'],
+      showHandle: true,
+      handleAriaLabel: 'Resize filters',
+      content: 'Body'
+    })
+    drawer.setOpen(true)
+
+    expect(getHandle().tagName).toBe('BUTTON')
+    expect(getHandle().getAttribute('aria-label')).toBe('Resize filters')
+    expect(getHandle().getAttribute('aria-hidden')).toBeNull()
+  })
+
   it('advances the activeSnapPoint to the next snap when the handle is clicked', () => {
     const drawer = createDrawer({
       id: 'handle-cycle-next',

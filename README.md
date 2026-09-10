@@ -49,11 +49,11 @@ Requires Node 20+ when bundling. Runtime target is ES2020.
 Use the browser build when you do not have a bundler and need to run the package directly in HTML, Shopify, WordPress, or any traditional template.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `3.1.0` with the version you ship.
+> Pin the version in production. Replace `4.0.0` with the version you ship.
 
 The browser bundle exposes a single global: `window.Drawer`.
 
@@ -62,8 +62,8 @@ The browser bundle exposes a single global: `window.Drawer`.
   <button id="open-drawer" type="button">Open</button>
 </form>
 
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@3.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@3.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
 <script>
   window.Drawer.createDrawer({
     id: 'demo',
@@ -83,12 +83,12 @@ See [docs/browser.md](docs/browser.md) for the full browser surface.
 
 ## Entrypoints
 
-| Entrypoint                | When to use                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `@samline/drawer`         | Main vanilla API for bundlers, ESM, or CJS consumers.                        |
-| `@samline/drawer/browser` | Pre-bundled IIFE that registers `window.Drawer` for direct `<script>` usage. |
+| Entrypoint                | When to use                                                            |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `@samline/drawer`         | Main vanilla API for bundlers, ESM, or CJS consumers.                  |
+| `@samline/drawer/browser` | ESM/CJS browser namespace with named and default exports for bundlers. |
 
-The root entrypoint does not export a `browser` namespace. Bundled applications should import the named registry helpers from `@samline/drawer`; the browser entry is the IIFE that attaches `window.Drawer`.
+The root entrypoint exports the individual helpers. Bundled applications that prefer a namespace can import `Drawer` from `@samline/drawer/browser`. Plain `<script>` usage loads the dedicated IIFE at `dist/browser/global.global.js`, as shown above.
 
 ---
 
@@ -274,18 +274,18 @@ See [`CommonDrawerOptions.open`](src/core/index.ts) for the full type contract.
 
 Full API reference, guides, and examples are available at **[samline.github.io/drawer](https://samline.github.io/drawer)**.
 
-| Doc                                                | Purpose                                                                                                                          |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [docs/README.md](docs/README.md)                   | Overview, anatomy, and entrypoint selection.                                                                                     |
-| [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                                                   |
+| Doc                                                | Purpose                                                                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/README.md](docs/README.md)                   | Overview, anatomy, and entrypoint selection.                                                                                    |
+| [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                                                  |
 | [docs/options.md](docs/options.md)                 | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row.                  |
 | [docs/recipes.md](docs/recipes.md)                 | End-to-end patterns: custom HTML content, renderable slots, lifecycle callbacks, nested drawers, snap points, scale background. |
 | [docs/css-styling.md](docs/css-styling.md)         | The data-attribute contract the stylesheet expects; inline writes; scale ownership; position all four directions.               |
-| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, numeric constants, browser global type.                               |
-| [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                                                      |
-| [docs/vanilla.md](docs/vanilla.md)                 | The root entrypoint (vanilla JS) in depth.                                                                                       |
-| [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                                               |
-| [CHANGELOG.md](CHANGELOG.md)                       | Version history.                                                                                                                 |
+| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, numeric constants, browser global type.                              |
+| [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                                                     |
+| [docs/vanilla.md](docs/vanilla.md)                 | The root entrypoint (vanilla JS) in depth.                                                                                      |
+| [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                                              |
+| [CHANGELOG.md](CHANGELOG.md)                       | Version history.                                                                                                                |
 
 ---
 

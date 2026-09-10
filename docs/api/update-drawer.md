@@ -27,10 +27,10 @@ The default `id` is `'default'`. Omit the id to update the default instance.
 
 ## Parameters
 
-| Name           | Type                              | Default     | Description                                                                                  |
-| -------------- | --------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| Name           | Type                                     | Default     | Description                                                                              |
+| -------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------- |
 | `idOrOptions?` | `string \| VanillaDrawerOptions \| null` | `undefined` | Either the drawer id (with `options` in the second argument) or the full options object. |
-| `options?`     | `VanillaDrawerOptions`            | `undefined` | The options to merge. Only used when `idOrOptions` is a string id.                           |
+| `options?`     | `VanillaDrawerOptions`                   | `undefined` | The options to merge. Only used when `idOrOptions` is a string id.                       |
 
 ## Returns
 

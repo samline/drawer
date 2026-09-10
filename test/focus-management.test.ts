@@ -48,7 +48,7 @@ describe('drawer initial focus management', () => {
     document.body.innerHTML = ''
   })
 
-  it('does NOT auto-focus the first focusable descendant on open (v2 default restored)', () => {
+  it('focuses the dialog without auto-focusing its first descendant by default', () => {
     const wrapper = el('div', {}, [
       el('a', { href: 'https://example.com' }, ['A link']),
       el('button', {}, ['A button'])
@@ -62,9 +62,8 @@ describe('drawer initial focus management', () => {
     })
     drawer.setOpen(true)
 
-    // The drawer's body contains a link as the first focusable.
-    // v2 default: focus stays on `document.body`, not on the link.
-    expect(document.activeElement).toBe(document.body)
+    const content = document.querySelector('[data-drawer][data-state="open"]')
+    expect(document.activeElement).toBe(content)
   })
 
   it('does not auto-focus when autoFocus is unset (the default)', () => {
@@ -78,7 +77,8 @@ describe('drawer initial focus management', () => {
     })
     drawer.setOpen(true)
 
-    expect(document.activeElement).toBe(document.body)
+    const content = document.querySelector('[data-drawer][data-state="open"]')
+    expect(document.activeElement).toBe(content)
   })
 
   it('auto-focuses the first focusable when autoFocus: true (opt-in)', () => {
@@ -141,5 +141,41 @@ describe('drawer initial focus management', () => {
     // interactive descendant. `tabIndex` was set to -1 and the
     // element received focus.
     expect(document.activeElement).toBe(content)
+  })
+
+  it('skips hidden controls when auto-focusing', () => {
+    const hidden = el('input', { type: 'hidden' })
+    const button = el('button', { id: 'visible-control' }, ['Continue'])
+    const drawer = createDrawer({ id: 'hidden-first', content: el('div', {}, [hidden, button]), autoFocus: true })
+
+    drawer.setOpen(true)
+
+    expect(document.activeElement).toBe(document.querySelector('#visible-control'))
+  })
+
+  it('restores focus to the trigger after close', () => {
+    const trigger = el('button', { id: 'external-trigger' }, ['Open'])
+    document.body.appendChild(trigger)
+    const drawer = createDrawer({ id: 'restore-trigger', triggerElement: trigger, content: 'Body' })
+    trigger.focus()
+
+    drawer.setOpen(true)
+    drawer.setOpen(false)
+
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('isolates and restores background content while a modal is open', () => {
+    const background = el('main', { 'aria-hidden': 'false' }, ['Page'])
+    document.body.appendChild(background)
+    const drawer = createDrawer({ id: 'modal-isolation', content: 'Body' })
+
+    drawer.setOpen(true)
+    expect(background.inert).toBe(true)
+    expect(background.getAttribute('aria-hidden')).toBe('true')
+
+    drawer.setOpen(false)
+    expect(background.inert).toBe(false)
+    expect(background.getAttribute('aria-hidden')).toBe('false')
   })
 })
