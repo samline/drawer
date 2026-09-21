@@ -6,7 +6,7 @@ sidebar:
   order: 3
 ---
 
-The public API of `@samline/drawer@4.0.0`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
+The public API of `@samline/drawer@4.0.1`. DOM-aware functions use one module-level registry; `createDrawerController` is the separate headless state factory.
 
 The runtime is built around `id`. Reusing an id merges into its registered instance and dedicated host rather than creating another host.
 
@@ -34,6 +34,11 @@ Most registry mutators return a controller. `destroyDrawer()` and `destroyDrawer
 - [`toggleDrawer(id?)`](#toggledrawerid) — toggle a drawer's open state.
 - [`destroyDrawer(id?)`](#destroydrawerid) — destroy a single drawer and remove it from the registry.
 - [`destroyDrawers()`](#destroydrawers) — destroy every live drawer.
+
+## Controllers
+
+- [`VanillaDrawerController`](#controller-api) — properties and methods returned by registry factories and inspectors.
+- [`CommonDrawerController`](#common-headless-controller) — snapshot methods returned by the headless factory.
 
 ## Headless
 
@@ -77,13 +82,13 @@ The default `id` is `'default'`. Omit `id` to use the default instance.
 
 **Parameters**
 
-| Name      | Type                   | Default | Description                                                             |
-| --------- | ---------------------- | ------- | ----------------------------------------------------------------------- |
-| `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
+| Name      | Type                   | Default | Description                                                                               |
+| --------- | ---------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](/drawer/reference/configuration/). |
 
 **Returns**
 
-`VanillaDrawerController` — a controller wrapper for the created or updated id. See [TypeScript → `VanillaDrawerController`](typescript/#vanilladrawercontroller).
+`VanillaDrawerController` — a controller wrapper for the created or updated id. See [TypeScript → `VanillaDrawerController`](/drawer/reference/typescript/#vanilladrawercontroller).
 
 **Example**
 
@@ -132,9 +137,9 @@ Both names hit the same module-level registry. The runtime does not track which 
 
 **Parameters**
 
-| Name      | Type                   | Default | Description                                                             |
-| --------- | ---------------------- | ------- | ----------------------------------------------------------------------- |
-| `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](configuration/). |
+| Name      | Type                   | Default | Description                                                                               |
+| --------- | ---------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| `options` | `VanillaDrawerOptions` | `{}`    | The drawer's full options surface. See [Configuration](/drawer/reference/configuration/). |
 
 **Returns**
 
@@ -401,7 +406,7 @@ getDrawer()?.getSnapshot().state.isOpen // true
 **Related**
 
 - [`createDrawer(options?)`](#createdraweroptions) — the canonical entrypoint.
-- [`drawer.update(options?)`](typescript/#vanilladrawercontroller) — the same merge on an already-held controller.
+- [`drawer.update(options?)`](#updateoptions) — the same merge on an already-held controller.
 
 #### `openDrawer(id?)`
 
@@ -626,6 +631,65 @@ destroyDrawers() // removes both ids
 - [`destroyDrawer(id?)`](#destroydrawerid) — destroy a single drawer.
 - [`closeDrawer(id?)`](#closedrawerid) — close a drawer but keep the registry entry.
 
+### Controller API
+
+Registry factories and inspectors return a `VanillaDrawerController`. Different calls may return different wrapper objects for the same id; compare `id` or snapshots rather than wrapper identity.
+
+```ts
+interface VanillaDrawerController extends CommonDrawerController {
+  readonly id: string
+  readonly element: HTMLElement | null
+  readonly options: VanillaDrawerOptions
+  getSnapshot(): CommonDrawerSnapshot
+  setOpen(open: boolean): CommonDrawerSnapshot
+  setActiveSnapPoint(value: number | string | null): CommonDrawerSnapshot
+  patch(options: Partial<CommonDrawerOptions>): CommonDrawerSnapshot
+  subscribe(listener: (snapshot: CommonDrawerSnapshot) => void): () => void
+  update(options?: VanillaDrawerOptions): VanillaDrawerController
+  destroy(): void
+}
+```
+
+Treat `options` and all snapshots as read-only. They are not deep immutable copies; mutating exposed arrays or objects bypasses rendering and publication.
+
+#### `id`, `element`, and `options`
+
+- `id` is the normalized registry key and remains available even after destruction.
+- `element` is the persistent `[data-drawer-vanilla-root]` host, not the lazy dialog. It is `null` outside a DOM environment and after destruction.
+- `options` is the latest shallow-merged object. After destruction it reads as `{ id }`.
+
+#### `getSnapshot()`
+
+Returns the current snapshot synchronously without publishing. After destruction, a retained controller returns a newly fabricated closed snapshot for its id.
+
+#### `setOpen(open)`
+
+Opens or closes this id and returns the resulting snapshot. It runs the same lifecycle as `openDrawer` / `closeDrawer`. A same-value call still publishes to subscribers but does not run transition callbacks. Calling it on a retained, destroyed controller creates the id again.
+
+#### `setActiveSnapPoint(value)`
+
+Updates `activeSnapPoint`, rerenders the open drawer's snap transform, publishes, and returns the snapshot. It does not call `onActiveSnapPointChange`; that callback is reserved for runtime-driven drag, handle, and reset changes. Use an exact member of `snapPoints`.
+
+#### `patch(options)`
+
+Shallow-merges `Partial<CommonDrawerOptions>`, publishes, reconciles the runtime, and returns a snapshot. It cannot update vanilla-only fields such as `title`, `content`, `container`, triggers, or classes. Prefer `update()` for those.
+
+Unlike `createDrawer()` / `update()`, directly patching a new `parentId` does not automatically set `nested: true`; establish relationships through `update({ parentId })`. Parent cycles still throw `TypeError`.
+
+#### `subscribe(listener)`
+
+Calls the listener immediately, then after each controller publication. Publications can include same-value writes and same-id updates, so do not assume every call represents a distinct state transition. Returns an unsubscribe function. A destroyed retained controller invokes the listener once with its fabricated closed snapshot and returns a no-op unsubscribe function.
+
+#### `update(options?)`
+
+Shallow-merges the complete `VanillaDrawerOptions` surface and returns a controller wrapper for the same id. While open, `open`, `activeSnapPoint`, and callback-only changes can reconcile in place; other option changes rebuild the dialog subtree. A rebuild may invoke renderable thunks again, detach supplied elements, release/reacquire effects, and move focus.
+
+During the 600 ms closing window, structural options do not reconcile into the exiting nodes; the persistent built-in trigger does. Apply structural updates before closing or after reopening.
+
+#### `destroy()`
+
+Delegates to `destroyDrawer(id)`. The facade is not permanently invalidated: a later mutator on that retained object creates the id again. Discard controllers after cleanup when resurrection is not intended.
+
 ### Headless
 
 #### `createDrawerController(options?)`
@@ -640,7 +704,7 @@ function createDrawerController(options?: CommonDrawerOptions): CommonDrawerCont
 
 **Description**
 
-`createDrawerController` builds a `CommonDrawerController` for the supplied options. It is the headless counterpart to `createDrawer`: same observable state, same mutators, same snapshot shape, but no DOM, no built-in trigger, no scale-background, no scroll lock, no history restoration, no focus trap, no body styles.
+`createDrawerController` builds a `CommonDrawerController` for the supplied options. It is the headless state counterpart to `createDrawer`: same snapshot shape and common mutator names, but no DOM, registry, parent validation, callbacks, snap reset, built-in trigger, scale-background, scroll lock, history restoration, focus trap, or body styles.
 
 The factory is useful for:
 
@@ -649,17 +713,17 @@ The factory is useful for:
 - **Custom renderers** — build your own dialog primitive on top of the same observable state. Subscribe to the controller and re-render your own host when the snapshot changes.
 - **Workers** — share the same `CommonDrawerOptions` surface without the runtime side effects.
 
-`createDrawerController` does not register the id in the module-level registry and is not affected by `getDrawer` / `getDrawers` / `destroyDrawer`. It is also not affected by DOM-only options: `content`, `title`, `description`, `container`, `triggerElement`, `triggerText`, `closeButton`, and every `*ClassName` option are ignored. Pass them only when you want a single options object that can be shared with `createDrawer` later; they will not produce DOM.
+`createDrawerController` does not register the id in the module-level registry and is not affected by `getDrawer` / `getDrawers` / `destroyDrawer`. Its typed parameter is `CommonDrawerOptions`, so vanilla-only fields such as `content`, `title`, `container`, triggers, and classes are not accepted in a direct object literal. A previously typed `VanillaDrawerOptions` variable is structurally assignable, but extra fields have no headless behavior.
 
 **Parameters**
 
-| Name      | Type                  | Default | Description                                                           |
-| --------- | --------------------- | ------- | --------------------------------------------------------------------- |
-| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full state surface. See [Configuration](configuration/). |
+| Name      | Type                  | Default | Description                                                                             |
+| --------- | --------------------- | ------- | --------------------------------------------------------------------------------------- |
+| `options` | `CommonDrawerOptions` | `{}`    | The drawer's full state surface. See [Configuration](/drawer/reference/configuration/). |
 
 **Returns**
 
-`CommonDrawerController` — the headless controller. See [TypeScript → CommonDrawerController](typescript/#commondrawercontroller).
+`CommonDrawerController` — the headless controller. See [TypeScript → CommonDrawerController](/drawer/reference/typescript/#commondrawercontroller).
 
 **Example**
 
@@ -690,5 +754,19 @@ unsubscribe()
 **Related**
 
 - [`createDrawer(options?)`](#createdraweroptions) — the DOM-aware factory.
-- [TypeScript → CommonDrawerController](typescript/#commondrawercontroller).
-- [Configuration → Common fields](configuration/#common-fields) — every field accepted by `createDrawerController`.
+- [TypeScript → CommonDrawerController](/drawer/reference/typescript/#commondrawercontroller).
+- [Configuration → Common fields](/drawer/reference/configuration/#common-fields) — every field accepted by `createDrawerController`.
+
+#### Common headless controller
+
+The returned controller has four mutators/readers:
+
+| Method                      | Return                 | Behavior                                                                                                |
+| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| `getSnapshot()`             | `CommonDrawerSnapshot` | Synchronous read; does not publish.                                                                     |
+| `setOpen(open)`             | `CommonDrawerSnapshot` | Stores `open`, publishes even for the same value, and returns the snapshot. No lifecycle callbacks run. |
+| `setActiveSnapPoint(value)` | `CommonDrawerSnapshot` | Stores the value without membership validation, publishes, and returns the snapshot.                    |
+| `patch(options)`            | `CommonDrawerSnapshot` | Shallow-merges common options, publishes, and returns the snapshot.                                     |
+| `subscribe(listener)`       | `() => void`           | Invokes immediately, then on every publication; returns unsubscribe.                                    |
+
+Snapshot options and nested arrays are shared references rather than deep copies. Treat them as immutable and use the mutators above.

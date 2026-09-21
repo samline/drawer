@@ -65,13 +65,14 @@ The `content`, `title`, and `description` slots all accept the same shape: `Vani
 type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined
 ```
 
-| Form                 | What happens                                                                                                                                                                  | Example                      |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `string`             | Mounted as a text node inside the slot. Safe for plain copy.                                                                                                                  | `content: 'Drawer body'`     |
-| `number`             | Mounted as a text node. Useful for numeric badges.                                                                                                                            | `title: 3`                   |
-| `HTMLElement`        | **Moved** (not cloned) into the slot. The runtime does not own the element; do not append it elsewhere while the drawer owns it.                                              | `content: formElement`       |
-| `() => HTMLElement`  | The thunk is invoked once per dialog DOM build (mount on open, rebuild on option-driven remount) and must return an element. Lazy presence will re-invoke it on every reopen. | `content: () => buildForm()` |
-| `null` / `undefined` | Renders nothing for that slot. Useful when the consumer builds the entire shell in their own code.                                                                            | `description: undefined`     |
+| Form                | What happens                                                                                                                                                                  | Example                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `string`            | Mounted as a text node inside the slot. Safe for plain copy.                                                                                                                  | `content: 'Drawer body'`     |
+| `number`            | Mounted as a text node. Useful for numeric badges.                                                                                                                            | `title: 3`                   |
+| `HTMLElement`       | **Moved** (not cloned) into the slot. The runtime does not own the element; do not append it elsewhere while the drawer owns it.                                              | `content: formElement`       |
+| `() => HTMLElement` | The thunk is invoked once per dialog DOM build (mount on open, rebuild on option-driven remount) and must return an element. Lazy presence will re-invoke it on every reopen. | `content: () => buildForm()` |
+| `undefined`         | Omits title/description slots and renders no body content.                                                                                                                    | `description: undefined`     |
+| `null`              | Renders no content, but `title: null` or `description: null` still creates an empty ARIA-referenced slot. Prefer omission when no slot should exist.                          | `content: null`              |
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -98,18 +99,19 @@ createDrawer({
   }
 })
 
-// 5. Empty.
-createDrawer({ id: 'e' /* no content slot — slot still mounts, body is empty */ })
+// 5. Empty body. The [data-drawer-body] wrapper still mounts.
+createDrawer({ id: 'e' })
 ```
 
 Notes:
 
-- **Move semantics**: when you pass an `HTMLElement`, the runtime adopts it. After `destroyDrawer`, the element is left in the host's previous location; you can keep using it as a normal DOM node, but you cannot pass the same instance to a second `content` while the first drawer still owns it.
+- **Move semantics**: when you pass an `HTMLElement`, the runtime adopts it. Closing or destroying removes its ancestor subtree, so the element becomes detached from the document but remains available through your JavaScript reference. Reappend it yourself before reuse. Do not pass one connected instance to two drawers.
 - **Lazy presence**: the dialog subtree is unmounted on close, so a thunk re-runs every time the user reopens. Use this to refresh dynamic content, or capture expensive work outside the thunk.
-- **`data-drawer-body`**: `content` is mounted into `[data-drawer-vanilla-body]` inside `[data-drawer]`. The body slot is always created while the dialog is mounted, even when `content` is omitted.
+- **Factory return**: a thunk must return an `HTMLElement`. A different return value does not throw; it renders no content.
+- **`data-drawer-body`**: `content` is mounted directly into `[data-drawer-body]`. The body wrapper is always created while the dialog is mounted; title and description slots are conditional children of it.
 - **Drag opt-out**: any descendant inside the content can opt out of starting a drawer drag with `data-drawer-no-drag`.
 
-See [Examples → Custom HTML content](/drawer/examples/#custom-html-content) for end-to-end patterns.
+See [Recipes → Custom HTML content](/drawer/reference/examples/#recipe-custom-html-content) for end-to-end patterns.
 
 ## Common fields
 
@@ -129,11 +131,11 @@ Every field on `CommonDrawerOptions`. The example column shows the smallest real
 | `onReleaseChange`           | `(open: boolean) => void`                       | `undefined`             | Fires after an accepted drag release: `false` when release closes, `true` when it resets or settles at a snap. Programmatic close and overlay clicks do not fire it.                                                                     | `onReleaseChange(keptOpen) { log(keptOpen) }` |
 | `dismissible`               | `boolean`                                       | `true`                  | Enables Escape, overlay mouse-up, drag-close, and last-snap handle dismissal. Programmatic methods and the optional built-in close button can still close when `false`.                                                                  | `dismissible: false`                          |
 | `modal`                     | `boolean`                                       | `true`                  | Modal drawers render an overlay, trap focus, isolate background branches with `inert`/`aria-hidden`, and acquire scroll effects. `false` omits those behaviors. Neither mode writes `body.style.pointerEvents`.                          | `modal: false`                                |
-| `nested`                    | `boolean`                                       | `false`                 | Enables nested behavior. The registry sets it to `true` automatically whenever `parentId` is present.                                                                                                                                    | `nested: true`                                |
+| `nested`                    | `boolean`                                       | `false`                 | Internal nested-layout flag. `createDrawer()` and `update()` set it automatically when `parentId` exists. Set `parentId` to establish a relationship; `nested: true` alone does not create one.                                          | `nested: true`                                |
 | `direction`                 | `'top' \| 'bottom' \| 'left' \| 'right'`        | `'bottom'`              | Selects entrance/exit side, close gesture, drag axis, snap math, and scale transform axis. All four directions support drag-to-dismiss.                                                                                                  | `direction: 'right'`                          |
-| `snapPoints`                | `Array<number \| string>`                       | `[]`                    | Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'120px'` becomes 120); a percent-suffixed string is not percentage math.                                         | `snapPoints: ['180px', '420px', 1]`           |
-| `fadeFromIndex`             | `number`                                        | last snap index         | First snap index where the overlay is visible. If omitted with snap points, the 4.0.0 release resolves it to `snapPoints.length - 1`.                                                                                                    | `fadeFromIndex: 1`                            |
-| `activeSnapPoint`           | `number \| string \| null`                      | `snapPoints[0] ?? null` | Current snap value. The controller and runtime update it together; close resets it to the first snap after 500 ms.                                                                                                                       | `activeSnapPoint: '180px'`                    |
+| `snapPoints`                | `Array<number \| string>`                       | `[]`                    | Numbers are container fractions (`0.5` is 50%). Strings use `parseInt` as pixels: `'120.9px'` becomes `120`, `'50%'` becomes `50px`, and `'1rem'` becomes `1px`. Values are not validated; use finite, ordered, unique values.           | `snapPoints: ['180px', '420px', 1]`           |
+| `fadeFromIndex`             | `number`                                        | last snap index         | First snap index where the overlay is visible. If omitted with snap points, the 4.0.1 release resolves it to `snapPoints.length - 1`.                                                                                                    | `fadeFromIndex: 1`                            |
+| `activeSnapPoint`           | `number \| string \| null`                      | `snapPoints[0] ?? null` | Current snap value. Use an exact member of `snapPoints`; values are matched with strict equality and are not validated. A non-member disables normal release/cycle indexing. Close resets it to the first snap after 500 ms.             | `activeSnapPoint: '180px'`                    |
 | `closeThreshold`            | `number`                                        | `0.25`                  | For snap-free drawers, fraction of the rendered height/width required for a low-velocity release to dismiss. Snap-point releases use the separate snap policy.                                                                           | `closeThreshold: 0.5`                         |
 | `scrollLockTimeout`         | `number`                                        | `100`                   | Millisecond cooldown after scrollable content blocks a drag, preventing the next pointer gesture from being captured immediately.                                                                                                        | `scrollLockTimeout: 200`                      |
 | `shouldScaleBackground`     | `boolean`                                       | `false`                 | Scales, translates, rounds, and clips the first `[data-drawer-wrapper]` as soon as the drawer opens. Dragging toward close moves it back toward normal.                                                                                  | `shouldScaleBackground: true`                 |
@@ -178,16 +180,16 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
 | --------------------------- | --------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `container`                 | `HTMLElement \| null` | `document.body`            | Preferred mount target. The runtime appends a dedicated per-id host inside it and uses its bounding rect for snap-point fractions. Multiple drawers sharing a container remain isolated.                                                       | `container: document.getElementById('region')`            |
 | `mountElement`              | `HTMLElement \| null` | `undefined`                | Deprecated alias for `container`. `container ?? mountElement ?? document.body` is used, so `container` wins.                                                                                                                                   | `mountElement: legacyContainer`                           |
-| `triggerElement`            | `HTMLElement \| null` | `undefined`                | Consumer-owned external element whose click opens the id. Its listener persists while closed, rebinds on update, and is removed on destroy.                                                                                                    | `triggerElement: document.getElementById('open-filters')` |
+| `triggerElement`            | `HTMLElement \| null` | `undefined`                | Consumer-owned external element whose click opens the id. Its listener persists while closed, rebinds on update, and is removed on destroy. The runtime does not add `aria-controls` or `aria-expanded`; manage those attributes if needed.    | `triggerElement: document.getElementById('open-filters')` |
 | `triggerText`               | `string`              | `undefined`                | Creates a built-in `<button data-drawer-vanilla-trigger>` in the per-id host. It persists while closed and during exit, updates in place, and is removed when cleared or destroyed.                                                            | `triggerText: 'Open filters'`                             |
 | `showHandle`                | `boolean`             | `false`                    | Renders the built-in handle while dialog content is present. `handleOnly` also renders it.                                                                                                                                                     | `showHandle: true`                                        |
 | `handleClassName`           | `string`              | `undefined`                | Class assigned to the built-in handle.                                                                                                                                                                                                         | `handleClassName: 'my-handle'`                            |
 | `handleAriaLabel`           | `string`              | `'Change drawer position'` | Accessible name assigned to the keyboard-operable handle button.                                                                                                                                                                               | `handleAriaLabel: 'Resize filters'`                       |
-| `ariaLabel`                 | `string`              | `undefined`                | Sets `aria-label`. Without an explicit title or matching custom labelled node, it is also copied into the title slot as an accessibility proxy and hidden by default.                                                                          | `ariaLabel: 'Filters'`                                    |
-| `ariaLabelledBy`            | `string`              | auto                       | Consumer target id, used unchanged. If `content` does not contain it, the runtime assigns it to the built-in title slot. When omitted, the slot gets `<drawer-id>-title`.                                                                      | `ariaLabelledBy: 'filters-title'`                         |
-| `ariaDescribedBy`           | `string`              | auto                       | Consumer target id, used unchanged. If `content` does not contain it, the runtime assigns it to the built-in description slot. When omitted, the slot gets `<drawer-id>-description`.                                                          | `ariaDescribedBy: 'filters-desc'`                         |
+| `ariaLabel`                 | `string`              | drawer id when no `title`  | Sets `aria-label`. When both `title` and `ariaLabel` are absent, the normalized drawer id is used so the dialog is always named. It does not create a proxy title slot.                                                                        | `ariaLabel: 'Filters'`                                    |
+| `ariaLabelledBy`            | `string`              | generated with `title`     | Used unchanged. With `title`, the runtime assigns this id to the built-in title slot; without `title`, you must provide that id elsewhere in your content/document. If omitted with a title, `<drawer-id>-title` is generated.                 | `ariaLabelledBy: 'filters-title'`                         |
+| `ariaDescribedBy`           | `string`              | generated with description | Used unchanged. With `description`, the runtime assigns this id to that slot; without a description, you must provide the target. If omitted with a description, `<drawer-id>-description` is generated.                                       | `ariaDescribedBy: 'filters-desc'`                         |
 | `title`                     | `VanillaRenderable`   | `undefined`                | Visible title-slot content unless `titleVisuallyHidden` is true. See [Renderable content](#renderable-content).                                                                                                                                | `title: 'Filters'`                                        |
-| `titleVisuallyHidden`       | `boolean`             | `false` (conditional)      | Applies the built-in visually hidden styles. A proxy title promoted from `ariaLabel` auto-hides unless this is explicitly `false`.                                                                                                             | `titleVisuallyHidden: true`                               |
+| `titleVisuallyHidden`       | `boolean`             | `false`                    | Applies the built-in visually hidden inline styles to an existing title slot. It has no effect when `title` is omitted.                                                                                                                        | `titleVisuallyHidden: true`                               |
 | `description`               | `VanillaRenderable`   | `undefined`                | Description-slot content. See [Renderable content](#renderable-content).                                                                                                                                                                       | `description: 'Refine the result set'`                    |
 | `descriptionVisuallyHidden` | `boolean`             | `true`                     | Applies the built-in visually hidden styles to the description slot.                                                                                                                                                                           | `descriptionVisuallyHidden: false`                        |
 | `content`                   | `VanillaRenderable`   | `undefined`                | Main body content. The open dialog skeleton and empty body slot still mount when this is omitted. See [Renderable content](#renderable-content).                                                                                               | `content: formElement`                                    |
@@ -196,6 +198,23 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
 | `closeButton`               | `boolean \| object`   | `false`                    | Renders `<button data-drawer-close>` after the body. `true` uses class `drawer-close-button`, text icon `xmark`, and label `Close`; an object overrides `className`, `icon`, and `ariaLabel`. Its click stops propagation and closes directly. | `closeButton: { className: 'absolute top-5 right-5' }`    |
 
 `VanillaRenderable` is `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Elements are moved into the dialog. A thunk is invoked once per dialog DOM build, so an option update that rebuilds the open subtree can invoke it again.
+
+## Updating and clearing options
+
+Options are shallow-merged. `drawer.patch()` accepts only common options and returns a snapshot; `drawer.update()` and `updateDrawer()` accept vanilla options and return a controller. While open, only `open`, `activeSnapPoint`, and callback changes can reconcile without rebuilding the dialog. Other changes tear down and rebuild the open subtree, which can re-run content thunks, detach supplied elements, and move focus.
+
+Optional fields do not share one universal reset value, especially with TypeScript's `exactOptionalPropertyTypes`. Supported explicit clears include:
+
+| Option                            | Clear with                                                   |
+| --------------------------------- | ------------------------------------------------------------ |
+| `triggerElement`, `container`     | `null`                                                       |
+| `content`, `title`, `description` | `null` (note that null title/description retain empty slots) |
+| `snapPoints`                      | `[]`                                                         |
+| `activeSnapPoint`                 | `null`                                                       |
+| `triggerText`, class names        | `''`                                                         |
+| `closeButton`                     | `false`                                                      |
+
+There is no typed generic “unset” operation for every shallow-merged optional field, including `parentId`. If an integration must remove such a stored option, destroy and recreate that id with the desired configuration.
 
 ### Close-button option shape
 
@@ -216,5 +235,7 @@ The button's `click` event `stopPropagation()`s so it does not bubble to the dra
 - Closing flips mounted nodes to `data-state="closed"`, releases focus/scroll/viewport effects immediately, and removes overlay/content after the exit safety timeout. It does not unregister the id.
 - Shared scroll lock, document scroll behavior, history restoration, and scale-background effects are reference-counted or owner-stacked. One drawer closing cannot restore an effect still owned by another.
 - The runtime never reads or writes `document.body.style.pointerEvents`.
+- During the 600 ms closing window, updates reconcile the persistent trigger but do not fully rebuild the exiting dialog. Apply structural updates before closing or after reopening.
+- A retained controller is an id facade, not a permanently dead object. After `destroy()`, calling one of its mutators creates that id again; discard stale facades during cleanup.
 
 Numeric defaults are root exports; see [TypeScript → Numeric constants](/drawer/reference/typescript/#numeric-constants).

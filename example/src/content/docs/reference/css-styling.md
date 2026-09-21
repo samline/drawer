@@ -14,13 +14,14 @@ With a bundler:
 
 ```ts
 import '@samline/drawer/styles.css'
+// Equivalent alias: import '@samline/drawer/style.css'
 ```
 
-With the 4.0.0 browser bundle, CSS and JavaScript are separate assets:
+With the 4.0.1 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -48,17 +49,17 @@ Each registered id owns a dedicated host. Closed overlay/content are absent; onl
     aria-modal="true"
     aria-label="Filters"
   >
-    <div data-drawer-handle data-drawer-visible="true">
+    <button type="button" data-drawer-handle data-drawer-visible="true" aria-label="Change drawer position">
       <!-- only if showHandle or handleOnly -->
-      <span data-drawer-handle-hitarea></span>
-    </div>
-    <div data-drawer-title id="filters-title">…</div>
-    <!-- only if title / ariaLabel -->
-    <div data-drawer-description id="filters-description" hidden>…</div>
-    <!-- only if description -->
-    <div data-drawer-vanilla-node>
-      <div data-drawer-vanilla-body data-drawer-body>…</div>
-      <!-- content slot -->
+      <span data-drawer-handle-hitarea aria-hidden="true"></span>
+    </button>
+    <div data-drawer-body>
+      <div data-drawer-title id="filters-title">…</div>
+      <!-- only if title !== undefined -->
+      <div data-drawer-description id="filters-description">…</div>
+      <!-- only if description !== undefined; visually hidden with inline styles by default -->
+      …
+      <!-- content -->
     </div>
     <button data-drawer-close>
       <!-- only if closeButton -->
@@ -116,12 +117,12 @@ The dialog surface has no HTML `id`. Select one instance with `[data-drawer-id="
 | `data-state`                      | `'open' \| 'closed'`                     | Open/exit state.                                                                                                                                |
 | `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | Motion, drag, and snap direction.                                                                                                               |
 | `data-drawer-snap-points`         | `'true' \| 'false'`                      | Whether snap-point transforms are active.                                                                                                       |
-| `data-drawer-delayed-snap-points` | `'false'`                                | 4.0.0 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.                                 |
+| `data-drawer-delayed-snap-points` | `'false'`                                | 4.0.1 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.                                 |
 | `data-drawer-custom-container`    | `'true' \| 'false'`                      | `true` when a non-null `container` or deprecated `mountElement` is used. The default-only `::after` extension is omitted for custom containers. |
 | `data-drawer-animate`             | `'true' \| 'false'`                      | Shared CSS animation gate.                                                                                                                      |
 | `role`                            | `'dialog'`                               | Always present while the dialog is mounted.                                                                                                     |
 | `aria-modal`                      | `'true' \| 'false'`                      | Mirrors `modal`.                                                                                                                                |
-| `aria-label`                      | string                                   | Present when `ariaLabel` is supplied.                                                                                                           |
+| `aria-label`                      | string                                   | Explicit `ariaLabel`, or the drawer id when no title and no explicit label are supplied.                                                        |
 | `aria-labelledby`                 | element id                               | Custom target or generated title-slot id.                                                                                                       |
 | `aria-describedby`                | element id                               | Custom target or generated description-slot id.                                                                                                 |
 
@@ -135,12 +136,12 @@ Clicking the handle advances snap points. At the final snap it closes when dismi
 
 ### Content slots
 
-- `[data-drawer-title]` and `[data-drawer-description]` are always created with an open dialog, even when empty, so ARIA references have stable targets.
-- `[data-drawer-vanilla-node]` is the compatibility wrapper around the body slot only.
-- `[data-drawer-vanilla-body]` receives `content`. See [Configuration → Renderable content](/drawer/reference/configuration/#renderable-content) for the full `VanillaRenderable` contract.
+- `[data-drawer-body]` is always created. Its children are the optional title, optional description, and resolved consumer content, in that order.
+- `[data-drawer-title]` exists only when `title !== undefined`; `[data-drawer-description]` exists only when `description !== undefined`. Passing `null` creates an empty slot, while omission does not.
+- The old `[data-drawer-vanilla-node]` and `[data-drawer-vanilla-body]` wrappers do not exist in 4.0.1. Target `[data-drawer-body]` instead. See [Configuration → Renderable content](/drawer/reference/configuration/#renderable-content).
 - `[data-drawer-close]` is the optional built-in close button; `[data-drawer-close-icon]` wraps its string or element icon and is `aria-hidden`.
 
-An `ariaLabel` promoted into an otherwise empty title slot is visually hidden by default. Explicit title content remains visible unless `titleVisuallyHidden: true` is set.
+`titleVisuallyHidden` and `descriptionVisuallyHidden` apply inline visually-hidden styles rather than the HTML `hidden` attribute. `ariaLabel` does not create a proxy title slot.
 
 ## Consumer markers
 
@@ -211,7 +212,7 @@ The shared keyframes use the Y axis for `top`/`bottom` and X axis for `left`/`ri
 
 ## Inline writes
 
-Not every live effect can be expressed by static CSS. 4.0.0 writes and later restores these values:
+Not every live effect can be expressed by static CSS. 4.0.1 writes and later restores these values:
 
 | Target                     | Runtime writes                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -224,6 +225,8 @@ Not every live effect can be expressed by static CSS. 4.0.0 writes and later res
 
 The runtime never writes `document.body.style.pointerEvents`. Existing application or modal-library values remain untouched.
 
+Nested children also write `transform` and `transition` directly on the parent `[data-drawer]`. The final reset is an explicit scale-1 transform, not restoration of a consumer's previous inline transform. Put application transforms on an inner wrapper when using nested drawers.
+
 ## Scale ownership
 
 `shouldScaleBackground: true` applies the wrapper's scaled open-rest state immediately on open, not only after the first drag. `setBackgroundColorOnScale` is on by default, so the body becomes black while a scale owner is open unless that option is `false` or `noBodyStyles` is true.
@@ -235,7 +238,9 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 ## Notes
 
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
-- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 4.0.0 JavaScript does not write it.
+- Its global keyframe names are `fadeIn`, `fadeOut`, `slideFromBottom`, `slideToBottom`, `slideFromTop`, `slideToTop`, `slideFromLeft`, `slideToLeft`, `slideFromRight`, and `slideToRight`. Avoid redefining those names globally.
+- Direction selectors set `touch-action` for gesture arbitration; fine pointers also disable text selection on draggable surfaces. Preserve those rules if you replace the package stylesheet.
+- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 4.0.1 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
 - The runtime adds the exported `drawer-dragging` class to `[data-drawer]` while a drag is in progress. Target it from your stylesheet to disable selection or change the cursor.

@@ -1,5 +1,5 @@
 ---
-title: Examples
+title: Recipes
 description: End-to-end recipes for common real-world scenarios with @samline/drawer.
 template: doc
 sidebar:
@@ -8,7 +8,15 @@ sidebar:
 
 import { Tabs, TabItem } from '@astrojs/starlight/components'
 
-These examples target `@samline/drawer@4.0.0` and its lazy-Presence lifecycle. Each registered id owns a host; overlay/content exist only while open or exiting.
+These recipes target `@samline/drawer@4.0.1` and its lazy-presence lifecycle. Start with the complete example below; later snippets focus on one behavior and assume the package stylesheet plus your panel geometry are already loaded.
+
+## Recipe index
+
+- **Start and render:** [complete bundler example](#recipe-complete-bundler-example), [custom HTML](#recipe-custom-html-content), [pre-built form](#recipe-render-a-pre-built-form-in-a-drawer), [update content](#recipe-update-content-after-creation)
+- **Interaction:** [directions](#recipe-all-four-directions), [snap points](#recipe-snap-points), [handle cycle](#recipe-handle-cycle), [viewport keyboard](#recipe-viewport-keyboard-handling)
+- **Controls:** [external trigger](#recipe-triggered-by-an-external-button), [built-in trigger](#recipe-built-in-trigger-button-no-external-element), [close button](#recipe-built-in-close-button)
+- **Architecture:** [nested drawers](#recipe-nested-drawers), [multiple drawers](#recipe-multiple-independent-drawers), [custom container](#recipe-custom-container), [headless renderer](#recipe-headless-custom-renderer)
+- **Accessibility and lifecycle:** [modal choices](#recipe-modal-and-dismissible-behavior), [external ARIA targets](#recipe-external-aria-targets), [callbacks](#recipe-listen-to-lifecycle-callbacks), [SPA cleanup](#recipe-spa-dynamic-mount-and-unmount)
 
 <Tabs syncKey="runtime">
   <TabItem label="Bundler / TS">
@@ -30,7 +38,7 @@ These examples target `@samline/drawer@4.0.0` and its lazy-Presence lifecycle. E
     ```
 
   </TabItem>
-  <TabItem label="Browser global">
+  <TabItem label="Browser / CDN">
 
     No bundler required. Load the separate CSS and JS assets, then use `window.Drawer.createDrawer(options)`.
 
@@ -39,8 +47,8 @@ These examples target `@samline/drawer@4.0.0` and its lazy-Presence lifecycle. E
       <main>App shell</main>
     </div>
 
-    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
-    <script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
+    <script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
     <script>
       window.Drawer.createDrawer({
         id: 'filters',
@@ -56,6 +64,61 @@ These examples target `@samline/drawer@4.0.0` and its lazy-Presence lifecycle. E
   </TabItem>
 
 </Tabs>
+
+## Recipe: Complete bundler example
+
+This is a copy-paste baseline with markup, package/runtime code, visible geometry, trigger wiring, and cleanup.
+
+```html
+<button id="open-account" type="button">Open account</button>
+```
+
+```css
+[data-drawer-overlay] {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(15 23 42 / 55%);
+}
+
+[data-drawer] {
+  position: fixed;
+  z-index: 41;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  color: #172033;
+  background: white;
+  outline: none;
+}
+
+[data-drawer-direction='bottom'] {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 85dvh;
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+```
+
+```ts
+import { createDrawer } from '@samline/drawer'
+import '@samline/drawer/styles.css'
+
+const trigger = document.querySelector<HTMLElement>('#open-account')
+const drawer = createDrawer({
+  id: 'account',
+  triggerElement: trigger,
+  title: 'Account',
+  description: 'Update your profile settings',
+  content: 'Profile controls go here.',
+  showHandle: true,
+  closeButton: true
+})
+
+window.addEventListener('pagehide', () => drawer.destroy(), { once: true })
+```
+
+For a complete no-bundler HTML document, see [Browser / CDN → Basic usage](/drawer/reference/browser/#basic-usage).
 
 ## Recipe: Custom HTML content
 
@@ -92,7 +155,7 @@ createDrawer({
 })
 ```
 
-> **Move semantics**: the runtime adopts the element. After `destroyDrawer`, the element stays in its previous location and you can keep using it. The same element instance cannot be passed to a second `content` while the first drawer still owns it.
+> **Move semantics**: the runtime adopts the element. Closing or destroying removes its ancestor subtree, so the element becomes detached from the document but remains reachable through your JavaScript reference. Reappend it before reuse. Do not pass one connected instance to two drawers.
 
 ### Lazy thunk
 
@@ -126,6 +189,12 @@ heading.textContent = 'Filters'
 const helpText = document.createElement('p')
 helpText.className = 'hint'
 helpText.textContent = 'Refine the result set.'
+
+function buildFormFields() {
+  const field = document.createElement('label')
+  field.innerHTML = 'Search <input name="q" />'
+  return field
+}
 
 createDrawer({
   id: 'filters',
@@ -190,6 +259,8 @@ createDrawer({
 
 Use `update()` (or `updateDrawer(id, options)`) to merge new options into a live drawer. The runtime rebuilds the dialog subtree when the renderable slots change, which re-invokes thunks and re-mounts elements.
 
+Only `open`, `activeSnapPoint`, and callback-only changes can reconcile an open drawer without a full subtree rebuild. Structural updates can also refocus a modal, so preserve form state outside the renderable when updates are frequent.
+
 ```ts
 import { createDrawer, getDrawer } from '@samline/drawer'
 
@@ -209,7 +280,7 @@ getDrawer('list')?.update({ content: newBody })
 
 ## Recipe: Listen to lifecycle callbacks
 
-The runtime exposes seven callbacks. Wire them when you need to mirror the drawer's state into your own store, log, or analytics pipeline.
+The runtime exposes six callbacks. Wire them when you need to mirror the drawer's state into your own store, log, or analytics pipeline.
 
 ```ts
 import { createDrawer, destroyDrawer } from '@samline/drawer'
@@ -307,11 +378,11 @@ destroyDrawer('parent')
 getDrawer('child') // null
 ```
 
-The parent's transform during the child's drag is driven by `runtime/nested.ts#getParentNestedVisualState`. The runtime re-applies the transform on every `onDragChange` of the child.
+The parent follows the child's drag percentage. Nested behavior writes `transform` and `transition` directly on the parent panel and resets to an explicit scale-1 transform; put application transforms on an inner wrapper rather than on `[data-drawer]`.
 
 ## Recipe: Snap points
 
-Snap points let the user drag between predefined positions. Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings are parsed as absolute pixel counts (`'180px'` is 180); percent-suffixed strings do not use percentage math in 4.0.0.
+Snap points let the user drag between predefined positions. Numbers are fractions of the viewport or custom container (`0.5` is 50%). Strings use `parseInt` as pixel counts (`'180px'` is 180, `'50%'` is 50px, and `'1rem'` is 1px). Inputs are not validated; use finite, ordered, unique values and make `activeSnapPoint` an exact array member.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
@@ -376,7 +447,7 @@ Scale ownership is stacked. If two open drawers target the same wrapper, the mos
 
 ## Recipe: Handle cycle
 
-When `handleOnly: true` or `showHandle: true`, the runtime renders a built-in handle inside the dialog. Clicking the handle advances the active snap point via `runtime/handle.ts#getNextHandleState`.
+When `handleOnly: true` or `showHandle: true`, the runtime renders a keyboard-operable handle button inside the dialog. Clicking it advances the active snap point.
 
 - At any non-last snap, the click moves to the next snap.
 - At the last snap with `dismissible: true`, the click closes the drawer.
@@ -536,6 +607,8 @@ destroyDrawer('filters')
 
 The runtime attaches a `click` listener on the trigger element when the drawer is created, and detaches / rebinds it on `update` and `destroy`.
 
+The runtime does not manage `aria-controls` or `aria-expanded` on an external trigger. Add and synchronize those attributes in your application when they are part of your accessibility contract.
+
 ## Recipe: Built-in trigger button (no external element)
 
 ```ts
@@ -623,7 +696,7 @@ const cleanup = showFilters()
 cleanup()
 ```
 
-For a `<script>` integration, call `window.Drawer.createDrawer` on mount and `window.Drawer.destroyDrawer` on teardown. For a bundler, use the [root named registry helpers](/drawer/getting-started/#browser-global-helpers).
+For a `<script>` integration, call `window.Drawer.createDrawer` on mount and `window.Drawer.destroyDrawer` on teardown. For a bundler, use the [root named registry helpers](/drawer/reference/api/).
 
 ## Recipe: Open immediately on mount with animation
 
@@ -675,6 +748,88 @@ createDrawer({
 
 The drag axis is `x` for `left` / `right` drawers. Perpendicular page scrolls will not start a drawer drag. See [CSS styling → Position all four directions](/drawer/reference/css-styling/#position-all-four-directions) for the full CSS shell.
 
+## Recipe: Modal and dismissible behavior
+
+`modal` controls page isolation; `dismissible` controls user dismissal paths. They are independent.
+
+| Options                              | Overlay/focus lock/scroll lock | Escape, overlay, drag close                         | Programmatic and built-in close button |
+| ------------------------------------ | ------------------------------ | --------------------------------------------------- | -------------------------------------- |
+| `modal: true`, `dismissible: true`   | Yes                            | Enabled                                             | Enabled                                |
+| `modal: true`, `dismissible: false`  | Yes                            | Disabled                                            | Enabled                                |
+| `modal: false`, `dismissible: true`  | No                             | Escape and drag remain available; no overlay exists | Enabled                                |
+| `modal: false`, `dismissible: false` | No                             | Disabled                                            | Enabled                                |
+
+```ts
+const drawer = createDrawer({
+  id: 'required-choice',
+  title: 'Choose an option',
+  content: 'This modal cannot be dismissed accidentally.',
+  modal: true,
+  dismissible: false,
+  closeButton: { ariaLabel: 'Cancel choice' },
+  autoFocus: true
+})
+
+drawer.setOpen(true)
+```
+
+`autoFocus: false` still moves modal focus to the dialog itself. Set `autoFocus: true` to focus its first visible focusable descendant. When closing, focus restoration is stack-aware across multiple drawers.
+
+## Recipe: External ARIA targets
+
+Use `ariaLabel` for a direct accessible name. Use `ariaLabelledBy` / `ariaDescribedBy` only when you provide matching ids. Without built-in `title` or `description`, the runtime does not create fallback target elements.
+
+```ts
+const content = document.createElement('div')
+content.innerHTML = `
+  <h2 id="account-heading">Account</h2>
+  <p id="account-help">Update your profile details.</p>
+  <label>Name <input name="name" /></label>
+`
+
+createDrawer({
+  id: 'account',
+  ariaLabelledBy: 'account-heading',
+  ariaDescribedBy: 'account-help',
+  content,
+  autoFocus: true
+})
+```
+
+When neither `title` nor `ariaLabel` is supplied, `aria-label` falls back to the drawer id. Prefer a human-readable title or label rather than relying on that safety fallback.
+
+## Recipe: Headless custom renderer
+
+`createDrawerController()` provides synchronous observable state without DOM, registry lifecycle, callback invocation, or page effects. Render and clean up your own UI from subscriptions.
+
+```ts
+import { createDrawerController } from '@samline/drawer'
+
+const customPanel = document.querySelector<HTMLElement>('#custom-panel')
+const openButton = document.querySelector<HTMLButtonElement>('#open-custom')
+const closeButton = document.querySelector<HTMLButtonElement>('#close-custom')
+if (!customPanel || !openButton || !closeButton) throw new Error('Missing custom renderer elements')
+
+const state = createDrawerController({
+  id: 'filters',
+  direction: 'right',
+  defaultOpen: false
+})
+
+const unsubscribe = state.subscribe((snapshot) => {
+  customPanel.hidden = !snapshot.state.isOpen
+  customPanel.dataset.direction = snapshot.state.direction
+})
+
+openButton.addEventListener('click', () => state.setOpen(true))
+closeButton.addEventListener('click', () => state.setOpen(false))
+
+// On teardown:
+unsubscribe()
+```
+
+Callbacks stored in `CommonDrawerOptions` do not run in headless mode. Parent validation, focus, scroll locking, snap reset, and animations are also the custom renderer's responsibility.
+
 ## Common pitfalls
 
 - **Reusing the same `id` updates the same drawer.** It does not create a second one. If you want a transient second drawer, use a unique id (e.g. `filters-${Date.now()}`) and destroy it on close.
@@ -687,3 +842,6 @@ The drag axis is `x` for `left` / `right` drawers. Perpendicular page scrolls wi
 - **`HTMLElement` content is moved, not cloned.** Do not append the same element to a second `content` while the first drawer still owns it. Use a thunk if you need a fresh node per open.
 - **Thunks re-run on every reopen.** Lazy presence unmounts the dialog subtree on close, so any `() => HTMLElement` is invoked again on the next open. Cache expensive work outside the thunk.
 - **Child auto-focus is opt-in.** Modal focus always moves inside the drawer. The default `autoFocus: false` focuses the dialog container; set `autoFocus: true` to focus its first visible control.
+- **Snapshots and `drawer.options` are not deep copies.** Treat them as read-only and update through controller methods.
+- **A retained controller can recreate a destroyed id.** Discard stale controller facades during SPA cleanup unless resurrection is intentional.
+- **Not every option has a typed unset value.** For fields such as `parentId`, destroy and recreate the id when you must remove a shallow-merged value.

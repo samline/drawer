@@ -113,6 +113,8 @@ import type { CommonDrawerSnapshot } from '@samline/drawer'
 type CommonDrawerState = CommonDrawerSnapshot['state']
 ```
 
+Snapshots are not deeply immutable copies. `options` and nested arrays such as `state.snapPoints` can share live references with runtime options. Treat every returned snapshot and `drawer.options` as read-only; direct mutation bypasses rendering, validation, callbacks, and subscriber publication.
+
 ### `CommonDrawerController`
 
 ```ts
@@ -178,6 +180,8 @@ drawer.update({ activeSnapPoint: '420px' })
 drawer.destroy()
 drawer.element // null
 ```
+
+A controller is an id-based facade. If you retain it after destruction, its reads return an empty closed snapshot and its mutators (`setOpen`, `setActiveSnapPoint`, `patch`, or `update`) register that id again. Discard stale controller references during component cleanup.
 
 `getDrawer()` and `getDrawers()` can return fresh controller wrapper objects. Compare ids or state, not object identity; all wrappers for one live id target the same underlying controller.
 
@@ -279,6 +283,8 @@ function createDrawerController(options?: CommonDrawerOptions): CommonDrawerCont
 
 `createDrawer` registers and renders a per-id host. `createDrawerController` is headless: it publishes snapshots but does not mount DOM or run registry lifecycle callbacks/effects.
 
+The headless controller stores callback fields as ordinary options but never invokes them. It also does not validate parent relationships, reset snap points after close, or participate in the registry. A custom renderer must implement those behaviors itself if required.
+
 ## Numeric constants
 
 These values are root runtime exports, not type-only declarations:
@@ -322,6 +328,18 @@ window.Drawer?.createDrawer({ id: 'filters', title: 'Filters', content: 'Body' }
 
 The interface uses the same function types as the root named API, including both `updateDrawer(options)` and `updateDrawer(id, options)` forms. There is no root runtime export named `browser` or root type export named `DrawerApi`.
 
+The browser subpath is also a normal ESM/CJS module. It exports the namespace as both default and named `Drawer`, plus every API function as a named export:
+
+```ts
+import Drawer, { Drawer as DrawerNamespace, createDrawer } from '@samline/drawer/browser'
+
+Drawer.createDrawer({ id: 'a' })
+DrawerNamespace.openDrawer('a')
+createDrawer({ id: 'b' })
+```
+
+Importing this subpath does not install `window.Drawer`; only the direct IIFE file described in [Browser / CDN](/drawer/reference/browser/) installs the global.
+
 ## Subscribing
 
 ```ts
@@ -348,12 +366,14 @@ if (snap.state.isOpen) {
 }
 ```
 
-`setOpen()`, `setActiveSnapPoint()`, and `patch()` all return the new snapshot, so you can chain state changes without an extra `getSnapshot()` call.
+`setOpen()`, `setActiveSnapPoint()`, and `patch()` all return the new snapshot. Snapshots are values to inspect, not fluent controllers, so call subsequent mutations on `drawer`.
 
 ```ts
 import { createDrawer } from '@samline/drawer'
 
 const drawer = createDrawer({ id: 'filters' })
-const next = drawer.patch({ title: 'Filters', activeSnapPoint: '420px' }).setOpen(true)
+drawer.update({ title: 'Filters' }) // vanilla options; returns a controller
+drawer.patch({ activeSnapPoint: '420px' }) // common options; returns a snapshot
+const next = drawer.setOpen(true)
 console.log(next.state.isOpen) // true
 ```

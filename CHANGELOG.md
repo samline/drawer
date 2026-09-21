@@ -2,7 +2,19 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `4.0.0` is the current stable release. The package is published under the `latest` npm tag.
+> **Status**: `4.0.1` is the current stable release. The package is published under the `latest` npm tag.
+
+## [4.0.1] — 2026-09-20
+
+Documentation completeness and accuracy release. There are no runtime or public API changes.
+
+### Documentation
+
+- Rebuilt the Starlight getting-started path around installation, a complete visible drawer, styling, controller usage, lifecycle, and cleanup.
+- Corrected the documented DOM and ARIA contract, including conditional slots, handle markup, body selectors, accessible-name fallbacks, and element ownership.
+- Added complete controller, browser-module, IIFE, compatibility, update/remount, snapshot mutability, and stale-controller behavior references.
+- Reorganized navigation and recipes by developer task, added complete bundler/CDN examples, and covered modal, accessibility, nested, snap-point, and headless-renderer scenarios.
+- Fixed broken internal links, invalid TypeScript examples, edit-page URLs, contradictory guidance, and incomplete snippets.
 
 ## [4.0.0] — 2026-09-10
 

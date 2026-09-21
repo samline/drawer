@@ -1,18 +1,37 @@
 ---
-title: Browser global
-description: Use @samline/drawer without a bundler via the window.Drawer IIFE.
+title: Browser / CDN
+description: Use the browser namespace as a module or load the global IIFE without a bundler.
 template: doc
 sidebar:
   order: 5
 ---
 
-Use the IIFE bundle when a CDN and a classic script are simpler than a bundler. The `@samline/drawer/browser` subpath is also available as a real ESM/CJS namespace module. This page targets the exact `4.0.0` CDN assets.
+Use the IIFE bundle when a CDN and classic script are simpler than a bundler. Use the `@samline/drawer/browser` subpath when you want the same namespace as a normal ESM/CJS module. This page targets the exact `4.0.1` CDN assets.
+
+## Module namespace
+
+The browser subpath exports the namespace as both default and named `Drawer`. It also exports every function individually and the `DrawerApi` type.
+
+```ts
+import Drawer, { Drawer as DrawerNamespace, createDrawer } from '@samline/drawer/browser'
+
+Drawer.createDrawer({ id: 'filters', title: 'Filters' })
+DrawerNamespace.openDrawer('filters')
+createDrawer({ id: 'account', content: 'Account' })
+```
+
+```js
+const Drawer = require('@samline/drawer/browser').default
+Drawer.openDrawer('filters')
+```
+
+This module does not write a global. Use the IIFE below only when you specifically need `globalThis.Drawer` / `window.Drawer`.
 
 ---
 
 ## What it exposes
 
-Loading the browser bundle attaches `window.Drawer` with this API:
+Loading the IIFE assigns the namespace to `globalThis.Drawer` and therefore to `window.Drawer` in browsers, with this API:
 
 - `getParentDrawer`
 - `getChildDrawers`
@@ -35,12 +54,12 @@ The IIFE is JavaScript only. It does not contain the runtime stylesheet and does
 ## Quick include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
 ```
 
 :::caution[Pin the version in production]
-Keep the CSS and JS URLs pinned to the same exact version. These docs intentionally use `@4.0.0`.
+Keep the CSS and JS URLs pinned to the same exact version. These docs intentionally use `@4.0.1`.
 :::
 
 ---
@@ -48,23 +67,51 @@ Keep the CSS and JS URLs pinned to the same exact version. These docs intentiona
 ## Basic usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.0/dist/style.css" />
-
-<div data-drawer-wrapper id="app-shell">
-  <main>App shell</main>
-</div>
-
-<script src="https://unpkg.com/@samline/drawer@4.0.0/dist/browser/global.global.js"></script>
-<script>
-  window.Drawer.createDrawer({
-    id: 'filters',
-    triggerText: 'Open drawer',
-    showHandle: true,
-    direction: 'bottom',
-    title: 'Drawer title',
-    content: 'Drawer content'
-  })
-</script>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
+    <style>
+      [data-drawer-overlay] {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background: rgb(15 23 42 / 55%);
+      }
+      [data-drawer] {
+        position: fixed;
+        z-index: 41;
+        box-sizing: border-box;
+        padding: 1.25rem;
+        background: white;
+        outline: none;
+      }
+      [data-drawer-direction='bottom'] {
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: 1.25rem 1.25rem 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>App shell</main>
+    <script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
+    <script>
+      window.Drawer.createDrawer({
+        id: 'filters',
+        triggerText: 'Open drawer',
+        showHandle: true,
+        direction: 'bottom',
+        title: 'Drawer title',
+        content: 'Drawer content',
+        closeButton: true
+      })
+    </script>
+  </body>
+</html>
 ```
 
 `createDrawer()` registers a closed `filters` instance, creates its dedicated host, and leaves the optional trigger mounted. The overlay and dialog content are created only when the trigger opens the drawer.
@@ -159,8 +206,9 @@ Every method on `window.Drawer` mirrors the named export on the root entry. See 
 
 ## Notes
 
-- Loading the script only attaches `window.Drawer`; it does not create a drawer.
+- Loading the script overwrites any existing `globalThis.Drawer`; it does not create a drawer. Save or rename an existing global before loading if your page already uses that name.
 - The methods on one loaded IIFE share that bundle's module-level registry. A separately bundled root import is a separate build; do not depend on the two copies sharing instances.
+- Loading a second IIFE replaces the visible global with a new namespace and registry. References retained from the first load continue to target the first registry.
 - Each registered id owns a separate `<div data-drawer-vanilla-root="id">`, including when multiple drawers use the same custom `container`.
 - Closed drawers use lazy Presence: no overlay or `[data-drawer]` content is mounted initially. During close, those nodes remain for the exit transition and are removed after the safety timeout.
 - A built-in `triggerText` button persists while closed. An external `triggerElement` listener also remains bound until it is replaced or the drawer is destroyed.
@@ -173,6 +221,17 @@ Every method on `window.Drawer` mirrors the named export on the root entry. See 
 - The runtime never writes `document.body.style.pointerEvents`; application or other modal-library values are preserved.
 
 For bundler code, use root named imports such as `import { createDrawer } from '@samline/drawer'`. There is no `browser` singleton exported from the root package.
+
+The IIFE file is distributed inside `dist` for direct file/CDN URLs, but it is not a package `exports` subpath. Do not write `import '@samline/drawer/dist/browser/global.global.js'` in a package-aware bundler; use `@samline/drawer/browser` instead.
+
+## Compatibility
+
+- Package tooling requires Node.js 20 or newer.
+- Published JavaScript targets ES2020.
+- Dragging requires Pointer Events and pointer capture.
+- Modal isolation uses `inert` with `aria-hidden`; test older browsers if your support matrix predates broad `inert` support.
+- Input repositioning uses `window.visualViewport` when available and safely does nothing when it is absent.
+- The runtime references DOM globals only when rendering, so module imports are SSR-safe. Calling `createDrawer()` on the server still registers an in-memory id with `element === null`; prefer creating DOM drawers on the client, or use `createDrawerController()` for purely headless state.
 
 ---
 
