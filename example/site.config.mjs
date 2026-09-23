@@ -46,9 +46,10 @@ const siteConfig = defineSiteConfig({
       label: 'Guide',
       items: [
         { slug: 'getting-started' },
-        { slug: 'reference/css-styling', label: 'Styling' },
-        { slug: 'reference/examples', label: 'Recipes' },
-        { slug: 'reference/browser', label: 'Browser / CDN' }
+        { slug: 'guides/lifecycle-and-state' },
+        { slug: 'guides/gestures-and-snap-points' },
+        { slug: 'guides/accessibility-and-focus' },
+        { slug: 'reference/examples', label: 'Recipes' }
       ]
     },
     {
@@ -57,7 +58,11 @@ const siteConfig = defineSiteConfig({
         { slug: 'reference' },
         { slug: 'reference/configuration' },
         { slug: 'reference/api' },
-        { slug: 'reference/typescript' }
+        { slug: 'reference/controller' },
+        { slug: 'reference/entrypoints' },
+        { slug: 'reference/typescript' },
+        { slug: 'reference/browser' },
+        { slug: 'reference/css-styling' }
       ]
     }
   ],

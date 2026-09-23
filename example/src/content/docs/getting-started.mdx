@@ -143,7 +143,7 @@ Important distinctions:
 - Subscribers run immediately and on every controller publication, including some same-value writes.
 - Treat `drawer.options` and snapshot objects as read-only. They expose live nested references; mutate state through controller methods so rendering and subscribers stay synchronized.
 
-See [Controller API](/drawer/reference/api/#controller-api) for every property and method.
+See [Controller and registry](/drawer/reference/controller/) for every property, method, return value, and the equivalent id-based helpers.
 
 ## Content forms
 
@@ -183,9 +183,12 @@ Reusing an `id` shallow-merges options into the existing drawer. Use a unique id
 
 ## Choose the next page
 
+- [Lifecycle and state](/drawer/guides/lifecycle-and-state/) explains identity, close versus destroy, callback order, subscriptions, and SPA cleanup.
+- [Gestures and snap points](/drawer/guides/gestures-and-snap-points/) explains drag permission, snap ordering, nesting, and scaled backgrounds.
+- [Accessibility and focus](/drawer/guides/accessibility-and-focus/) covers naming, modal focus ownership, dismissal, and interactive content.
 - [Configuration](/drawer/reference/configuration/) documents every option, default, accepted value, and important edge case.
-- [API reference](/drawer/reference/api/) covers registry functions and controller methods.
+- [Controller and registry](/drawer/reference/controller/) helps choose between instance methods, id-based helpers, and the headless controller.
+- [Entrypoints](/drawer/reference/entrypoints/) compares ESM, CommonJS, the browser namespace, and the standalone IIFE.
 - [Styling](/drawer/reference/css-styling/) defines the DOM, ARIA, selectors, inline styles, and all four directions.
 - [Recipes](/drawer/reference/examples/) covers snap points, nesting, forms, focus, triggers, multiple drawers, and cleanup.
-- [Browser / CDN](/drawer/reference/browser/) covers the IIFE global and the `@samline/drawer/browser` module.
 - [TypeScript](/drawer/reference/typescript/) lists all exported types, constants, and return shapes.
