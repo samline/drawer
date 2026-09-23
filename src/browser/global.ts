@@ -13,10 +13,10 @@
 //     `createDrawer()` / `configureDrawer()` calls, matching the
 //     documented "loading the script only attaches `window.Drawer`" contract.
 
-import Drawer, { type DrawerApi } from './index'
+import Drawer, { browser, type DrawerApi } from './index'
 
-export { Drawer }
-export type { DrawerApi }
+export { browser, Drawer }
+export type { DrawerApi, NewDrawerInput } from './index'
 
 declare global {
   interface Window {

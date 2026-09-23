@@ -2,7 +2,15 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `4.0.1` is the current stable release. The package is published under the `latest` npm tag.
+> **Status**: `4.1.0` is the current stable release. Publish it under the `latest` npm tag after verification.
+
+## [4.1.0] — 2026-09-23
+
+### Added
+
+- Added a shared `browser` alias so bundler and IIFE consumers use the same `Drawer` singleton.
+- Added `newDrawer({ id, html, options })` for trusted server-rendered HTML integrations.
+- Added a read-only `available` view derived from the package registry; it never creates a second source of truth.
 
 ## [4.0.1] — 2026-09-20
 

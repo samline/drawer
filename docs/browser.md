@@ -29,8 +29,8 @@ Loading the browser bundle attaches `window.Drawer` with this API:
 The IIFE bundle is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.1.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -40,19 +40,19 @@ The browser bundle only attaches `window.Drawer`. It does not inject any `<style
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.1.0/dist/browser/global.global.js"></script>
 ```
 
-> Pin the version in production. Replace `4.0.1` with the version you ship.
+> Pin the version in production. Replace `4.1.0` with the version you ship.
 
 ---
 
 ## Basic Usage
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.0.1/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.0.1/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.1.0/dist/browser/global.global.js"></script>
 
 <div data-drawer-wrapper id="app-shell">
   <main>App shell</main>
@@ -134,6 +134,20 @@ interface DrawerApi {
 
 Every method on `window.Drawer` mirrors the named export on the root entry. See [API reference](api/index.md) for full per-method documentation.
 
+The browser namespace also includes two compatibility helpers for server-rendered applications:
+
+```js
+const drawer = window.Drawer.newDrawer({
+  id: 'account',
+  html: '<strong>Account</strong>',
+  options: { direction: 'bottom' }
+})
+
+window.Drawer.available.account === window.Drawer.getDrawer('account')
+```
+
+`available` is a read-only view derived from the package registry, not a second registry. Prefer `getDrawer(id)` and the imperative helpers in new code. `newDrawer` is intended for trusted server-rendered HTML; never pass unsanitized user input.
+
 ```html
 <script>
   const Drawer = window.Drawer
@@ -162,7 +176,7 @@ Every method on `window.Drawer` mirrors the named export on the root entry. See 
 
 ## Notes
 
-- All methods on one `window.Drawer` namespace use the same registry. The namespace does not expose controllers as keyed properties; use `getDrawer(id)` or `getDrawers()`.
+- All methods on one `window.Drawer` namespace use the same registry. `available` is a compatibility view; use `getDrawer(id)` or `getDrawers()` for explicit inspection.
 - Loading the script only attaches `window.Drawer`. Calling `createDrawer()` or `configureDrawer()` creates that drawer's dedicated host and optional trigger immediately; overlay and content mount only while open or exiting.
 - Treat each browser drawer id as an owned runtime instance. If your page removes that flow, swaps to a new id, or rebuilds the integration dynamically, call `destroyDrawer(id)` or `destroyDrawers()` so the shared registry can release the instance.
 - Pass `showHandle` to render the built-in handle in plain HTML or CDN usage. If `handleOnly` is enabled, that handle is rendered automatically.

@@ -19,7 +19,9 @@ function collectConsoleMessages(spies: Array<ReturnType<typeof vi.spyOn>>) {
 
 describe('browser entry', () => {
   it('exposes the full imperative API on the Drawer namespace', async () => {
-    const { Drawer } = await importBrowser()
+    const { browser, Drawer } = await importBrowser()
+
+    expect(browser).toBe(Drawer)
 
     expect(Drawer.openDrawer).toBeTypeOf('function')
     expect(Drawer.closeDrawer).toBeTypeOf('function')
@@ -33,6 +35,38 @@ describe('browser entry', () => {
     expect(Drawer.destroyDrawer).toBeTypeOf('function')
     expect(Drawer.destroyDrawers).toBeTypeOf('function')
     expect(Drawer.createDrawerController).toBeTypeOf('function')
+    expect(Drawer.newDrawer).toBeTypeOf('function')
+    expect(Drawer.available).toEqual({})
+  })
+
+  it('derives available and newDrawer from the package registry', async () => {
+    const { Drawer } = await importBrowser()
+
+    Drawer.destroyDrawers()
+    const drawer = Drawer.newDrawer({
+      id: 'browser-html',
+      html: '<strong data-browser-html>Body</strong>',
+      options: { open: true }
+    })
+
+    expect(drawer?.id).toBe(Drawer.getDrawer('browser-html')?.id)
+    expect(Drawer.available['browser-html']?.id).toBe('browser-html')
+    expect(document.querySelector('[data-browser-html]')?.textContent).toBe('Body')
+
+    Drawer.destroyDrawer('browser-html')
+    expect(Drawer.available['browser-html']).toBeUndefined()
+  })
+
+  it('rejects incomplete newDrawer input without changing the registry', async () => {
+    const { Drawer } = await importBrowser()
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    Drawer.destroyDrawers()
+    expect(Drawer.newDrawer({ id: '', html: '' })).toBeUndefined()
+    expect(Drawer.available).toEqual({})
+    expect(error).toHaveBeenCalledWith('Drawer ID and HTML content are required')
+
+    error.mockRestore()
   })
 
   it('attaches the Drawer namespace to window when a DOM is available', async () => {
