@@ -95,10 +95,12 @@
   transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 [data-drawer-overlay][data-drawer-snap-points='false'][data-state='open'] {
-  animation-name: fadeIn;
+  opacity: 1;
+  pointer-events: auto;
+  animation-name: drawer-overlay-fade-in;
 }
 [data-drawer-overlay][data-state='closed'] {
-  /* Hold the exiting overlay at opacity:0 after fadeOut. Initially
+  /* Hold the exiting overlay at opacity:0 after its fade. Initially
      closed drawers use lazy presence, so this rule only applies to
      visual nodes retained for an active close transition.
 
@@ -113,7 +115,7 @@
      rule's specificity to (0,3,0), which is high enough to win
      regardless of order. */
   opacity: 0;
-  animation-name: fadeOut;
+  animation-name: drawer-overlay-fade-out;
   animation-fill-mode: forwards;
   /* When the drawer is closed the overlay sits at
      `position: fixed; inset: 0; z-index: 100` (consumer's CSS) and
@@ -127,7 +129,7 @@
    this rule wins specificity ties against the later
    `[data-drawer-overlay][data-drawer-snap-points-overlay='true']`
    rule. The visual effect is the same as the base rule above
-   (opacity:0, pointer-events:none, animation-name:fadeOut), the
+   (opacity:0, pointer-events:none, and the exit animation), the
    only difference is the selector specificity. */
 [data-drawer-overlay][data-drawer-overlay][data-state='closed'] {
   opacity: 0;
@@ -240,7 +242,7 @@
   }
 }
 
-@keyframes fadeIn {
+@keyframes drawer-overlay-fade-in {
   from {
     opacity: 0;
   }
@@ -249,7 +251,7 @@
   }
 }
 
-@keyframes fadeOut {
+@keyframes drawer-overlay-fade-out {
   to {
     opacity: 0;
   }

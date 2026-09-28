@@ -47,18 +47,18 @@ describe('overlay closed-state pointer-events', () => {
 
     const closedRuleBody = closedRuleMatch![0]
     expect(closedRuleBody).toMatch(/pointer-events\s*:\s*none/)
-    expect(closedRuleBody).toMatch(/animation-name\s*:\s*fadeOut/)
+    expect(closedRuleBody).toMatch(/animation-name\s*:\s*drawer-overlay-fade-out/)
     expect(closedRuleBody).toMatch(/animation-fill-mode\s*:\s*forwards/)
   })
 
-  it('does not apply `pointer-events: none` to the open-state overlay rule', () => {
+  it('makes the open-state overlay visible and interactive', () => {
     const css = readSourceStylesheet()
 
     // The open-state overlay rule must NOT carry `pointer-events:
     // none` — when the drawer is open the user has to be able to
-    // click the overlay to dismiss. The default value (`auto`) is
-    // restored automatically once `data-state="open"` makes the
-    // closed rule stop matching.
+    // click the overlay to dismiss. Keep the open-state opacity and
+    // hit testing explicit so an overlay cannot settle into an
+    // invisible click-blocking state.
     //
     // The open-state rule carries an intermediate
     // `[data-drawer-snap-points='false']` attribute selector in
@@ -68,7 +68,9 @@ describe('overlay closed-state pointer-events', () => {
     expect(openRuleMatch).not.toBeNull()
 
     const openRuleBody = openRuleMatch![0]
-    expect(openRuleBody).not.toMatch(/pointer-events/)
+    expect(openRuleBody).toMatch(/opacity\s*:\s*1/)
+    expect(openRuleBody).toMatch(/pointer-events\s*:\s*auto/)
+    expect(openRuleBody).toMatch(/animation-name\s*:\s*drawer-overlay-fade-in/)
   })
 
   it('does not leave an invisible overlay mounted while closed', () => {

@@ -2,7 +2,13 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `4.2.0` is the current stable release. Publish it under the `latest` npm tag after verification.
+> **Status**: `4.2.1` is the current stable release. Publish it under the `latest` npm tag after verification.
+
+## [4.2.1] — 2026-09-28
+
+### Fixed
+
+- Modeless overlays now settle at visible, interactive open-state styles and use package-scoped fade keyframes, preventing an invisible overlay from intercepting pointer events when application keyframes collide.
 
 ## [4.2.0] — 2026-09-28
 

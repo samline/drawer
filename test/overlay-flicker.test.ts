@@ -14,7 +14,7 @@
  * triggers `data-drawer-snap-points-overlay='true'` on every
  * mount (the runtime sets it whenever there are no snap-points),
  * so the later rule wins and the overlay starts at opacity:1.
- * The `fadeOut` animation then runs (with `forwards` fill-mode)
+ * The overlay close animation then runs (with `forwards` fill-mode)
  * and fades the overlay to opacity:0 over 0.5s — the visible
  * flicker.
  *
@@ -51,5 +51,13 @@ describe('overlay initial-mount flicker', () => {
     expect(css).toMatch(/\[data-drawer-overlay\]\[data-drawer-snap-points-overlay=['"]true['"]/)
     // The boost must NOT include the open state.
     expect(css).not.toMatch(/\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]open['"]/)
+  })
+
+  it('uses package-scoped overlay keyframes', () => {
+    const css = fs.readFileSync(path.resolve(__dirname, '../src/style.css'), 'utf8')
+
+    expect(css).toMatch(/@keyframes\s+drawer-overlay-fade-in/)
+    expect(css).toMatch(/@keyframes\s+drawer-overlay-fade-out/)
+    expect(css).not.toMatch(/@keyframes\s+fade(?:In|Out)\b/)
   })
 })

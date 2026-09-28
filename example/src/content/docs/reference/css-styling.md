@@ -238,7 +238,7 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 ## Notes
 
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
-- Its global keyframe names are `fadeIn`, `fadeOut`, `slideFromBottom`, `slideToBottom`, `slideFromTop`, `slideToTop`, `slideFromLeft`, `slideToLeft`, `slideFromRight`, and `slideToRight`. Avoid redefining those names globally.
+- Its global keyframe names are `drawer-overlay-fade-in`, `drawer-overlay-fade-out`, `slideFromBottom`, `slideToBottom`, `slideFromTop`, `slideToTop`, `slideFromLeft`, `slideToLeft`, `slideFromRight`, and `slideToRight`. Avoid redefining those names globally.
 - Direction selectors set `touch-action` for gesture arbitration; fine pointers also disable text selection on draggable surfaces. Preserve those rules if you replace the package stylesheet.
 - `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 4.0.1 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
