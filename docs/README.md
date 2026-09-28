@@ -1,6 +1,6 @@
 # Drawer docs
 
-This is the markdown reference for `@samline/drawer` v4.1.0, a framework-agnostic vanilla drawer runtime with module entrypoints and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer).
+This is the markdown reference for `@samline/drawer` v4.2.0, a framework-agnostic vanilla drawer runtime with module entrypoints and a `window.Drawer` browser bundle. The same content is served as a Starlight site at [samline.github.io/drawer](https://samline.github.io/drawer).
 
 ---
 
@@ -85,4 +85,4 @@ The drag pipeline (Phases A–E in `CHANGELOG.md`) is fully wired: snap points, 
 
 ## Versioning
 
-This documentation matches `@samline/drawer` v4.1.0. Earlier releases and the v3-to-v4 migration notes are tracked in [CHANGELOG.md](../CHANGELOG.md).
+This documentation matches `@samline/drawer` v4.2.0. Earlier releases and the v3-to-v4 migration notes are tracked in [CHANGELOG.md](../CHANGELOG.md).

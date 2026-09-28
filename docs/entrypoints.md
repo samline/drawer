@@ -35,8 +35,8 @@ The subpath exports the namespace plus individual helpers. Importing it does not
 ## Standalone IIFE
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.2.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.2.0/dist/browser/global.global.js"></script>
 ```
 
 The IIFE installs `window.Drawer`. It does not inject CSS, so the link is required. Pin the version in production.

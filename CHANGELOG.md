@@ -2,7 +2,13 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `4.1.0` is the current stable release. Publish it under the `latest` npm tag after verification.
+> **Status**: `4.2.0` is the current stable release. Publish it under the `latest` npm tag after verification.
+
+## [4.2.0] — 2026-09-28
+
+### Added
+
+- Added `overlay` as an independent backdrop control. `modal: false, overlay: true` now supports local dismissible overlays without focus trapping, background isolation, or body scroll locking.
 
 ## [4.1.0] — 2026-09-23
 

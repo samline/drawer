@@ -52,6 +52,12 @@ export interface CommonDrawerOptions {
   onReleaseChange?: (open: boolean) => void
   dismissible?: boolean
   modal?: boolean
+  /**
+   * Whether to render the backdrop element. Defaults to the value of
+   * `modal`, preserving the existing behavior. Set `overlay: true` with
+   * `modal: false` for a local backdrop without modal side effects.
+   */
+  overlay?: boolean
   nested?: boolean
   direction?: CommonDrawerDirection
   snapPoints?: CommonDrawerSnapPoint[]

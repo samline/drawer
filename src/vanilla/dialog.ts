@@ -2239,7 +2239,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   const shouldAnimateEntrance = state.hasMounted && !hadOpenMount
   const shouldRenderHandle = Boolean(options.handleOnly || options.showHandle)
   const shouldRenderVanillaContent = true
-  const shouldRenderOverlay = options.modal !== false
+  const shouldRenderOverlay = options.overlay ?? options.modal !== false
   let snapEntranceTransform: string | null = null
   let snapEntranceOverlayOpacity: string | null = null
 

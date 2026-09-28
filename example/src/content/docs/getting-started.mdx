@@ -175,7 +175,7 @@ Lazy factories run again whenever the dialog subtree is rebuilt, including after
 ## Lifecycle
 
 1. `createDrawer()` registers one host per id. A closed drawer keeps only that host and its optional built-in trigger.
-2. Opening mounts the dialog and, for modal drawers, an overlay. Creating with `open: true` skips the entrance animation; create closed and then call `setOpen(true)` to animate.
+2. Opening mounts the dialog and, when `overlay` resolves to `true`, a backdrop. `overlay` defaults to `modal`. Creating with `open: true` skips the entrance animation; create closed and then call `setOpen(true)` to animate.
 3. Closing marks visual nodes closed, releases focus and page effects, then removes those nodes after the exit timeout. It keeps the id and host registered.
 4. Destroying removes the registry entry, host, listeners, timers, and effects owned by that drawer. It does not call `onClose()`.
 

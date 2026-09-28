@@ -42,7 +42,7 @@ With the default `modal: true`, the drawer:
 - locks page scroll;
 - restores focus after close.
 
-`modal: false` omits those modal effects. Use it for a genuinely non-modal complementary panel, not merely to hide an overlay.
+`modal: false` omits those modal effects and, by default, the overlay. Set `overlay: true` when a modeless drawer needs a local backdrop and overlay-click dismissal; content outside its container remains interactive.
 
 :::caution[Custom focus management]
 If you set `autoFocus: false`, move focus intentionally when a modal drawer opens. Leaving keyboard focus behind an active modal produces a broken interaction even when the panel looks correct.

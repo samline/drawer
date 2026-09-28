@@ -750,14 +750,15 @@ The drag axis is `x` for `left` / `right` drawers. Perpendicular page scrolls wi
 
 ## Recipe: Modal and dismissible behavior
 
-`modal` controls page isolation; `dismissible` controls user dismissal paths. They are independent.
+`modal` controls page isolation, `overlay` controls backdrop rendering, and `dismissible` controls user dismissal paths. They are independent.
 
-| Options                              | Overlay/focus lock/scroll lock | Escape, overlay, drag close                         | Programmatic and built-in close button |
-| ------------------------------------ | ------------------------------ | --------------------------------------------------- | -------------------------------------- |
-| `modal: true`, `dismissible: true`   | Yes                            | Enabled                                             | Enabled                                |
-| `modal: true`, `dismissible: false`  | Yes                            | Disabled                                            | Enabled                                |
-| `modal: false`, `dismissible: true`  | No                             | Escape and drag remain available; no overlay exists | Enabled                                |
-| `modal: false`, `dismissible: false` | No                             | Disabled                                            | Enabled                                |
+| Options                                               | Overlay | Focus/scroll lock | Escape, overlay, drag close | Programmatic and built-in close button |
+| ----------------------------------------------------- | ------- | ----------------- | --------------------------- | -------------------------------------- |
+| `modal: true`, `dismissible: true`                    | Yes     | Yes               | Enabled                     | Enabled                                |
+| `modal: true`, `dismissible: false`                   | Yes     | Yes               | Disabled                    | Enabled                                |
+| `modal: false`, `dismissible: true`                   | No      | No                | Escape and drag enabled     | Enabled                                |
+| `modal: false`, `overlay: true`, `dismissible: true`  | Yes     | No                | Enabled                     | Enabled                                |
+| `modal: false`, `overlay: true`, `dismissible: false` | Yes     | No                | Disabled                    | Enabled                                |
 
 ```ts
 const drawer = createDrawer({

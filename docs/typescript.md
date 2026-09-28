@@ -75,6 +75,7 @@ interface CommonDrawerOptions {
   onReleaseChange?: (open: boolean) => void
   dismissible?: boolean
   modal?: boolean
+  overlay?: boolean
   nested?: boolean
   direction?: CommonDrawerDirection
   snapPoints?: CommonDrawerSnapPoint[]

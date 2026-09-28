@@ -13,8 +13,8 @@ import '@samline/drawer/styles.css'
 The IIFE bundle (`@samline/drawer/browser`) is a pure JS bundle — it does **not** include the stylesheet. Link the CSS separately from the browser entry:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.1.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.1.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.2.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@4.2.0/dist/browser/global.global.js"></script>
 ```
 
 The browser bundle only attaches `window.Drawer`. It does not inject any `<style>` element.
@@ -86,7 +86,7 @@ The host does not receive an HTML `id`; use `[data-drawer-vanilla-root='my-id']`
 
 When `triggerText` is set, the host renders a `<button type="button">` with this attribute as the drawer's built-in trigger. It persists while closed, is reconciled during an exit, and opens the same id. The runtime removes it when `triggerText` becomes empty or the drawer is destroyed.
 
-### `[data-drawer-overlay]` — the modal backdrop
+### `[data-drawer-overlay]` — the backdrop
 
 | Attribute                         | Values               | When                                                                                 |
 | --------------------------------- | -------------------- | ------------------------------------------------------------------------------------ |
@@ -95,7 +95,7 @@ When `triggerText` is set, the host renders a `<button type="button">` with this
 | `data-drawer-snap-points-overlay` | `'true' \| 'false'`  | whether the active snap is in the visible overlay range                              |
 | `data-drawer-animate`             | `'true' \| 'false'`  | runtime animation gate; initially open content starts false, then changes next frame |
 
-An initially closed drawer has no overlay. During close, the overlay remains temporarily with `data-state="closed"` so the exit can finish; the shipped `pointer-events: none` rule prevents that exiting overlay from capturing clicks. Open overlays retain normal hit testing and can dismiss the drawer. The runtime does not write `document.body.style.pointerEvents`.
+An initially closed drawer has no overlay. Open modal drawers render one by default; `overlay` can explicitly enable or disable it independently from `modal`. During close, the overlay remains temporarily with `data-state="closed"` so the exit can finish; the shipped `pointer-events: none` rule prevents that exiting overlay from capturing clicks. Open overlays retain normal hit testing and can dismiss the drawer. The runtime does not write `document.body.style.pointerEvents`.
 
 ```css
 /* Default closed-overlay guard from the shipped stylesheet. */

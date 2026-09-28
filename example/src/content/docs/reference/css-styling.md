@@ -89,7 +89,7 @@ Optional `<button type="button">` created by `triggerText`. It persists while cl
 
 ### `[data-drawer-overlay]`
 
-Only modal, present drawers render an overlay.
+Present drawers render an overlay when `overlay` resolves to `true`. It defaults to the value of `modal`, so modal drawers retain a backdrop by default while modeless drawers can opt in explicitly.
 
 | Attribute                         | Values               | Meaning                                                                                                                     |
 | --------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
