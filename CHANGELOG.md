@@ -2,7 +2,7 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.0.0] — 2026-10-20
+## [5.0.0] — 2026-10-21
 
 ### Breaking changes
 
@@ -28,6 +28,8 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 ### Changed
 
 - Separated DOM content, modal focus/isolation, gesture listeners, snap geometry and background scaling from dialog lifecycle coordination. Existing pointer, nested, viewport, accessibility and animation capabilities are retained.
+- Expanded the shared gallery to eighteen task-specific examples, including guided configuration, independent panels and a custom floating card; kept complete/split CDN and ESM files aligned.
+- Consolidated repository maintenance notes and retired duplicate documentation stubs, unused inherited controls and obsolete vendored agent material. Public documentation routes and historical fragments remain available.
 - Reorganized onboarding around one owned controller and optional registry inspection. Updated complete/split examples, framework/CMS integrations, documentation, metadata and agent guidance. Removed-method URLs are migration notes rather than active API navigation.
 
 ### Migration
@@ -246,7 +248,7 @@ The third beta of the v3.0.0 line. This release focuses on completing the drag p
 ### Fixed
 
 - Memory leak in the vanilla host: each `createDrawer` mounted a fresh `<div data-drawer-vanilla-root>` but `destroyDrawer` left the host orphaned. Added the explicit `nextElement.parentNode.removeChild(nextElement)` in `renderVanillaHost` when the host element changes.
-- CSS `data-state="closed"` animation got cut off because `animation-fill-mode: forwards` was missing. Applied to the five `slideTo{Bottom,Top,Left,Right}` and `fadeOut` rules. (See `.agents/issues/2026-07-25-drawer-visible-on-load-with-closed-state.md` for the post-bug-report write-up.)
+- CSS `data-state="closed"` animation got cut off because `animation-fill-mode: forwards` was missing. Applied to the five `slideTo{Bottom,Top,Left,Right}` and `fadeOut` rules.
 - A11y ids: `[data-drawer-title]` and `[data-drawer-description]` slots get a generated `id` when `ariaLabelledBy` / `ariaDescribedBy` is provided, so the `aria-labelledby` / `aria-describedby` attributes point to a real target.
 
 ### Versioning note

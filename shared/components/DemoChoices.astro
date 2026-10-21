@@ -1,0 +1,29 @@
+---
+import Button from './Button.astro'
+interface Props {
+  heading: string
+  items: readonly { label: string; detail: string; icon: string; value?: string }[]
+  kind?: 'action' | 'delivery'
+}
+const { heading, items, kind = 'action' } = Astro.props
+---
+
+<div class:list={['demo-menu']} role="group" aria-label={heading} data-drawer-no-drag>
+  {items.map(item => (
+    <Button
+      variant="secondary"
+      class:list={['demo-menu-item']}
+      data-demo-choice={kind === 'action' ? item.label : undefined}
+      data-demo-delivery={kind === 'delivery' ? item.value : undefined}
+    >
+      <span class:list={['demo-menu-icon']} aria-hidden="true">
+        {item.icon}
+      </span>
+      <span class:list={['demo-menu-copy']}>
+        <strong>{item.label}</strong>
+        <span>{item.detail}</span>
+      </span>
+      <span aria-hidden="true">↗</span>
+    </Button>
+  ))}
+</div>

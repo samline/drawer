@@ -1,3 +1,4 @@
+import { presets as demoPresets } from '../shared/i18n/translations/en/demo'
 import { test, expect } from '@playwright/test'
 import { readFile, readdir, mkdtemp, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -142,7 +143,7 @@ test('file tabs copy exact highlighted source and feedback resets independently'
     }
   }
 })
-test('all twelve rendered recipes execute in both modes as separate and complete files', async ({
+test('all rendered recipes execute in both modes as separate and complete files', async ({
   page,
   context,
 }) => {
@@ -159,22 +160,14 @@ test('all twelve rendered recipes execute in both modes as separate and complete
       require.resolve('vite', { paths: [fileURLToPath(new URL('../landing', import.meta.url))] })
     ).href
   )
-  const presets = [
-    'bottom',
-    'top',
-    'left',
-    'right',
-    'snaps',
-    'nested',
-    'form',
-    'scroll',
-    'nonmodal',
-    'handle',
-    'update',
-    'controlled',
-  ]
-  for (const [index, preset] of presets.entries()) {
-    const scope = page.locator('.recipe').nth(index)
+  const allPresets = Object.keys(demoPresets) as Array<keyof typeof demoPresets>
+  const requested =
+    process.env.DRAWER_RECIPE_PRESETS?.split(',').map(preset => preset.trim()) ?? allPresets
+  for (const preset of requested) expect(allPresets, 'Unknown requested recipe').toContain(preset)
+  const presets = allPresets.filter(preset => requested.includes(preset))
+  await expect(page.locator('.recipe')).toHaveCount(allPresets.length)
+  for (const preset of presets) {
+    const scope = page.locator('.recipe').nth(allPresets.indexOf(preset))
     await scope.getByText('Explore the code', { exact: true }).click()
     for (const mode of ['HTML / CDN', 'Package / ESM']) {
       await scope.getByRole('tab', { name: mode, exact: true }).click()
@@ -251,14 +244,60 @@ test('all twelve rendered recipes execute in both modes as separate and complete
           await trigger.click()
           const dialog = example.getByRole('dialog').first()
           await expect(dialog).toBeVisible()
+          await expect(dialog).toHaveAccessibleName(demoPresets[preset].panelTitle)
           await expect(dialog).toHaveAttribute(
             'data-drawer-direction',
-            ['snaps', 'nested', 'form', 'handle', 'update', 'controlled'].includes(preset)
-              ? 'bottom'
-              : ['scroll', 'nonmodal'].includes(preset)
-                ? 'right'
-                : preset
+            demoPresets[preset].direction
           )
+          if (preset === 'wizard') {
+            await dialog
+              .getByLabel('Canvas finish', { exact: true })
+              .selectOption('Midnight canvas')
+            await dialog.getByRole('button', { name: 'Continue', exact: true }).click()
+            await dialog.getByLabel('Initials (optional)', { exact: true }).fill('AM')
+            await dialog.getByRole('button', { name: 'Back', exact: true }).click()
+            await expect(dialog.getByLabel('Canvas finish', { exact: true })).toHaveValue(
+              'Midnight canvas'
+            )
+            await dialog.getByRole('button', { name: 'Continue', exact: true }).click()
+            await expect(dialog.getByLabel('Initials (optional)', { exact: true })).toHaveValue(
+              'AM'
+            )
+            await dialog.getByRole('button', { name: 'Continue', exact: true }).click()
+            await expect(dialog.locator('[data-flow-summary]')).toHaveText('Midnight canvas · AM')
+            await dialog
+              .getByRole('button', { name: 'Confirm sample selection', exact: true })
+              .click()
+            await expect(example.locator('#demo-result')).toHaveText(
+              'Configured: Midnight canvas · AM'
+            )
+            await trigger.click()
+          }
+          if (preset === 'independent') {
+            await dialog.getByRole('button', { name: 'Open activity', exact: true }).click()
+            const activity = example.getByRole('dialog', { name: 'Project activity', exact: true })
+            await expect(activity).toBeVisible()
+            await activity.evaluate(async el => {
+              await Promise.all(el.getAnimations().map(animation => animation.finished))
+            })
+            const notesBounds = (await dialog.boundingBox())!
+            const activityBounds = (await activity.boundingBox())!
+            expect(notesBounds.x + notesBounds.width).toBeLessThanOrEqual(activityBounds.x)
+            await dialog.getByRole('button', { name: 'Close drawer', exact: true }).click()
+            await expect(activity).toBeVisible()
+            await activity.getByRole('button', { name: 'Close activity', exact: true }).click()
+            await trigger.click()
+          }
+          if (preset === 'styled') {
+            await expect(dialog).toHaveClass(/demo-invitation/)
+            await dialog
+              .getByRole('button', { name: 'Accept sample invitation', exact: true })
+              .click()
+            await expect(example.locator('#demo-result')).toHaveText(
+              'Selected: Accept sample invitation'
+            )
+            await trigger.click()
+          }
           if (preset === 'snaps') {
             const before = await dialog.evaluate(el => getComputedStyle(el).transform)
             await dialog.locator('[data-drawer-handle]').click()
@@ -269,12 +308,16 @@ test('all twelve rendered recipes execute in both modes as separate and complete
           if (preset === 'form') {
             await dialog.getByLabel('Category', { exact: true }).selectOption({ label: 'Books' })
             await dialog.getByRole('button', { name: 'Apply filters' }).click()
-            await expect(example.locator('#demo-result')).toHaveText('Selected category: Books')
+            await expect(example.locator('#demo-result')).toHaveText(
+              'Selected category: Books · Recommended'
+            )
             await expect(dialog).not.toBeVisible()
             await trigger.click()
           }
           if (preset === 'nonmodal') {
             await expect(dialog).not.toHaveAttribute('aria-modal', 'true')
+            await dialog.getByRole('checkbox', { name: 'Show canvas grid' }).check()
+            await expect(example.locator('#canvas')).toHaveAttribute('data-grid', '')
             await example.getByRole('button', { name: 'Try a page action' }).click()
             await expect(example.locator('#demo-result')).toHaveText(
               'The page is still interactive.'
@@ -282,9 +325,9 @@ test('all twelve rendered recipes execute in both modes as separate and complete
             await expect(dialog).toBeVisible()
           }
           if (preset === 'update') {
-            await dialog.getByRole('button', { name: 'Load the next detail' }).click()
-            await expect(dialog).toContainText('The same drawer now shows fresh content.')
-            await expect(dialog).toContainText('Your next detail')
+            await dialog.getByRole('button', { name: 'Show packing update' }).click()
+            await expect(dialog).toContainText('Order STUDIO-1042 is packed:')
+            await expect(dialog).toContainText('Packed and ready to go')
           }
           if (preset === 'controlled') {
             await dialog.getByRole('button', { name: 'Expanded', exact: true }).click()
@@ -318,25 +361,67 @@ test('all twelve rendered recipes execute in both modes as separate and complete
             await expect(dialog.getByLabel('Your notes')).toHaveValue('Keep this gesture local')
           }
           if (preset === 'nested') {
-            await example.getByRole('button', { name: 'Open child drawer' }).click()
+            await example.getByRole('button', { name: 'Choose delivery' }).click()
             await expect(example.locator('[data-drawer][data-state="open"]')).toHaveCount(2)
-            await example.getByRole('button', { name: 'Close child', exact: true }).click()
+            await example.getByRole('button', { name: /Express delivery/ }).click()
+            await expect(dialog.locator('[data-delivery-summary]')).toContainText(
+              'Express delivery · $8'
+            )
             await expect(example.locator('[data-drawer][data-state="open"]')).toHaveCount(1)
           }
-          await example.getByRole('button', { name: 'Close drawer', exact: true }).click()
+          if (
+            ['top', 'left', 'account', 'actions', 'confirm', 'bottom', 'right'].includes(preset)
+          ) {
+            if (preset === 'top') {
+              await dialog.getByRole('searchbox').fill('teammate')
+              await expect(dialog.locator('button[data-demo-choice]:visible')).toHaveCount(1)
+            }
+            if (preset === 'confirm') {
+              await example.keyboard.press('Escape')
+              await expect(dialog).toBeVisible()
+              await expect(dialog.locator('[data-drawer-close], [data-drawer-handle]')).toHaveCount(
+                0
+              )
+            }
+            const choice = dialog.locator('button[data-demo-choice]:visible').first()
+            const label = await choice.getAttribute('data-demo-choice')
+            await choice.click()
+            await expect(example.locator('#demo-result')).toHaveText(`Selected: ${label}`)
+            await expect(dialog).not.toBeVisible()
+          } else {
+            await example.getByRole('button', { name: 'Close drawer', exact: true }).click()
+          }
           await expect(example.getByRole('dialog')).not.toBeVisible()
-          if (preset !== 'nonmodal') await expect(trigger).toBeFocused()
+          if (!['nonmodal', 'independent'].includes(preset)) await expect(trigger).toBeFocused()
           await example.evaluate(() => {
             window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))
             window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
           })
           await trigger.click()
           await expect(example.getByRole('dialog')).toBeVisible()
+          if (preset === 'nested') {
+            await expect(example.getByRole('dialog').locator('[data-delivery-summary]')).toHaveText(
+              'No delivery selected'
+            )
+            await example.getByRole('button', { name: 'Choose delivery' }).click()
+            await example.getByRole('button', { name: /Standard delivery/ }).click()
+            await expect(
+              example.getByRole('dialog').locator('[data-delivery-summary]')
+            ).toContainText('Standard delivery · $0')
+          }
+          if (preset === 'independent')
+            await dialog.getByRole('button', { name: 'Open activity', exact: true }).click()
           await example.evaluate(() =>
             window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))
           )
           await expect(example.locator('[data-drawer-vanilla-root]')).toHaveCount(0)
           expect(errors, `${preset} ${mode} ${complete}`).toEqual([])
+        } catch (error) {
+          await test.info().attach(`copied-${preset}-${mode}-${complete ? 'complete' : 'split'}`, {
+            body: await example.content(),
+            contentType: 'text/html',
+          })
+          throw error
         } finally {
           await example.close()
           await rm(directory, { recursive: true, force: true })
@@ -388,7 +473,6 @@ test('no JavaScript preserves content, code, alternative installs and mobile nav
   await context.close()
 })
 test('all pages pass automated accessibility checks in both themes', async ({ page }) => {
-  test.setTimeout(120000)
   test.setTimeout(180000)
   const axe = await readFile(
     new URL('../node_modules/axe-core/axe.min.js', import.meta.url),

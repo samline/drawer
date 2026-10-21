@@ -28,8 +28,6 @@ import { dampenValue, getDraggableOffset, isDraggingInCloseDirection } from '../
  *   - `isDraggingInCloseDirection` therefore returns
  *     `draggedDistance < 0` for every direction.
  *
- * See `.agents/issues/2026-07-26-drag-opposite-direction-no-logarithmic-dampening.md`
- * for the full diagnosis.
  */
 
 describe('drag elastic resistance (opposite direction)', () => {

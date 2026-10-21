@@ -69,6 +69,7 @@ const t = getI18n(Astro).examples
       </section>
     ))}
     <div class:list={['resources']}>
+      <p class:list={['basis-full', 'text-center', 'text-pretty']}>{t.possibilities}</p>
       <TextLink href={`${project.docsBase}guides/examples/`}>{t.guide}</TextLink>
     </div>
   </Box>

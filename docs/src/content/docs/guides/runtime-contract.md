@@ -299,9 +299,9 @@ createDrawer({
 
 ## Next steps
 
-- Need a full options reference? See [docs/options.md](../../reference/configuration/).
-- Looking up the exact signature of a method? See [docs/api/index.md](../../reference/api/).
-- Working with the type system? See [docs/typescript.md](../../reference/typescript/).
-- Want end-to-end patterns? See [docs/recipes.md](../recipes/).
-- Want the stylesheet contract? See [docs/css-styling.md](../../reference/css-styling/).
+- Need a full options reference? See [Configuration](../../reference/configuration/).
+- Looking up the exact signature of a method? See [API reference](../../reference/api/).
+- Working with the type system? See [TypeScript reference](../../reference/typescript/).
+- Want end-to-end patterns? See [Recipes](../recipes/).
+- Want the stylesheet contract? See [Styling reference](../../reference/css-styling/).
 - Working with the IIFE bundle? See [HTML / CDN](../../reference/browser/).

@@ -311,6 +311,12 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
 - The runtime adds the exported `drawer-dragging` class to `[data-drawer]` while a drag is in progress. Target it from your stylesheet to disable selection or change the cursor.
 
+## Floating cards and inset panels
+
+The [custom-design example](../../guides/examples/#a-custom-visual-design) keeps the native controller and animations but uses a constrained floating card instead of an edge-to-edge sheet. `contentClassName` scopes its corners, width and gradient. An application `::before` layer paints the card on a transparent panel, so the native inherited `::after` background extension stays transparent; content still scrolls in the native body. No runtime pseudo-element or gesture logic is removed.
+
+For these **non-snap** inset examples, the CSS declaration `--initial-transform: 100dvh` (vertical) or `100dvw` (horizontal) gives the native entrance/exit animation enough travel to leave the viewport. This overrides the stylesheet's panel-size fallback; it is not a custom animation. Do not apply this preset to snap drawers: their runtime computes and owns snap offsets. Never replace the panel's `transform` with centering transforms; use CSS insets and auto margins, as the example does.
+
 ## Theming
 
 Override any of the data-attribute selectors in your own stylesheet. The runtime also writes targeted inline transforms, snap offsets, overlay opacity, transition state, and viewport keyboard offsets while those behaviors are active.

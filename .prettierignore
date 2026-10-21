@@ -13,11 +13,6 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Third-party skill content (read-only reference material for AI agents,
-# not part of the package's source — see AGENTS.md and the .agents/skills/
-# directory layout in the monorepo convention).
-.agents/skills/
-
 landing/
 shared/
 site-tools/
@@ -30,5 +25,3 @@ content-audit.json
 design-reference.json
 project.config.json
 playwright.site.config.ts
-
-site-skills-lock.json

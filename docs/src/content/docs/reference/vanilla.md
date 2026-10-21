@@ -9,7 +9,7 @@ sidebar:
 
 Use the root entry when you want a programmatic module API with named instances and shared runtime helpers.
 
-If you want a `<script>`-only setup without a bundler, see [docs/browser.md](../browser/).
+If you want a `<script>`-only setup without a bundler, see [HTML / CDN guide](../browser/).
 
 ---
 
@@ -56,7 +56,7 @@ import {
 } from '@samline/drawer'
 ```
 
-The full per-method reference is under [`docs/api/`](../api/).
+The full per-method reference is under [API reference](../api/).
 
 ---
 

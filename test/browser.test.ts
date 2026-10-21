@@ -175,12 +175,6 @@ describe('browser entry', () => {
     expect(document.activeElement).not.toBe(trigger)
   })
 
-  it.skip('prevents built-in trigger focus on mouse down when modal focus release is required', () => {
-    // jsdom does not enforce defaultPrevented semantics on the synthetic
-    // MouseEvent the runtime dispatches; the test stays disabled until
-    // the runtime ships its own focus model.
-  })
-
   it('rebinds trigger listeners when the same browser id is updated with a new trigger element', async () => {
     const triggerA = document.createElement('button')
     const triggerB = document.createElement('button')

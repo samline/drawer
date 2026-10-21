@@ -1,10 +1,21 @@
 ---
 import Button from './Button.astro'
-import t, { type DemoPreset } from '../i18n/translations/en/demo'
+import DemoFlowContent from './DemoFlowContent.astro'
+import DemoChoices from './DemoChoices.astro'
+import t, {
+  menus,
+  deliveryOptions,
+  scenes,
+  type ScenePreset,
+  type MenuPreset,
+  type DemoPreset,
+} from '../i18n/translations/en/demo'
 interface Props {
   preset: DemoPreset
 }
 const { preset } = Astro.props
+const scene = scenes[preset as ScenePreset]
+const menu = menus[preset as MenuPreset]
 const fieldId = `category-${crypto.randomUUID()}`
 ---
 
@@ -14,7 +25,42 @@ const fieldId = `category-${crypto.randomUUID()}`
   role={preset === 'scroll' ? 'region' : undefined}
   aria-label={preset === 'scroll' ? t.scrollContentLabel : undefined}
 >
-  {preset === 'form' ? (
+  {preset === 'controlled' && (
+    <div class:list={['demo-actions']} data-drawer-no-drag>
+      <Button data-demo-compact variant="secondary">
+        {t.compact}
+      </Button>
+      <Button data-demo-expanded>{t.expanded}</Button>
+    </div>
+  )}
+  {['wizard', 'independent', 'styled'].includes(preset) ? (
+    <DemoFlowContent preset={preset} />
+  ) : menu ? (
+    <>
+      <p class:list={['demo-kicker']}>{menu.eyebrow}</p>
+      <h3>{menu.heading}</h3>
+      {preset === 'top' && (
+        <label data-drawer-no-drag>
+          {t.commandSearch}
+          <input type="search" data-demo-search placeholder={t.commandPlaceholder} />
+        </label>
+      )}
+      {preset === 'confirm' && (
+        <div class:list={['demo-scene']}>
+          <div class:list={['demo-scene-row']}>
+            <p>{t.draftPreview}</p>
+          </div>
+        </div>
+      )}
+      <DemoChoices heading={menu.heading} items={menu.items} />
+      {preset === 'top' && (
+        <p data-demo-empty hidden role="status">
+          {t.noCommands}
+        </p>
+      )}
+      <p class:list={['demo-hint']}>{menu.hint}</p>
+    </>
+  ) : preset === 'form' ? (
     <form data-demo-form data-drawer-no-drag>
       <label for={fieldId}>{t.category}</label>
       <select id={fieldId} name="category">
@@ -22,27 +68,60 @@ const fieldId = `category-${crypto.randomUUID()}`
         <option>{t.books}</option>
         <option>{t.tools}</option>
       </select>
+      <label>
+        {t.sort}
+        <select name="sort">
+          <option>{t.recommended}</option>
+          <option>{t.newest}</option>
+          <option>{t.price}</option>
+        </select>
+      </label>
+      <p class:list={['demo-hint']}>{t.filterHint}</p>
       <Button type="submit">{t.apply}</Button>
     </form>
   ) : preset === 'scroll' ? (
     <div>
-      {t.scrollSections.map(title => (
+      {t.scrollSections.map((title, index) => (
         <section>
           <h3>{title}</h3>
-          <p>{t.scrollParagraph}</p>
-          <p>{t.scrollParagraph}</p>
+          <p>{t.scrollParagraphs[index]}</p>
         </section>
       ))}
     </div>
   ) : (
     <>
-      <p>{t.contentHeading}</p>
-      <ul>
-        {t.contentItems.map(item => (
-          <li>{item}</li>
-        ))}
-      </ul>
+      {scene ? (
+        <>
+          <p class:list={['demo-kicker']}>{scene.eyebrow}</p>
+          <h3>{scene.heading}</h3>
+          <div class:list={['demo-scene']}>
+            {scene.items.map(item => (
+              <div class:list={['demo-scene-row']}>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.detail}</p>
+                </div>
+                <span>{item.value}</span>
+              </div>
+            ))}
+          </div>
+          {scene.action && (
+            <Button data-demo-choice={scene.action} data-drawer-no-drag>
+              {scene.action}
+              <span aria-hidden="true">↗</span>
+            </Button>
+          )}
+        </>
+      ) : (
+        <p>{t.contentHeading}</p>
+      )}
     </>
+  )}
+  {preset === 'nonmodal' && (
+    <label class:list={['demo-field-inline']} data-drawer-no-drag>
+      <input type="checkbox" data-demo-grid />
+      {t.gridLabel}
+    </label>
   )}
   {preset === 'handle' && (
     <label data-drawer-no-drag>
@@ -55,13 +134,17 @@ const fieldId = `category-${crypto.randomUUID()}`
       {t.loadNext}
     </Button>
   )}
-  {preset === 'controlled' && (
-    <div class:list={['demo-actions']} data-drawer-no-drag>
-      <Button data-demo-compact variant="secondary">
-        {t.compact}
-      </Button>
-      <Button data-demo-expanded>{t.expanded}</Button>
-    </div>
+  {preset === 'nested' && (
+    <>
+      <p data-delivery-summary role="status">
+        {t.deliveryInitial}
+      </p>
+      <template data-delivery-content>
+        <div class:list={['demo-body']}>
+          <DemoChoices heading={t.deliveryGroup} items={deliveryOptions} kind="delivery" />
+        </div>
+      </template>
+    </>
   )}
   {preset === 'nested' && (
     <Button data-child data-drawer-no-drag>

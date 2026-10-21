@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { project } from '../shared/lib/project.mjs'
+const sourceRoot = process.env.DRAWER_MIGRATION_SOURCE_ROOT ?? new URL('../', import.meta.url)
 const audit = JSON.parse(await readFile(new URL('../content-audit.json', import.meta.url), 'utf8'))
 assert.equal(
   project.template,
@@ -55,6 +58,21 @@ for (const item of [...audit.sources, ...audit.publicExports]) {
     'Audit destinations must stay inside this project.'
   )
   await readFile(destination)
+  if (item.sourceRevision) {
+    assert.match(
+      item.sourceRevision,
+      /^[a-f0-9]{40}$/,
+      'Pin historical evidence to a full Git commit.'
+    )
+    const source = execFileSync('git', ['show', `${item.sourceRevision}:${item.source}`], {
+      cwd: sourceRoot,
+    })
+    assert.equal(
+      createHash('sha256').update(source).digest('hex'),
+      item.sha256,
+      `Historical source changed: ${item.source}`
+    )
+  }
 }
 console.log(
   'Release evidence is complete. Run npm run site:verify and manually review claims and copied examples.'

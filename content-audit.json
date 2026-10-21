@@ -4,7 +4,7 @@
   "sources": [
     {
       "source": "CHANGELOG.md",
-      "sha256": "45e9359e11a79f886d780b3e6d7cf4bd4232c05c3c4e6aa8208c2821a53f9b2d",
+      "sha256": "1078dbbc538a094b34dc2f48a94912ab6e9d514d933c681303ce100a30be9172",
       "destination": "CHANGELOG.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -23,223 +23,251 @@
       "sha256": "b1265e83f624d40773932cb85f590c53540036b4c6e5ce0b7ed2ce58a89fe82b",
       "destination": "docs/src/content/docs/index.mdx",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "65fe25dbcbd261c080cd08f9504a5a9b937cfdd0094732750caaefbe4bf2402a"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "65fe25dbcbd261c080cd08f9504a5a9b937cfdd0094732750caaefbe4bf2402a",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/close-drawer.md",
       "sha256": "83d5ddda7ad444e43cb1ff9c29f8bff5441f14c77746bcccf1d70bc21aeedfb7",
       "destination": "docs/src/content/docs/api/close-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "da58d60bb0827ac55a72b37a90e95fca4d53ae8ec851de66f94877842acbedea"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "da58d60bb0827ac55a72b37a90e95fca4d53ae8ec851de66f94877842acbedea",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/configure-drawer.md",
       "sha256": "63c5fc9257fa50e907d4368e072eff568450346b159db1d1986837d5035d036b",
       "destination": "docs/src/content/docs/api/configure-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "d83df494ed2fa2722c7679a7d4bf4f34903568f95c52816dd1cfd6c045d0f3fb"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "d83df494ed2fa2722c7679a7d4bf4f34903568f95c52816dd1cfd6c045d0f3fb",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/create-drawer-controller.md",
       "sha256": "432eaa75fdf066583338e9211946278d0d53c69eff9b166c3d5d139e83f7e68d",
       "destination": "docs/src/content/docs/api/create-drawer-controller.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "48d12bdfc9553317452f28d8d7daaaa87fe23123063ca087f140032993ae1213"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "48d12bdfc9553317452f28d8d7daaaa87fe23123063ca087f140032993ae1213",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/create-drawer.md",
       "sha256": "258e26e65a6b01f585b64f89101c815e33af1f0ef365d8ab4e3e61def180047b",
       "destination": "docs/src/content/docs/api/create-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "c9a73c1d2c7a557be752288df91fd888855c9ba2616bc641bb65ec80912fc8ec"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "c9a73c1d2c7a557be752288df91fd888855c9ba2616bc641bb65ec80912fc8ec",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/destroy-drawer.md",
       "sha256": "6c69c33b3109e62f2f4445151cc115e1cde243fee94d54d2eb7632d54f1f8107",
       "destination": "docs/src/content/docs/api/destroy-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "c43dfc3c252bb51df240d4b484196623debaa4082bb922b215befb578ffb7a39"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "c43dfc3c252bb51df240d4b484196623debaa4082bb922b215befb578ffb7a39",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/destroy-drawers.md",
       "sha256": "0e04e11db5e982e47b486a11de6578b49501525ca769c0660fa84d77297f4eb2",
       "destination": "docs/src/content/docs/api/destroy-drawers.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "7ab0de679d141c0ed7e04eb4bb20722e5d371137a96cb9fc141b86ddb61e5d09"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "7ab0de679d141c0ed7e04eb4bb20722e5d371137a96cb9fc141b86ddb61e5d09",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/get-child-drawers.md",
       "sha256": "dfc261e52f134c7c033117d903df53362ddadc270cec40b0818e54fc4f297fc5",
       "destination": "docs/src/content/docs/api/get-child-drawers.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "2e62d93099be40de98659a5c2dc27b69013ece766b2b0f561aba3aa381f8b968"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "2e62d93099be40de98659a5c2dc27b69013ece766b2b0f561aba3aa381f8b968",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/get-drawer.md",
       "sha256": "54f6b59e287301ba3923b1831fdbc9203bdf1605515a58494e2081400fe37130",
       "destination": "docs/src/content/docs/api/get-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "361adc169d970cdc9520899392feaba7a30f5c0a492ce22b23eb09867df066e4"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "361adc169d970cdc9520899392feaba7a30f5c0a492ce22b23eb09867df066e4",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/get-drawers.md",
       "sha256": "82ec10d3a753697db47b8be3684952080629585d2054b512de68c859a2299bd2",
       "destination": "docs/src/content/docs/api/get-drawers.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "73cac327b8aa56dae1d1ae2c8653dcba1fa539d87976230b5d286b300f1d4dc9"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "73cac327b8aa56dae1d1ae2c8653dcba1fa539d87976230b5d286b300f1d4dc9",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/get-parent-drawer.md",
       "sha256": "7e94b8661943613320acd3d2702f03f42d947d2a9445d0682e07b22cd8ffdf8d",
       "destination": "docs/src/content/docs/api/get-parent-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "5cc858c33a70d0dfc6fda54f485747970afbb7a5e64145bae50033bf582b170f"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "5cc858c33a70d0dfc6fda54f485747970afbb7a5e64145bae50033bf582b170f",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/index.md",
       "sha256": "99e1c125e6ba7dbc7649aaab653f1e330da709d565ff77d47928217ec451ba6e",
       "destination": "docs/src/content/docs/reference/api.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "bc70079eb568ee11d0bd3fb3e247992c3619f292b3de0b1d8ed345953454e409"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "bc70079eb568ee11d0bd3fb3e247992c3619f292b3de0b1d8ed345953454e409",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/open-drawer.md",
       "sha256": "868a4777c8ad0bd5ae85cb278e91da2be6eb0b6b7e9ae82dcc45d242694a9820",
       "destination": "docs/src/content/docs/api/open-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "dfbc3c5cdb1317d3014adf2968dc680709b9462b9295ce8538b315462e7daa78"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "dfbc3c5cdb1317d3014adf2968dc680709b9462b9295ce8538b315462e7daa78",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/toggle-drawer.md",
       "sha256": "f92457177414a6f5f19a1f76b24f51f0e6d1dd46bddc521a42b7206fddfd8a94",
       "destination": "docs/src/content/docs/api/toggle-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "786c476b83c7fd84db71be61e07ecb7d97d0360243e5579242e7ba9a0a274538"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "786c476b83c7fd84db71be61e07ecb7d97d0360243e5579242e7ba9a0a274538",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/api/update-drawer.md",
       "sha256": "100a937f2cfc722db6a415472a10b326bd5f2718b3cf0ac8ba9be7d780ef9d0c",
       "destination": "docs/src/content/docs/api/update-drawer.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "5888d1307f4a7b3897898fb73e731f7d50edd8951741242e51290f8a609d3514"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "5888d1307f4a7b3897898fb73e731f7d50edd8951741242e51290f8a609d3514",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/browser.md",
       "sha256": "612addc3fe07d3f37dab799426e8e4c4980bb35f4eb4568f27a1a6cc338e335f",
       "destination": "docs/src/content/docs/reference/browser.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "9e6fc2be89059f95c72fb273d41faaf3a153a79aea1fbe85fa30499450541e2a"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "9e6fc2be89059f95c72fb273d41faaf3a153a79aea1fbe85fa30499450541e2a",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/controller.md",
       "sha256": "695c15cc187c0405fa3274cc8cfca65c76d691f4747d689954afa153ce5689fa",
       "destination": "docs/src/content/docs/reference/controller.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "45d13c004a9aa1254768a90ac2b4abd890c923b3ec5a091ebd586cfead785dc4"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "45d13c004a9aa1254768a90ac2b4abd890c923b3ec5a091ebd586cfead785dc4",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/css-styling.md",
       "sha256": "39e37650c2651a6d15379516beb0c815473e655d19876e841ea4f199dbd3e5c5",
       "destination": "docs/src/content/docs/reference/css-styling.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "952774459014d3d0475faa433ded0185d2a1eb5b48d3673a277d7c0426d03bd2"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "952774459014d3d0475faa433ded0185d2a1eb5b48d3673a277d7c0426d03bd2",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/entrypoints.md",
       "sha256": "a9c3248a0eba81856b20e94742a353610b9b4d698107b5c7a3119f7d2c445057",
       "destination": "docs/src/content/docs/reference/entrypoints.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "a876d3f2bf646b08b8f66d29a211e8ccb68448c5e0946cf3c158a6a2887f3989"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "a876d3f2bf646b08b8f66d29a211e8ccb68448c5e0946cf3c158a6a2887f3989",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/getting-started.md",
       "sha256": "a636047e768ff425a9939a7d6b78404f5f2b3793bd2e82be372e13b53abab2fc",
       "destination": "docs/src/content/docs/guides/runtime-contract.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "9d824d94def619de0c13607fa2deb419e85def8682bbd8462962a951fbff9792"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "9d824d94def619de0c13607fa2deb419e85def8682bbd8462962a951fbff9792",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/guides/accessibility-and-focus.md",
       "sha256": "feef8b8d87c322a350ea7c357926f8cb3fa22fa7f93d991d3d96c71f655603b6",
       "destination": "docs/src/content/docs/guides/accessibility-and-focus.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "64af9329da9e750850ec2f0211e21f2eaf780706cdd8cb251f627a0b8c559a84"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "64af9329da9e750850ec2f0211e21f2eaf780706cdd8cb251f627a0b8c559a84",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/guides/gestures-and-snap-points.md",
       "sha256": "7f409473f1508d27935c0e37b8869f77717701028c014f73ec272b84dff78a21",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "804f38225bd13f694f57f0133c1624b8e555d092859e9e50cf037c198cbb583f"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "804f38225bd13f694f57f0133c1624b8e555d092859e9e50cf037c198cbb583f",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/guides/lifecycle-and-state.md",
       "sha256": "ee81826bb101740f7df12ea04672acd80d8c402415fcd22eb2963347029068cc",
       "destination": "docs/src/content/docs/guides/lifecycle-and-state.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "c62446eac4c72719f0a97175cea980b4e1d715946b194891ad2bc6021a17ddeb"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "c62446eac4c72719f0a97175cea980b4e1d715946b194891ad2bc6021a17ddeb",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/options.md",
       "sha256": "ea4356a2ca52f0e284cca19430f2652a5c456b84ab99b8b96767483d631e8d93",
       "destination": "docs/src/content/docs/reference/configuration.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "9b70f098f0e8ca4d5825612470bf482088b4adf6879b094914cf6069ea7f62b5"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "9b70f098f0e8ca4d5825612470bf482088b4adf6879b094914cf6069ea7f62b5",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/recipes.md",
       "sha256": "4ae6f356705ca8a3d4693fe9fe8290133dcaa9a8c932704fd42693959a735dc0",
       "destination": "docs/src/content/docs/guides/recipes.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "176c9253f17022f1e92270bce95b2b27dc98bb467f347711cf1f2883afd4bf3b"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "176c9253f17022f1e92270bce95b2b27dc98bb467f347711cf1f2883afd4bf3b",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/typescript.md",
       "sha256": "43a1f0da5796abd8364f755a93ed53a9f7f3b39ff843ef088deae7ea6ea66532",
       "destination": "docs/src/content/docs/reference/typescript.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "9be9e50ca00773cc79337ce1e091565405061d2408dfb7348e8fede62b0db136"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "9be9e50ca00773cc79337ce1e091565405061d2408dfb7348e8fede62b0db136",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "docs/vanilla.md",
       "sha256": "b71c355fa24e042078146ff6cc9959838c458e4fd668071cec1859afe844cdf3",
       "destination": "docs/src/content/docs/reference/vanilla.md",
       "reviewed": true,
-      "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
-      "importSha256": "2d411881c1b21ade9164630966f55081c9feb2408c510c1a96ef196e1f24d3bb"
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "importSha256": "2d411881c1b21ade9164630966f55081c9feb2408c510c1a96ef196e1f24d3bb",
+      "sourceRevision": "32fbe93ad6da48877940550abe8ecf176d0bb0ea"
     },
     {
       "source": "example/README.md",
       "sha256": "38ea8f40076accc637d57c4715fb128e04ef74569307c513cfd0ba901bf0def1",
       "destination": "SITE.md",
       "reviewed": true,
-      "reviewScope": "Semantics reconciled with public source and current 4.2.1 behavior."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "package.json",
@@ -430,98 +458,112 @@
       "sha256": "2664f4186c782a0cda9eeaf5d6bab913994b90290900c0852ccc911ce922c3bb",
       "destination": "docs/src/content/docs/guides/runtime-contract.md",
       "reviewed": true,
-      "reviewScope": "Preserved imported runtime contract separately from the concise installation guide."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/guides/accessibility-and-focus.md",
       "sha256": "b51e73544b08a14e8aa475e6dfd00d30c13b6ea0e81316740f5265ea2fd146ff",
       "destination": "docs/src/content/docs/guides/accessibility-and-focus.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/guides/gestures-and-snap-points.md",
       "sha256": "18ee3b4cdcb6ba352744da8f866f826a045560722dde618eb8539f25ee9539e3",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/guides/lifecycle-and-state.md",
       "sha256": "0c1d6f51f34e473e5d9aca6bf425f845f41172ef14d5b34f0dc5972053e32702",
       "destination": "docs/src/content/docs/guides/lifecycle-and-state.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/index.mdx",
       "sha256": "16854fa10884c34bcc398113be69f63c5ed489c03d5528f3181ca236a10ae12f",
       "destination": "docs/src/content/docs/index.mdx",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/api.md",
       "sha256": "76b7caccd9b755320a8b04246e431df2accd9fc2621e0e2dc594226b7e6280cf",
       "destination": "docs/src/content/docs/reference/api.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/browser.md",
       "sha256": "2f369b048068709f7d8de286da14e3f2400e75b3a8a6e3a3904b9cd70cfc37b7",
       "destination": "docs/src/content/docs/reference/browser.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/configuration.md",
       "sha256": "e9f7daf0ea952ce671377d1796011804dc97010e9b3dea0dc0f0ff80acea1512",
       "destination": "docs/src/content/docs/reference/configuration.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/controller.md",
       "sha256": "c621ba9a7fc589f772ad25b42675030a2de349a28b7ef45b15cf1f2176e15f8f",
       "destination": "docs/src/content/docs/reference/controller.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/css-styling.md",
       "sha256": "c64ff942cc9bf1ee81b904c132eea06187d3e06a5783bdde53380b9f218945c5",
       "destination": "docs/src/content/docs/reference/css-styling.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/entrypoints.md",
       "sha256": "0e08f0ffb6d42a99497890dcdcee2a0481073cf45177157529c98b457fa20e14",
       "destination": "docs/src/content/docs/reference/entrypoints.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/examples.mdx",
       "sha256": "80df0dcc5805114a76bfaaa2beb38eda0ec5b62a82b4e73fbcd65ef5e953206b",
       "destination": "docs/src/content/docs/guides/recipes.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/index.md",
       "sha256": "e6608b9062bc6da8581e8090df012a4d8296a8007c85f31ffe27e8d2450478e6",
       "destination": "docs/src/content/docs/reference/api.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     },
     {
       "source": "example/src/content/docs/reference/typescript.md",
       "sha256": "a70f5e6df4c48b9dee5a5d056fb8feaa0f90ec29277b8c659ccfd71c1ef3e8d2",
       "destination": "docs/src/content/docs/reference/typescript.md",
       "reviewed": true,
-      "reviewScope": "Reconciled overlapping content, retained source, migrated useful sections and meaningful fragments; obsolete 4.0.1 URLs use 4.2.1 in the web edition."
+      "reviewScope": "Historical source archived in Git after reconciliation with the maintained collection; public destinations remain verified.",
+      "sourceRevision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0"
     }
   ],
   "publicExports": [

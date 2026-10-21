@@ -27,8 +27,7 @@ import { resolve } from 'node:path'
 // `dist/index.mjs` is a one-line re-export shim from `./index.js`,
 // written by the same hook. Vite 7's symlink-aware dev-server resolver
 // walks the filesystem and falls back to `dist/index.mjs` when the
-// `exports` map is not consulted (see
-// `.agents/issues/2026-07-25-vite-symlink-resolution-fails-with-404-on-index-mjs.md`).
+// `exports` map is not consulted.
 // The shim makes that fallback succeed without renaming the
 // `dist/index.js` ESM output that native Node `"type": "module"`
 // consumers resolve.

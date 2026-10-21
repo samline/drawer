@@ -22,8 +22,6 @@ import { createDrawer, destroyDrawers } from '../src'
  * element. Together they guarantee that repeated `mouseup`
  * events on a closed overlay never accumulate wrappers.
  *
- * See `.agents/issues/2026-07-25-overlay-mouseup-accumulation-not-fixed.md`
- * for the full bug report.
  */
 
 describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', () => {

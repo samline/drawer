@@ -17,7 +17,7 @@ for (const item of reference.components) {
   assert.equal(
     createHash('sha256').update(styles).digest('hex'),
     item.styleSha256,
-    `${item.path}: visual drift from ${reference.repository}/blob/${reference.commit}/${item.sourcePath}; inspect REFERENCE.md before changing the fingerprint`
+    `${item.path}: visual drift from ${reference.repository}/blob/${reference.commit}/${item.sourcePath}; inspect SITE.md before changing the fingerprint`
   )
 }
 console.log(

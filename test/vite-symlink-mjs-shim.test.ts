@@ -22,8 +22,6 @@ import { describe, expect, it } from 'vitest'
  * (no rename to `.mjs`) and adds a path Vite's symlink resolver
  * can locate.
  *
- * See `.agents/issues/2026-07-25-vite-symlink-resolution-fails-with-404-on-index-mjs.md`
- * for the full bug report.
  */
 
 function readTsupConfig(): string {

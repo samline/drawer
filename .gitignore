@@ -36,9 +36,6 @@ skills-lock.json
 # npm pack output
 *.tgz
 
-# AGENTS.md and .agents/ ARE versioned (decision 2026-07-13)
-# .local/ deprecated since 2026-07-13 — use .agents/ instead
-
 # Website build artifacts
 .astro/
 playwright-report/

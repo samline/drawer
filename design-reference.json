@@ -201,11 +201,6 @@
       "styleSha256": "cfb97f354f2ed52392c1720f2a8911d19258eb9b2820d8d06d2b270a9c55e6aa"
     },
     {
-      "path": "shared/components/Callout.astro",
-      "sourcePath": "shared/components/Callout.astro",
-      "styleSha256": "4668141b233742a10b902a22d8480491b3d3abde58b78b9690847a741566fdff"
-    },
-    {
       "path": "shared/components/CardGrid.astro",
       "sourcePath": "shared/components/CardGrid.astro",
       "styleSha256": "8730472cb04d417cd77be63766e85f2c810f6aa87bfd1f1f44151693293034a0"

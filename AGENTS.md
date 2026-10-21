@@ -1,11 +1,13 @@
+# Drawer maintenance contract
+
+This is the single project memory for runtime, Home, Examples and Docs. Follow the current user request and preserve unrelated edits. Read [SITE.md](SITE.md) for architecture, validation, provenance and the scenario audit. README.md remains the public package guide; CHANGELOG.md is the release source; skills/drawer/SKILL.md is the downloadable integration skill.
+
 <!-- codebase-memory-mcp:start -->
 
-For structural codebase exploration, use the installed `codebase-memory` skill.
+Use the installed codebase-memory skill for structural exploration. Check indexed-path coverage and use source reads for stale/missing Astro/CSS coverage. Graph degree alone cannot prove dead code: callbacks, build hooks, routes and assets can have no incoming graph edges.
 <!-- codebase-memory-mcp:end -->
 
-Website work: read [SITE-AGENTS.md](SITE-AGENTS.md), including its shared PageSpeed performance contract. Runtime build/test scripts stay independent of site tooling.
-
-## Drawer 5 ownership and module boundaries
+## Runtime ownership
 
 The user authorized a complete major API simplification. `createDrawer()` always creates an independent instance; explicit ids are unique, queries never create and updates never change identity. Keep the returned controller. Commands are `setOpen`, `setActiveSnapPoint` and one `update` method; they return snapshots. `destroy` is terminal and idempotent. Stale handles cannot affect a replacement using the same id. Headless controllers have the same state/update/disposal contract without registry or DOM.
 
@@ -16,3 +18,81 @@ Do not restore removed configure/open/close/toggle/update/destroy helpers, `patc
 The v5 source, exact copied files, framework/CMS examples, root README, root changelog, docs collection, metadata and downloadable skills/drawer/SKILL.md are one release contract. Keep historical documentation fragments meaningful and removed helper pages out of current navigation. The package is prepared as 5.0.0; npm publication remains a separate maintainer action.
 
 Lifecycle callbacks and immediate subscriptions may synchronously destroy their owner. Re-check runtime identity before rendering, notifying or scheduling timers after a consumer callback; never operate on a replacement that reuses the same id. Initial content factory failures must roll back both partial DOM and registry ownership. Regression coverage exercises these cases. TypeScript rejects unused imports/locals/parameters so extraction cannot leave abandoned plumbing behind.
+
+## One website
+
+Home, Examples and Docs share one design implementation; directories are build boundaries. Inventory shared/components before writing markup. Reuse complete controls, titles, cards, demos and code viewers. Astro 7, Tailwind 4, class:list, rem fixed lengths and scoped styles/processed scripts apply everywhere. Box owns widths/gutters; forward native and scope attributes. Theme CSS owns tokens, not global component selectors. UI copy/demo data live in typed catalogs; prose lives in the docs collection.
+
+Titles use Heading/PageTitle and explicit translated accent parts. Preserve the approved Inter/Instrument Serif scale and compiled whitespace. Header/menu/footer branding uses manifest.npmName; editorial text uses manifest.name. Preserve the original compatibility labels/composition. Contextual selectors express CSS precedence: never rely on emission order for responsive visibility or icon geometry.
+
+- Reuse full implementations, not a toolbar with unhighlighted content. CodeFrame and native Markdown share one Shiki theme; CopyButton alone owns exact clipboard text, fallback and feedback reset. Check computed colors in both themes and complete copied text, including terminal newlines.
+- CodeFiles composes the existing tabs and code frames. Independently copyable HTML/CSS/JS must run together; Complete file must run alone. Do not invent another tab/highlighting/clipboard controller. Preserve data-panel hooks, instance independence, keyboard selection and no-JS labels.
+- Heading separates semantic level from controlled visual scale. PageTitle composes title/eyebrow/description. Choose explicit translated accents, never a last-word heuristic or arbitrary API identifier split. Verify compiled whitespace and metadata/search text.
+- Examples is part of Landing. Use the exact Home preview and controls in Examples and related guides. Iframes introduce foreign typography, controls and theme plumbing; do not add them without a new user requirement.
+- Keep runtime behavior in its owning dependency. Drawer owns gestures, focus trapping, Escape/backdrop, animation and scroll locking; CopyButton owns clipboard state. Add only the app integration and return explicit cleanup.
+- Namespace app hooks instead of selecting a package's data attributes as controls. Query native buttons for button-only ARIA. If a moving demo has Pause, show Play when paused and the matching accessible name. Do not mix changing action labels with stable-label aria-pressed semantics.
+- Dividers stay straight/visible, hover surfaces remain between them with equal vertical inset, and active navigation changes background without an extra border. Actions need a recognizable resting state. Docs stays last in the main menu.
+- Headings land 2.5rem below the measured sticky header. Do not combine global scroll padding with target margins or add manual scroll restoration to compensate for drawer behavior. Test open/close scroll stability and focus restoration.
+- Test the complete page at 320–1440 and back, both themes and 200% root text. Shared text buttons use min-height and wrap; grid copy uses minmax(0,1fr) and long identifiers can wrap. Never hide page overflow to conceal defects.
+- Search uses local Pagefind and the native top Drawer: compact initial height, CSS growth with results, fixed close/input/intro, separately scrolling results and native upward handle. Debounce 300ms, retain old results while typing/loading, discard stale requests and clear immediately on empty input. Do not add height measurement, gestures or a second focus trap.
+- The ToC tracks one current heading across nested headings, clicks, initial fragments, upward scroll and document end. Keep desktop/mobile instances synchronized without stealing focus or rewriting history on scroll.
+- Preserve source documentation until a semantic audit establishes its new destination. Export-name checks, automated axe and screenshots are useful evidence, not proof of complete API docs or accessibility. Execute copied code and review actual package behavior.
+
+## Site implementation and example lessons
+
+Interactive site code uses arrow setup functions and closure state through shared/lib/mount-elements.ts, with returned cleanup; no classes or this. Tags are DOM scopes, not registered custom elements. Handle detach/reinsert in one mutation batch. Drawer.destroy() does not emit the application's open-change callback: reset owned aria-expanded during cleanup. Persisted pagehide preserves controllers/listeners; real departures dispose them.
+
+Use public package imports/styles; development aliases connect this checkout. Teach Package / ESM and HTML / CDN as loading modes, with Global naming window.Drawer. Keep gestures, focus, animation, sizing and locking in the runtime. Use clear variables/arrow callbacks in copied consumer code, no generic framework or site reset helpers. Shared demo-source/demo-flow-source/demo-files generate the 72 complete/split mode variants from one catalog.
+
+Preserve all 18 preset keys/order/fragments. Home, Examples and Docs reuse Playground/DemoContent and shared controls. Each scenario needs useful consumer content and an observable result; feature explanations stay outside panelTitle/panelDescription. Local intents are not real payment, account or file operations. SITE.md records reset and usefulness policies. Receipts remain readable until reopening; opt-out retains application state, not recreated input DOM. Native snap timers already reset snaps.
+
+DemoChoices owns repeated choices. Refresh reused child factories against the current parent. Independent panels omit parentId, close independently and require separate destroy/ARIA cleanup. Wizard steps retain input DOM and focus headings; reopen recreates fields. Copied mixed-direction geometry clears opposite insets; test rendered panels, not just source or the live preview.
+
+Panel overflow stays visible because the runtime background extension otherwise creates a false scroll range. Scroll its min-height:0 flex body; keep close/handle reachable. Snap layouts reserve the runtime-provided offset without recomputing it. Custom non-snap floating cards paint an opaque application ::before over a transparent panel and adapt native CSS endpoints only as needed. Preserve runtime pseudo-elements, gestures and snap offsets; test real exit motion and both themes.
+
+FrameworkExamples/CmsExamples reuse Tabs/CodeFiles. React/Vue/Svelte lifecycle, Astro, Shopify and WordPress use verified APIs, not invented adapters. Compile/run copied components and CMS fixtures; these are not live-host deployment evidence.
+
+## PageSpeed performance contract
+
+Performance is a shared site requirement for Home, Examples and Docs. Preserve readable content, the approved design, accessibility, keyboard controls and package behavior while optimizing. Use this section as the cross-site policy; app/shared contracts describe implementation ownership, and [SITE.md](SITE.md#performance-validation) records dated measurements and limitations.
+
+### Goals and evidence
+
+- For the adapted production site, aim for at least 95 mobile performance and 100 desktop, and 100 accessibility, best practices and SEO in PageSpeed. These are engineering targets, not guaranteed scores or evidence of complete accessibility. Investigate metric regressions even when the overall score stays green; do not change the design merely to chase a perfect score.
+- Track FCP, LCP, TBT, CLS and Speed Index separately. Aim for near-zero initialization CLS and TBT; prioritize visible content and responsiveness over diagnostic counts. Lighthouse TBT is not field INP. Missing field data means unknown real-user performance, not a Core Web Vitals pass.
+
+### Loading and asset conventions
+
+- Keep static content and syntax highlighting in generated HTML. Reuse Astro's processed, deduplicated scripts and existing shared components; avoid client hydration, third-party scripts and duplicate runtimes unless a concrete requirement justifies their loading cost. Keep Pagefind lazy and package animation/viewport behavior in the package owner.
+- Fonts must come through shared Fonts: three local Latin WOFF2 faces, currently 96.4 KiB total, with `font-display: swap`. Preload only Inter and Instrument Serif for initial headings; do not preload every font or restore Google/Bunny stylesheets. Keep weights, character coverage, hashes, versions and licenses in shared/assets/fonts/README.md. Preserve the separate social-image TTF inputs. Recheck coverage when adding locales or weights.
+- Both Astro configs use shared/lib/site-build.mjs. The current policy inlines CSS strictly below 40 KiB of uncompressed content and preserves Vite defaults for other assets. Inspect the emitted routes: smaller route CSS may inline while larger documentation styles stay cacheable. Before changing the threshold, compare compressed HTML plus CSS transfer, blocking requests, cold mobile LCP and repeat/cross-route caching. Neither blanket inlining nor eliminating every external stylesheet is a goal.
+- Emit highlighted code once. CopyButton reads live rendered source unless a command explicitly overrides it; never duplicate complete snippets in clipboard attributes, hidden markup or client state. Keep Shiki at build time, exact copying, final newlines and execution of complete/split examples.
+- Keep hashed assets and valid base paths. Inspect actual response headers before diagnosing cache warnings. Cache TTLs are hosting observations, not application guarantees; verify the actual deployment. Do not add a service worker, caching proxy or hosting migration just to silence that audit without a separate requirement and evidence.
+
+### Layout, initialization and motion
+
+- Reserve control geometry before scripts run using inert plus visibility:hidden, as CopyButton and Tabs already do. Keep unavailable actions outside focus/accessibility until ready. Do not replace this with display:none or override native hidden on inactive panels. Preserve readable no-JavaScript content and test delayed-script dimensions after initialization changes.
+- Finish initial tab and fragment selection before releasing inert. Initial selection must not animate. Limit interactive feedback to explicit color/background-color transitions on hover/focus, rather than the background shorthand; respect reduced motion.
+- Use observer-provided geometry and batch layout reads before writes. Do not measure every Reveal block synchronously during mount or add per-item scroll listeners. Reveal uses the first IntersectionObserver snapshot, arms only offscreen blocks, anticipates entry by 64 CSS pixels and retains the 600ms fade. Initial viewport content must remain visible immediately; disconnect observers on reveal/removal.
+- Prefer opacity/transform for entrance motion, with cleanup and reduced-motion alternatives. Avoid layout-property animation, blanket transition:all, persistent will-change on every item and new independent animation systems. The approved HeroBackdrop entrance lasts 4.8 seconds; if Speed Index is slow, inspect the filmstrip and trace before attributing the delay or changing that visual contract. Do not hide meaningful content to improve a score.
+- Avoid unnecessary DOM and repeated generated content, while preserving readable originals, dependency-owned generated content, all examples and public fragments. Investigate long tasks and expensive measurements at their owner rather than bypassing runtime behavior. Preserve image dimensions/aspect ratios when adding media, and defer offscreen media rather than the initial LCP content.
+
+### Measurement and completion workflow
+
+1. Record the commit and dirty state, route, date, tool/browser versions, device, throttling and cache conditions. Build the production artifact; do not benchmark a dev server. Capture a baseline before editing. Measure Home, Examples and a representative Docs article separately when shared loading changes; Home's score cannot stand in for the gallery or docs.
+2. Compare at least three cold mobile runs per before/after configuration using the same environment and median metrics. Avoid concurrent builds/tests during timing. Report compressed HTML/CSS/JS/font sizes and request changes alongside metrics; also inspect repeat navigation if caching changes. Keep raw reports locally, record reproducible conditions and summarized evidence in SITE.md, and do not commit generated reports or machine-specific temporary paths as tooling.
+3. Change a bounded cause, compare the result and retain it only with a justified tradeoff. Local HTTP Lighthouse and deployed HTTPS PageSpeed use different environments; never compare their scores as a controlled experiment. Label simulated and observed timings, lab and field data, single runs and medians. Report failed diagnostics as unverified, not passed. An upstream Lighthouse animation diagnostic failed internally; do not mark failed diagnostics as verified on a new project. Browser regressions and trace diagnostics are different evidence.
+4. Review Home beside Examples and Docs. Run affected app checks and formatting, npm run site:verify, including both app checks, the combined build/link audit, adaptation builds and browser suites. Preserve site-e2e/upstream.spec.ts, site-e2e/reveal.spec.ts and related responsive, theme, enlarged-text, keyboard, no-JavaScript, copy and lifecycle coverage. Documentation-only edits need formatting/link review, not a new performance benchmark or full browser run.
+5. After an authorized commit/push, confirm the deployment's exact head and successful publication, then verify the live artifact/assets before re-running PageSpeed mobile and desktop. A queued workflow or a local green build is not a published improvement. Check job logs, environment approvals, concurrency and GitHub Status when publication stalls; do not change application code or repeatedly restart workflows without evidence.
+
+Ticker measurements belong to the upstream repository and are not a Drawer score. Preserve this contract when adapting shared theme code. Record fresh evidence per adapted project; do not copy benchmark numbers or claim an untested deployment.
+
+## Maintenance and release
+
+Keep package.json, bun.lock, project.config.json, CDN pins, metadata, CHANGELOG, collection, public skill and copied files aligned. A prepared version or intercepted local CDN request does not establish npm publication. Npm publication remains the maintainer's action. Inspect the runtime-only archive: dist/, CHANGELOG.md and automatic package.json/README.md/LICENSE.md.
+
+Run runtime build/typecheck/tests/test:package/formatting plus site:verify and site:check:release. Site validation includes both apps, visual fingerprints, Node tooling, alternate bases, combined links/migration and full browser coverage. Filtered recipe runs are not the full suite. Browser loops across rich pages should be separate route/viewport cases; capture the opened drawer id and wait for DOM removal rather than letting a generic first-dialog selector rebind during close. Record actual evidence/limits in SITE.md, not duplicated chronological logs. Preserve font notices, WOFF2, social TTF inputs, meaningful tests and Git-backed migration records.
+
+Canonical theme/adaptation skill: https://github.com/samline/package-landing-docs (../package-landing-docs). Visual source: https://github.com/samline/ticker at 8a30c9ca8486953fdc2801f0ceff8b17d0cb5615 (../ticker). Consult committed source before changing design-reference.json; never bless a failing fingerprint automatically or copy another agent's uncommitted work. Keep package-specific behavior and performance claims out of theme ports. Accent preference must come from the maintainer, recorded in content-audit.json.themeReview.
+
+Historical audit reports remain in Git, not active instructions. Durable runtime lessons: lazy closed presence; interruption/rapid-reopen cleanup; dominant-axis pointer capture/cancel; logical stacking; composable scale/scroll locks; restore existing styles and priorities. Do not write application-owned body pointer events to imitate another library. Real Safari/iOS/PWA parity requires explicit device evidence.

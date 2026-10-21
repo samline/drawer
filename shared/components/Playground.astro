@@ -8,7 +8,17 @@ import Button from './Button.astro'
 import Disclosure from './Disclosure.astro'
 import DemoCode from './DemoCode.astro'
 import DemoContent from './DemoContent.astro'
-import t, { presets, type DemoPreset } from '../i18n/translations/en/demo'
+import t, {
+  presets,
+  flowPreviews,
+  flow,
+  resetBehavior,
+  menus,
+  scenes,
+  type MenuPreset,
+  type ScenePreset,
+  type DemoPreset,
+} from '../i18n/translations/en/demo'
 interface Props extends HTMLAttributes<'div'> {
   showCode?: boolean
   preset?: DemoPreset
@@ -23,6 +33,10 @@ const {
   ...attributes
 } = Astro.props
 const item = presets[preset]
+const preview = menus[preset as MenuPreset] ?? scenes[preset as ScenePreset] ?? flowPreviews[preset]
+const resetMode = resetBehavior[preset]
+const resetHint =
+  resetMode === 'none' ? undefined : t.resetHints[preset === 'nonmodal' ? 'nonmodal' : resetMode]
 const Frame = framed ? DemoStudio : 'div'
 ---
 
@@ -34,11 +48,9 @@ const Frame = framed ? DemoStudio : 'div'
         <div class:list={['specimen']}>
           <div>
             <p id={`${id}-label`} class:list={['preview-eyebrow']}>
-              {t.previewEyebrow}
+              {preview?.eyebrow ?? t.previewEyebrow}
             </p>
-            <p class:list={['preview-title']}>
-              {t.previewTitle} <span>{t.previewAccent}</span>
-            </p>
+            <p class:list={['preview-title']}>{preview?.heading ?? t.previewTitle}</p>
             <p class:list={['preview-description']}>{item.description}</p>
           </div>
           <div class:list={['preview-diagram']} data-edge={item.direction} aria-hidden="true">
@@ -54,11 +66,19 @@ const Frame = framed ? DemoStudio : 'div'
       </DemoPanel>
       <DemoFooter
         note={
-          preset === 'nonmodal'
-            ? t.nonmodalHint
-            : preset === 'handle'
-              ? t.handleHint
-              : t.description
+          preset === 'confirm'
+            ? menus.confirm.hint
+            : preset === 'wizard'
+              ? flow.wizardHint
+              : preset === 'independent'
+                ? flow.independentHint
+                : preset === 'styled'
+                  ? flow.styledHint
+                  : preset === 'nonmodal'
+                    ? t.nonmodalHint
+                    : preset === 'handle'
+                      ? t.handleHint
+                      : t.description
         }
       >
         <Button data-open disabled aria-haspopup="dialog" aria-expanded="false">
@@ -71,7 +91,35 @@ const Frame = framed ? DemoStudio : 'div'
             {t.backgroundAction}
           </Button>
         )}
+        {preset === 'independent' && (
+          <Button
+            variant="secondary"
+            data-open-companion
+            disabled
+            aria-haspopup="dialog"
+            aria-expanded="false"
+          >
+            {flow.openActivity}
+          </Button>
+        )}
         <span data-demo-result role="status"></span>
+        {resetBehavior[preset] !== 'none' && (
+          <div class:list={['demo-reset']}>
+            <label>
+              <input
+                type="checkbox"
+                data-demo-reset
+                disabled
+                checked
+                aria-describedby={`${id}-reset-note`}
+              />
+              {t.resetLabel}
+            </label>
+            <p id={`${id}-reset-note`}>
+              {resetHint} {t.resetDisclaimer}
+            </p>
+          </div>
+        )}
       </DemoFooter>
     </Frame>
     <template data-content>
@@ -93,10 +141,11 @@ const Frame = framed ? DemoStudio : 'div'
 
 <script>
   import { demoOptions } from '../lib/demo-options'
+  import { connectWizard } from '../lib/demo-flow'
   import { connectDemoActions } from '../lib/demo-actions'
   import { mountElements } from '../lib/mount-elements'
   import { createDrawer, type VanillaDrawerController } from '@samline/drawer'
-  import t, { presets, type DemoPreset } from '../i18n/translations/en/demo'
+  import t, { presets, resetBehavior, flow, type DemoPreset } from '../i18n/translations/en/demo'
 
   mountElements('package-site-demo', element => {
     const lifecycle = new AbortController()
@@ -109,6 +158,29 @@ const Frame = framed ? DemoStudio : 'div'
     const item = presets[preset]
     const id = `site-demo-${crypto.randomUUID()}`
     let child: VanillaDrawerController | undefined
+    let companion: VanillaDrawerController | undefined
+    const companionTrigger = element.querySelector<HTMLButtonElement>('button[data-open-companion]')
+    const openCompanion = () => {
+      companion ??= createDrawer({
+        id: `${id}-activity`,
+        direction: 'right',
+        title: flow.activityTitle,
+        description: flow.activityDescription,
+        modal: false,
+        overlay: false,
+        autoFocus: false,
+        content: () =>
+          template.content
+            .querySelector<HTMLTemplateElement>('[data-companion-content]')!
+            .content.firstElementChild!.cloneNode(true) as HTMLElement,
+        contentClassName: 'site-demo-drawer demo-floating demo-independent-activity',
+        showHandle: false,
+        closeButton: { icon: '×', ariaLabel: flow.closeActivity },
+        onOpenChange: open => companionTrigger?.setAttribute('aria-expanded', String(open)),
+      })
+      companion.setOpen(true)
+    }
+    companionTrigger?.addEventListener('click', openCompanion, { signal })
     const result = element.querySelector<HTMLElement>('[data-demo-result]')!
     const report = (text: string) => {
       result.textContent = text
@@ -116,51 +188,116 @@ const Frame = framed ? DemoStudio : 'div'
     element
       .querySelector('[data-demo-page]')
       ?.addEventListener('click', () => report(t.backgroundResult), { signal })
+    const setGrid = (enabled: boolean) => element.toggleAttribute('data-preview-grid', enabled)
+    const buildContent = () => {
+      const body = template.content.firstElementChild!.cloneNode(true) as HTMLElement
+      body.querySelector<HTMLButtonElement>('[data-child]')?.addEventListener(
+        'click',
+        () => {
+          const deliveryContent = () => {
+            const choices = body
+              .querySelector<HTMLTemplateElement>('[data-delivery-content]')!
+              .content.firstElementChild!.cloneNode(true) as HTMLElement
+            choices
+              .querySelectorAll<HTMLButtonElement>('button[data-demo-delivery]')
+              .forEach(button =>
+                button.addEventListener(
+                  'click',
+                  () => {
+                    body.querySelector('[data-delivery-summary]')!.textContent =
+                      button.dataset.demoDelivery!
+                    child!.setOpen(false)
+                  },
+                  { signal }
+                )
+              )
+            return choices
+          }
+          if (child) child.update({ content: deliveryContent })
+          child ??= createDrawer({
+            id: `${id}-child`,
+            parentId: id,
+            title: t.childTitle,
+            description: t.childDescription,
+            content: deliveryContent,
+            contentClassName: 'site-demo-drawer',
+            overlayClassName: 'site-demo-overlay',
+            autoFocus: true,
+            showHandle: true,
+            closeButton: { icon: '×', ariaLabel: t.closeChild },
+          })
+          child.setOpen(true)
+        },
+        { signal }
+      )
+      body
+        .querySelector('button[data-open-companion]')
+        ?.addEventListener('click', openCompanion, { signal })
+      if (preset === 'wizard')
+        connectWizard(
+          body,
+          text => {
+            report(text)
+            drawer.setOpen(false)
+          },
+          signal
+        )
+      const grid = body.querySelector<HTMLInputElement>('[data-demo-grid]')
+      if (grid) grid.checked = element.hasAttribute('data-preview-grid')
+      connectDemoActions(body, () => drawer, report, signal, setGrid)
+      return body
+    }
+    const reset = element.querySelector<HTMLInputElement>('[data-demo-reset]')
+    let wasClosed = false
+    trigger.addEventListener(
+      'click',
+      () => {
+        if (reset?.checked) {
+          report('')
+          setGrid(false)
+          if (wasClosed && resetBehavior[preset] === 'content') {
+            drawer.update({ title: item.panelTitle, content: buildContent })
+          }
+        }
+        wasClosed = false
+      },
+      { capture: true, signal }
+    )
     const drawer = createDrawer({
       id,
       direction: item.direction,
-      title: item.title,
-      description: item.description,
+      title: item.panelTitle,
+      description: item.panelDescription,
       triggerElement: trigger,
       autoFocus: true,
-      content: () => {
-        const body = template.content.firstElementChild!.cloneNode(true) as HTMLElement
-        body.querySelector<HTMLButtonElement>('[data-child]')?.addEventListener(
-          'click',
-          () => {
-            child ??= createDrawer({
-              id: `${id}-child`,
-              parentId: id,
-              title: t.childTitle,
-              description: t.childDescription,
-              content: t.childContent,
-              contentClassName: 'site-demo-drawer',
-              overlayClassName: 'site-demo-overlay',
-              autoFocus: true,
-              showHandle: true,
-              closeButton: { icon: '×', ariaLabel: t.closeChild },
-            })
-            child.setOpen(true)
-          },
-          { signal }
-        )
-        connectDemoActions(body, () => drawer, report, signal)
-        return body
-      },
-      contentClassName: 'site-demo-drawer',
+      content: buildContent,
+      contentClassName: `site-demo-drawer${preset === 'styled' ? ' demo-floating demo-invitation' : preset === 'independent' ? ' demo-floating demo-independent-notes' : ''}`,
       overlayClassName: 'site-demo-overlay',
       showHandle: true,
       closeButton: { icon: '×', ariaLabel: t.close },
       ...demoOptions(preset),
       onOpenChange: open => {
+        if (!open) {
+          wasClosed = true
+          if (preset === 'nonmodal' && reset?.checked) {
+            report('')
+            setGrid(false)
+          }
+        }
         output.value = open ? t.stateOpen : t.stateClosed
         trigger.setAttribute('aria-expanded', String(open))
       },
     })
+    if (reset) reset.disabled = false
     trigger.disabled = false
+    if (companionTrigger) companionTrigger.disabled = false
     return () => {
       lifecycle.abort()
       drawer.destroy()
+      companion?.destroy()
+      companionTrigger?.setAttribute('aria-expanded', 'false')
+      setGrid(false)
+      report('')
       trigger.setAttribute('aria-expanded', 'false')
       output.value = t.stateClosed
     }
@@ -179,6 +316,12 @@ const Frame = framed ? DemoStudio : 'div'
   }
   package-site-demo {
     display: block;
+  }
+  package-site-demo[data-preview-grid] .specimen {
+    background-image:
+      linear-gradient(var(--color-border) 0.0625rem, transparent 0.0625rem),
+      linear-gradient(90deg, var(--color-border) 0.0625rem, transparent 0.0625rem);
+    background-size: 1.5rem 1.5rem;
   }
   .specimen {
     display: grid;
@@ -199,12 +342,6 @@ const Frame = framed ? DemoStudio : 'div'
     font-weight: var(--heading-weight);
     line-height: 1.12;
     letter-spacing: var(--heading-tracking);
-  }
-  .preview-title span {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-weight: 400;
-    color: var(--color-accent);
   }
   .preview-description {
     margin-top: var(--space-md);
@@ -271,23 +408,45 @@ const Frame = framed ? DemoStudio : 'div'
     font: var(--text-caption)/1.6 var(--font-mono);
     color: var(--palette-control-text);
   }
+  .demo-reset {
+    flex-basis: 100%;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .demo-reset label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--color-text);
+    font-size: var(--text-small);
+    cursor: pointer;
+  }
+  .demo-reset input {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--color-accent);
+    flex-shrink: 0;
+  }
+  .demo-reset input:focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: var(--focus-offset);
+  }
+  .demo-reset p {
+    max-width: 65ch;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
   .code-body {
     padding: var(--space-sm);
     min-width: 0;
   }
-  .demo-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-lg);
-  }
-  .demo-body ul {
-    margin: 0;
-    padding-left: 1.25rem;
-  }
-  .demo-body li + li {
-    margin-top: var(--space-xs);
-  }
   @media (width < 37.5rem) {
+    package-site-demo[data-preview-grid] .specimen {
+      background-image:
+        linear-gradient(var(--color-border) 0.0625rem, transparent 0.0625rem),
+        linear-gradient(90deg, var(--color-border) 0.0625rem, transparent 0.0625rem);
+      background-size: 1.5rem 1.5rem;
+    }
     .specimen {
       grid-template-columns: minmax(0, 1fr);
     }

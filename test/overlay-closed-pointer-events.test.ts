@@ -18,8 +18,6 @@ import { createDrawer, destroyDrawers } from '../src'
  * the drawer is open, the rule no longer matches (so clicks on
  * the overlay dismiss the drawer as expected).
  *
- * See `.agents/issues/2026-07-25-overlay-closed-captures-clicks-pointer-events-not-none.md`
- * for the full bug report.
  */
 
 function readSourceStylesheet(): string {

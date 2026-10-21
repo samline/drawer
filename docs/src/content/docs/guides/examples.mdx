@@ -1,7 +1,7 @@
 ---
 locale: en
 title: Working examples
-description: Twelve runnable Drawer integrations, with complete and separately copyable HTML, CSS and JavaScript.
+description: Eighteen runnable Drawer integrations, with complete and separately copyable HTML, CSS and JavaScript.
 sidebar:
   group: guides
   order: 1
@@ -39,7 +39,7 @@ The points are ordered visible sizes. Numeric `1` means zero offset; fractional 
 
 <Playground preset="nested" showCode />
 
-The child is related with `parentId`. Closing it leaves its parent open; destroying the parent also destroys its child. Keep ids unique when using these examples together.
+Choose Standard or Express delivery to update the order summary; only the child closes. The child is related with `parentId`. Closing it leaves its parent open; destroying the parent also destroys its child. Keep ids unique when using these examples together.
 
 ## Apply filters
 
@@ -57,7 +57,7 @@ The panel has its own scroll container and a sticky close button. Test wheel, ke
 
 <Playground preset="nonmodal" showCode />
 
-`modal: false` and `overlay: false` leave the background interactive. This intentionally does not trap focus or isolate the page; choose it for an inspector, not a blocking confirmation.
+Toggle **Show canvas grid** to change the preview behind the panel, then try the page action while it remains open. `modal: false` and `overlay: false` leave the background interactive. This intentionally does not trap focus or isolate the page; choose it for an inspector, not a blocking confirmation.
 
 ## Handle-only dragging
 
@@ -69,13 +69,55 @@ The panel has its own scroll container and a sticky close button. Test wheel, ke
 
 <Playground preset="update" showCode />
 
-The action replaces title and body through `update()`. The updated content remains when reopened. For a form or editor, keep application data outside disposable dialog DOM.
+The packing action advances order STUDIO-1042 from confirmation to a packed status, with items, delivery timing and the next step. It replaces title and body through `update()`. Uncheck **Reset between attempts** to keep the updated content when reopening. The checked playground option restores the initial example for another try; it is deliberately absent from copied integration code. For a form or editor, keep application data outside disposable dialog DOM.
 
 ## Controlled snap size
 
 <Playground preset="controlled" showCode />
 
-Compact and Expanded call `setActiveSnapPoint()` with exact members of the configured array. Direct calls update the snapshot; they do not echo `onActiveSnapPointChange`.
+The sample boarding pass keeps flight and baggage details in one panel. Compact and Expanded call `setActiveSnapPoint()` with exact members of the configured array. Direct calls update the snapshot; they do not echo `onActiveSnapPointChange`.
+
+## Repeat a trial
+
+Stateful previews offer **Reset between attempts**, enabled by default. Its explanation states what resets: a result message, inspector grid setting or updated content. Completed selections stay readable after closing and clear on the next opening; the non-modal result and canvas grid also clear when its inspector closes. Turn it off to inspect retained state. The inspector checkbox reflects its retained canvas state. Other form fields, command searches, notes and reading position recreate normally; this option does not add persistence to them. Reading, notes, nested navigation and both snap examples need no reset control. Drawer itself returns snaps to the first point after the close animation finishes. These helpers belong to the playground and are omitted from copied consumer code.
+
+The sample data is fictional. Menu, checkout, shortlist, account, file and draft actions return local selections for your application to handle; they are not connected services. The delivery chooser and inspector grid demonstrate actual local interface changes.
+
+## Account menu
+
+<Playground preset="account" showCode />
+
+Keep workspace choices and profile actions together. The application reports the selected action and closes its owned controller; connect these actions to your own router or account state.
+
+## File actions
+
+<Playground preset="actions" showCode />
+
+A touch-friendly contextual menu groups actions with descriptions. These are local demonstrations; no files are changed.
+
+## Explicit draft confirmation
+
+<Playground preset="confirm" showCode />
+
+`dismissible: false` keeps the panel open when Escape, the backdrop or a drag would normally dismiss it. `showHandle: false` and `closeButton: false` remove competing dismissal affordances. Each explicit choice still calls `setOpen(false)`; the application owns saving or discarding the draft.
+
+## Guided configuration
+
+<Playground preset="wizard" showCode />
+
+Choose a canvas finish and optional initials, then review the selection. Back and Continue keep the same input DOM and values; confirmation reports a local result. Closing and reopening starts a fresh configuration. The playground checkbox controls its external result message, not field persistence. This uses one controller and application state, not a second navigation API.
+
+## Independent drawers
+
+<Playground preset="independent" showCode />
+
+Open notes and activity at the same time. Both use `modal: false` and `overlay: false`, separate ids and no `parentId`. Closing notes leaves activity open, and vice versa. The page has separate triggers to reopen either one. On narrow screens the two panels occupy separate upper and lower regions. Each controller must be destroyed by its owner during cleanup; unlike the nested example, destroying one does not destroy the other. Notes are a local scratchpad, not saved storage.
+
+## A custom visual design
+
+<Playground preset="styled" showCode />
+
+The invitation uses a floating card, asymmetric corners, a constrained width and an accent gradient. `contentClassName` attaches application CSS; Drawer still owns focus, gestures and dismissal. Compare its CSS tab with the bottom-sheet example: this is the same package, not a separate dialog implementation or built-in theme. The sample action returns a local selection and does not join a real workspace.
 
 ## Cleanup
 

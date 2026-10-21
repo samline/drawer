@@ -62,11 +62,13 @@ export default {
     title: `${project.name} examples.`,
     accent: 'examples.',
     description:
-      'Try twelve Drawer examples: filters, nested flows, snap points, non-modal inspectors and more. Copy runnable HTML/CDN or ESM files.',
+      'Try eighteen Drawer examples: filters, nested flows, snap points, non-modal inspectors and more. Copy runnable HTML/CDN or ESM files.',
+    possibilities:
+      'These examples show a few possibilities. The next ideas are yours: combine the package’s capabilities with your own content, design and interactions to create the experience your project needs.',
     guide: 'Read the example guide',
     navigation: 'Choose an example',
     accessibility:
-      'Modal examples manage focus and restore it on close. The non-modal inspector leaves the page interactive. Each example includes a named close action.',
+      'Modal examples manage focus and restore it on close. The non-modal inspector leaves the page interactive. Each example includes named actions; the draft confirmation requires an explicit choice.',
     skill: 'Download the website adaptation skill',
   },
 } as const

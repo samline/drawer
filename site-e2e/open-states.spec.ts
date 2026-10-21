@@ -4,14 +4,29 @@ import { readFile } from 'node:fs/promises'
 test('new interaction states keep named controls, readable contrast and narrow layouts', async ({
   page,
 }) => {
-  test.setTimeout(90000)
+  test.setTimeout(180000)
   const axe = await readFile(
     new URL('../node_modules/axe-core/axe.min.js', import.meta.url),
     'utf8'
   )
   await page.setViewportSize({ width: 320, height: 900 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  for (const preset of ['form', 'scroll', 'nonmodal', 'handle', 'update', 'controlled']) {
+  for (const preset of [
+    'form',
+    'scroll',
+    'nonmodal',
+    'handle',
+    'update',
+    'controlled',
+    'top',
+    'left',
+    'account',
+    'actions',
+    'confirm',
+    'wizard',
+    'independent',
+    'styled',
+  ]) {
     await page.goto(`examples/#${preset}`)
     await page.addScriptTag({ content: axe })
     for (const theme of ['light', 'dark']) {
@@ -19,7 +34,7 @@ test('new interaction states keep named controls, readable contrast and narrow l
         document.documentElement.dataset.theme = theme
       }, theme)
       await page
-        .locator(`#${preset}`)
+        .locator(`#${preset === 'top' ? 'top-panel' : preset}`)
         .getByRole('button', { name: 'Open drawer', exact: true })
         .click()
       const dialog = page.getByRole('dialog')
@@ -38,7 +53,8 @@ test('new interaction states keep named controls, readable contrast and narrow l
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         320
       )
-      await page.getByRole('button', { name: 'Close drawer', exact: true }).click()
+      if (preset === 'confirm') await dialog.locator('button[data-demo-choice]').first().click()
+      else await page.getByRole('button', { name: 'Close drawer', exact: true }).click()
       await expect(dialog).not.toBeVisible()
     }
   }

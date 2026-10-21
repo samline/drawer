@@ -19,9 +19,7 @@ import { createDrawer, destroyDrawers } from '../src'
  * `document`, each holding a reference to a stale controller).
  *
  * See `.agents/recommendations/2026-07-25-built-in-closeButton-option.md`
- * for the design rationale and
- * `.agents/issues/2026-07-25-modal-drawers-title-leak-open-parpadeo-and-close-button.md`
- * for the original bug report.
+ * for the design rationale.
  */
 
 function getCloseButton(): HTMLButtonElement | null {

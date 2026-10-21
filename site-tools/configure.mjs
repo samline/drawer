@@ -166,7 +166,7 @@ export async function configure(args = process.argv.slice(2)) {
     }
   }
   console.log(
-    `Imported ${prepared.config.package.name}@${prepared.config.package.version}; ${prepared.audit.sources.length} evidence files inventoried. Source package unchanged. Read ADAPTATION.md to write verified content.`
+    `Imported ${prepared.config.package.name}@${prepared.config.package.version}; ${prepared.audit.sources.length} evidence files inventoried. Source package unchanged. Read SITE.md and the canonical template adaptation skill to write verified content.`
   )
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.argv[1]))
