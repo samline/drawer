@@ -1,6 +1,6 @@
 # Drawer website
 
-Landing, Examples and Docs for `@samline/drawer` 5.0.0. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
+Landing, Examples and Docs for `@samline/drawer` 5.0.1. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
 
 ## Run locally
 
@@ -25,7 +25,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 
 ## Maintain
 
-- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.0.0 and correspond to the package’s real distribution outputs.
+- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.0.1 and correspond to the package’s real distribution outputs.
 - `landing/src/i18n/translations/en/` owns landing copy. Article prose lives in `docs/src/content/docs/`. Shared UI copy lives in `shared/i18n/`.
 - `shared/components/Playground.astro` supplies Home, Examples and Docs previews. `shared/i18n/translations/en/demo.ts` owns editable scenario copy, while `shared/lib/demo-source.ts` and `demo-files.ts` generate/format complete and split files for both loading modes. Previews import public APIs, resolved by each app’s Vite aliases to this checkout; never duplicate runtime gestures, focus, animation or locks.
 - Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
@@ -138,3 +138,7 @@ Memory is centralized in AGENTS.md and this guide. Removed generic vendored agen
 The full Chromium run passed 40 tests, including all 72 copied CDN/ESM complete/split variants, React/Vue/Svelte, CMS fixtures, both themes, enlarged text, accessibility, search, local fonts and lifecycle cleanup. Its aggregate scroll test failed at a generic close selector; the diagnostic trace then exhausted the single global timeout. Replaced that aggregate with six route/viewport cases, pinned each opened controller id and required actual DOM removal between attempts. All six cases passed at 320/1440 on Home, Examples and Docs (1.6 minutes), without changing package runtime behavior. This records the full-run plus focused follow-up evidence, not a claim that the final 46-test suite was run locally in one invocation. CI runs the complete final suite.
 
 No new PageSpeed median, real-device Safari/iOS certification or npm publication is claimed. GitHub publication status is checked separately after the authorized push.
+
+## Bun workspace correction — 2026-10-21
+
+The first Pages run passed runtime quality but failed before Astro checking: Bun rewrote internal npm run commands and looked for an app-only check script at the root. Workspace commands now use npm --workspace <app> run <script>, which preserves the owning app under both runners. bun run site:check passed with zero diagnostics after the correction. Keep the published v5.0.0 Git tag immutable; the correction is prepared as 5.0.1 with matching package/site/CDN/skill references. No runtime API changed. The corrected Bun package build/typecheck/npm smoke test and site build passed: 25 permitted npm files, 2,688 links across 50 pages and all 14 historical articles/157 fragments. Frozen installation and formatting also passed. The full remote workflow validates the final release snapshot.

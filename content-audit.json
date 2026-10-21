@@ -1,10 +1,10 @@
 {
   "status": "verified",
-  "packageVersion": "5.0.0",
+  "packageVersion": "5.0.1",
   "sources": [
     {
       "source": "CHANGELOG.md",
-      "sha256": "1078dbbc538a094b34dc2f48a94912ab6e9d514d933c681303ce100a30be9172",
+      "sha256": "c39a39627503bc42a1735912b068866e44758e0126fd8bd4b5e223539b828bd6",
       "destination": "CHANGELOG.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -12,7 +12,7 @@
     },
     {
       "source": "README.md",
-      "sha256": "197e2823127b7212b6cd06efa23b5eac00636d19f0f792e7d0a55467eddd8b40",
+      "sha256": "4de73768f6aa133391fd73553c3d62bd90374e723f5cadc42475f8b3f10bf1bd",
       "destination": "docs/src/content/docs/index.mdx",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -271,7 +271,7 @@
     },
     {
       "source": "package.json",
-      "sha256": "53babaa6e2f919e957a4afd095ad4354dc43bf399c93a9168b8c18e733455f9a",
+      "sha256": "6398d4d05f6582a5ff4f8158692b6fcdfe3a546e483fd34a59be10990ad0f986",
       "destination": "docs/src/content/docs/reference/entrypoints.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -1505,7 +1505,7 @@
     }
   ],
   "v5Review": {
-    "version": "5.0.0",
+    "version": "5.0.1",
     "scope": "Explicit creation, stable controller identity, one update method, terminal disposal, removed redundant mutators/browser aliases/mountElement, native template content and migrated consumers. Runtime capabilities and historical routes/fragments preserved.",
     "publication": "Prepared locally; npm/CDN publication is a separate maintainer action.",
     "validation": "345 runtime tests passed / one pre-existing skip; 33 full browser checks passed, plus 8 targeted browser checks after the development-tool security update; 2661 combined links and 157 historical fragments verified; actual 25-file npm manifest and installed TypeScript consumer passed."

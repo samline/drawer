@@ -241,7 +241,7 @@ drawer.destroy()`,
     heading: heading('Keep the page.', 'Open the possibilities.'),
     description: 'Try a working interaction or build your first drawer.',
     docs: {
-      description: 'Installation, practical guides and the complete API for Drawer 5.0.0.',
+      description: 'Installation, practical guides and the complete API for Drawer 5.0.1.',
       label: 'Read the documentation',
     },
   },

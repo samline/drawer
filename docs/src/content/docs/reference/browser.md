@@ -17,11 +17,11 @@ Use **HTML / CDN** when your page does not use a bundler. The standalone script 
 ## Quick Include
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.0/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.0.0/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.1/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@5.0.1/dist/browser/global.global.js"></script>
 ```
 
-Pin matching JavaScript and CSS versions. These release URLs require the maintainer to publish 5.0.0; when developing before publication, serve the local dist files. The script must load before initialization. A deferred external script followed by an immediately executing inline initializer does not guarantee that order.
+Pin matching JavaScript and CSS versions. These release URLs require the maintainer to publish 5.0.1; when developing before publication, serve the local dist files. The script must load before initialization. A deferred external script followed by an immediately executing inline initializer does not guarantee that order.
 
 ## Basic Usage
 

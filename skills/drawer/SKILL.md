@@ -3,12 +3,12 @@ name: drawer
 description: Integrate @samline/drawer bottom sheets and side panels in HTML, JavaScript, TypeScript, framework components and CMS themes. Use for installation, accessible content, styling, registry queries, gestures and lifecycle; not unrelated navigation libraries.
 metadata:
   package: '@samline/drawer'
-  package-version: '5.0.0'
+  package-version: '5.0.1'
 ---
 
 # Drawer 5
 
-Check the installed version and exports first. This guide targets 5.0.0, whose creation, identity and destruction semantics differ from v4. Publishing the package is a maintainer action; verify CDN availability before choosing remote assets.
+Check the installed version and exports first. This guide targets 5.0.1, whose creation, identity and destruction semantics differ from v4. Publishing the package is a maintainer action; verify CDN availability before choosing remote assets.
 
 ## Default integration
 

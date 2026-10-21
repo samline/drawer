@@ -15,7 +15,7 @@ Do not restore removed configure/open/close/toggle/update/destroy helpers, `patc
 
 `vanilla/dialog.ts` coordinates presence and viewport lifecycle; `dialog-content` renders slots/controls, `dialog-focus` owns focus/modal isolation, `dialog-gestures` wires pointer/handle input, `dialog-layout` resolves geometry, and `dialog-background` owns scaling/restoration. `dialog-state` is type-only shared state; pure interaction math stays under runtime/. Preserve cleanup order and shared side-effect ownership when moving code. A smaller coordinator is an organization improvement, not a measured performance gain.
 
-The v5 source, exact copied files, framework/CMS examples, root README, root changelog, docs collection, metadata and downloadable skills/drawer/SKILL.md are one release contract. Keep historical documentation fragments meaningful and removed helper pages out of current navigation. The package is prepared as 5.0.0; npm publication remains a separate maintainer action.
+The v5 source, exact copied files, framework/CMS examples, root README, root changelog, docs collection, metadata and downloadable skills/drawer/SKILL.md are one release contract. Keep historical documentation fragments meaningful and removed helper pages out of current navigation. The package is prepared as 5.0.1; npm publication remains a separate maintainer action.
 
 Lifecycle callbacks and immediate subscriptions may synchronously destroy their owner. Re-check runtime identity before rendering, notifying or scheduling timers after a consumer callback; never operate on a replacement that reuses the same id. Initial content factory failures must roll back both partial DOM and registry ownership. Regression coverage exercises these cases. TypeScript rejects unused imports/locals/parameters so extraction cannot leave abandoned plumbing behind.
 
@@ -89,7 +89,7 @@ Ticker measurements belong to the upstream repository and are not a Drawer score
 
 ## Maintenance and release
 
-Keep package.json, bun.lock, project.config.json, CDN pins, metadata, CHANGELOG, collection, public skill and copied files aligned. A prepared version or intercepted local CDN request does not establish npm publication. Npm publication remains the maintainer's action. Inspect the runtime-only archive: dist/, CHANGELOG.md and automatic package.json/README.md/LICENSE.md.
+Keep package.json, bun.lock, project.config.json, CDN pins, metadata, CHANGELOG, collection, public skill and copied files aligned. A prepared version or intercepted local CDN request does not establish npm publication. Workspace commands use `npm --workspace <app> run <script>`; Bun rewrites the `npm run ... --workspace` form to a root Bun command. Verify the actual CI executor, not only npm. Npm publication remains the maintainer's action. Inspect the runtime-only archive: dist/, CHANGELOG.md and automatic package.json/README.md/LICENSE.md.
 
 Run runtime build/typecheck/tests/test:package/formatting plus site:verify and site:check:release. Site validation includes both apps, visual fingerprints, Node tooling, alternate bases, combined links/migration and full browser coverage. Filtered recipe runs are not the full suite. Browser loops across rich pages should be separate route/viewport cases; capture the opened drawer id and wait for DOM removal rather than letting a generic first-dialog selector rebind during close. Record actual evidence/limits in SITE.md, not duplicated chronological logs. Preserve font notices, WOFF2, social TTF inputs, meaningful tests and Git-backed migration records.
 
