@@ -8,6 +8,10 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 
 - Local stylesheet aliases preserve Vite query suffixes such as `?inline`, so clean-checkout and alternate-base builds do not depend on an already installed or built copy of Drawer.
 
+### Changed
+
+- Separated Pages publication from the exhaustive CI workflow, following Ticker's deployment model. All package, app, adaptation and browser checks remain in independent CI; publishing still validates the built site's links, migration destinations and release evidence.
+
 ## [5.0.1] — 2026-10-21
 
 ### Fixed
