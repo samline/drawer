@@ -228,10 +228,58 @@ drawer.destroy()`,
           'Yes. Link the stylesheet and load the pinned IIFE bundle, then call window.Drawer.createDrawer. ESM and CommonJS consumers use the package exports instead.'
         ),
       },
-      changes: {
-        question: text('What does my application own?'),
+      frameworks: {
+        question: text('Can I use Drawer with my framework or CMS?'),
         answer: text(
-          'You own accessible content, panel styling, unique ids and teardown. Drawer owns gestures, modal focus, background isolation, scroll locks and the open/close lifecycle. Close keeps the host; destroy removes the instance.'
+          'Yes. Use the same JavaScript API in React, Vue, Svelte or Astro, or add it to a Shopify theme or WordPress site. Create DOM drawers in the browser, after their content and triggers exist. The integration guide includes host-specific setup and cleanup.'
+        ),
+      },
+      multiple: {
+        question: text('Can I open more than one drawer?'),
+        answer: text(
+          'Yes. Create independent controllers for unrelated panels, or give a child the parent drawer’s id through parentId for a nested flow. Keep explicit ids unique. Independent panels need their own cleanup; nested drawers let users complete a second step without losing the first.'
+        ),
+      },
+      snaps: {
+        question: text('Can a drawer start small and expand?'),
+        answer: text(
+          'Yes. Snap points define the stops a drawer can move between. Use fractions of the available space for responsive sizes, then let users drag between stops or choose one with setActiveSnapPoint(). Your CSS still defines the panel’s overall geometry.'
+        ),
+      },
+      modeless: {
+        question: text('Can the page stay interactive while a drawer is open?'),
+        answer: text(
+          'Yes. Set modal to false for an inspector, notes panel or other tool used alongside the page. This disables modal focus trapping, background isolation and page scroll locking. The backdrop is also omitted by default; overlay can be configured separately.'
+        ),
+      },
+      scrolling: {
+        question: text('What about forms, long content and touch scrolling?'),
+        answer: text(
+          'Put overflow on the content body and keep the close control reachable. Drawer coordinates dragging with scrollable content and responds to mobile viewport changes while an input is focused. Use handleOnly or data-drawer-no-drag for controls that need their own gestures, and test the finished layout on your target devices.'
+        ),
+      },
+      updates: {
+        question: text('Can I change the content or keep form values between openings?'),
+        answer: text(
+          'Call update() on the existing controller to change content or options. Keep values that must survive closing in application state and restore them when building the form. A content factory runs again when the dialog is rebuilt, so closing a drawer does not automatically save form data.'
+        ),
+      },
+      dismissal: {
+        question: text('Can I prevent accidental dismissal during an important step?'),
+        answer: text(
+          'Set dismissible to false to prevent Escape, backdrop and drag dismissal. A configured close button or a programmatic close can still dismiss it. For a confirmation or unfinished form, provide clear actions and choose deliberately which controls may close the panel.'
+        ),
+      },
+      lifecycle: {
+        question: text('Should I close the drawer or destroy it?'),
+        answer: text(
+          'Close it with setOpen(false) when users may open the same drawer again. Its controller remains available while the visual content leaves after the exit transition. Call destroy() when the owning view or widget is removed; it releases the instance and its listeners, and that controller cannot be reused.'
+        ),
+      },
+      changes: {
+        question: text('What does my application still need to provide?'),
+        answer: text(
+          'Your application supplies the content, styling, meaningful dialog names, visible focus indicators and form validation or status messages. Drawer supplies dialog semantics, gestures and the configured focus and scroll behavior. Verify the complete experience with keyboard, touch and your own content.'
         ),
       },
     },
