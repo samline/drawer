@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
 import { resolveProject } from '../shared/lib/project.mjs'
 import config from '../project.config.json' with { type: 'json' }
 const fixture = () => structuredClone(config)
@@ -59,4 +60,21 @@ test('CDN is optional and keeps stylesheet and standalone script separate', () =
     cdnStylesheet: 'https://cdn.example.com/pkg@4.2.1/style.css',
   }
   assert.deepEqual(resolveProject(candidate).delivery, candidate.delivery)
+})
+
+test('both app configs resolve public stylesheet queries to this checkout without package fallback', async () => {
+  const stylesheet = fileURLToPath(new URL('../src/style.css', import.meta.url))
+  for (const app of ['landing', 'docs']) {
+    const { default: appConfig } = await import(
+      new URL(`../${app}/astro.config.mjs`, import.meta.url)
+    )
+    for (const name of ['style.css', 'styles.css']) {
+      for (const suffix of ['', '?inline', '?url']) {
+        const specifier = `@samline/drawer/${name}${suffix}`
+        const alias = appConfig.vite.resolve.alias.find(item => item.find.test(specifier))
+        assert.ok(alias, `${app}: ${specifier} requires a local alias`)
+        assert.equal(specifier.replace(alias.find, alias.replacement), stylesheet + suffix)
+      }
+    }
+  }
 })

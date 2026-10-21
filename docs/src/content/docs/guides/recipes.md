@@ -1,7 +1,7 @@
 ---
 locale: en
 title: 'Recipes'
-description: 'Recipes: behavior, signatures and examples for @samline/drawer 5.0.1.'
+description: 'Recipes: behavior, signatures and examples for @samline/drawer 5.0.2.'
 sidebar:
   group: guides
   order: 2

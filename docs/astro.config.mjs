@@ -27,7 +27,7 @@ export default defineConfig({
         },
         { find: /^@samline\/drawer$/, replacement: fileURLToPath(new URL('../src/index.ts', import.meta.url)) },
         {
-          find: /^@samline\/drawer\/(styles|style)\.css$/,
+          find: /^@samline\/drawer\/(styles|style)\.css(?=\?|$)/,
           replacement: fileURLToPath(new URL('../src/style.css', import.meta.url))
         }
       ]
