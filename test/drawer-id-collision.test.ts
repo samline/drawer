@@ -103,8 +103,8 @@ describe('drawer id collision', () => {
     expect(resolved?.querySelector('input[name="email"]')).not.toBeNull()
   })
 
-  it('preserves a consumer-provided mountElement id (does not overwrite)', () => {
-    // Defensive: a consumer-provided `mountElement` may already
+  it('preserves a consumer-provided container id (does not overwrite)', () => {
+    // Defensive: a consumer-provided `container` may already
     // carry an id. The runtime must not overwrite it with the
     // drawer's id, because the consumer's id is meaningful to the
     // page-level DOM.
@@ -117,7 +117,7 @@ describe('drawer id collision', () => {
       direction: 'bottom',
       title: 'Contact form',
       content: 'Body',
-      mountElement: mountEl
+      container: mountEl
     })
     drawer.setOpen(true)
 

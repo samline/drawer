@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { destroyDrawers, getDrawers } from '../src'
-
 async function importBrowser() {
   // Each test gets a fresh module registry so the optional
   // `window.Drawer` assignment runs against the current globals.
@@ -18,55 +16,41 @@ function collectConsoleMessages(spies: Array<ReturnType<typeof vi.spyOn>>) {
 }
 
 describe('browser entry', () => {
-  it('exposes the full imperative API on the Drawer namespace', async () => {
-    const { browser, Drawer } = await importBrowser()
-
-    expect(browser).toBe(Drawer)
-
-    expect(Drawer.openDrawer).toBeTypeOf('function')
-    expect(Drawer.closeDrawer).toBeTypeOf('function')
-    expect(Drawer.toggleDrawer).toBeTypeOf('function')
-    expect(Drawer.updateDrawer).toBeTypeOf('function')
-    expect(Drawer.getParentDrawer).toBeTypeOf('function')
-    expect(Drawer.getChildDrawers).toBeTypeOf('function')
-    expect(Drawer.createDrawer).toBeTypeOf('function')
-    expect(Drawer.getDrawer).toBeTypeOf('function')
-    expect(Drawer.getDrawers).toBeTypeOf('function')
-    expect(Drawer.destroyDrawer).toBeTypeOf('function')
-    expect(Drawer.destroyDrawers).toBeTypeOf('function')
-    expect(Drawer.createDrawerController).toBeTypeOf('function')
-    expect(Drawer.newDrawer).toBeTypeOf('function')
-    expect(Drawer.available).toEqual({})
+  it('exposes one API without legacy aliases', async () => {
+    const { Drawer } = await importBrowser()
+    expect(Object.keys(Drawer).sort()).toEqual([
+      'createDrawer',
+      'createDrawerController',
+      'destroyDrawers',
+      'getChildDrawers',
+      'getDrawer',
+      'getDrawers',
+      'getParentDrawer'
+    ])
   })
 
-  it('derives available and newDrawer from the package registry', async () => {
+  it('registers native content through the same factory', async () => {
     const { Drawer } = await importBrowser()
-
     Drawer.destroyDrawers()
-    const drawer = Drawer.newDrawer({
-      id: 'browser-html',
-      html: '<strong data-browser-html>Body</strong>',
-      options: { open: true }
-    })
-
-    expect(drawer?.id).toBe(Drawer.getDrawer('browser-html')?.id)
-    expect(Drawer.available['browser-html']?.id).toBe('browser-html')
+    const body = document.createElement('strong')
+    body.dataset.browserHtml = ''
+    body.textContent = 'Body'
+    const drawer = Drawer.createDrawer({ id: 'browser-html', content: body, open: true })
+    expect(Drawer.getDrawer('browser-html')).toBe(drawer)
+    expect(Drawer.getDrawers()['browser-html']).toBe(drawer)
     expect(document.querySelector('[data-browser-html]')?.textContent).toBe('Body')
-
-    Drawer.destroyDrawer('browser-html')
-    expect(Drawer.available['browser-html']).toBeUndefined()
+    drawer.destroy()
+    expect(Drawer.getDrawers()['browser-html']).toBeUndefined()
   })
 
-  it('rejects incomplete newDrawer input without changing the registry', async () => {
+  it('rejects invalid and duplicate explicit ids without replacing a registered instance', async () => {
     const { Drawer } = await importBrowser()
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-
     Drawer.destroyDrawers()
-    expect(Drawer.newDrawer({ id: '', html: '' })).toBeUndefined()
-    expect(Drawer.available).toEqual({})
-    expect(error).toHaveBeenCalledWith('Drawer ID and HTML content are required')
-
-    error.mockRestore()
+    expect(() => Drawer.createDrawer({ id: '' })).toThrow(TypeError)
+    const drawer = Drawer.createDrawer({ id: 'kept' })
+    expect(() => Drawer.createDrawer({ id: 'kept' })).toThrow(/already registered/)
+    expect(Drawer.getDrawer('kept')).toBe(drawer)
+    Drawer.destroyDrawers()
   })
 
   it('attaches the Drawer namespace to window when a DOM is available', async () => {
@@ -85,9 +69,9 @@ describe('browser entry', () => {
     expect(Drawer.getDrawer('browser-a')?.getSnapshot().state.direction).toBe('left')
     expect(Drawer.getDrawer('browser-b')?.getSnapshot().state.direction).toBe('right')
 
-    Drawer.openDrawer('browser-a')
-    Drawer.updateDrawer('browser-b', { modal: false })
-    Drawer.toggleDrawer('browser-b')
+    Drawer.getDrawer('browser-a')?.setOpen(true)
+    Drawer.getDrawer('browser-b')?.update({ modal: false })
+    Drawer.getDrawer('browser-b')?.setOpen(!Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen)
     Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-a', open: true })
 
     expect(Drawer.getDrawer('browser-a')?.getSnapshot().state.isOpen).toBe(true)
@@ -115,7 +99,7 @@ describe('browser entry', () => {
     Drawer.getDrawer('browser-snap')?.setActiveSnapPoint('320px')
     expect(Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe('320px')
 
-    Drawer.updateDrawer('browser-snap', { activeSnapPoint: 1 })
+    Drawer.getDrawer('browser-snap')?.update({ activeSnapPoint: 1 })
     expect(Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe(1)
   })
 
@@ -214,8 +198,8 @@ describe('browser entry', () => {
         content: 'Body'
       })
 
-      Drawer.closeDrawer('browser-trigger-rebind')
-      Drawer.updateDrawer('browser-trigger-rebind', { triggerElement: triggerB })
+      Drawer.getDrawer('browser-trigger-rebind')?.setOpen(false)
+      Drawer.getDrawer('browser-trigger-rebind')?.update({ triggerElement: triggerB })
 
       triggerA.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -278,8 +262,8 @@ describe('browser entry', () => {
           content: `Body ${index}`
         })
 
-        Drawer.updateDrawer(`browser-balance-${index}`, { triggerElement: triggerB })
-        Drawer.destroyDrawer(`browser-balance-${index}`)
+        Drawer.getDrawer(`browser-balance-${index}`)?.update({ triggerElement: triggerB })
+        Drawer.getDrawer(`browser-balance-${index}`)?.destroy()
       }
 
       expect(clickAddCount).toBe(40)
@@ -378,7 +362,7 @@ describe('browser entry', () => {
       trigger.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
 
-      Drawer.destroyDrawer(`browser-cycle-${index}`)
+      Drawer.getDrawer(`browser-cycle-${index}`)?.destroy()
       await new Promise((resolve) => setTimeout(resolve, 0))
     }
 

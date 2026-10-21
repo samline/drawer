@@ -1,0 +1,186 @@
+---
+import { format } from '../../../shared/i18n/format'
+import { docsHref } from '../lib/docs'
+import { getI18n } from '../i18n/utils'
+import Box from '../../../shared/components/Box.astro'
+import Logo from '../../../shared/components/Logo.astro'
+const i18n = getI18n(Astro)
+import { project } from '../../../shared/lib/project.mjs'
+const t = i18n.navigation.footer
+---
+
+<footer class:list={['site-footer']}>
+  <Box>
+    <div class:list={['footer-main']}>
+      <div class:list={['footer-brand']}>
+        <Logo href={import.meta.env.BASE_URL} />
+        <p>{t.description}</p>
+        <div class:list={['footer-meta']}>
+          <span>{format(i18n.common.versionLabel, { version: i18n.common.version })}</span>
+          <span aria-hidden="true">·</span>
+          <span>{i18n.common.license}</span>
+        </div>
+      </div>
+      <nav aria-label={t.label} class:list={['footer-nav']}>
+        <div class:list={['footer-group']}>
+          <h2>{t.explore}</h2>
+          <a href={docsHref('overview')}>{i18n.common.links.docs}</a>
+          <a href={docsHref('setup')}>{t.setup}</a>
+          <a href={`${import.meta.env.BASE_URL}examples/`}>{t.examples}</a>
+        </div>
+        <div class:list={['footer-group']}>
+          <h2>{t.project}</h2>
+          <a href={project.repository} target="_blank" rel="noopener noreferrer">
+            {i18n.common.links.github}
+            <span aria-hidden="true">↗</span>
+            <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
+          </a>
+          <a href={`${project.docsBase}changelog/`}>{t.changelog}</a>
+          <a
+            href={`https://www.npmjs.com/package/${project.npmName}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {i18n.common.links.npm}
+            <span aria-hidden="true">↗</span>
+            <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
+          </a>
+          <a
+            href={`${project.repository}/blob/main/LICENSE.md`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {i18n.common.links.license}
+            <span aria-hidden="true">↗</span>
+            <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
+          </a>
+        </div>
+      </nav>
+    </div>
+    <div class:list={['footer-bottom']}>
+      <p>
+        © {new Date().getFullYear()} {t.credit}
+      </p>
+      <a href="#top" class:list={['back-to-top']}>
+        {t.backToTop}
+        <span aria-hidden="true">↑</span>
+      </a>
+    </div>
+  </Box>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    z-index: 10;
+    border-top: 0.0625rem solid var(--color-border-soft);
+    background: var(--color-bg-soft);
+  }
+  .footer-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3rem;
+    padding-block: 3rem 2.5rem;
+  }
+  .footer-brand {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 1rem;
+  }
+  .footer-brand p {
+    max-width: 38ch;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.75;
+  }
+  .footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+  }
+  .footer-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+  }
+  .footer-group {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 0.75rem;
+  }
+  h2 {
+    margin-bottom: 0.25rem;
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .footer-group a,
+  .back-to-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    transition: color var(--duration-ui) var(--ease-ui);
+  }
+  .footer-group a > span[aria-hidden] {
+    color: var(--color-text-subtle);
+    font-size: 0.75rem;
+  }
+  .footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-block: 1.25rem 1.5rem;
+    border-top: 0.0625rem solid var(--color-border-soft);
+    color: var(--color-text-subtle);
+  }
+  .footer-bottom p,
+  .back-to-top {
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  .back-to-top {
+    gap: 0.625rem;
+  }
+  @media (hover: hover) {
+    .footer-group a:hover,
+    .back-to-top:hover {
+      color: var(--color-accent);
+    }
+  }
+  .footer-group a:focus-visible,
+  .back-to-top:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.25rem;
+    border-radius: 0.125rem;
+  }
+  @media (width < 48rem) {
+    .footer-main {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+      padding-block: 2.5rem 2rem;
+    }
+    .footer-nav {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 10ch), 1fr));
+      gap: 1.5rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-group a,
+    .back-to-top {
+      transition: none;
+    }
+  }
+</style>

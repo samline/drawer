@@ -1,0 +1,46 @@
+---
+import Tabs from './Tabs.astro'
+import TabPanel from './TabPanel.astro'
+import CodeFrame from './CodeFrame.astro'
+import { project } from '../lib/project.mjs'
+import controls from '../i18n/translations/en/controls'
+import { format } from '../i18n/format'
+const { class: className, id = `install-${crypto.randomUUID()}` } = Astro.props
+const items = [
+  { id: 'npm', label: 'npm', code: `npm install ${project.npmName}` },
+  { id: 'pnpm', label: 'pnpm', code: `pnpm add ${project.npmName}` },
+  { id: 'yarn', label: 'yarn', code: `yarn add ${project.npmName}` },
+  { id: 'bun', label: 'bun', code: `bun add ${project.npmName}` },
+].map(item => ({ ...item, language: 'bash' as const }))
+const panels = [
+  ...items,
+  ...(project.delivery.cdnScript
+    ? [
+        {
+          id: 'cdn',
+          label: controls.install.cdn,
+          language: 'html' as const,
+          code: [
+            ...(project.delivery.cdnStylesheet
+              ? [`<link rel="stylesheet" href="${project.delivery.cdnStylesheet}">`]
+              : []),
+            `<script src="${project.delivery.cdnScript}" defer></script>`,
+          ].join('\n'),
+        },
+      ]
+    : []),
+]
+---
+
+<Tabs class:list={[className]} id={id} label={controls.install.label} items={panels}>
+  {panels.map(item => (
+    <TabPanel id={item.id} label={item.label}>
+      <CodeFrame
+        label={controls.install.filename}
+        text={item.code}
+        language={item.language}
+        copyLabel={format(controls.code.copyLabel, { filename: item.label })}
+      />
+    </TabPanel>
+  ))}
+</Tabs>

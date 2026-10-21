@@ -1,0 +1,38 @@
+{
+  "package": {
+    "name": "Drawer",
+    "npmName": "@samline/drawer",
+    "version": "5.0.0",
+    "description": "Drawers that move with you. Bottom sheets, side panels and nested flows with a typed, framework-free API.",
+    "author": "Samuel Olvera (samline)",
+    "license": "MIT",
+    "keywords": [
+      "drawer",
+      "javascript",
+      "typescript",
+      "dialog",
+      "modal",
+      "bottom-sheet",
+      "snap-points",
+      "react",
+      "vue",
+      "svelte",
+      "astro",
+      "html-cdn"
+    ]
+  },
+  "site": {
+    "url": "https://samline.github.io/drawer/",
+    "repository": "https://github.com/samline/drawer",
+    "namespace": "pkg-samline-drawer",
+    "template": false
+  },
+  "theme": {
+    "accentLight": "#a32379",
+    "accentDark": "#ee9bd2"
+  },
+  "delivery": {
+    "cdnScript": "https://unpkg.com/@samline/drawer@5.0.0/dist/browser/global.global.js",
+    "cdnStylesheet": "https://unpkg.com/@samline/drawer@5.0.0/dist/style.css"
+  }
+}

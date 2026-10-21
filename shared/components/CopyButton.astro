@@ -1,0 +1,135 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import { getI18n } from '../i18n/utils'
+interface Props extends HTMLAttributes<'div'> {
+  text?: string
+  ariaLabel: string
+  variant?: 'code' | 'command'
+}
+const { text, ariaLabel, variant = 'code', class: className, ...attributes } = Astro.props
+const t = getI18n(Astro).controls.copy
+---
+
+<package-site-copy
+  {...attributes}
+  class:list={['copy-control', className]}
+  data-copy-text={text}
+  data-label={t.label}
+  data-copied-label={t.copiedLabel}
+  data-success={t.success}
+  data-fallback={t.fallback}
+  data-variant={variant}
+>
+  <button type="button" aria-label={ariaLabel} inert>
+    <span data-copy-label="">{t.label}</span>
+    <span aria-hidden="true">⧉</span>
+  </button>
+  <span
+    class:list={['sr-only']}
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    data-copy-status=""
+  ></span>
+</package-site-copy>
+
+<script>
+  import { mountElements } from '../lib/mount-elements'
+
+  mountElements('package-site-copy', element => {
+    let feedbackTimer: ReturnType<typeof setTimeout> | undefined
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const button = element.querySelector<HTMLButtonElement>('button')
+    const label = element.querySelector<HTMLElement>('[data-copy-label]')
+    const status = element.querySelector<HTMLElement>('[data-copy-status]')
+    if (!button || !label || !status) return
+    label.textContent = element.dataset.label ?? ''
+    button.inert = false
+    button.addEventListener(
+      'click',
+      async () => {
+        clearTimeout(feedbackTimer)
+        label.textContent = element.dataset.label ?? ''
+        status.textContent = ''
+        const code = element.closest('[data-copy-source]')?.querySelector('code')
+        try {
+          await navigator.clipboard.writeText(element.dataset.copyText ?? code?.textContent ?? '')
+          if (signal.aborted) return
+          label.textContent = element.dataset.copiedLabel ?? ''
+          status.textContent = element.dataset.success ?? ''
+          feedbackTimer = setTimeout(() => {
+            if (!signal.aborted) label.textContent = element.dataset.label ?? ''
+          }, 2000)
+        } catch {
+          if (signal.aborted) return
+          if (!code) return
+          const range = document.createRange()
+          range.selectNodeContents(code)
+          const selection = window.getSelection()
+          selection?.removeAllRanges()
+          selection?.addRange(range)
+          status.textContent = element.dataset.fallback ?? ''
+        }
+      },
+      { signal }
+    )
+    return () => {
+      lifecycle.abort()
+      clearTimeout(feedbackTimer)
+    }
+  })
+</script>
+
+<style>
+  .copy-control {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2rem;
+    min-width: 4.5rem;
+    padding: 0.375rem 0.625rem;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    line-height: 1.25;
+    cursor: pointer;
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui);
+  }
+  button[inert] {
+    visibility: hidden;
+  }
+  @media (hover: hover) {
+    button:hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border-color: var(--palette-border-hover);
+    }
+  }
+  button:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  [data-variant='command'] button {
+    min-width: 3.625rem;
+    border-color: transparent;
+    border-radius: 0.375rem;
+    padding-inline: 0.625rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,45 @@
+---
+interface Props {
+  note: string
+  controls?: boolean
+}
+const { note, controls = true } = Astro.props
+---
+
+{controls && Astro.slots.has('default') && (
+  <div class:list={['studio-footer']}>
+    <slot />
+  </div>
+)}
+<p class:list={['studio-note']}>{note}</p>
+
+<style>
+  .studio-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 1.5rem;
+    color: var(--color-text-subtle);
+    font-size: 0.72rem;
+  }
+  .studio-note {
+    border-top: 0.0625rem solid var(--color-border);
+    padding: 1rem 1.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.825rem;
+    line-height: 1.6;
+  }
+  @media (width < 48rem) {
+    .studio-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1rem 1.125rem;
+      gap: 0.875rem;
+    }
+    .studio-note {
+      padding-inline: 1.125rem;
+    }
+  }
+</style>

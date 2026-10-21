@@ -1,0 +1,19 @@
+---
+import { landingHref } from '../lib/routes'
+import LinkCard from '../../../shared/components/LinkCard.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+const url = landingHref('examples/')
+---
+
+<div class:list={['examples-link']} data-pagefind-ignore>
+  <LinkCard href={url} title={t.examples}>
+    <p>{t.examplesDescription}</p>
+  </LinkCard>
+</div>
+
+<style>
+  .examples-link {
+    margin-top: var(--space-xl);
+  }
+</style>

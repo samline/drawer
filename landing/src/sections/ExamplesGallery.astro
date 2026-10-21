@@ -1,0 +1,164 @@
+---
+import Box from '../../../shared/components/Box.astro'
+import Section from '../../../shared/components/Section.astro'
+import PageTitle from '../../../shared/components/PageTitle.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import HeroBackdrop from '../components/HeroBackdrop.astro'
+import Button from '../../../shared/components/Button.astro'
+import Playground from '../../../shared/components/Playground.astro'
+import TextLink from '../../../shared/components/TextLink.astro'
+import { getI18n } from '../i18n/utils'
+import { project } from '../../../shared/lib/project.mjs'
+import { presets } from '../../../shared/i18n/translations/en/demo'
+const t = getI18n(Astro).examples
+---
+
+<Section spacing="none" aria-labelledby="examples-title" class:list={['gallery-hero']}>
+  <HeroBackdrop />
+  <Box size="narrow" class:list={['introduction']}>
+    <PageTitle
+      headingId="examples-title"
+      title={t.title}
+      accent={t.accent}
+      description={t.description}
+      eyebrow={t.eyebrow}
+      align="center"
+    />
+    <div class:list={['gallery-actions']}>
+      <Button context="hero" href="#interaction" variant="primary">
+        {t.exploreAction}
+        <span aria-hidden="true">↓</span>
+      </Button>
+      <Button context="hero" href={`${project.docsBase}getting-started/`} variant="secondary">
+        {t.installAction}
+        <span aria-hidden="true">↗</span>
+      </Button>
+    </div>
+    <p class:list={['accessibility']}>{t.accessibility}</p>
+  </Box>
+  <Box size="medium" class:list={['gallery']}>
+    <div class:list={['gallery-index']}>
+      <p class:list={['navigation-label']}>{t.navigation}</p>
+      <nav aria-label={t.navigation} class:list={['recipe-navigation']}>
+        {Object.entries(presets).map(([key, item]) => (
+          <Button
+            variant="secondary"
+            href={`#${key === 'bottom' ? 'interaction' : key === 'top' ? 'top-panel' : key}`}
+            class:list={['recipe-link']}
+          >
+            {item.title}
+            <span aria-hidden="true">↓</span>
+          </Button>
+        ))}
+      </nav>
+    </div>
+    {Object.entries(presets).map(([key, item], index) => (
+      <section
+        id={key === 'bottom' ? 'interaction' : key === 'top' ? 'top-panel' : key}
+        aria-labelledby={`${key}-title`}
+        class:list={['recipe']}
+      >
+        <SectionHeading
+          headingId={`${key}-title`}
+          eyebrow={`${String(index + 1).padStart(2, '0')} / ${item.direction}`}
+          class:list={['recipe-heading']}
+        >
+          {item.title}
+        </SectionHeading>
+        <Playground preset={key as keyof typeof presets} showCode />
+      </section>
+    ))}
+    <div class:list={['resources']}>
+      <TextLink href={`${project.docsBase}guides/examples/`}>{t.guide}</TextLink>
+    </div>
+  </Box>
+</Section>
+
+<style>
+  .gallery-hero {
+    isolation: isolate;
+    position: relative;
+    padding-top: 3.5rem;
+  }
+  .introduction {
+    text-align: center;
+  }
+  .gallery-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-top: 1.875rem;
+  }
+  .accessibility {
+    margin-top: var(--space-lg);
+    color: var(--color-text-subtle);
+    font-size: var(--text-small);
+    line-height: 1.75;
+    text-wrap: pretty;
+  }
+  .gallery {
+    padding-block: 3rem 5rem;
+  }
+  .gallery-index {
+    padding-bottom: 3rem;
+  }
+  .navigation-label {
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: var(--text-small);
+    text-align: center;
+    margin-bottom: var(--space-lg);
+  }
+  .recipe-navigation {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+  .recipe-link {
+    justify-content: space-between;
+    text-align: left;
+    padding: 0.75rem 1rem;
+  }
+  .resources {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-lg) var(--space-xl);
+    padding-top: 3rem;
+    border-top: 0.0625rem solid var(--color-border-soft);
+  }
+  @media (width < 48rem) {
+    .gallery-hero {
+      padding-top: 3rem;
+    }
+    .recipe-navigation {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (width < 30rem) {
+    .gallery-actions {
+      flex-direction: column;
+    }
+    .recipe-navigation {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .recipe {
+    --recipe-top-space: 2.5rem;
+    padding-block: var(--recipe-top-space);
+    border-top: 0.0625rem solid var(--color-border-soft);
+  }
+  .recipe[id] {
+    scroll-margin-top: calc(var(--header-offset, 9rem) - var(--recipe-top-space) - 0.0625rem);
+  }
+  .recipe-heading {
+    overflow-wrap: anywhere;
+    margin-bottom: 2rem;
+  }
+  @media (width < 48rem) {
+    .recipe {
+      --recipe-top-space: 2rem;
+    }
+  }
+</style>

@@ -1,0 +1,185 @@
+---
+import drawerCss from '@samline/drawer/styles.css?inline'
+import Icon from '../../../shared/components/Icon.astro'
+import IconButton from '../../../shared/components/IconButton.astro'
+import ExamplesLink from './ExamplesLink.astro'
+import Navigation from './Navigation.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+import DrawerStyles from '../../../shared/components/DrawerStyles.astro'
+interface Props {
+  current: string
+}
+const { current } = Astro.props
+const id = `docs-menu-${crypto.randomUUID()}`
+---
+
+<package-site-docs-menu
+  class:list={['mobile']}
+  data-id={id}
+  data-label={t.navigation}
+  data-close={t.close}
+>
+  <IconButton label={t.menu} hidden aria-expanded="false" aria-haspopup="dialog">
+    <Icon name="menu" size="1.25rem" />
+  </IconButton>
+  <details>
+    <summary aria-label={t.menu}>
+      <Icon name="menu" size="1.25rem" />
+    </summary>
+    <div class:list={['content']} data-content data-drawer-no-drag>
+      <p class:list={['eyebrow']}>{t.name}</p>
+      <h2>{t.docs}</h2>
+      <Navigation current={current} />
+      <ExamplesLink />
+    </div>
+  </details>
+</package-site-docs-menu>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  import { createDrawer } from '@samline/drawer'
+  mountElements('package-site-docs-menu', element => {
+    const button = element.querySelector('button'),
+      fallback = element.querySelector('details'),
+      content = element.querySelector('[data-content]'),
+      id = element.dataset.id
+    if (!button || !fallback || !content || !id) return
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const drawer = createDrawer({
+      id,
+      content: () => content.cloneNode(true) as HTMLElement,
+      container: element,
+      triggerElement: button,
+      direction: 'right',
+      autoFocus: true,
+      ariaLabel: element.dataset.label,
+      contentClassName: 'docs-menu-panel',
+      overlayClassName: 'docs-menu-overlay',
+      closeButton: { icon: '×', ariaLabel: element.dataset.close, className: 'docs-menu-close' },
+      onOpenChange: open => button.setAttribute('aria-expanded', String(open)),
+    })
+    element.addEventListener(
+      'click',
+      event => {
+        if (event.target instanceof Element && event.target.closest('.docs-menu-panel a'))
+          drawer.setOpen(false)
+      },
+      { signal }
+    )
+    matchMedia('(width >= 64rem)').addEventListener(
+      'change',
+      event => {
+        if (event.matches) drawer.setOpen(false)
+      },
+      { signal }
+    )
+    button.hidden = false
+    fallback.hidden = true
+    return () => {
+      lifecycle.abort()
+      drawer.destroy()
+      button.setAttribute('aria-expanded', 'false')
+    }
+  })
+</script>
+<DrawerStyles scope="package-site-docs-menu" css={drawerCss} />
+<style>
+  .mobile {
+    display: block;
+  }
+  [hidden] {
+    display: none !important;
+  }
+  summary {
+    display: grid;
+    place-items: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.5rem;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 0.625rem;
+    background: var(--color-bg-soft);
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 0.75rem;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  details {
+    position: relative;
+  }
+  details > .content {
+    position: absolute;
+    right: 0;
+    top: 3.25rem;
+    width: min(20rem, calc(100vw - 2.5rem));
+    max-height: calc(100dvh - 8rem);
+    overflow: auto;
+    padding: 1.25rem;
+    background: var(--color-bg);
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 0.75rem;
+  }
+  h2 {
+    margin: 0.5rem 0 2rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 2.25rem;
+    font-weight: 400;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    padding-right: 2.5rem;
+  }
+  .mobile :global(.docs-menu-panel) {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 101;
+    width: min(22rem, calc(100% - 1rem));
+    height: 100dvh;
+    padding: 1.5rem;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-left: 0.0625rem solid var(--color-border);
+  }
+  .mobile :global(.docs-menu-overlay) {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgb(0 0 0 / 0.5);
+  }
+  summary {
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui);
+  }
+  @media (hover: hover) {
+    summary:hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+    }
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  @media (width >= 64rem) {
+    .mobile {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    summary {
+      transition: none;
+    }
+  }
+</style>

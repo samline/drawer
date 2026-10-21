@@ -1,0 +1,53 @@
+---
+interface Props {
+  variant?: 'halo' | 'none'
+}
+const { variant = 'halo' } = Astro.props
+---
+
+{variant === 'halo' && <div class:list={['hero-backdrop']} aria-hidden="true"></div>}
+
+<style>
+  .hero-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: clip;
+    pointer-events: none;
+  }
+  .hero-backdrop::before {
+    content: '';
+    position: absolute;
+    top: -4rem;
+    left: 50%;
+    width: min(70rem, 140%);
+    height: 38rem;
+    background:
+      radial-gradient(ellipse at 35% 42%, var(--palette-hero-halo) 0%, transparent 62%),
+      radial-gradient(ellipse at 68% 45%, var(--palette-hero-halo-soft) 0%, transparent 58%);
+    filter: blur(1.5rem);
+    transform: translateX(-50%);
+    animation: halo-arrive 4.8s var(--ease-out-expo) both;
+  }
+  @keyframes halo-arrive {
+    from {
+      opacity: 0;
+      transform: translate(-54%, 1.5rem) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%);
+    }
+  }
+  @media (width < 48rem) {
+    .hero-backdrop::before {
+      top: -2rem;
+      height: 35rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-backdrop::before {
+      animation: none;
+    }
+  }
+</style>

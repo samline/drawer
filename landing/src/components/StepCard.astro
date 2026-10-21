@@ -1,0 +1,34 @@
+---
+import Surface from '../../../shared/components/Surface.astro'
+import Reveal from './Reveal.astro'
+interface Props {
+  number: number
+  title: string
+}
+const { number, title } = Astro.props
+---
+
+<Reveal>
+  <Surface as="article" tone="step" class:list={['card-elevated p-6 lg:p-7']}>
+    <div class:list={['mb-4 flex items-center gap-3']}>
+      <span
+        class:list={[
+          'flex h-7 w-7 items-center justify-center rounded-full border-[0.0625rem] border-accent/40 bg-accent-soft font-mono text-[0.78rem] text-accent',
+        ]}
+      >
+        {number}
+      </span>
+      <p class:list={['font-mono text-[0.7rem] tracking-wider text-text-subtle uppercase']}>
+        {title}
+      </p>
+    </div>
+    <slot />
+  </Surface>
+</Reveal>
+
+<style>
+  .card-elevated {
+    box-shadow: none;
+    min-width: 0;
+  }
+</style>

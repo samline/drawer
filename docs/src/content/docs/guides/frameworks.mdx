@@ -1,0 +1,58 @@
+---
+locale: en
+title: 'Framework integrations'
+titleAccent: 'integrations'
+description: 'Use Drawer in React, Vue, Svelte, Astro, Shopify and WordPress with accessible triggers, browser assets and explicit client lifecycle ownership.'
+sidebar:
+  group: guides
+  order: 7
+---
+
+import FrameworkExamples from '../../../../../shared/components/FrameworkExamples.astro'
+import CmsExamples from '../../../../../shared/components/CmsExamples.astro'
+import { frameworkFiles } from '../../../../../shared/lib/framework-files'
+import t from '../../../../../shared/i18n/translations/en/demo'
+
+Drawer provides a **browser API**, not React, Vue or Svelte components. Use the same public `createDrawer()` function after your trigger mounts; destroy the instance when its owner unmounts. Keep one owner for the dialog DOM. Do not pass JSX, Vue VNodes or Svelte snippets as `content`: use text, an `HTMLElement` or a function returning one.
+
+## JavaScript and TypeScript
+
+Start with the [working files](../../getting-started/#copy-the-files). Plain JavaScript needs no types or wrappers. TypeScript can import `VanillaDrawerOptions` and `VanillaDrawerController` from the same package. Use `satisfies VanillaDrawerOptions` when checking a reusable options object; see the [TypeScript reference](../../reference/typescript/) for every exported shape.
+
+## React, Vue and Svelte
+
+These are client components for an existing framework application. Install Drawer, save the component and its **CSS** sibling together, then render `Filters` using your framework. The stylesheet is ordinary global CSS because the runtime mounts its panel outside the component DOM. Package CSS comes first. Each mounted component gets an independent id, updates `aria-expanded`, and destroys only its own drawer.
+
+<FrameworkExamples groups={frameworkFiles} label={t.frameworkLabel} />
+
+React's Effect cleanup also handles its development setup/cleanup cycle. In SSR applications, keep drawer creation in `useEffect`, Vue `onMounted`, or Svelte `onMount`; importing a module is not permission to create a DOM instance on the server.
+
+The patterns follow [React Effects](https://react.dev/reference/react/useEffect), [Vue mount/unmount hooks](https://vuejs.org/api/composition-api-lifecycle.html) and [Svelte onMount cleanup](https://svelte.dev/docs/svelte/lifecycle-hooks).
+
+## Astro
+
+Use a processed client `<script>` with the [JavaScript setup](../../getting-started/#copy-the-files), not frontmatter, for DOM creation. Astro emits static markup and runs the script in the browser. If you enable client-side navigation, set up the current page after `astro:page-load`, destroy its instances on `astro:before-swap`, and avoid adding document listeners again on each visit. Ordinary full-page navigation can use the provided persisted-`pagehide` cleanup.
+
+## Shopify
+
+Use a theme section and theme assets. Copy the published **5.0.0** `dist/browser/global.global.js` to `assets/drawer.global.js` and `dist/style.css` to `assets/drawer.css`; save the JavaScript and CSS below beside them. Include the loader once in `layout/theme.liquid`, then add `sections/drawer-filters.liquid` through the theme editor. Do not put another runtime script tag inside every section.
+
+<CmsExamples host="shopify" />
+
+Each section gets an independent id. The loader handles `shopify:section:load` and `shopify:section:unload`; removing an open section destroys its drawer and releases modal effects. The template is cloned each time the panel opens. Retain application data outside that disposable DOM when edits must survive closing. See [Shopify's section events](https://shopify.dev/docs/storefronts/themes/best-practices/editor/integrate-sections-and-blocks) and [theme asset loading](https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags).
+
+## WordPress
+
+Create `wp-content/plugins/drawer-example/` with the plugin PHP file below and an `assets/` folder. Save the same pinned runtime files there as `drawer.global.js` and `drawer.css`, plus the provided `integration.js` and `integration.css`. Activate **Drawer example**, then put `[drawer_filters]` in a Shortcode block on an ordinary post or page.
+
+<CmsExamples host="wordpress" />
+
+The plugin targets WordPress 6.3+ deferred-script arguments. The integration depends on the runtime handle, so asset order is explicit. Assets are queued for singular post content containing this shortcode; widgets, page builders or AJAX navigation require their own enqueue/mount policy. Labels and markup are static example content; escape dynamic PHP output and validate any submitted form data in a real integration. See [wp_enqueue_script](https://developer.wordpress.org/reference/functions/wp_enqueue_script/) and [frontend asset hooks](https://developer.wordpress.org/reference/hooks/wp_enqueue_scripts/).
+
+## Plain HTML
+
+Use [HTML / CDN](../../reference/browser/) with the same JavaScript API when a plain document is enough. Serving the pinned files yourself changes delivery, not the public namespace or lifecycle.
+
+## Ownership and accessible content
+
+Framework state belongs in your application. Dialog DOM is disposable after close: retain form values in application state when they must survive reopening. Drawer owns modal focus, gestures and scroll locking; your component owns labels, validation, styling and teardown. See [forms and non-modal examples](../examples/#apply-filters) and [accessibility responsibilities](../accessibility-and-focus/).

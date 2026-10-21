@@ -1,0 +1,1159 @@
+{
+  "routes": {
+    "docs/README.md": "index",
+    "docs/getting-started.md": "getting-started",
+    "docs/options.md": "reference/configuration",
+    "docs/controller.md": "reference/controller",
+    "docs/entrypoints.md": "reference/entrypoints",
+    "docs/typescript.md": "reference/typescript",
+    "docs/css-styling.md": "reference/css-styling",
+    "docs/browser.md": "reference/browser",
+    "docs/vanilla.md": "reference/vanilla",
+    "docs/recipes.md": "guides/recipes",
+    "docs/api/index.md": "reference/api",
+    "docs/api/toggle-drawer.md": "api/toggle-drawer",
+    "docs/api/get-drawers.md": "api/get-drawers",
+    "docs/api/update-drawer.md": "api/update-drawer",
+    "docs/api/create-drawer-controller.md": "api/create-drawer-controller",
+    "docs/api/open-drawer.md": "api/open-drawer",
+    "docs/api/close-drawer.md": "api/close-drawer",
+    "docs/api/get-drawer.md": "api/get-drawer",
+    "docs/api/destroy-drawer.md": "api/destroy-drawer",
+    "docs/api/create-drawer.md": "api/create-drawer",
+    "docs/api/destroy-drawers.md": "api/destroy-drawers",
+    "docs/api/get-parent-drawer.md": "api/get-parent-drawer",
+    "docs/api/get-child-drawers.md": "api/get-child-drawers",
+    "docs/api/configure-drawer.md": "api/configure-drawer",
+    "docs/guides/accessibility-and-focus.md": "guides/accessibility-and-focus",
+    "docs/guides/lifecycle-and-state.md": "guides/lifecycle-and-state",
+    "docs/guides/gestures-and-snap-points.md": "guides/gestures-and-snap-points",
+    "README.md": "index",
+    "CHANGELOG.md": "changelog"
+  },
+  "destinations": {
+    "docs/README.md": "docs/src/content/docs/index.mdx",
+    "docs/getting-started.md": "docs/src/content/docs/guides/runtime-contract.md",
+    "docs/options.md": "docs/src/content/docs/reference/configuration.md",
+    "docs/controller.md": "docs/src/content/docs/reference/controller.md",
+    "docs/entrypoints.md": "docs/src/content/docs/reference/entrypoints.md",
+    "docs/typescript.md": "docs/src/content/docs/reference/typescript.md",
+    "docs/css-styling.md": "docs/src/content/docs/reference/css-styling.md",
+    "docs/browser.md": "docs/src/content/docs/reference/browser.md",
+    "docs/vanilla.md": "docs/src/content/docs/reference/vanilla.md",
+    "docs/recipes.md": "docs/src/content/docs/guides/recipes.md",
+    "docs/api/index.md": "docs/src/content/docs/reference/api.md",
+    "docs/api/toggle-drawer.md": "docs/src/content/docs/api/toggle-drawer.md",
+    "docs/api/get-drawers.md": "docs/src/content/docs/api/get-drawers.md",
+    "docs/api/update-drawer.md": "docs/src/content/docs/api/update-drawer.md",
+    "docs/api/create-drawer-controller.md": "docs/src/content/docs/api/create-drawer-controller.md",
+    "docs/api/open-drawer.md": "docs/src/content/docs/api/open-drawer.md",
+    "docs/api/close-drawer.md": "docs/src/content/docs/api/close-drawer.md",
+    "docs/api/get-drawer.md": "docs/src/content/docs/api/get-drawer.md",
+    "docs/api/destroy-drawer.md": "docs/src/content/docs/api/destroy-drawer.md",
+    "docs/api/create-drawer.md": "docs/src/content/docs/api/create-drawer.md",
+    "docs/api/destroy-drawers.md": "docs/src/content/docs/api/destroy-drawers.md",
+    "docs/api/get-parent-drawer.md": "docs/src/content/docs/api/get-parent-drawer.md",
+    "docs/api/get-child-drawers.md": "docs/src/content/docs/api/get-child-drawers.md",
+    "docs/api/configure-drawer.md": "docs/src/content/docs/api/configure-drawer.md",
+    "docs/guides/accessibility-and-focus.md": "docs/src/content/docs/guides/accessibility-and-focus.md",
+    "docs/guides/lifecycle-and-state.md": "docs/src/content/docs/guides/lifecycle-and-state.md",
+    "docs/guides/gestures-and-snap-points.md": "docs/src/content/docs/guides/gestures-and-snap-points.md"
+  },
+  "corrections": [
+    "Snapshots are values, not chainable controllers; content options belong to update().",
+    "autoFocus defaults to false.",
+    "Title/description slots are absent when omitted.",
+    "Drawer 5 preserves exact controller identity through queries; destroyed handles are terminal.",
+    "There are six lifecycle callbacks.",
+    "Moved content is disconnected with the destroyed host.",
+    "Starlight 4.0.1 prose is evidence, not current truth: retain current v5 defaults, object-keyed getDrawers, SSR boundaries and lifecycle return types.",
+    "Original installation requirements, browser registry separation and callback distinctions were restored or linked explicitly."
+  ],
+  "starlight": {
+    "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+    "articles": [
+      {
+        "source": "example/src/content/docs/getting-started.mdx",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "2664f4186c782a0cda9eeaf5d6bab913994b90290900c0852ccc911ce922c3bb",
+        "legacyRoute": "getting-started",
+        "destination": "getting-started/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "requirements",
+            "destination": "getting-started/#requirements",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "1-install-the-package",
+            "destination": "getting-started/#install",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "2-add-a-trigger",
+            "destination": "getting-started/#your-first-working-drawer",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "3-import-the-runtime-and-stylesheet",
+            "destination": "getting-started/#copy-the-files",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "4-position-and-theme-the-panel",
+            "destination": "getting-started/#copy-the-files",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "the-controller",
+            "destination": "reference/controller/#vanilla-controller",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "content-forms",
+            "destination": "reference/configuration/#renderable-content",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "lifecycle",
+            "destination": "guides/lifecycle-and-state/#the-three-layers",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          },
+          {
+            "source": "choose-the-next-page",
+            "destination": "getting-started/#next-steps",
+            "reviewed": true,
+            "reason": "Moved into focused installation, controller, content or lifecycle coverage; old fragment redirects to its new section."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/index.mdx",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "16854fa10884c34bcc398113be69f63c5ed489c03d5528f3181ca236a10ae12f",
+        "legacyRoute": "",
+        "destination": "/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "why-samlinedrawer",
+            "destination": "/#choose-your-integration",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "next-steps",
+            "destination": "/#start-building",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/api.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "76b7caccd9b755320a8b04246e431df2accd9fc2621e0e2dc594226b7e6280cf",
+        "legacyRoute": "reference/api",
+        "destination": "reference/api/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "factory",
+            "destination": "reference/api/#factory",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "inspectors",
+            "destination": "reference/api/#inspectors",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "mutators",
+            "destination": "reference/api/#mutators",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "controllers",
+            "destination": "reference/api/#headless",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "headless",
+            "destination": "reference/api/#headless",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "lifecycle-contract",
+            "destination": "reference/api/#lifecycle-contract",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "per-method-summaries",
+            "destination": "reference/api/#factory",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "factory-1",
+            "destination": "reference/api/#factory",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "createdraweroptions",
+            "destination": "reference/api/#createdraweroptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "configuredraweroptions",
+            "destination": "reference/api/#configuredraweroptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "inspectors-1",
+            "destination": "reference/api/#inspectors",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "getdrawerid",
+            "destination": "reference/api/#getdrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "getdrawers",
+            "destination": "reference/api/#getdrawers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "getparentdrawerid",
+            "destination": "reference/api/#getparentdrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "getchilddrawersid",
+            "destination": "reference/api/#getchilddrawersid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "mutators-1",
+            "destination": "reference/api/#mutators",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "updatedraweridoroptions-options",
+            "destination": "reference/api/#updatedraweridoroptions-options",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "opendrawerid",
+            "destination": "reference/api/#opendrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "closedrawerid",
+            "destination": "reference/api/#closedrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "toggledrawerid",
+            "destination": "reference/api/#toggledrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "destroydrawerid",
+            "destination": "reference/api/#destroydrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "destroydrawers",
+            "destination": "reference/api/#destroydrawers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "controller-api",
+            "destination": "reference/controller/#common-methods",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "id-element-and-options",
+            "destination": "reference/api/#id-element-and-options",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "getsnapshot",
+            "destination": "reference/api/#getsnapshot",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "setopenopen",
+            "destination": "reference/api/#setopenopen",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "setactivesnappointvalue",
+            "destination": "reference/api/#setactivesnappointvalue",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "patchoptions",
+            "destination": "reference/api/#patchoptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "subscribelistener",
+            "destination": "reference/api/#subscribelistener",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "updateoptions",
+            "destination": "reference/api/#updateoptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "destroy",
+            "destination": "reference/api/#destroy",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "headless-1",
+            "destination": "reference/api/#headless",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "createdrawercontrolleroptions",
+            "destination": "reference/api/#createdrawercontrolleroptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "common-headless-controller",
+            "destination": "reference/api/#common-headless-controller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/browser.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "2f369b048068709f7d8de286da14e3f2400e75b3a8a6e3a3904b9cd70cfc37b7",
+        "legacyRoute": "reference/browser",
+        "destination": "reference/browser/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "module-namespace",
+            "destination": "reference/browser/#typescript-global-type",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "what-it-exposes",
+            "destination": "reference/browser/#what-it-exposes",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "quick-include",
+            "destination": "reference/browser/#quick-include",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "basic-usage",
+            "destination": "reference/browser/#basic-usage",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "custom-html-content",
+            "destination": "reference/browser/#custom-html-content",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "all-methods-at-a-glance",
+            "destination": "reference/browser/#all-methods-at-a-glance",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "notes",
+            "destination": "reference/browser/#notes",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "compatibility",
+            "destination": "reference/browser/#compatibility",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "typescript-global-type",
+            "destination": "reference/browser/#typescript-global-type",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "cleanup-guidance",
+            "destination": "reference/browser/#cleanup-guidance",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "when-to-use-it",
+            "destination": "reference/browser/#when-to-use-it",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/configuration.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "e9f7daf0ea952ce671377d1796011804dc97010e9b3dea0dc0f0ff80acea1512",
+        "legacyRoute": "reference/configuration",
+        "destination": "reference/configuration/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "signatures",
+            "destination": "reference/configuration/#signatures",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "renderable-content",
+            "destination": "reference/configuration/#renderable-content",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "common-fields",
+            "destination": "reference/configuration/#common-fields",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "vanilla-only-fields",
+            "destination": "reference/configuration/#vanilla-only-fields",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "updating-and-clearing-options",
+            "destination": "reference/configuration/#updating-and-clearing-options",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "close-button-option-shape",
+            "destination": "reference/configuration/#close-button-option-shape",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "presence-and-ownership",
+            "destination": "reference/configuration/#presence-and-ownership",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/controller.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "c621ba9a7fc589f772ad25b42675030a2de349a28b7ef45b15cf1f2176e15f8f",
+        "legacyRoute": "reference/controller",
+        "destination": "reference/controller/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "decision-table",
+            "destination": "reference/controller/#choose-an-api",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "vanilla-controller",
+            "destination": "reference/controller/#vanilla-controller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "common-controller-methods",
+            "destination": "reference/controller/#common-methods",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "registry-helpers",
+            "destination": "reference/controller/#common-methods",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "headless-controller",
+            "destination": "reference/controller/#headless-controller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "related",
+            "destination": "reference/controller/#see-also",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/css-styling.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "c64ff942cc9bf1ee81b904c132eea06187d3e06a5783bdde53380b9f218945c5",
+        "legacyRoute": "reference/css-styling",
+        "destination": "reference/css-styling/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "load-the-stylesheet",
+            "destination": "reference/css-styling/#load-the-stylesheet",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "presence-and-dom-shape",
+            "destination": "reference/css-styling/#presence-and-dom-shape",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "runtime-attributes",
+            "destination": "reference/css-styling/#runtime-attributes",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer-vanilla-root",
+            "destination": "reference/css-styling/#data-drawer-vanilla-root",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer-vanilla-trigger",
+            "destination": "reference/css-styling/#data-drawer-vanilla-trigger",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer-overlay",
+            "destination": "reference/css-styling/#data-drawer-overlay",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer",
+            "destination": "reference/css-styling/#data-drawer",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "handle-and-hit-area",
+            "destination": "reference/css-styling/#handle-and-hit-area",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "content-slots",
+            "destination": "reference/css-styling/#content-slots",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "consumer-markers",
+            "destination": "reference/css-styling/#consumer-markers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer-wrapper",
+            "destination": "reference/css-styling/#data-drawer-wrapper",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "data-drawer-no-drag",
+            "destination": "reference/css-styling/#data-drawer-no-drag",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "position-all-four-directions",
+            "destination": "reference/css-styling/#position-all-four-directions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "inline-writes",
+            "destination": "reference/css-styling/#inline-writes",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "scale-ownership",
+            "destination": "reference/css-styling/#scale-ownership",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "notes",
+            "destination": "reference/css-styling/#notes",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/entrypoints.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "0e08f0ffb6d42a99497890dcdcee2a0481073cf45177157529c98b457fa20e14",
+        "legacyRoute": "reference/entrypoints",
+        "destination": "reference/entrypoints/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "decision-table",
+            "destination": "reference/entrypoints/#decision-table",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "root-entrypoint",
+            "destination": "reference/entrypoints/#root",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "browser-namespace-module",
+            "destination": "reference/entrypoints/#browser-namespace-module",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "standalone-iife",
+            "destination": "reference/entrypoints/#standalone-iife",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "stylesheet-aliases",
+            "destination": "reference/entrypoints/#standalone-iife",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "related",
+            "destination": "reference/entrypoints/#see-also",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/examples.mdx",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "80df0dcc5805114a76bfaaa2beb38eda0ec5b62a82b4e73fbcd65ef5e953206b",
+        "legacyRoute": "reference/examples",
+        "destination": "guides/recipes/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "recipe-index",
+            "destination": "guides/recipes/#custom-html-content",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-complete-bundler-example",
+            "destination": "getting-started/#copy-the-files",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-custom-html-content",
+            "destination": "guides/recipes/#custom-html-content",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "pre-built-element",
+            "destination": "guides/recipes/#pre-built-element",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "lazy-thunk",
+            "destination": "guides/recipes/#lazy-thunk",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "mixed-slots",
+            "destination": "guides/recipes/#mixed-slots",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "opt-descendants-out-of-drag",
+            "destination": "guides/recipes/#opt-descendants-out-of-drag",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-render-a-pre-built-form-in-a-drawer",
+            "destination": "guides/recipes/#render-a-pre-built-form-in-a-drawer",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-update-content-after-creation",
+            "destination": "guides/recipes/#update-content-after-creation",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-listen-to-lifecycle-callbacks",
+            "destination": "guides/recipes/#listen-to-lifecycle-callbacks",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-all-four-directions",
+            "destination": "guides/recipes/#all-four-directions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-nested-drawers",
+            "destination": "guides/recipes/#nested-drawers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-snap-points",
+            "destination": "guides/recipes/#snap-points",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "behaviour",
+            "destination": "guides/recipes/#behavior",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-scale-background",
+            "destination": "guides/recipes/#scale-background",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-handle-cycle",
+            "destination": "guides/recipes/#handle-cycle",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-viewport-keyboard-handling",
+            "destination": "guides/recipes/#viewport-keyboard-handling",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-built-in-close-button",
+            "destination": "guides/recipes/#built-in-close-button",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-programmatic-open--close-with-a-controller",
+            "destination": "guides/recipes/#programmatic-open--close-with-a-controller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-imperative-helpers-no-controller",
+            "destination": "guides/recipes/#imperative-helpers-no-controller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-triggered-by-an-external-button",
+            "destination": "guides/recipes/#triggered-by-an-external-button",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-built-in-trigger-button-no-external-element",
+            "destination": "guides/recipes/#built-in-trigger-button-no-external-element",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-custom-container",
+            "destination": "guides/recipes/#custom-container",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-multiple-independent-drawers",
+            "destination": "guides/recipes/#multiple-independent-drawers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-subscribe-to-state-changes-from-a-higher-level-component",
+            "destination": "guides/recipes/#subscribe-to-state-changes-from-a-higher-level-component",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-spa--dynamic-mount-and-unmount",
+            "destination": "guides/recipes/#spa--dynamic-mount-and-unmount",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-open-immediately-on-mount-with-animation",
+            "destination": "guides/recipes/#open-immediately-on-mount-with-animation",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-build-a-sidebar-panel-with-the-right-direction",
+            "destination": "guides/recipes/#build-a-sidebar-panel-with-the-right-direction",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-modal-and-dismissible-behavior",
+            "destination": "guides/recipes/#modal-and-dismissible-behavior",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-external-aria-targets",
+            "destination": "guides/recipes/#external-aria-targets",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "recipe-headless-custom-renderer",
+            "destination": "guides/recipes/#headless-custom-renderer",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "common-pitfalls",
+            "destination": "guides/recipes/#common-pitfalls",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/index.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "e6608b9062bc6da8581e8090df012a4d8296a8007c85f31ffe27e8d2450478e6",
+        "legacyRoute": "reference",
+        "destination": "reference/api/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "sections-in-this-reference",
+            "destination": "reference/api/#factory",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/reference/typescript.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "a70f5e6df4c48b9dee5a5d056fb8feaa0f90ec29277b8c659ccfd71c1ef3e8d2",
+        "legacyRoute": "reference/typescript",
+        "destination": "reference/typescript/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "root-type-exports",
+            "destination": "reference/typescript/#root-type-exports",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondrawerdirection",
+            "destination": "reference/typescript/#commondrawerdirection",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondrawersnappoint",
+            "destination": "reference/typescript/#commondrawersnappoint",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondrawerid",
+            "destination": "reference/typescript/#commondrawerid",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondraweroptions",
+            "destination": "reference/typescript/#commondraweroptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondrawersnapshot",
+            "destination": "reference/typescript/#commondrawersnapshot",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "commondrawercontroller",
+            "destination": "reference/typescript/#commondrawercontroller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "vanilladrawercontroller",
+            "destination": "reference/typescript/#vanilladrawercontroller",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "vanilladraweroptions",
+            "destination": "reference/typescript/#vanilladraweroptions",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "close-button-object-shape",
+            "destination": "reference/typescript/#close-button-object-shape",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "vanillarenderable",
+            "destination": "reference/typescript/#vanillarenderable",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "factory-returns",
+            "destination": "reference/typescript/#factory-returns",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "numeric-constants",
+            "destination": "reference/typescript/#numeric-constants",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "browser-global-type",
+            "destination": "reference/typescript/#browser-global-type",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "subscribing",
+            "destination": "reference/typescript/#subscribing",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/guides/accessibility-and-focus.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "b51e73544b08a14e8aa475e6dfd00d30c13b6ea0e81316740f5265ea2fd146ff",
+        "legacyRoute": "guides/accessibility-and-focus",
+        "destination": "guides/accessibility-and-focus/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "name-and-describe-the-dialog",
+            "destination": "guides/accessibility-and-focus/#give-every-drawer-a-useful-name",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "modal-focus-ownership",
+            "destination": "guides/accessibility-and-focus/#modal-focus-ownership",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "dismissal-and-controls",
+            "destination": "guides/accessibility-and-focus/#dismissal-is-a-product-decision",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "interactive-draggable-content",
+            "destination": "guides/accessibility-and-focus/#interactive-content-and-drag",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "verification-checklist",
+            "destination": "guides/accessibility-and-focus/#accessibility-checklist",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "related",
+            "destination": "guides/accessibility-and-focus/#related",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/guides/gestures-and-snap-points.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "18ee3b4cdcb6ba352744da8f866f826a045560722dde618eb8539f25ee9539e3",
+        "legacyRoute": "guides/gestures-and-snap-points",
+        "destination": "guides/gestures-and-snap-points/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "start-with-a-predictable-model",
+            "destination": "guides/gestures-and-snap-points/#a-useful-baseline",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "snap-lifecycle",
+            "destination": "guides/gestures-and-snap-points/#order-points-from-closed-to-open",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "drag-permission",
+            "destination": "guides/gestures-and-snap-points/#drag-permission",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "nested-drawers",
+            "destination": "guides/gestures-and-snap-points/#nested-drawers",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "scale-the-page-behind-the-drawer",
+            "destination": "guides/gestures-and-snap-points/#scale-the-page-shell",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "related",
+            "destination": "guides/gestures-and-snap-points/#related",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      },
+      {
+        "source": "example/src/content/docs/guides/lifecycle-and-state.md",
+        "revision": "172fedaf1910c9b6c63f4e9b2d93bb7c03a5fee0",
+        "sha256": "0c1d6f51f34e473e5d9aca6bf425f845f41172ef14d5b34f0dc5972053e32702",
+        "legacyRoute": "guides/lifecycle-and-state",
+        "destination": "guides/lifecycle-and-state/",
+        "reviewed": true,
+        "fragments": [
+          {
+            "source": "create-open-close-destroy",
+            "destination": "guides/lifecycle-and-state/#create-open-close-destroy",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "identity-and-updates",
+            "destination": "guides/lifecycle-and-state/#identity-and-updates",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "callback-order",
+            "destination": "guides/lifecycle-and-state/#callback-order",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "subscribe-without-leaking",
+            "destination": "guides/lifecycle-and-state/#subscribe-without-leaking",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "spa-pattern",
+            "destination": "guides/lifecycle-and-state/#spa-ownership-pattern",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          },
+          {
+            "source": "related",
+            "destination": "guides/lifecycle-and-state/#related",
+            "reviewed": true,
+            "reason": "Equivalent section reviewed against maintained documentation and current public source."
+          }
+        ]
+      }
+    ]
+  }
+}

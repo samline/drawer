@@ -1,0 +1,94 @@
+---
+import Reveal from './Reveal.astro'
+interface Props {
+  label: string
+  entrypoint: string
+}
+const { label, entrypoint } = Astro.props
+---
+
+<Reveal>
+  <article class:list={['card']}>
+    <p class:list={['font-mono text-[0.72rem] tracking-wider text-text-subtle uppercase']}>
+      {label}
+    </p>
+    <h3 class:list={['mt-1 font-mono text-[0.95rem] text-text']}>{entrypoint}</h3>
+    <p class:list={['mt-3 text-sm text-text-muted']}>
+      <slot />
+    </p>
+  </article>
+</Reveal>
+
+<style>
+  .card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    padding: 1.4375rem 2rem;
+    overflow-wrap: anywhere;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline: 1rem;
+    height: 0.0625rem;
+    background: var(--color-border-soft);
+    pointer-events: none;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0.5rem 1rem;
+    z-index: -1;
+    border-radius: 0.5rem;
+    background: transparent;
+    pointer-events: none;
+    transition: background-color var(--duration-ui) var(--ease-ui);
+  }
+  @media (hover: hover) {
+    .card:hover::after {
+      background: var(--color-accent-soft);
+    }
+  }
+  .card > p:first-child {
+    padding-top: 0.1875rem;
+    font-size: 0.6rem;
+    color: var(--color-text-subtle);
+  }
+  h3 {
+    margin-top: 0;
+    overflow-wrap: anywhere;
+    font-size: 0.78rem;
+  }
+  .card > p:last-child {
+    grid-column: 2;
+    font-size: 0.825rem;
+    line-height: 1.75;
+    margin-top: 0.5625rem;
+  }
+  @media (width < 48rem) {
+    .card {
+      display: block;
+    }
+    h3 {
+      margin-top: 0.5625rem;
+    }
+  }
+  @media (width < 30rem) {
+    .card {
+      display: grid;
+      grid-template-columns: 4.0625rem 1fr;
+    }
+    h3 {
+      margin-top: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card::after {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,169 @@
+---
+import '@samline/drawer/styles.css'
+---
+
+<style is:global>
+  .site-demo-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 45%);
+    z-index: 201;
+  }
+  .site-demo-drawer {
+    --demo-padding: 2rem;
+    position: fixed;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+    color: var(--color-text);
+    z-index: 201;
+    padding: var(--demo-padding);
+    max-height: 90dvh;
+    outline: none;
+    font: 1rem/1.6 var(--font-sans);
+  }
+  .site-demo-drawer[data-drawer-direction='bottom'] {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 1.5rem 1.5rem 0 0;
+    min-height: 18rem;
+  }
+  .site-demo-drawer[data-drawer-direction='top'] {
+    top: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0 0 1.5rem 1.5rem;
+    min-height: 18rem;
+  }
+  .site-demo-drawer[data-drawer-direction='left'] {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(28rem, 90vw);
+    max-height: 100dvh;
+  }
+  .site-demo-drawer[data-drawer-direction='right'] {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: min(28rem, 90vw);
+    max-height: 100dvh;
+  }
+  .site-demo-drawer[data-drawer-snap-points='true'] {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .site-demo-drawer[data-drawer-snap-points='true'][data-drawer-direction='bottom'][data-state='open'] {
+    padding-bottom: calc(var(--demo-padding) + var(--initial-transform, 0rem));
+  }
+  .site-demo-drawer [data-drawer-title],
+  .site-demo-drawer [data-drawer-description] {
+    flex-shrink: 0;
+  }
+  .site-demo-drawer [data-drawer-title] {
+    margin-block: 1rem;
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    line-height: 1.15;
+    padding-right: 3rem;
+  }
+  .site-demo-drawer [data-drawer-description] {
+    margin-bottom: var(--space-xl);
+    color: var(--color-text-muted);
+  }
+  .site-demo-drawer {
+    border: 0.0625rem solid var(--color-border);
+  }
+  .site-demo-drawer [data-drawer-body] {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .site-demo-drawer .demo-body {
+    display: grid;
+    gap: var(--space-lg);
+  }
+  .site-demo-drawer button:not(.btn):not([data-drawer-handle]) {
+    cursor: pointer;
+    font: inherit;
+    padding: 0.75rem 1rem;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+  .site-demo-drawer [data-drawer-close] {
+    position: sticky;
+    order: -1;
+    flex: 0 0 auto;
+    top: 0;
+    display: block;
+    margin-left: auto;
+    z-index: 1;
+  }
+  .site-demo-drawer [data-drawer-handle] {
+    margin-inline: auto;
+    order: -2;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .site-demo-drawer button:focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: var(--focus-offset);
+  }
+  .site-demo-drawer button:not(.btn):not([data-drawer-handle]):hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .site-demo-drawer .demo-body:focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: calc(-1 * var(--focus-width));
+  }
+  .site-demo-drawer label,
+  .site-demo-drawer form {
+    display: grid;
+    gap: var(--space-sm);
+  }
+  .site-demo-drawer select,
+  .site-demo-drawer textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    padding: var(--space-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 0.0625rem solid var(--color-border);
+    border-radius: var(--radius-control);
+    font: inherit;
+  }
+  .site-demo-drawer .demo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .site-demo-drawer h3 {
+    font-size: 1.25rem;
+    margin-bottom: var(--space-sm);
+  }
+  .site-demo-drawer section + section {
+    margin-top: var(--space-xl);
+  }
+  .site-demo-drawer section p + p {
+    margin-top: var(--space-md);
+  }
+  @media (width < 37.5rem) {
+    .site-demo-drawer {
+      --demo-padding: 1.5rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .site-demo-drawer,
+    .site-demo-overlay {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>

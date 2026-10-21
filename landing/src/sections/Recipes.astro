@@ -1,0 +1,49 @@
+---
+import { docsHref } from '../lib/docs'
+import { getI18n } from '../i18n/utils'
+import Reveal from '../components/Reveal.astro'
+import TextLink from '../../../shared/components/TextLink.astro'
+import RichText from '../components/RichText.astro'
+import Section from '../../../shared/components/Section.astro'
+import Box from '../../../shared/components/Box.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import RecipeCard from '../components/RecipeCard.astro'
+import CodeBlock from '../components/CodeBlock.astro'
+const t = getI18n(Astro).sections.recipes
+const headingId = `section-heading-${crypto.randomUUID()}`
+---
+
+<Section aria-labelledby={headingId} spacing="none" id="recipes" class:list={['content-section']}>
+  <Box id="compare">
+    <SectionHeading
+      headingId={headingId}
+      eyebrow={t.eyebrow}
+      class:list={['mb-10 flex flex-col items-start gap-3']}
+    >
+      {t.title}
+      <br />
+      <span class:list={['serif italic']}>{t.titleAccent}</span>
+      <Fragment slot="description">{t.description}</Fragment>
+    </SectionHeading>
+    {t.items.map(item => (
+      <Reveal>
+        <div>
+          <RecipeCard
+            title={item.title}
+            context={item.context}
+            href={docsHref(item.docsRoute)}
+            linkLabel={item.docsLabel}
+          >
+            <RichText slot="description" parts={item.description} />
+            <CodeBlock
+              filename={item.code.filename}
+              code={item.code.code}
+              language={item.code.language}
+            />
+          </RecipeCard>
+        </div>
+      </Reveal>
+    ))}
+    <TextLink href={`${import.meta.env.BASE_URL}examples/`}>{t.examplesLabel}</TextLink>
+  </Box>
+</Section>

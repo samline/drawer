@@ -1,0 +1,41 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'input'> {
+  label: string
+}
+const { label, class: className, ...attributes } = Astro.props
+---
+
+<label class:list={['range-control', className]}>
+  {label}
+  <input {...attributes} type="range" />
+  <slot />
+</label>
+
+<style>
+  .range-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+  .range-control input {
+    accent-color: var(--color-accent);
+    width: 7rem;
+    cursor: pointer;
+  }
+  .range-control input:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  @media (width < 48rem) {
+    .range-control {
+      width: 100%;
+    }
+    .range-control input {
+      flex: 1;
+      min-width: 3.75rem;
+    }
+  }
+</style>

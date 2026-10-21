@@ -1,0 +1,44 @@
+---
+import { getI18n } from '../i18n/utils'
+import Reveal from '../components/Reveal.astro'
+import Section from '../../../shared/components/Section.astro'
+import Box from '../../../shared/components/Box.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import RichText from '../components/RichText.astro'
+import FaqItem from '../components/FaqItem.astro'
+const i18n = getI18n(Astro)
+const t = i18n.sections.faq
+const headingId = `section-heading-${crypto.randomUUID()}`
+---
+
+<Section
+  aria-labelledby={headingId}
+  layout="faq"
+  spacing="none"
+  id="faq"
+  class:list={['content-section']}
+>
+  <Box size="narrow">
+    <SectionHeading
+      headingId={headingId}
+      context="faq"
+      eyebrow={t.eyebrow}
+      class:list={['mb-10 text-center']}
+    >
+      <RichText parts={t.heading} />
+    </SectionHeading>
+
+    <Reveal>
+      <div>
+        {Object.values(t.items).map(item => (
+          <FaqItem>
+            <Fragment slot="question">
+              <RichText parts={item.question} />
+            </Fragment>
+            <RichText parts={item.answer} />
+          </FaqItem>
+        ))}
+      </div>
+    </Reveal>
+  </Box>
+</Section>

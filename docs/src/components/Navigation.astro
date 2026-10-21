@@ -1,0 +1,54 @@
+---
+import NavLink from '../../../shared/components/NavLink.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+import { getNavigation } from '../lib/navigation'
+const groups = await getNavigation(Astro.currentLocale)
+import { href } from '../lib/routes'
+interface Props {
+  current: string
+}
+const { current } = Astro.props
+---
+
+<nav class:list={['navigation']} aria-label={t.navigation}>
+  {groups.map(group => (
+    <div class:list={['group']}>
+      <p>{group.label}</p>
+      <ul>
+        {group.pages.map(([id, label]) => (
+          <li>
+            <NavLink href={href(id)} current={id === current ? 'page' : undefined}>
+              {label}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</nav>
+
+<style>
+  .navigation {
+    display: grid;
+    gap: var(--space-lg);
+    font-size: 0.8125rem;
+  }
+  p {
+    margin: 0 0 var(--space-xs);
+    padding-inline: var(--space-sm);
+    color: var(--color-text);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    font-family: var(--font-mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+</style>

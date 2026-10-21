@@ -1,0 +1,22 @@
+---
+export type RichTextPart = {
+  readonly kind: 'text' | 'code' | 'strong' | 'emphasis'
+  readonly value: string
+}
+interface Props {
+  parts: readonly RichTextPart[]
+}
+const { parts } = Astro.props
+---
+
+{parts.map(part =>
+  part.kind === 'code' ? (
+    <code class:list={['font-mono text-text']}>{part.value}</code>
+  ) : part.kind === 'strong' ? (
+    <strong>{part.value}</strong>
+  ) : part.kind === 'emphasis' ? (
+    <span class:list={['serif italic']}>{part.value}</span>
+  ) : (
+    part.value
+  )
+)}

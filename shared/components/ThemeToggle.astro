@@ -1,0 +1,105 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'div'> {}
+const { class: className, ...attributes } = Astro.props
+import { getI18n } from '../i18n/utils'
+import Button from './Button.astro'
+const i18n = getI18n(Astro)
+const t = i18n.controls.theme
+---
+
+<package-site-theme
+  {...attributes}
+  class:list={[className]}
+  data-toggle-label={t.label}
+  data-light-label={t.toLight}
+  data-dark-label={t.toDark}
+>
+  <Button
+    variant="ghost"
+    class:list={['theme-toggle']}
+    data-theme-toggle
+    aria-label={t.label}
+    aria-pressed="false"
+    title={t.title}
+  >
+    <svg
+      data-icon="sun"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linecap="round"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+    </svg>
+    <svg
+      data-icon="moon"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    >
+      <path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z" />
+    </svg>
+  </Button>
+</package-site-theme>
+
+<script>
+  import { mountElements } from '../lib/mount-elements'
+
+  mountElements('package-site-theme', element => {
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const button = element.querySelector<HTMLButtonElement>('button')
+    if (!button) return
+    const sync = () => {
+      const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+      element.dataset.theme = theme
+      button.setAttribute('aria-pressed', String(theme === 'dark'))
+      button.setAttribute('aria-label', element.dataset.toggleLabel ?? '')
+      button.setAttribute(
+        'title',
+        (theme === 'dark' ? element.dataset.lightLabel : element.dataset.darkLabel) ?? ''
+      )
+    }
+    button.addEventListener(
+      'click',
+      () => {
+        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+        document.dispatchEvent(new CustomEvent('package-site:theme-request', { detail: theme }))
+      },
+      { signal }
+    )
+    document.addEventListener('package-site:theme-change', sync, { signal })
+    sync()
+    return () => {
+      lifecycle.abort()
+    }
+  })
+</script>
+
+<style>
+  package-site-theme .theme-toggle {
+    width: 2.5rem;
+    padding: 0;
+    flex: none;
+  }
+  .theme-toggle svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+  package-site-theme[data-theme='light'] .theme-toggle [data-icon='moon'] {
+    display: none;
+  }
+  package-site-theme[data-theme='dark'] .theme-toggle [data-icon='sun'] {
+    display: none;
+  }
+  package-site-theme {
+    display: inline-flex;
+  }
+</style>

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { configureDrawer, createDrawer, destroyDrawer, destroyDrawers } from '../src/runtime/registry'
+import { createDrawer, destroyDrawers, getDrawer } from '../src/runtime/registry'
 
 /**
  * F5/F17: `onAnimationEnd` debounce.
@@ -51,7 +51,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
       onAnimationEnd
     }).setOpen(true)
 
-    destroyDrawer('f5-destroy')
+    getDrawer('f5-destroy')?.destroy()
     vi.runAllTimers()
 
     // The destroy cancels the pending callback, so it should NOT
@@ -82,7 +82,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
     vi.useFakeTimers()
 
     const onAnimationEnd = vi.fn()
-    const drawer = configureDrawer({
+    const drawer = createDrawer({
       id: 'f5-configure',
       onAnimationEnd
     })

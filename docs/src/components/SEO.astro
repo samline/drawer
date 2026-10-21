@@ -1,0 +1,26 @@
+---
+import SEO from '../../../shared/components/SEO.astro'
+import { getI18n } from '../i18n/utils'
+import { href } from '../lib/routes'
+import { project } from '../../../shared/lib/project.mjs'
+interface Props {
+  title: string
+  description: string
+  current: string
+}
+const { title, description, current } = Astro.props
+const t = getI18n(Astro)
+const docsUrl = new URL(href('index'), project.url).href
+const breadcrumb = [
+  { name: t.docs, url: docsUrl },
+  ...(current === 'index' ? [] : [{ name: title, url: new URL(href(current), project.url).href }]),
+]
+---
+
+<SEO
+  title={`${title} · ${t.titleSuffix}`}
+  description={description}
+  path={href(current)}
+  article
+  breadcrumb={breadcrumb}
+/>

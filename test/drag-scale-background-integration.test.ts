@@ -33,14 +33,6 @@ function getContent(): HTMLElement {
   return element
 }
 
-function getWrapper(): HTMLElement {
-  const element = document.querySelector('[data-drawer-wrapper]') as HTMLElement | null
-  if (!element) {
-    throw new Error('Expected a [data-drawer-wrapper] element to be in the DOM')
-  }
-  return element
-}
-
 function dispatchOnContent(event: Event) {
   getContent().dispatchEvent(event)
 }
@@ -57,7 +49,7 @@ function removeWrapper() {
 }
 
 /**
- * Mirrors `computeBaseScale` in `src/vanilla/dialog.ts`. 1:1 with
+ * Mirrors `computeBaseScale` in `src/vanilla/dialog-background.ts`. 1:1 with
  * vaul upstream's `useScaleBackground#getScale()`: always uses
  * `innerWidth` and `WINDOW_TOP_OFFSET` (= 26), regardless of
  * direction. Audit G4 fixed the previous formula which incorrectly
@@ -151,7 +143,6 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
   it('clears the wrapper inline styles after TRANSITIONS.DURATION on a close release', () => {
     const wrapper = attachWrapper()
     const direction: CommonDrawerDirection = 'bottom'
-    const baseScale = computeBaseScale(direction)
 
     vi.useFakeTimers()
     const onOpenChange = vi.fn()

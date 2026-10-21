@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { createDrawer, destroyDrawers } from '../src'
+
 import { preventBodyScroll } from '../src/runtime/scroll-lock'
 import { browserModuleMocks } from './_test-helpers'
 
@@ -38,6 +40,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
   })
 
   afterEach(() => {
+    destroyDrawers()
     pendingRestores.splice(0).forEach((restore) => restore())
     browserModuleMocks.reset()
     document.body.style.overflow = ''
@@ -49,9 +52,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: false
     })
     expect(bodyOverflow()).toBe('hidden')
     restore()
@@ -64,9 +65,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: false
     })
     expect(bodyOverflow()).toBe('')
     expect(() => restore()).not.toThrow()
@@ -77,9 +76,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: false,
       isDragging: false,
       modal: true,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: false
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -90,9 +87,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: true,
       modal: true,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: false
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -103,9 +98,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: false,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: false
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -116,38 +109,24 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: true,
-      hasBeenOpened: true,
-      repositionInputs: true
+      justReleased: true
     })
     expect(bodyOverflow()).toBe('')
     restore()
   })
 
   it('locks an initially open modal before it has opened previously', () => {
-    const restore = acquire({
-      isOpen: true,
-      isDragging: false,
-      modal: true,
-      justReleased: false,
-      hasBeenOpened: false,
-      repositionInputs: true
-    })
+    const drawer = createDrawer({ defaultOpen: true })
     expect(bodyOverflow()).toBe('hidden')
-    restore()
+    drawer.destroy()
+    expect(bodyOverflow()).toBe('')
   })
 
   it('locks when input repositioning is disabled', () => {
-    const restore = acquire({
-      isOpen: true,
-      isDragging: false,
-      modal: true,
-      justReleased: false,
-      hasBeenOpened: true,
-      repositionInputs: false
-    })
+    const drawer = createDrawer({ open: true, repositionInputs: false })
     expect(bodyOverflow()).toBe('hidden')
-    restore()
+    drawer.destroy()
+    expect(bodyOverflow()).toBe('')
   })
 
   it('multiple gates combine (OR semantics)', () => {
@@ -155,9 +134,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: true, // gate 1
       modal: true,
-      justReleased: true, // gate 2
-      hasBeenOpened: true,
-      repositionInputs: false // gate 3
+      justReleased: true // gate 2
     })
     expect(bodyOverflow()).toBe('')
     restore()

@@ -21,7 +21,7 @@ describe('browser IIFE bundle', () => {
 
       const drawer = window.Drawer as DrawerApi | undefined
       expect(drawer?.createDrawer).toBeTypeOf('function')
-      expect(drawer?.openDrawer).toBeTypeOf('function')
+      expect(drawer?.getDrawers).toBeTypeOf('function')
       expect((drawer as unknown as { Drawer?: unknown }).Drawer).toBeUndefined()
     } finally {
       if (previousDrawer) window.Drawer = previousDrawer

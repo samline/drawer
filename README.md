@@ -1,296 +1,151 @@
-# Drawer
+# @samline/drawer
 
-> A small, framework-free drawer runtime for vanilla JS and direct browser usage.
+Accessible bottom sheets and side panels for JavaScript, TypeScript and browser-based frameworks. No framework runtime or peer dependency required.
 
-> It binds to a host element, keeps drawer state in sync with the DOM, runs the drag / snap / scale pipeline, and ships a typed controller for the consumer.
-
----
-
-## Table of Contents
-
-- [Installation](#installation)
-- [CDN / Browser](#cdn--browser)
-- [Entrypoints](#entrypoints)
-- [Quick Start](#quick-start)
-- [What You Can Build](#what-you-can-build)
-- [Custom Content](#custom-content)
-- [Title and Close Button](#title-and-close-button)
-- [API at a Glance](#api-at-a-glance)
-- [Presence and Mount Lifecycle](#presence-and-mount-lifecycle)
-- [Documentation](#documentation)
-- [License](#license)
-
----
+[Demo](https://samline.github.io/drawer/) · [Examples](https://samline.github.io/drawer/examples/) · [Documentation](https://samline.github.io/drawer/docs/) · [Changelog](CHANGELOG.md)
 
 ## Installation
 
-```bash
+```sh
 npm install @samline/drawer
 ```
 
-```bash
-pnpm add @samline/drawer
-```
+pnpm, Bun and Yarn can install the same package. Package tooling requires Node.js 20+; browser output targets ES2020.
 
-```bash
-bun add @samline/drawer
-```
+## Quick start
 
-```bash
-yarn add @samline/drawer
-```
-
-Requires Node 20+ when bundling. Runtime target is ES2020.
-
----
-
-## CDN / Browser
-
-Use the browser build when you do not have a bundler and need to run the package directly in HTML, Shopify, WordPress, or any traditional template.
+Create a trigger, load the runtime stylesheet and give the panel its own positioning and appearance. Keep the returned controller: it owns opening, updates and cleanup.
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.2.1/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.2.1/dist/browser/global.global.js"></script>
+<button id="open-filters" type="button" aria-haspopup="dialog">Open filters</button>
 ```
 
-> Pin the version in production. Replace `4.2.1` with the version you ship.
-
-The browser bundle exposes a single global: `window.Drawer`.
-
-Bundler consumers can import the exact same singleton as `browser`; server-rendered integrations may use its `newDrawer({ id, html, options })` helper and read-only `available` compatibility view.
-
-```html
-<form id="contact-form">
-  <button id="open-drawer" type="button">Open</button>
-</form>
-
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@4.2.1/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@4.2.1/dist/browser/global.global.js"></script>
-<script>
-  window.Drawer.createDrawer({
-    id: 'demo',
-    triggerElement: document.getElementById('open-drawer'),
-    direction: 'bottom',
-    title: 'Demo',
-    content: 'Hello from the browser'
-  })
-</script>
-```
-
-The methods on `window.Drawer` share a module-level registry keyed by `id`. Controllers are not stored as properties on the namespace; inspect them with `window.Drawer.getDrawer(id)` or `window.Drawer.getDrawers()`. `window.Drawer.destroyDrawer(id)` tears down the matching instance and removes it from that registry.
-
-See [docs/browser.md](docs/browser.md) for the full browser surface.
-
----
-
-## Entrypoints
-
-| Entrypoint                | When to use                                                            |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `@samline/drawer`         | Main vanilla API for bundlers, ESM, or CJS consumers.                  |
-| `@samline/drawer/browser` | ESM/CJS browser namespace with named and default exports for bundlers. |
-
-The root entrypoint exports the individual helpers. Bundled applications that prefer a namespace can import `Drawer` from `@samline/drawer/browser`. Plain `<script>` usage loads the dedicated IIFE at `dist/browser/global.global.js`, as shown above.
-
----
-
-## Quick Start
-
-```ts
+```js
 import { createDrawer } from '@samline/drawer'
 import '@samline/drawer/styles.css'
+import './drawer.css'
 
 const drawer = createDrawer({
-  id: 'filters',
-  direction: 'bottom',
+  triggerElement: document.getElementById('open-filters'),
   title: 'Filters',
-  content: 'Filter body',
-  showHandle: true,
-  snapPoints: ['180px', '420px', 1],
-  activeSnapPoint: '180px'
+  content: 'Choose what you want to see.',
+  contentClassName: 'drawer-panel',
+  overlayClassName: 'drawer-overlay',
+  closeButton: { icon: '×', ariaLabel: 'Close filters' },
+  autoFocus: true
 })
+```
 
+```css
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(0 0 0 / 45%);
+}
+.drawer-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-height: 90dvh;
+  padding: 1.5rem;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: white;
+  color: #24212b;
+}
+.drawer-panel [data-drawer-body] {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.drawer-panel [data-drawer-close] {
+  flex-shrink: 0;
+  margin: 0.75rem 0 0 auto;
+}
+```
+
+The trigger opens the drawer; Escape, the backdrop and the close button dismiss it. Programmatic actions use the same owned instance:
+
+```js
 drawer.setOpen(true)
+drawer.update({ content: 'Your filters are ready.' })
+drawer.setOpen(false)
+// When the owning component or page leaves:
+drawer.destroy()
 ```
 
-What this does:
+## One lifecycle
 
-- Binds a controller to the id `filters`. Reusing the id is an update, not a second mount.
-- Mounts the dialog in the bottom direction with the open transition.
-- Renders the built-in handle. Clicking the handle advances the active snap point.
-- Positions the content at the `180px` snap on open; the user can drag to `420px` or the zero-offset snap represented by numeric `1`.
-- Locks body scroll while the drawer is open (because `modal` defaults to `true`).
+- Each `createDrawer()` creates an independent instance. Omitted ids are generated; supply an id only for explicit lookup or parent relationships.
+- Explicit duplicate ids throw. Use `drawer.update()` to change an existing instance.
+- Closing preserves the instance for reopening; destroying releases its registry entry, listeners, subscriptions, timers and owned effects.
+- Destruction is final: stale handles cannot recreate a drawer or affect a new instance with the same id. Repeated `destroy()` is harmless; other methods on a destroyed controller throw.
+- `setOpen()`, `update()` and `setActiveSnapPoint()` return the resulting snapshot. `subscribe()` fires immediately and returns an unsubscribe function.
 
----
+## Registry queries
 
-## What You Can Build
+```js
+import { createDrawer, getDrawer, getDrawers, destroyDrawers } from '@samline/drawer'
 
-- Mobile-style bottom sheets, side panels, and modal dialogs with a typed controller.
-- Nested drawer flows (parent → child) where the parent scales and shifts when the child opens.
-- Snap-point flows (Spotify-like mini-player, sheet with a handle, drawer with a "show more" anchor).
-- Scale-background flows that dim and shift the page shell while the drawer is dragged open.
-- Drawers with a built-in handle, built-in trigger button, or built-in close button — no manual `document.addEventListener` boilerplate.
-- Browser / CDN / Shopify / WordPress embeds via the `window.Drawer` IIFE bundle.
-- HMR-safe SPAs under Vite using stable ids and explicit teardown.
-- Drawers that honour the mobile keyboard through the default-enabled, focus-gated `repositionInputs` pipeline (`fixed` is optional).
-- Drawers that opt out of scroll restoration (`preventScrollRestoration: true`).
-- Test-friendly flows via the headless `createDrawerController` API (no DOM, no side effects).
-
----
-
-## Custom Content
-
-The `content` slot (and the `title` / `description` slots) accept the same `VanillaRenderable` shape: `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Pick the form that matches how you build your UI.
-
-```ts
-import { createDrawer } from '@samline/drawer'
-
-// 1. Plain text.
-createDrawer({ id: 'a', content: 'Hello' })
-
-// 2. Pre-built element (the runtime moves it into the body slot).
-const form = document.createElement('form')
-form.innerHTML = '<input name="q" /><button>Search</button>'
-createDrawer({ id: 'b', title: 'Search', content: form })
-
-// 3. Lazy thunk (re-invoked every time the dialog subtree is rebuilt).
-createDrawer({
-  id: 'c',
-  content: () => {
-    const node = document.createElement('p')
-    node.textContent = new Date().toLocaleTimeString()
-    return node
-  }
-})
+const filters = createDrawer({ id: 'filters', title: 'Filters' })
+getDrawer('filters') === filters // true
+getDrawer('missing') // null; does not create
+Object.keys(getDrawers()) // ['filters']
+// On whole-application teardown, when you own every registered instance:
+destroyDrawers()
 ```
 
-> **Move semantics**: when you pass an `HTMLElement`, the runtime adopts it. Do not append the same element to a second `content` while the first drawer still owns it. Use a thunk if you need a fresh node per open.
->
-> **Lazy presence**: the dialog subtree unmounts on close, so any `() => HTMLElement` is invoked again on the next open. Use this to refresh dynamic content, or cache expensive work outside the thunk.
+`getDrawers()` returns a fresh object containing the same stable controller objects. `getParentDrawer(id)` and `getChildDrawers(id)` inspect nested relationships. Prefer a local controller when a component already owns it.
 
-For the full contract, end-to-end patterns, and how `content` lands in the DOM, see [docs/options.md → Renderable content](docs/options.md#renderable-content) and [docs/recipes.md → Custom HTML content](docs/recipes.md#custom-html-content).
+## Content and accessibility
 
----
+Strings are plain text. Pass an HTMLElement or a factory returning one for custom UI; native templates are useful when fresh DOM is needed on each open. Keep persistent form data in application state. Supply an accessible title or label, label your inputs and provide a usable close action. Reading-only scroll regions need a named keyboard focus target. See [content, styling and accessibility](https://samline.github.io/drawer/docs/reference/configuration/).
 
-## Title and Close Button
+## Capabilities
 
-The package ships two convenience slots that cover the most common consumer needs.
+- Top, bottom, left and right panels, with matching consumer CSS.
+- Native pointer dragging, handle-only dragging, snap points and programmatic snap selection.
+- Modal focus containment, Escape/backdrop dismissal, background isolation and focus restoration.
+- Independent non-modal panels and optional overlays.
+- Parent/child drawers, shared scroll ownership and optional background scaling.
+- Focus-gated mobile keyboard positioning and viewport handling.
+- Dynamic content, lifecycle callbacks and observable state.
 
-### Title slot
+[Working examples](https://samline.github.io/drawer/examples/) include forms, long content, nested panels and controlled snap sizes. [Framework integrations](https://samline.github.io/drawer/docs/guides/frameworks/) covers React, Vue, Svelte, Astro, Shopify and WordPress using this same API.
 
-The `[data-drawer-title]` slot has two roles:
+## HTML / CDN
 
-- **Visible title** — pass a string or `HTMLElement` to the `title` option. The package renders it visibly at the top of the drawer body.
-- **Accessibility target** — when only `ariaLabel` is provided (no `title`), the package auto-promotes the `ariaLabel` value into the title slot for the `aria-labelledby` reference, and **auto-hides the slot** so the a11y text does not leak visually into the drawer. Pass an explicit `titleVisuallyHidden: false` to opt out of the auto-hide.
+Load matching versioned runtime CSS and JavaScript, then replace the import with `window.Drawer.createDrawer`. Keep the same panel stylesheet and controller lifecycle.
 
-```ts
-import { createDrawer } from '@samline/drawer'
-
-// Visible title (a heading the user sees)
-createDrawer({
-  id: 'filters',
-  title: 'Filters',
-  content: 'Body'
-})
-
-// Accessibility-only title (proxy from ariaLabel, auto-hidden)
-createDrawer({
-  id: 'filters',
-  ariaLabel: 'Filters',
-  content: 'Body'
-})
+```html
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@5.0.0/dist/browser/global.global.js"></script>
 ```
 
-### Built-in close button
+Use local `dist` files before publishing the new version. ESM/CommonJS are module formats; CDN or self-hosted files are delivery choices. The optional `@samline/drawer/browser` module exports a `Drawer` namespace with the same functions and no global side effect.
 
-Pass `closeButton: true` (or a config object) and the package renders a `<button data-drawer-close>` inside the drawer, wired to `onOpenChange(false)`. This eliminates the need to write a manual `document.addEventListener('click', ...)` listener (which accumulates on Vite HMR cycles and triggers stale-controller bugs).
+## State without DOM
 
-```ts
-import { createDrawer } from '@samline/drawer'
+`createDrawerController()` is the advanced state-only API. It does not register, render, trap focus or lock scrolling. Its `setOpen`, `update`, `setActiveSnapPoint`, `getSnapshot`, `subscribe` and `destroy` methods follow the same state/disposal contract.
 
-const drawer = createDrawer({
-  id: 'filters',
-  content: 'Body',
-  closeButton: {
-    className: 'absolute top-5 right-5',
-    icon: 'xmark', // any string; rendered as <span aria-hidden="true">
-    ariaLabel: 'Close'
-  }
-})
-```
+## TypeScript
 
-The button is removed automatically on re-mount (HMR safety) and on `destroyDrawer`. Its `click` event `stopPropagation()`s so it does not bubble to the drawer's content.
+The package includes declarations. Import `VanillaDrawerOptions`/`VanillaDrawerController` for DOM integrations and `CommonDrawerOptions`/`CommonDrawerController` for state-only work. The [TypeScript reference](https://samline.github.io/drawer/docs/reference/typescript/) lists snapshot, direction, content, snap point and callback types.
 
-See the [close-button option shape](docs/typescript.md#close-button-option-shape). It is part of `VanillaDrawerOptions`, not a named root type export.
+## Upgrading to v5
 
----
+V5 removes redundant factories and id-based mutators, unifies updates, makes creation explicit and destruction terminal. See [Breaking changes and replacements](CHANGELOG.md) before upgrading v4 code. Historical method URLs explain their replacement.
 
-## API at a Glance
+## Agent integration
 
-The runtime is built around one factory plus a focused set of helpers. State mutators return snapshots, `update` returns a controller for the same id, and each registry helper's return shape is documented in the per-method reference.
-
-| Group                   | Methods                                                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Factory                 | [`createDrawer`](docs/api/create-drawer.md) · [`configureDrawer`](docs/api/configure-drawer.md) · [`createDrawerController`](docs/api/create-drawer-controller.md)                        |
-| Inspectors              | [`getDrawer`](docs/api/get-drawer.md) · [`getDrawers`](docs/api/get-drawers.md) · [`getParentDrawer`](docs/api/get-parent-drawer.md) · [`getChildDrawers`](docs/api/get-child-drawers.md) |
-| Mutators                | [`updateDrawer`](docs/api/update-drawer.md) · [`openDrawer`](docs/api/open-drawer.md) · [`closeDrawer`](docs/api/close-drawer.md) · [`toggleDrawer`](docs/api/toggle-drawer.md)           |
-| Teardown                | [`destroyDrawer`](docs/api/destroy-drawer.md) · [`destroyDrawers`](docs/api/destroy-drawers.md)                                                                                           |
-| Properties (controller) | `id` · `element` · `options`                                                                                                                                                              |
-| Lifecycle (controller)  | `setOpen` · `setActiveSnapPoint` · `patch` · `update` · `subscribe` · `getSnapshot` · `destroy`                                                                                           |
-
-See the full per-method reference in [`docs/api/`](docs/api/index.md).
-
----
-
-## Presence and Mount Lifecycle
-
-`createDrawer` immediately creates a dedicated `<div data-drawer-vanilla-root>` for that drawer in `document.body` or its `container`. An optional built-in trigger is also rendered immediately. Each drawer gets its own host, including drawers that share the same custom container.
-
-The visual dialog uses lazy presence:
-
-1. **Initially closed drawers have no overlay or content in the DOM.** `[data-drawer-overlay]`, `[data-drawer]`, the handle, and the content slots mount only when the drawer opens.
-2. **Closing keeps the overlay and content present for the exit.** Their state changes to `closed`, the animation starts from the current rendered transform, and the nodes are removed after the 500 ms transition plus a 100 ms safety window. The host and optional trigger remain until destroy.
-3. **`open: true` at creation means "open immediately."** The dialog is visible without an entrance animation. For an animated programmatic open, create it closed and call `setOpen(true)` after mount.
-4. **HMR considerations:** if consumer code recreates a drawer with `open: true`, it is opened again on every HMR run. Prefer the closed-then-open pattern when that flash is undesirable.
-
-**Recommended pattern for "open on mount" dialogs:**
-
-```ts
-import { createDrawer } from '@samline/drawer'
-
-const drawer = createDrawer({
-  id: 'my-drawer'
-  // no `open` here; defaults to closed
-})
-
-// Defer open to the next microtask so the entrance animation
-// runs after the mount is fully wired.
-queueMicrotask(() => drawer.setOpen(true))
-```
-
-See [`CommonDrawerOptions.open`](src/core/index.ts) for the full type contract.
-
----
-
-## Documentation
-
-Full API reference, guides, and examples are available at **[samline.github.io/drawer](https://samline.github.io/drawer)**.
-
-| Doc                                                | Purpose                                                                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| [docs/README.md](docs/README.md)                   | Overview, anatomy, and entrypoint selection.                                                                                    |
-| [docs/getting-started.md](docs/getting-started.md) | Concepts, observable contract, lifecycle, side-effect table, registry helpers.                                                  |
-| [docs/options.md](docs/options.md)                 | Every `CommonDrawerOptions` and `VanillaDrawerOptions` field with defaults, behaviour, and an example per row.                  |
-| [docs/recipes.md](docs/recipes.md)                 | End-to-end patterns: custom HTML content, renderable slots, lifecycle callbacks, nested drawers, snap points, scale background. |
-| [docs/css-styling.md](docs/css-styling.md)         | The data-attribute contract the stylesheet expects; inline writes; scale ownership; position all four directions.               |
-| [docs/typescript.md](docs/typescript.md)           | Exported types, callback signatures, helper return shapes, numeric constants, browser global type.                              |
-| [docs/api/index.md](docs/api/index.md)             | One page per public method.                                                                                                     |
-| [docs/vanilla.md](docs/vanilla.md)                 | The root entrypoint (vanilla JS) in depth.                                                                                      |
-| [docs/browser.md](docs/browser.md)                 | Using `window.Drawer` with a plain `<script>` tag.                                                                              |
-| [CHANGELOG.md](CHANGELOG.md)                       | Version history.                                                                                                                |
-
----
+The [Drawer skill](https://samline.github.io/drawer/skills/drawer/SKILL.md) describes v5 integration, lifecycle, content and host ownership. Pass it to an agent or install it using a skills-compatible tool. Verify the installed package version before applying its guidance.
 
 ## License
 
-MIT
+MIT — [LICENSE.md](LICENSE.md).

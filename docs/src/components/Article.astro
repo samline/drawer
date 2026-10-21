@@ -1,0 +1,167 @@
+---
+import CodeFrame from '../../../shared/components/CodeFrame.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+---
+
+<package-site-docs-article class:list={['article']}>
+  <slot />
+  <template>
+    <CodeFrame size="comfortable" label={t.copy.code} text="" copyLabel={t.copy.aria} />
+  </template>
+</package-site-docs-article>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  mountElements('package-site-docs-article', element => {
+    const template = element.querySelector('template')
+    if (!template) return
+    for (const pre of element.querySelectorAll('pre')) {
+      if (pre.closest('[data-copy-source]')) continue
+      const code = pre.querySelector('code')
+      if (!code) continue
+      const frame = template.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined
+      if (!frame) continue
+      const label = frame.querySelector('[data-code-label]')
+      if (label && pre.dataset.language) label.textContent = pre.dataset.language
+      pre.before(frame)
+      frame.querySelector('[data-code-content]')?.append(pre)
+    }
+  })
+</script>
+
+<style>
+  .article {
+    display: block;
+    min-width: 0;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+  .article :global(p:not([data-ui], [data-ui] *)),
+  .article :global(ul:not([data-ui], [data-ui] *)),
+  .article :global(ol:not([data-ui], [data-ui] *)) {
+    margin: var(--space-md) 0;
+  }
+  .article :global(ul:not([data-ui], [data-ui] *)),
+  .article :global(ol:not([data-ui], [data-ui] *)) {
+    padding-left: 1.5rem;
+  }
+  .article :global(ul:not([data-ui], [data-ui] *)) {
+    list-style: disc;
+  }
+  .article :global(ol:not([data-ui], [data-ui] *)) {
+    list-style: decimal;
+  }
+  .article :global(li:not([data-ui], [data-ui] *)) {
+    margin: 0.4rem 0;
+  }
+  .article :global(h2:not([data-ui], [data-ui] *)),
+  .article :global(h3:not([data-ui], [data-ui] *)),
+  .article :global(h4:not([data-ui], [data-ui] *)) {
+    color: var(--color-text);
+    line-height: 1.35;
+    letter-spacing: -0.025em;
+    font-weight: var(--heading-weight);
+    scroll-margin-top: calc(var(--docs-header-height, 4.5rem) + 2.5rem);
+  }
+  .article :global(h2:not([data-ui], [data-ui] *)) {
+    margin: 3rem 0 var(--space-md);
+    font-size: var(--text-article-section);
+  }
+  .article :global(h3:not([data-ui], [data-ui] *)) {
+    margin: var(--space-xl) 0 var(--space-sm);
+    font-size: 1.125rem;
+  }
+  .article :global(h4:not([data-ui], [data-ui] *)) {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1rem;
+  }
+  .article :global(a:not([data-ui], [data-ui] *)) {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-color: var(--color-border);
+  }
+  .article :global(strong:not([data-ui], [data-ui] *)) {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .article :global(code:not([data-ui], [data-ui] *)) {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--color-text);
+    background: var(--color-accent-soft);
+    padding: 0.15em 0.35em;
+    border-radius: 0.25rem;
+  }
+  .article :global(pre:not([data-ui], [data-ui] *)) {
+    max-width: 100%;
+    margin: 1.5rem 0;
+    padding: 1.25rem;
+    overflow-x: auto;
+    border: 0.0625rem solid var(--palette-code-border);
+    border-radius: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    background: var(--palette-code-surface) !important;
+  }
+  .article :global(pre:not([data-ui] *) code) {
+    padding: 0;
+    background: none;
+    font-size: inherit;
+    overflow-wrap: normal;
+  }
+  .article :global(.code-frame) {
+    margin: var(--space-lg) 0;
+  }
+  .article :global(table:not([data-ui], [data-ui] *)) {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+  }
+  .article :global(th:not([data-ui], [data-ui] *)),
+  .article :global(td:not([data-ui], [data-ui] *)) {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 0.0625rem solid var(--color-border-soft);
+    min-width: 7rem;
+    vertical-align: top;
+  }
+  .article :global(th:not([data-ui], [data-ui] *)) {
+    color: var(--color-text);
+    font-weight: 600;
+    background: var(--palette-feature-surface);
+  }
+  .article :global(blockquote:not([data-ui], [data-ui] *)) {
+    margin: 1.5rem 0;
+    padding: 0.25rem 1.25rem;
+    border-left: 0.1875rem solid var(--color-accent);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--color-accent-soft);
+  }
+  .article :global(hr:not([data-ui], [data-ui] *)) {
+    border: 0;
+    border-top: 0.0625rem solid var(--color-border-soft);
+    margin: 2rem 0;
+  }
+  .article :global(:focus-visible:not([data-ui], [data-ui] *)) {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  .article :global(pre:focus-visible:not([data-ui] *)) {
+    outline-offset: -0.1875rem;
+  }
+  .article :global(img:not([data-ui], [data-ui] *)) {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

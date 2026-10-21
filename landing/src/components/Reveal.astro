@@ -1,0 +1,67 @@
+<package-site-reveal>
+  <slot />
+</package-site-reveal>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  mountElements('package-site-reveal', element => {
+    const target = element.firstElementChild
+    if (
+      !target ||
+      !('IntersectionObserver' in window) ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return
+    let initial = true
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0]
+        if (!entry) return
+        // Use the observer's layout snapshot instead of synchronously measuring
+        // each block between the other components' initialization writes.
+        if (initial) {
+          initial = false
+          if (!entry.isIntersecting && entry.boundingClientRect.top >= innerHeight) {
+            element.dataset.pending = 'true'
+            return
+          }
+        }
+        if (entry.isIntersecting || !element.hasAttribute('data-pending')) {
+          delete element.dataset.pending
+          observer.disconnect()
+        }
+      },
+      { threshold: 0, rootMargin: '0px 0px 64px 0px' }
+    )
+    observer.observe(target)
+    return () => {
+      observer.disconnect()
+      delete element.dataset.pending
+    }
+  })
+</script>
+
+<style>
+  package-site-reveal {
+    display: block;
+    min-width: 0;
+    transition:
+      opacity var(--duration-reveal) var(--ease-ui),
+      transform var(--duration-reveal) var(--ease-ui);
+  }
+  package-site-reveal > :global(*) {
+    height: 100%;
+  }
+  package-site-reveal[data-pending] {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    package-site-reveal {
+      transition: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

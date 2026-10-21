@@ -1,0 +1,130 @@
+---
+import type { HTMLAttributes, ComponentProps } from 'astro/types'
+import { Code } from 'astro:components'
+import { codeTheme } from '../lib/code-theme.mjs'
+import { getI18n } from '../i18n/utils'
+import { format } from '../i18n/format'
+import CopyButton from './CopyButton.astro'
+interface Props extends HTMLAttributes<'div'> {
+  language?: ComponentProps<typeof Code>['lang']
+  label: string
+  text: string
+  copyLabel: string
+  size?: 'compact' | 'comfortable'
+  class?: string
+}
+const {
+  label,
+  text,
+  language = 'plaintext',
+  copyLabel,
+  size = 'compact',
+  class: className,
+  ...attributes
+} = Astro.props
+const codeLabel = format(getI18n(Astro).controls.code.label, { filename: label })
+---
+
+<div
+  {...attributes}
+  data-ui
+  data-copy-source
+  class:list={['code-frame', { comfortable: size === 'comfortable' }, className]}
+>
+  <header data-pagefind-ignore>
+    <span class:list={['file-label']}>
+      <span class:list={['dot']} aria-hidden="true"></span>
+      <span data-code-label>{label}</span>
+    </span>
+    <CopyButton ariaLabel={copyLabel} />
+  </header>
+  <div class:list={['code-content']} data-code-content>
+    {Astro.slots.has('default') ? (
+      <slot />
+    ) : (
+      text && (
+        <Code
+          code={text}
+          lang={language}
+          theme={codeTheme}
+          transformers={[
+            {
+              code(node) {
+                // Astro removes one terminal newline; keep displayed and copied source identical.
+                if (text.endsWith('\n')) node.children.push({ type: 'text', value: '\n' })
+              },
+            },
+          ]}
+          tabindex="0"
+          role="group"
+          aria-label={codeLabel}
+        />
+      )
+    )}
+  </div>
+</div>
+
+<style>
+  .code-frame {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--palette-code-surface);
+    border: 0.0625rem solid var(--palette-code-border);
+    border-radius: 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    line-height: 1.7;
+  }
+  .comfortable {
+    font-size: var(--text-small);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 0.0625rem solid var(--palette-code-border);
+    color: var(--palette-code-header);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .dot {
+    flex-shrink: 0;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    opacity: 0.7;
+  }
+  .code-content {
+    min-width: 0;
+  }
+  .code-content :global(pre) {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    max-height: var(--code-max-height, none);
+    border: 0;
+    border-radius: 0;
+    background: var(--palette-code-surface);
+    color: var(--palette-code-text);
+    font: inherit;
+  }
+  .code-content :global(pre code) {
+    font: inherit;
+  }
+  .code-content :global(pre:focus-visible) {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: -0.125rem;
+  }
+</style>

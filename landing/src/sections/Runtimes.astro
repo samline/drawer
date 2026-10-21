@@ -1,0 +1,52 @@
+---
+import RichText from '../components/RichText.astro'
+import { getI18n } from '../i18n/utils'
+import Section from '../../../shared/components/Section.astro'
+import Box from '../../../shared/components/Box.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import RuntimeItem from '../components/RuntimeItem.astro'
+const i18n = getI18n(Astro)
+const t = i18n.sections.runtimes
+const headingId = `section-heading-${crypto.randomUUID()}`
+---
+
+<Section aria-labelledby={headingId} spacing="none" class:list={['content-section']}>
+  <Box>
+    <SectionHeading
+      headingId={headingId}
+      context="runtime"
+      eyebrow={t.eyebrow}
+      class:list={['mb-10 flex flex-col items-start gap-3']}
+    >
+      <RichText parts={t.heading} />
+      <Fragment slot="description">{t.description}</Fragment>
+    </SectionHeading>
+
+    <div class:list={['runtime-grid']}>
+      {Object.values(t.items).map(item => (
+        <RuntimeItem label={item.label} entrypoint={item.entrypoint}>
+          {item.description}
+        </RuntimeItem>
+      ))}
+    </div>
+  </Box>
+</Section>
+
+<style>
+  .runtime-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2.25rem;
+    row-gap: 0;
+  }
+  @media (width < 48rem) {
+    .runtime-grid {
+      column-gap: 1.5rem;
+    }
+  }
+  @media (width < 30rem) {
+    .runtime-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

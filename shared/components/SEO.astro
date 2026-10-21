@@ -1,0 +1,86 @@
+---
+import { project } from '../lib/project.mjs'
+import { serializeJsonLd } from '../lib/serialize'
+interface Props {
+  title: string
+  description: string
+  path: string
+  article?: boolean
+  breadcrumb?: { name: string; url: string }[]
+}
+const { title, description, path, article = false, breadcrumb = [] } = Astro.props
+const canonical = new URL(path, project.url).href
+const social = new URL('social.png', project.url).href
+const imageAlt = `${project.name} — ${project.description}`
+const websiteId = `${project.url}#website`
+const schema = serializeJsonLd({
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': websiteId, name: project.name, url: project.url },
+    {
+      '@type': article ? 'TechArticle' : 'WebPage',
+      '@id': `${canonical}#page`,
+      name: title,
+      headline: title,
+      description,
+      url: canonical,
+      inLanguage: 'en',
+      isPartOf: { '@id': websiteId },
+      author: { '@type': 'Person', name: project.author },
+      image: social,
+      ...(breadcrumb.length ? { breadcrumb: { '@id': `${canonical}#breadcrumb` } } : {}),
+    },
+    ...(breadcrumb.length
+      ? [
+          {
+            '@type': 'BreadcrumbList',
+            '@id': `${canonical}#breadcrumb`,
+            itemListElement: breadcrumb.map((item, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: item.name,
+              item: item.url,
+            })),
+          },
+        ]
+      : []),
+  ],
+})
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="author" content={project.author} />
+<meta name="keywords" content={project.keywords.join(', ')} />
+<meta
+  name="robots"
+  content={
+    import.meta.env.DEV || project.template
+      ? 'noindex, nofollow'
+      : 'index, follow, max-image-preview:large'
+  }
+/>
+<meta name="theme-color" media="(prefers-color-scheme: light)" content={project.accentLight} />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content={project.accentDark} />
+<meta name="color-scheme" content="light dark" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<link rel="canonical" href={canonical} />
+<link rel="icon" type="image/svg+xml" href={`${project.base}favicon.svg`} />
+<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:site_name" content={project.name} />
+<meta property="og:locale" content="en_US" />
+<meta property="og:image" content={social} />
+<meta property="og:image:alt" content={imageAlt} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={social} />
+<meta name="twitter:image:alt" content={imageAlt} />
+<script type="application/ld+json" set:html={schema} />

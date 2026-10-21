@@ -89,8 +89,7 @@ let previousScrollRestoration: ScrollRestoration | null = null
  * This is the vanilla runtime's baseline modal lock. Unlike Vaul,
  * there is no Radix Dialog underneath to provide a separate lock.
  * Acquisition is suppressed when any of the following is true:
- * - `isDisabled: true` — short-circuit. Caller can also pass
- *   `disablePreventScroll: true` (the legacy alias).
+ * - `disablePreventScroll: true` — explicit lock opt-out.
  * - `!isOpen` — closed drawer.
  * - `isDragging` — user is currently dragging the drawer. vaul
  *   releases the lock so the user can scroll content inside the
@@ -98,8 +97,6 @@ let previousScrollRestoration: ScrollRestoration | null = null
  * - `!modal` — non-modal drawer, no lock.
  * - `justReleased` — drag was released < 200ms ago, no lock
  *   (avoids focus-input race).
- * `hasBeenOpened` and `repositionInputs` remain accepted for API
- * compatibility, but do not disable the baseline lock.
  *
  * On `isIOS()`, takes the 6-step Mobile Safari workaround
  * regardless of the gates (the gate only controls whether to
@@ -112,8 +109,6 @@ export function preventBodyScroll(
     isDragging?: boolean
     modal?: boolean
     justReleased?: boolean
-    hasBeenOpened?: boolean
-    repositionInputs?: boolean
   } = {}
 ): () => void {
   const isDisabled =

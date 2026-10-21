@@ -18,6 +18,17 @@ Thumbs.db
 # directory layout in the monorepo convention).
 .agents/skills/
 
-# Generated documentation-site state
-example/.astro/
-example/dist/
+landing/
+shared/
+site-tools/
+site-tests/
+site-e2e/
+docs/src/
+docs/scripts/
+SITE*.md
+content-audit.json
+design-reference.json
+project.config.json
+playwright.site.config.ts
+
+site-skills-lock.json

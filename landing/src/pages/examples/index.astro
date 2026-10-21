@@ -1,0 +1,10 @@
+---
+import Main from '../../layouts/Main.astro'
+import ExamplesGallery from '../../sections/ExamplesGallery.astro'
+import { getI18n } from '../../i18n/utils'
+const t = getI18n(Astro).examples
+---
+
+<Main title={t.title} description={t.description}>
+  <ExamplesGallery />
+</Main>

@@ -1,0 +1,65 @@
+---
+import type { ComponentProps, HTMLAttributes } from 'astro/types'
+import Tabs from './Tabs.astro'
+import TabPanel from './TabPanel.astro'
+import CodeFrame from './CodeFrame.astro'
+import { getI18n } from '../i18n/utils'
+import { format } from '../i18n/format'
+interface Props extends HTMLAttributes<'div'> {
+  files: readonly {
+    id: string
+    label: string
+    filename: string
+    code: string
+    language: ComponentProps<typeof CodeFrame>['language']
+  }[]
+  complete?: { code: string; copyLabel: string; filename?: string }
+}
+const { files, complete, class: className, ...attributes } = Astro.props
+const t = getI18n(Astro).controls
+const id = `code-files-${crypto.randomUUID()}`
+const panels = [
+  ...files.map(file => ({
+    ...file,
+    copyLabel: format(t.code.copyLabel, { filename: file.filename }),
+  })),
+  ...(complete
+    ? [
+        {
+          id: 'complete',
+          label: t.codeFiles.complete,
+          filename: complete.filename ?? 'index.html',
+          code: complete.code,
+          language: 'html' as const,
+          copyLabel: complete.copyLabel,
+        },
+      ]
+    : []),
+]
+---
+
+<div {...attributes} data-ui data-code-files class:list={['code-files', className]}>
+  <Tabs id={id} label={t.codeFiles.label} items={panels}>
+    {panels.map(panel => (
+      <TabPanel id={panel.id} label={panel.label} class:list={['file-panel']}>
+        <CodeFrame
+          label={panel.filename}
+          text={panel.code}
+          language={panel.language}
+          copyLabel={panel.copyLabel}
+          size="comfortable"
+        />
+      </TabPanel>
+    ))}
+  </Tabs>
+</div>
+
+<style>
+  .code-files {
+    min-width: 0;
+    --code-max-height: 28rem;
+  }
+  .file-panel {
+    margin-bottom: 0;
+  }
+</style>

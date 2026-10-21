@@ -1,0 +1,40 @@
+---
+import CopyButton from '../../../shared/components/CopyButton.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro).controls.copy
+---
+
+<div data-copy-source="" class:list={['install-shortcut']}>
+  <code>{t.command}</code>
+  <CopyButton text={t.command} ariaLabel={t.ariaLabel} variant="command" />
+</div>
+
+<style>
+  .install-shortcut {
+    display: inline-flex;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 1.4375rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+    border: 0.0625rem solid var(--color-border-soft);
+    border-radius: 0.5625rem;
+    background: var(--palette-install-surface);
+  }
+  .install-shortcut code {
+    color: var(--palette-install-text);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+  }
+  @media (width < 30rem) {
+    .install-shortcut {
+      gap: 0.75rem;
+      padding-left: 0.6875rem;
+    }
+    .install-shortcut code {
+      font-size: 0.62rem;
+    }
+  }
+</style>

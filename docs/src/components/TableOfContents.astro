@@ -1,0 +1,112 @@
+---
+import Disclosure from '../../../shared/components/Disclosure.astro'
+import NavLink from '../../../shared/components/NavLink.astro'
+import type { MarkdownHeading } from 'astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+interface Props {
+  headings: MarkdownHeading[]
+  collapsed?: boolean
+}
+const { headings, collapsed = false } = Astro.props
+const items = headings.filter(h => h.depth === 2 || h.depth === 3)
+---
+
+{items.length > 0 && (
+  <package-site-docs-toc class:list={['toc']}>
+    <aside aria-label={t.toc}>
+      <Disclosure open={!collapsed} class:list={['toc-disclosure']}>
+        <span slot="summary">{t.toc}</span>
+        <nav aria-label={t.toc}>
+          <ul>
+            {items.map(h => (
+              <li>
+                <NavLink href={`#${h.slug}`} compact nested={h.depth === 3}>
+                  {h.text}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </Disclosure>
+    </aside>
+  </package-site-docs-toc>
+)}
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  mountElements('package-site-docs-toc', element => {
+    let frame = 0
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const entries = Array.from(element.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'))
+      .map(link => ({
+        link,
+        heading: document.getElementById(decodeURIComponent(link.hash.slice(1))),
+      }))
+      .filter(entry => entry.heading)
+    const header = document.querySelector('package-site-docs-header')
+    const update = () => {
+      frame = 0
+      const offset =
+        (header?.getBoundingClientRect().bottom ?? 0) +
+        2.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) +
+        // Native anchor rounding and fractional font metrics can differ by
+        // slightly more than one CSS pixel after layout settles.
+        2
+      const atEnd =
+        scrollY > 0 && scrollY + innerHeight >= document.documentElement.scrollHeight - 1
+      const current = atEnd
+        ? entries.at(-1)
+        : entries.findLast(entry => entry.heading!.getBoundingClientRect().top <= offset)
+      for (const entry of entries) {
+        if (entry === current) entry.link.setAttribute('aria-current', 'location')
+        else entry.link.removeAttribute('aria-current')
+      }
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    window.addEventListener('scroll', schedule, { passive: true, signal })
+    window.addEventListener('resize', schedule, { signal })
+    window.addEventListener('hashchange', schedule, { signal })
+    window.addEventListener('load', schedule, { signal })
+    const observer = new ResizeObserver(schedule)
+    if (header) observer.observe(header)
+    const article = document.querySelector('package-site-docs-article')
+    if (article) observer.observe(article)
+    schedule()
+    return () => {
+      lifecycle.abort()
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+      frame = 0
+    }
+  })
+</script>
+
+<style>
+  .toc {
+    display: block;
+    min-width: 0;
+    font-size: 0.75rem;
+  }
+  ul {
+    list-style: none;
+    margin: var(--space-xs) 0 0;
+    padding: 0 var(--space-xs);
+    border-left: 0.0625rem solid var(--color-border-soft);
+    display: grid;
+    gap: 0.25rem;
+  }
+  @media (width < 80rem) {
+    .toc-disclosure {
+      border: 0.0625rem solid var(--color-border-soft);
+      padding: var(--space-xs);
+      border-radius: var(--radius-panel);
+    }
+    .toc-disclosure:not([open]) {
+      margin: 0;
+    }
+  }
+</style>

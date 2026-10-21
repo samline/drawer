@@ -1,16 +1,10 @@
 export {
-  closeDrawer,
-  configureDrawer,
   createDrawer,
-  destroyDrawer,
   destroyDrawers,
   getChildDrawers,
   getDrawer,
   getDrawers,
-  getParentDrawer,
-  openDrawer,
-  toggleDrawer,
-  updateDrawer
+  getParentDrawer
 } from './runtime/registry'
 export type { VanillaDrawerController, VanillaDrawerOptions, VanillaRenderable } from './runtime/registry'
 export type {

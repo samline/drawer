@@ -1,0 +1,19 @@
+---
+import Tabs from './Tabs.astro'
+import TabPanel from './TabPanel.astro'
+import CodeFiles from './CodeFiles.astro'
+import type { ComponentProps } from 'astro/types'
+interface Props {
+  label: string
+  groups: readonly { id: string; label: string; files: ComponentProps<typeof CodeFiles>['files'] }[]
+}
+const { label, groups } = Astro.props
+---
+
+<Tabs data-framework-examples id={`framework-${crypto.randomUUID()}`} label={label} items={groups}>
+  {groups.map(item => (
+    <TabPanel id={item.id} label={item.label}>
+      <CodeFiles files={item.files} />
+    </TabPanel>
+  ))}
+</Tabs>

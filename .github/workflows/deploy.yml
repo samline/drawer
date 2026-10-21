@@ -38,21 +38,46 @@ jobs:
       - name: Audit dependencies
         run: bun audit
 
-      - name: Verify package contents
-        run: npm pack --dry-run
+      - name: Verify package exports and contents
+        run: bun run test:package
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout your repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install, shadow load and build Astro
-        uses: withastro/action@v3
         with:
-          path: example
-          node-version: 22
-          package-manager: npm
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build package for consumer example checks
+        run: bun run build
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Install isolated framework example test dependencies
+        run: npm install --prefix "$RUNNER_TEMP/drawer-frameworks" react@19.3.1 react-dom@19.3.1 vue@3.5.44 svelte@5.57.2 liquidjs@10.30.0 --ignore-scripts --no-audit --no-fund
+
+      - name: Verify landing, examples and docs
+        env:
+          DRAWER_FRAMEWORK_NODE_MODULES: ${{ runner.temp }}/drawer-frameworks/node_modules
+        run: bun run site:verify && bun run site:check:release
+
+      - name: Upload combined Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing/dist
 
   deploy:
     needs: [quality, build]

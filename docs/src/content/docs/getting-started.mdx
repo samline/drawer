@@ -1,0 +1,73 @@
+---
+locale: en
+title: 'Getting started'
+titleAccent: 'started'
+description: 'Install Drawer, supply your panel styles, and create your first working interaction.'
+sidebar:
+  group: start
+  order: 2
+---
+
+import Installer from '../../../../shared/components/Installer.astro'
+import DemoCode from '../../../../shared/components/DemoCode.astro'
+import Playground from '../../../../shared/components/Playground.astro'
+
+## Requirements
+
+Use Node.js 20 or newer for package tooling and a modern browser with ES2020, Pointer Events and pointer capture. Modal isolation uses `inert` and `aria-hidden`; test any older browsers in your support matrix. HTML / CDN needs no Node.js or bundler at runtime. The website's own build-tool requirements are separate from the published package.
+
+## Install
+
+<Installer />
+
+## One instance, one controller
+
+Start with createDrawer(), keep its controller and use setOpen(), update() and destroy(). You do not need registry helpers, a namespace module or headless state for this first integration. An id is optional; omitted ids are independent, and explicit ids must be unique.
+
+## Your first working drawer
+
+Choose a loading mode, then save the HTML, CSS and JavaScript files together. **Package / ESM** works with an HTML-entry bundler such as Vite. **HTML / CDN** opens directly in a browser with an internet connection. Both use the same public API and panel styles.
+
+<Playground />
+
+## Copy the files
+
+<DemoCode />
+
+The package stylesheet supplies motion and the handle. The example stylesheet supplies panel position, dimensions, colors and focus styles. Keep that import order. Drawer owns dismissal, focus management and scroll locking; your application owns accessible content and instance cleanup.
+
+## Next steps
+
+- [Use React, Vue, Svelte or Astro](../guides/frameworks/) with the same browser API.
+- [Explore working examples](../guides/examples/) for all four edges, snap points and nested flows.
+- [Style your panel](../reference/css-styling/) with the runtime’s documented data attributes.
+- [Understand the runtime contract](../guides/runtime-contract/) for lifecycle side effects and callbacks.
+- [Review options](../reference/configuration/) when you need more control.
+- [Use Drawer with your agent](../../skills/drawer/SKILL.md) through the versioned integration skill.
+
+<details>
+<summary>Looking for the former runtime sections?</summary>
+
+These sections now live in the runtime contract. Existing installation fragments remain available here.
+
+- <span id="when-to-use-this-variant"></span>[When to use this
+  variant](../guides/runtime-contract/#when-to-use-this-variant)
+- <span id="anatomy-of-the-runtime"></span>[Anatomy of the
+  runtime](../guides/runtime-contract/#anatomy-of-the-runtime)
+- <span id="custom-html-content"></span>[Custom HTML
+  content](../guides/runtime-contract/#custom-html-content)
+- <span id="observable-contract"></span>[Observable
+  contract](../guides/runtime-contract/#observable-contract)
+- <span id="lifecycle"></span>[Lifecycle](../guides/runtime-contract/#lifecycle)
+- <span id="side-effects-per-method"></span>[Side effects per
+  method](../guides/runtime-contract/#side-effects-per-method)
+- <span id="recommended-usage-patterns"></span>[Recommended usage
+  patterns](../guides/runtime-contract/#recommended-usage-patterns)
+- <span id="multiple-drawers-and-ownership"></span>[Multiple drawers and
+  ownership](../guides/runtime-contract/#multiple-drawers-and-ownership)
+- <span id="browser-global-helpers"></span>[Browser global
+  helpers](../guides/runtime-contract/#browser-global-helpers)
+- <span id="submission-examples"></span>[Submission
+  examples](../guides/runtime-contract/#submission-examples)
+
+</details>

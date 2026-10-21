@@ -1,0 +1,96 @@
+---
+import PageTitle from '../../../shared/components/PageTitle.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+import { href } from '../lib/routes'
+interface Props {
+  title: string
+  titleAccent?: string
+  description: string
+  current: string
+}
+const { title, titleAccent, description, current } = Astro.props
+---
+
+<nav class:list={['breadcrumb']} aria-label={t.breadcrumbLabel} data-pagefind-ignore>
+  <ol>
+    <li>
+      {current === 'index' ? (
+        <span aria-current="page">{t.breadcrumb}</span>
+      ) : (
+        <a href={href('index')}>{t.breadcrumb}</a>
+      )}
+    </li>
+    {current !== 'index' && (
+      <li>
+        <span aria-hidden="true">/</span>
+        <span class:list={['section-name']} aria-current="page">
+          {title}
+        </span>
+      </li>
+    )}
+  </ol>
+</nav>
+<PageTitle
+  title={title}
+  accent={titleAccent}
+  description={description}
+  eyebrow={/^(reference|api)(\/|$)/.test(current) ? t.apiReading : t.reading}
+  headingId="article-title"
+  size="section"
+  indexTitle
+  class:list={['article-heading']}
+/>
+
+<style>
+  .breadcrumb {
+    overflow-wrap: anywhere;
+    font-size: 0.6875rem;
+    color: var(--color-text-subtle);
+    margin-bottom: var(--space-xl);
+  }
+  .breadcrumb ol,
+  .breadcrumb li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem;
+  }
+  .breadcrumb ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .breadcrumb a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .breadcrumb li {
+    min-width: 0;
+  }
+  .section-name {
+    min-width: 0;
+    max-width: 100%;
+    color: var(--palette-heading-accent);
+  }
+  .article-heading {
+    padding-bottom: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    border-bottom: 0.0625rem solid var(--color-border-soft);
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  a {
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    a {
+      transition: none;
+    }
+  }
+</style>

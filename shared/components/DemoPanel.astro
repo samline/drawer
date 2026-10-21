@@ -1,0 +1,45 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'div'> {
+  label: string
+  tagline?: string
+}
+const { label, tagline, class: className, ...attributes } = Astro.props
+---
+
+<div {...attributes} class:list={['studio-panel', className]}>
+  <div class:list={['specimen-heading']}>
+    <span>{label}</span>
+    {tagline && <span>{tagline}</span>}
+  </div>
+  <slot />
+</div>
+
+<style>
+  .studio-panel {
+    background: var(--palette-specimen-surface);
+    padding: 1.5625rem 1.5rem 1rem;
+    color: var(--palette-specimen-text);
+  }
+  .specimen-heading {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.13em;
+    line-height: 1.6;
+    display: flex;
+    justify-content: space-between;
+    gap: 1.25rem;
+    color: var(--palette-specimen-label);
+    margin-bottom: 1.25rem;
+  }
+  @media (width < 48rem) {
+    .studio-panel {
+      padding: 1.375rem 1.125rem 0.875rem;
+    }
+    .specimen-heading {
+      font-size: 0.52rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+  }
+</style>

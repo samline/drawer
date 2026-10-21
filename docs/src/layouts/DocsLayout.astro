@@ -1,0 +1,158 @@
+---
+import Header from './Header.astro'
+import Sidebar from '../sections/Sidebar.astro'
+import ArticleHeader from '../sections/ArticleHeader.astro'
+import ArticleFooter from '../sections/ArticleFooter.astro'
+import SEO from '../components/SEO.astro'
+import TableOfContents from '../components/TableOfContents.astro'
+import Article from '../components/Article.astro'
+import Theme from '../../../shared/components/Theme.astro'
+import SiteHead from '../../../shared/components/SiteHead.astro'
+import { project } from '../../../shared/lib/project.mjs'
+import Box from '../../../shared/components/Box.astro'
+import '../styles/theme.css'
+import { getI18n, getLocale } from '../i18n/utils'
+import type { MarkdownHeading } from 'astro'
+interface Props {
+  title: string
+  titleAccent?: string
+  description: string
+  current: string
+  headings: MarkdownHeading[]
+}
+const { title, titleAccent, description, current, headings } = Astro.props
+const t = getI18n(Astro)
+---
+
+<!doctype html>
+<html
+  lang={getLocale(Astro.currentLocale)}
+  data-theme="dark"
+  data-theme-storage={`${project.namespace}-theme`}
+>
+  <head>
+    <SEO title={title} description={description} current={current} />
+    <SiteHead />
+    <Theme />
+  </head>
+  <body>
+    <a class:list={['skip']} href="#content">
+      {t.skip}
+    </a>
+    <Header current={current} />
+    <Box size="wide" class:list={['shell']}>
+      <Sidebar current={current} />
+      <main id="content" aria-labelledby="article-title" tabindex="-1" data-pagefind-body>
+        <ArticleHeader
+          current={current}
+          title={title}
+          titleAccent={titleAccent}
+          description={description}
+        />
+        <div class:list={['mobile-toc']} data-pagefind-ignore>
+          <TableOfContents headings={headings} collapsed />
+        </div>
+        <Article>
+          <slot />
+        </Article>
+
+        <ArticleFooter current={current} />
+      </main>
+      <div class:list={['desktop-toc']} data-pagefind-ignore>
+        <TableOfContents headings={headings} />
+      </div>
+    </Box>
+  </body>
+</html>
+
+<style>
+  :global(html) {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-synthesis: none;
+  }
+  :global(body) {
+    margin: 0;
+    min-width: 0;
+  }
+  :global(button),
+  :global(input) {
+    font-family: inherit;
+  }
+  :global([hidden]) {
+    display: none !important;
+  }
+  :global(.sr-only) {
+    position: absolute;
+    width: 0.0625rem;
+    height: 0.0625rem;
+    padding: 0;
+    margin: -0.0625rem;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .skip {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 200;
+    padding: 0.75rem 1rem;
+    transform: translateY(-200%);
+    background: var(--color-accent);
+    color: var(--palette-on-accent);
+    border-radius: 0.5rem;
+  }
+  .skip:focus {
+    transform: none;
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+  main {
+    min-width: 0;
+    padding: 2.5rem 0 0;
+    scroll-margin-top: calc(var(--docs-header-height, 4.5rem) + 2.5rem);
+  }
+  .desktop-toc {
+    display: none;
+    position: sticky;
+    top: calc(var(--docs-header-height, 4.5rem) + 2.5rem);
+    max-height: calc(100dvh - var(--docs-header-height, 4.5rem) - 5rem);
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+  .mobile-toc {
+    margin-bottom: 2rem;
+  }
+  @media (width >= 80rem) {
+    .shell {
+      grid-template-columns: 13.5rem minmax(0, 1fr) 11rem;
+      gap: 2.5rem;
+    }
+    .desktop-toc {
+      display: block;
+    }
+    .mobile-toc {
+      display: none;
+    }
+  }
+  @media (width < 64rem) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    main {
+      padding-top: 2rem;
+    }
+  }
+  @media (width < 37.5rem) {
+    .shell {
+      padding-inline: 1.25rem;
+    }
+  }
+</style>

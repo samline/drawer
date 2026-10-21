@@ -1,0 +1,94 @@
+---
+import TextLink from '../../../shared/components/TextLink.astro'
+import { docsHref } from '../lib/docs'
+import RichText from '../components/RichText.astro'
+import { getI18n } from '../i18n/utils'
+import Reveal from '../components/Reveal.astro'
+import Eyebrow from '../../../shared/components/Eyebrow.astro'
+import Heading from '../../../shared/components/Heading.astro'
+import Section from '../../../shared/components/Section.astro'
+import Box from '../../../shared/components/Box.astro'
+import Button from '../../../shared/components/Button.astro'
+const i18n = getI18n(Astro)
+import { project } from '../../../shared/lib/project.mjs'
+const t = i18n.sections.callToAction
+const headingId = `section-heading-${crypto.randomUUID()}`
+---
+
+<Section
+  aria-labelledby={headingId}
+  spacing="none"
+  class:list={['content-section closing-section']}
+>
+  <Box>
+    <Reveal>
+      <div class:list={['cta-card text-center']}>
+        <Eyebrow context="closing">{t.eyebrow}</Eyebrow>
+        <Heading id={headingId} context="closing">
+          <RichText parts={t.heading} />
+        </Heading>
+        <p class:list={['mx-auto mt-4 max-w-md text-text-muted']}>{t.description}</p>
+        <div class:list={['mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row']}>
+          <Button context="closing" href="#how" class:list={['w-full sm:w-auto']} variant="primary">
+            {i18n.common.buttons.getStarted}
+            <svg
+              aria-hidden="true"
+              width="0.875rem"
+              height="0.875rem"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="0.125rem"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14M13 5l7 7-7 7"></path>
+            </svg>
+          </Button>
+          <Button
+            context="closing"
+            href={project.repository}
+            target="_blank"
+            rel="noreferrer"
+            class:list={['w-full sm:w-auto']}
+            variant="secondary"
+          >
+            {i18n.common.buttons.starGithub}
+          </Button>
+        </div>
+        <div class:list={['closing-docs']}>
+          <p>{t.docs.description}</p>
+          <TextLink href={docsHref('overview')} tone="closing">
+            {t.docs.label}
+          </TextLink>
+        </div>
+      </div>
+    </Reveal>
+  </Box>
+</Section>
+
+<style>
+  .cta-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--palette-closing-surface);
+    border: 0;
+    border-radius: 1.25rem;
+    padding: 4rem 1.5rem;
+  }
+  .cta-card > p {
+    color: var(--palette-closing-text);
+    font-size: 0.9rem;
+  }
+  .closing-docs {
+    display: grid;
+    justify-items: center;
+    gap: 0.625rem;
+    margin-top: 2rem;
+  }
+  .closing-docs p {
+    color: var(--palette-closing-text);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+</style>

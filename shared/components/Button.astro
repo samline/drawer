@@ -1,0 +1,177 @@
+---
+import { getI18n } from '../i18n/utils'
+import type { HTMLAttributes } from 'astro/types'
+type Props = (HTMLAttributes<'a'> | HTMLAttributes<'button'>) & {
+  variant?: 'primary' | 'secondary' | 'ghost'
+  context?: 'default' | 'hero' | 'closing' | 'nav' | 'package-site'
+  href?: string
+}
+const {
+  href,
+  class: className,
+  variant = 'primary',
+  context = 'default',
+  ...attributes
+} = Astro.props
+const i18n = getI18n(Astro)
+const opensNewTab = !!href && (attributes as HTMLAttributes<'a'>).target === '_blank'
+const Tag = href ? 'a' : 'button'
+const variants = { primary: 'btn-primary', secondary: 'btn-secondary', ghost: 'btn-ghost' }
+---
+
+<Tag
+  {...attributes}
+  data-context={context}
+  rel={opensNewTab ? 'noopener noreferrer' : (attributes as HTMLAttributes<'a'>).rel}
+  href={href}
+  type={href ? undefined : ((attributes as HTMLAttributes<'button'>).type ?? 'button')}
+  class:list={['btn', variants[variant], className]}
+>
+  <slot />
+  {opensNewTab && <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>}
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3.125rem;
+    padding: 0.5rem 1.4rem;
+    border-radius: 0.875rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    letter-spacing: -0.01em;
+    transition:
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui),
+      color var(--duration-ui) var(--ease-ui);
+    cursor: pointer;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--palette-on-accent);
+  }
+  .btn-secondary {
+    background: var(--palette-button-surface);
+    color: var(--color-text);
+    border: 0.0625rem solid var(--palette-button-border);
+  }
+  .btn-ghost {
+    min-height: 2.5rem;
+    padding-inline: 1rem;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-text-muted);
+    border: 0.0625rem solid var(--color-border);
+  }
+  @media (hover: hover) {
+    .btn-primary:hover {
+      background: var(--palette-accent-hover);
+    }
+    .btn-secondary:hover {
+      background: var(--palette-button-hover);
+      border-color: var(--palette-border-hover);
+    }
+    .btn-ghost:hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border-color: var(--palette-border-hover);
+    }
+  }
+  .btn.hidden {
+    display: none;
+  }
+  @media (width >= 64rem) {
+    .btn.lg\:inline-flex {
+      display: inline-flex;
+    }
+  }
+  .btn[data-context='hero'] {
+    min-width: 10.3125rem;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+  .btn[data-context='hero']:first-child {
+    border-radius: 1.5rem 0.5rem 0.5rem 1.5rem;
+  }
+  .btn[data-context='hero']:last-child {
+    border-radius: 0.5rem 1.5rem 1.5rem 0.5rem;
+  }
+  .btn[data-context='hero'] :global(span) {
+    font-size: 1.2rem;
+    font-weight: 400;
+  }
+  .btn[data-context='package-site'] {
+    color: var(--palette-control-text);
+    border-color: var(--palette-control-border);
+    background: transparent;
+    min-height: 2rem;
+    padding-block: 0.25rem;
+    padding-inline: 0.75rem;
+    font-size: 0.65rem;
+  }
+  .btn-primary[data-context='closing'] {
+    background: var(--palette-lavender);
+    color: var(--palette-closing-on-accent);
+  }
+  .btn-secondary[data-context='closing'] {
+    background: transparent;
+    color: var(--palette-closing-secondary);
+    border-color: var(--palette-closing-border);
+  }
+  @media (hover: hover) {
+    .btn[data-context='package-site']:hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border-color: var(--palette-border-hover);
+    }
+    .btn-primary[data-context='closing']:hover {
+      background: var(--palette-accent-hover);
+    }
+    .btn-secondary[data-context='closing']:hover {
+      background: var(--color-accent-soft);
+      border-color: var(--palette-border-hover);
+    }
+  }
+  @media (width < 37.5rem) {
+    .btn-primary[data-context='nav'] {
+      padding-inline: 0.875rem;
+      font-size: 0.825rem;
+    }
+  }
+  @media (width < 30rem) {
+    .btn[data-context='hero'] {
+      min-width: 0;
+      width: 100%;
+      flex: none;
+      padding-inline: 1rem;
+      gap: 0.5rem;
+    }
+    .btn[data-context='hero']:first-child,
+    .btn[data-context='hero']:last-child {
+      border-radius: 0.875rem;
+    }
+  }
+  @media (width < 23.4375rem) {
+    .btn-primary[data-context='nav'] {
+      padding-inline: 0.75rem;
+      font-size: 0.72rem;
+    }
+  }
+  .btn[data-context='nav'] {
+    min-height: 2.5rem;
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.25rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn {
+      transition: none;
+    }
+  }
+</style>

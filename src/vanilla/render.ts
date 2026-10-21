@@ -6,7 +6,7 @@
 //     `description`, and `content` (string / number / HTMLElement /
 //     thunk / nullish).
 //   - `VanillaDrawerOptions` — the public option surface, including
-//     the framework-agnostic extras (`mountElement`, `triggerElement`,
+//     the framework-agnostic extras (`container`, `triggerElement`,
 //     `triggerText`, ARIA wiring, etc.).
 //   - `mountVanillaDrawer` — the entrypoint used by the runtime
 //     registry to install the dialog DOM, the trigger button, the
@@ -27,19 +27,8 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
    * Container element the drawer should mount into. Defaults to
    * `document.body`; the host creates a dedicated wrapper
    * `<div data-drawer-vanilla-root>` there.
-   *
-   * Alias for `mountElement`. Use whichever name you prefer; the
-   * other is read as a fallback. The alias exists for backward
-   * compat with the v2 / v3 API and to match vaul's naming.
    */
   container?: HTMLElement | null
-  /**
-   * @deprecated Use `container` instead. Kept for backward compat
-   * with the v2 / v3 API. The drawer reads `container ?? mountElement`
-   * internally, so a non-null container wins and `container: null`
-   * falls through to `mountElement`.
-   */
-  mountElement?: HTMLElement | null
   triggerElement?: HTMLElement | null
   triggerText?: string
   showHandle?: boolean

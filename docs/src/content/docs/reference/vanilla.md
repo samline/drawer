@@ -1,0 +1,192 @@
+---
+locale: en
+title: 'Vanilla JS'
+description: 'Create and own a Drawer instance with native DOM content, triggers, live updates and cleanup through the public JavaScript API.'
+sidebar:
+  group: reference
+  order: 9
+---
+
+Use the root entry when you want a programmatic module API with named instances and shared runtime helpers.
+
+If you want a `<script>`-only setup without a bundler, see [docs/browser.md](../browser/).
+
+---
+
+## Install
+
+Use the [installation tabs and complete files](../../getting-started/) for npm, pnpm, Yarn, Bun or HTML / CDN. The root export is the primary Package / ESM entrypoint.
+
+## Quick Start
+
+```ts
+import '@samline/drawer/styles.css'
+import { createDrawer } from '@samline/drawer'
+
+document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '')
+
+const drawer = createDrawer({
+  id: 'filters',
+  triggerText: 'Open drawer',
+  showHandle: true,
+  direction: 'bottom',
+  title: 'Drawer title',
+  description: 'Drawer description',
+  content: 'Drawer content',
+})
+
+drawer.setOpen(true)
+```
+
+That quick start renders the built-in trigger inside the drawer's dedicated vanilla host. If you do not pass `container`, the host is appended to `document.body`. The shared stylesheet provides runtime behavior and the built-in handle, not a finished bottom-sheet theme; use `triggerElement`, `overlayClassName`, and `contentClassName` when you want a fully styled visible shell.
+
+---
+
+## API at a glance
+
+```ts
+import {
+  createDrawer,
+  getDrawer,
+  getDrawers,
+  getParentDrawer,
+  getChildDrawers,
+  destroyDrawers,
+  createDrawerController,
+} from '@samline/drawer'
+```
+
+The full per-method reference is under [`docs/api/`](../api/).
+
+---
+
+## Common Patterns
+
+### Identity and lifecycle
+
+- Pass `id` when you need more than the default runtime instance.
+- Pass `parentId` when this drawer should follow another drawer's lifecycle.
+- Pass `triggerText` to render a built-in button inside the mounted host.
+- Pass `triggerElement` when you want an external button and the same custom shell used in the styled example below.
+- Pass `showHandle` to render the built-in handle in the mounted host.
+- `showHandle` is optional when `handleOnly` is enabled. `handleOnly` already renders the built-in handle and also restricts dragging to that handle.
+- Pass `closeButton: true` to render an in-drawer close control. Pass an object to override class / icon / aria-label.
+- Pass `container` when the host should live inside a specific DOM subtree instead of being appended to `document.body`. The target is `container ?? document.body`.
+- Pass `overlayClassName`, `contentClassName`, and `handleClassName` when you want a visible shell instead of only the shared runtime styles.
+- If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance.
+- If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale behind the drawer.
+- If a child node inside your rendered content should not start a drag gesture, add `data-drawer-no-drag` to that element.
+- Use `title` and `description` when a simple heading block above the body content is enough. If your drawer body defines its own card, panel, or header layout, render that heading block inside `content` so it stays inside the same visual shell.
+- If the surface should not show top-level title or description content, provide `ariaLabel` or `ariaLabelledBy` for its accessible name and `ariaDescribedBy` when custom content supplies the description. The title and description slots mount only when their corresponding values are supplied. External ARIA targets must exist in your content.
+- When you point `ariaLabelledBy` or `ariaDescribedBy` at custom content, make those ids unique per drawer instance. Deriving them from the drawer `id` is a good default.
+- Use `drawer.update()` when you want to merge new options into the same instance.
+
+### Renderable content
+
+The `title`, `description`, and `content` slots all accept `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Pick the form that matches how you build your UI.
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+// 1. Plain text.
+createDrawer({ id: 'a', content: 'Hello' })
+
+// 2. Pre-built element (the runtime moves it into the body slot).
+const form = document.createElement('form')
+form.innerHTML = '<input name="q" /><button>Search</button>'
+createDrawer({ id: 'b', title: 'Search', content: form })
+
+// 3. Lazy thunk (re-invoked every time the dialog subtree is rebuilt).
+createDrawer({
+  id: 'c',
+  content: () => {
+    const node = document.createElement('p')
+    node.textContent = new Date().toLocaleTimeString()
+    return node
+  },
+})
+
+// 4. Mixed slots.
+const heading = document.createElement('h2')
+heading.textContent = 'Filters'
+createDrawer({ id: 'd', title: heading, content: 'Body' })
+```
+
+See [Options → Renderable content](../configuration/#renderable-content) and [Recipes → Custom HTML content](../../guides/recipes/#custom-html-content) for the full contract.
+
+---
+
+## Runtime Helpers
+
+```ts
+import { createDrawer, getChildDrawers, getDrawers, getDrawer } from '@samline/drawer'
+
+createDrawer({ id: 'account', title: 'Account', content: 'Primary drawer' })
+createDrawer({ id: 'security', parentId: 'account', title: 'Security', content: 'Nested drawer' })
+
+getDrawer('account')?.setOpen(true)
+console.log(Object.keys(getDrawers())) // ['account', 'security']
+console.log(getChildDrawers('account').map(drawer => drawer.id)) // ['security']
+getDrawer('account')?.setOpen(false)
+```
+
+---
+
+## Lifecycle and Cleanup
+
+```ts
+import { createDrawer, getDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'draft', title: 'Draft', content: 'Unsaved changes' })
+
+getDrawer('draft')?.setOpen(true)
+
+drawer.destroy()
+```
+
+`drawer.destroy()` tears down only that drawer's host and removes it from the registry. It does not remove a consumer-owned `container` or sibling drawer hosts. Use `destroyDrawers()` when you want to clear the entire registry.
+
+Treat the vanilla API as an owned lifecycle. If an app creates drawers dynamically, swaps ids, or rebuilds sections of the page over time, the matching runtime instance should be destroyed explicitly so the shared registry can release it.
+
+---
+
+## Listening to state
+
+```ts
+import { createDrawer } from '@samline/drawer'
+
+const drawer = createDrawer({ id: 'profile', title: 'Profile' })
+
+const unsubscribe = drawer.subscribe(snapshot => {
+  console.log('isOpen:', snapshot.state.isOpen)
+  console.log('snap:', snapshot.state.activeSnapPoint)
+})
+
+// Read once without subscribing.
+console.log(drawer.getSnapshot().state.direction) // 'bottom'
+
+// Later:
+unsubscribe()
+```
+
+`setOpen`, `setActiveSnapPoint`, and `update` all return the new snapshot, so you can inspect each result directly. Snapshots do not expose controller methods.
+
+```ts
+drawer.update({ activeSnapPoint: '420px' })
+const next = drawer.setOpen(true)
+console.log(next.state.isOpen) // true
+```
+
+---
+
+## Integration Notes
+
+- `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`. See [Renderable content](../configuration/#renderable-content) for the full rules.
+- Use `ariaLabel` or `ariaLabelledBy` for drawers like galleries or custom shells that should not render a top-level title node.
+- `title` and `description` are rendered before `content` inside the shared vanilla content wrapper.
+- `@samline/drawer/styles.css` provides the shared runtime animations, transforms, and handle styles. It does not provide a complete overlay or panel theme for your app.
+- When `container` is omitted, a dedicated vanilla host is created automatically and appended to `document.body`. Closed drawers retain this host and an optional trigger, but not an overlay or dialog surface.
+- The root entry exposes per-drawer hosts through a programmatic API instead of framework-specific component composition.
+- Duplicate explicit ids throw. Omit id for independent generated ids; update an owned controller instead of creating again.
+
+See [CSS styling](../css-styling/) for the data-attribute contract and [Options](../configuration/) for the full field reference.

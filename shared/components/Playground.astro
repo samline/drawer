@@ -1,0 +1,298 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import DemoStyles from './DemoStyles.astro'
+import DemoStudio from './DemoStudio.astro'
+import DemoPanel from './DemoPanel.astro'
+import DemoFooter from './DemoFooter.astro'
+import Button from './Button.astro'
+import Disclosure from './Disclosure.astro'
+import DemoCode from './DemoCode.astro'
+import DemoContent from './DemoContent.astro'
+import t, { presets, type DemoPreset } from '../i18n/translations/en/demo'
+interface Props extends HTMLAttributes<'div'> {
+  showCode?: boolean
+  preset?: DemoPreset
+  framed?: boolean
+}
+const {
+  id = `demo-${crypto.randomUUID()}`,
+  showCode = false,
+  preset = 'bottom',
+  framed = true,
+  class: className,
+  ...attributes
+} = Astro.props
+const item = presets[preset]
+const Frame = framed ? DemoStudio : 'div'
+---
+
+<DemoStyles />
+<div {...attributes} data-ui class:list={['playground', className]}>
+  <package-site-demo data-preset={preset} role="group" aria-labelledby={`${id}-label`}>
+    <Frame>
+      <DemoPanel label={item.title} tagline={t.previewTagline}>
+        <div class:list={['specimen']}>
+          <div>
+            <p id={`${id}-label`} class:list={['preview-eyebrow']}>
+              {t.previewEyebrow}
+            </p>
+            <p class:list={['preview-title']}>
+              {t.previewTitle} <span>{t.previewAccent}</span>
+            </p>
+            <p class:list={['preview-description']}>{item.description}</p>
+          </div>
+          <div class:list={['preview-diagram']} data-edge={item.direction} aria-hidden="true">
+            <span class:list={['diagram-line']}></span>
+            <span class:list={['diagram-line']}></span>
+            <div class:list={['diagram-panel']}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </DemoPanel>
+      <DemoFooter
+        note={
+          preset === 'nonmodal'
+            ? t.nonmodalHint
+            : preset === 'handle'
+              ? t.handleHint
+              : t.description
+        }
+      >
+        <Button data-open disabled aria-haspopup="dialog" aria-expanded="false">
+          {t.increment}
+          <span aria-hidden="true">↗</span>
+        </Button>
+        <output aria-live="polite">{t.stateClosed}</output>
+        {preset === 'nonmodal' && (
+          <Button variant="secondary" data-demo-page>
+            {t.backgroundAction}
+          </Button>
+        )}
+        <span data-demo-result role="status"></span>
+      </DemoFooter>
+    </Frame>
+    <template data-content>
+      <DemoContent preset={preset} />
+    </template>
+    <noscript>
+      <p>{t.noscript}</p>
+    </noscript>
+  </package-site-demo>
+  {showCode && (
+    <Disclosure>
+      <span slot="summary">{t.openCode}</span>
+      <div class:list={['code-body']}>
+        <DemoCode preset={preset} />
+      </div>
+    </Disclosure>
+  )}
+</div>
+
+<script>
+  import { demoOptions } from '../lib/demo-options'
+  import { connectDemoActions } from '../lib/demo-actions'
+  import { mountElements } from '../lib/mount-elements'
+  import { createDrawer, type VanillaDrawerController } from '@samline/drawer'
+  import t, { presets, type DemoPreset } from '../i18n/translations/en/demo'
+
+  mountElements('package-site-demo', element => {
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const output = element.querySelector('output')
+    const trigger = element.querySelector<HTMLButtonElement>('[data-open]')
+    const template = element.querySelector<HTMLTemplateElement>('template[data-content]')
+    if (!output || !trigger || !template) return
+    const preset = element.dataset.preset as DemoPreset
+    const item = presets[preset]
+    const id = `site-demo-${crypto.randomUUID()}`
+    let child: VanillaDrawerController | undefined
+    const result = element.querySelector<HTMLElement>('[data-demo-result]')!
+    const report = (text: string) => {
+      result.textContent = text
+    }
+    element
+      .querySelector('[data-demo-page]')
+      ?.addEventListener('click', () => report(t.backgroundResult), { signal })
+    const drawer = createDrawer({
+      id,
+      direction: item.direction,
+      title: item.title,
+      description: item.description,
+      triggerElement: trigger,
+      autoFocus: true,
+      content: () => {
+        const body = template.content.firstElementChild!.cloneNode(true) as HTMLElement
+        body.querySelector<HTMLButtonElement>('[data-child]')?.addEventListener(
+          'click',
+          () => {
+            child ??= createDrawer({
+              id: `${id}-child`,
+              parentId: id,
+              title: t.childTitle,
+              description: t.childDescription,
+              content: t.childContent,
+              contentClassName: 'site-demo-drawer',
+              overlayClassName: 'site-demo-overlay',
+              autoFocus: true,
+              showHandle: true,
+              closeButton: { icon: '×', ariaLabel: t.closeChild },
+            })
+            child.setOpen(true)
+          },
+          { signal }
+        )
+        connectDemoActions(body, () => drawer, report, signal)
+        return body
+      },
+      contentClassName: 'site-demo-drawer',
+      overlayClassName: 'site-demo-overlay',
+      showHandle: true,
+      closeButton: { icon: '×', ariaLabel: t.close },
+      ...demoOptions(preset),
+      onOpenChange: open => {
+        output.value = open ? t.stateOpen : t.stateClosed
+        trigger.setAttribute('aria-expanded', String(open))
+      },
+    })
+    trigger.disabled = false
+    return () => {
+      lifecycle.abort()
+      drawer.destroy()
+      trigger.setAttribute('aria-expanded', 'false')
+      output.value = t.stateClosed
+    }
+  })
+</script>
+
+<style>
+  .playground:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-lg);
+  }
+  .playground,
+  package-site-demo {
+    min-width: 0;
+  }
+  package-site-demo {
+    display: block;
+  }
+  .specimen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.6fr);
+    align-items: center;
+    gap: var(--space-xl);
+    min-height: 12rem;
+    padding-block: var(--space-md) var(--space-xl);
+  }
+  .preview-eyebrow {
+    font: var(--text-caption)/1.6 var(--font-mono);
+    color: var(--palette-specimen-label);
+    letter-spacing: 0.1em;
+  }
+  .preview-title {
+    margin-top: var(--space-md);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: var(--heading-weight);
+    line-height: 1.12;
+    letter-spacing: var(--heading-tracking);
+  }
+  .preview-title span {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--color-accent);
+  }
+  .preview-description {
+    margin-top: var(--space-md);
+    color: var(--palette-specimen-text);
+    font-size: var(--text-small);
+    line-height: 1.75;
+  }
+  .preview-diagram {
+    position: relative;
+    min-height: 10rem;
+    border: 0.0625rem solid var(--palette-studio-border);
+    border-radius: var(--radius-control);
+    background: var(--palette-studio-surface);
+    padding: var(--space-lg);
+    overflow: hidden;
+  }
+  .diagram-line {
+    display: block;
+    width: 45%;
+    height: 0.375rem;
+    margin-bottom: var(--space-sm);
+    border-radius: var(--radius-pill);
+    background: var(--color-accent-soft);
+  }
+  .diagram-line + .diagram-line {
+    width: 65%;
+  }
+  .diagram-panel {
+    position: absolute;
+    inset: 45% 0 0;
+    display: grid;
+    align-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-lg);
+    border-top: 0.0625rem solid var(--color-accent);
+    background: var(--palette-tab-active);
+  }
+  .diagram-panel span {
+    height: 0.25rem;
+    width: 70%;
+    background: var(--color-accent);
+    border-radius: var(--radius-pill);
+    opacity: 0.5;
+  }
+  .diagram-panel span:last-child {
+    width: 40%;
+  }
+  [data-edge='right'] .diagram-panel {
+    inset: 0 0 0 40%;
+    border-top: 0;
+    border-left: 0.0625rem solid var(--color-accent);
+  }
+  [data-edge='left'] .diagram-panel {
+    inset: 0 40% 0 0;
+    border-top: 0;
+    border-right: 0.0625rem solid var(--color-accent);
+  }
+  [data-edge='top'] .diagram-panel {
+    inset: 0 0 45%;
+    border-top: 0;
+    border-bottom: 0.0625rem solid var(--color-accent);
+  }
+  output {
+    font: var(--text-caption)/1.6 var(--font-mono);
+    color: var(--palette-control-text);
+  }
+  .code-body {
+    padding: var(--space-sm);
+    min-width: 0;
+  }
+  .demo-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-lg);
+  }
+  .demo-body ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+  .demo-body li + li {
+    margin-top: var(--space-xs);
+  }
+  @media (width < 37.5rem) {
+    .specimen {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .preview-diagram {
+      min-height: 8rem;
+    }
+  }
+</style>

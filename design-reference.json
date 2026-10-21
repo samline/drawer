@@ -1,0 +1,249 @@
+{
+  "repository": "https://github.com/samline/ticker",
+  "commit": "8a30c9ca8486953fdc2801f0ceff8b17d0cb5615",
+  "localSibling": "../ticker",
+  "templateRepository": "https://github.com/samline/package-landing-docs",
+  "rule": "Adapt data and real package runtime integrations. Preserve the source visual design unless the user requests a change. Consult Ticker before reconstructing a component.",
+  "components": [
+    {
+      "path": "shared/components/Section.astro",
+      "sourcePath": "landing/src/components/Section.astro",
+      "styleSha256": "4279af31bf4eaed9a1c2ef414dab3e0fbfbb9389bcc3da889cc82204b80d5147"
+    },
+    {
+      "path": "landing/src/components/SectionHeading.astro",
+      "sourcePath": "landing/src/components/SectionHeading.astro",
+      "styleSha256": "766e0b5a56e80c52711bf67145a18ac784843ff0ddbdf363cb0557e947a9e410"
+    },
+    {
+      "path": "landing/src/components/FeatureCard.astro",
+      "sourcePath": "landing/src/components/FeatureCard.astro",
+      "styleSha256": "ee84664356fff46a66a7dd6d2132894e5c1a57e29a3d8988948c0faf630c5279"
+    },
+    {
+      "path": "landing/src/components/StepCard.astro",
+      "sourcePath": "landing/src/components/StepCard.astro",
+      "styleSha256": "e1b70116273a7b49201ad893809f7780a8499175ff23d3bde2b1787b1fce2a05"
+    },
+    {
+      "path": "landing/src/components/RecipeCard.astro",
+      "sourcePath": "landing/src/components/RecipeCard.astro",
+      "styleSha256": "45b9d3273e091b754bebd6d60ffdebec608d2692f5484922ae679d9cd0f1a124"
+    },
+    {
+      "path": "landing/src/components/RuntimeItem.astro",
+      "sourcePath": "landing/src/components/RuntimeItem.astro",
+      "styleSha256": "d2ce118206bf40cbbabef3798421d372bb70193ac8b048e4b3e288d4ef515ef0"
+    },
+    {
+      "path": "landing/src/components/FaqItem.astro",
+      "sourcePath": "landing/src/components/FaqItem.astro",
+      "styleSha256": "610177efc08dc6898813fa8143c8415d14ab5ef00fefce21218369d4fce9cbe3"
+    },
+    {
+      "path": "landing/src/components/Reveal.astro",
+      "sourcePath": "landing/src/components/Reveal.astro",
+      "styleSha256": "3d0a252a49413c8ac724fd32587b3d9f656c75d1c82d78044f9a7a47f20bc241"
+    },
+    {
+      "path": "landing/src/components/InstallCommand.astro",
+      "sourcePath": "landing/src/components/InstallCommand.astro",
+      "styleSha256": "d3f9ff41804073fa531a769088ed8015b2a601c31af5c66382a4baf2b7ad81ef"
+    },
+    {
+      "path": "shared/components/DemoStudio.astro",
+      "sourcePath": "landing/src/components/DemoStudio.astro",
+      "styleSha256": "554bfdb9d49dcc4ded3fa886fca68e6e73b06f54cbe10c621169c51d6647b7dd"
+    },
+    {
+      "path": "shared/components/DemoPanel.astro",
+      "sourcePath": "landing/src/components/DemoPanel.astro",
+      "styleSha256": "278844cf656fd5cde3a43766df7b9e7b98162067390fc277639d8506f9dac5cd"
+    },
+    {
+      "path": "shared/components/DemoFooter.astro",
+      "sourcePath": "landing/src/components/DemoFooter.astro",
+      "styleSha256": "e0e4ee74d44f7a634730ce94c67b2a44114eee2383dcef11a94ce54d84fcf21c"
+    },
+    {
+      "path": "landing/src/sections/Hero.astro",
+      "sourcePath": "landing/src/sections/Hero.astro",
+      "styleSha256": "788a1ae0ee333632b36e3e3febee1faa3efb82df56c5655e0c95dc25af773b1f"
+    },
+    {
+      "path": "landing/src/sections/Features.astro",
+      "sourcePath": "landing/src/sections/Features.astro",
+      "styleSha256": "ebbe31c7a858b1fe4a8361f54126f83b6c90c8a4ded510dc2d03a251d9a6cb51"
+    },
+    {
+      "path": "landing/src/sections/Runtimes.astro",
+      "sourcePath": "landing/src/sections/Runtimes.astro",
+      "styleSha256": "333d088e848a7afa11a093f8f9a17440d72999feeca7fa25f2718c5faf962d8e"
+    },
+    {
+      "path": "landing/src/sections/Recipes.astro",
+      "sourcePath": "landing/src/sections/Recipes.astro",
+      "styleSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "landing/src/sections/Faq.astro",
+      "sourcePath": "landing/src/sections/Faq.astro",
+      "styleSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "landing/src/sections/CallToAction.astro",
+      "sourcePath": "landing/src/sections/CallToAction.astro",
+      "styleSha256": "64ece6fef9c1b4f9062e15039ee29537e58d13bfe8e6d858e1ca0064ccc8d48f"
+    },
+    {
+      "path": "landing/src/sections/GettingStarted.astro",
+      "sourcePath": "landing/src/sections/GettingStarted.astro",
+      "styleSha256": "c0874955b2643ecafa5dd352f011f6463ccdbe3be9c5c8b8340ae3dbcdd55b55"
+    },
+    {
+      "path": "landing/src/sections/ExamplesGallery.astro",
+      "sourcePath": "landing/src/sections/ExamplesGallery.astro",
+      "styleSha256": "1789c736f847cddc844734f8e30bbdb6e30ade6bb3d25252941fe8f93ca839f7",
+      "exception": "Latest original gallery hero/index/resources plus the original recipe frame styles colocated for the neutral single recipe. Content is template-owned."
+    },
+    {
+      "path": "landing/src/layouts/Main.astro",
+      "sourcePath": "landing/src/layouts/Main.astro",
+      "styleSha256": "012323f3831cfcaddf4656ea9b7b4fc64916f55cd54e8421c7124446ce97bba0"
+    },
+    {
+      "path": "landing/src/layouts/Footer.astro",
+      "sourcePath": "landing/src/layouts/Footer.astro",
+      "styleSha256": "ab32b9479c4516fbca5fe51d0d494307ad5463e7f994ab7055426414b0c012f2",
+      "exception": "Mobile footer columns adapt to font-relative content width at enlarged text. Normal mobile/desktop composition is unchanged."
+    },
+    {
+      "path": "landing/src/layouts/Header.astro",
+      "sourcePath": "landing/src/layouts/Header.astro",
+      "styleSha256": "bae5a8d381bd151046b487018fb94f805d53be8d97757a0cd9a88573c06dd11f"
+    },
+    {
+      "path": "landing/src/components/MobileMenu.astro",
+      "sourcePath": "landing/src/components/MobileMenu.astro",
+      "styleSha256": "cf74e971e9a28da51914d2a8b5dc1a5de7a1effebde266721381371477ee9b94"
+    },
+    {
+      "path": "shared/components/Box.astro",
+      "sourcePath": "shared/components/Box.astro",
+      "styleSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared/components/Button.astro",
+      "sourcePath": "shared/components/Button.astro",
+      "styleSha256": "d16cb51b81f008e439af9df317d5fd6c4d1da4ed46a31a440a70b60151ce6bbd"
+    },
+    {
+      "path": "shared/components/Heading.astro",
+      "sourcePath": "shared/components/Heading.astro",
+      "styleSha256": "9fda615739f84b2a9e00453128ac4c2cb4369010229af76ad817f4a38e0d270a"
+    },
+    {
+      "path": "shared/components/PageTitle.astro",
+      "sourcePath": "shared/components/PageTitle.astro",
+      "styleSha256": "4504d332c09664b95ef77f224f173a5eb0dd5fac36bc84ff40c452d529cd1fb3",
+      "adaptationReason": "Constrain the title grid track and wrap long API identifiers in descriptions at 320px/200% root text; normal typography and geometry remain unchanged."
+    },
+    {
+      "path": "shared/components/CodeFrame.astro",
+      "sourcePath": "shared/components/CodeFrame.astro",
+      "styleSha256": "77ed4812aae17823da9e700759cdaf4209e64126ef1e5df4d8e2b6265f47b543"
+    },
+    {
+      "path": "shared/components/CopyButton.astro",
+      "sourcePath": "shared/components/CopyButton.astro",
+      "styleSha256": "bbbc3db3b0b4c18710f397098393b0f55fda6a2d5fd6bf283e5c9403afc6f982"
+    },
+    {
+      "path": "shared/components/Tabs.astro",
+      "sourcePath": "shared/components/Tabs.astro",
+      "styleSha256": "4b43064f65b8784476150267000d93fffd266bd7b5206ad3904edd1fc5535749"
+    },
+    {
+      "path": "shared/components/TabPanel.astro",
+      "sourcePath": "shared/components/TabPanel.astro",
+      "styleSha256": "0c2f7a827ba0d5f4a0424079a797939da3465f30d56636cd55cdd13453f70fe5"
+    },
+    {
+      "path": "shared/components/TextLink.astro",
+      "sourcePath": "shared/components/TextLink.astro",
+      "styleSha256": "50a0bd7709be4a36777da04b085fa07b5698f11700e3234b1257f9a3cea0afcc"
+    },
+    {
+      "path": "shared/components/NavLink.astro",
+      "sourcePath": "shared/components/NavLink.astro",
+      "styleSha256": "4af81500bd16d59ebde4898ab80ed65cbb8d8a792d69e2bab2034cc5d817ceaa"
+    },
+    {
+      "path": "shared/components/Surface.astro",
+      "sourcePath": "shared/components/Surface.astro",
+      "styleSha256": "77dc651f35273ba4727fb8fd51edffa487136334fb6108bdc357c8d283ce8402",
+      "exception": "Surface adds overflow-wrap:anywhere for long neutral starter text; it changes no color, dimensions, spacing or shape."
+    },
+    {
+      "path": "shared/components/Disclosure.astro",
+      "sourcePath": "shared/components/Disclosure.astro",
+      "styleSha256": "0b8e62420769883abf0b1e4d63f5a20e7a1b61cadfb2df49d6e0db29e33c7968"
+    },
+    {
+      "path": "shared/components/ThemeToggle.astro",
+      "sourcePath": "shared/components/ThemeToggle.astro",
+      "styleSha256": "b13353ddbc2b11369a9544dba6682e6078d3176a54fb51f2ac4914ad1e8232d7",
+      "exception": "Root context keeps the original zero padding and 2.5rem theme button geometry independent of shared Button CSS emission order after inlining."
+    },
+    {
+      "path": "shared/components/LinkCard.astro",
+      "sourcePath": "shared/components/LinkCard.astro",
+      "styleSha256": "cfb97f354f2ed52392c1720f2a8911d19258eb9b2820d8d06d2b270a9c55e6aa"
+    },
+    {
+      "path": "shared/components/Callout.astro",
+      "sourcePath": "shared/components/Callout.astro",
+      "styleSha256": "4668141b233742a10b902a22d8480491b3d3abde58b78b9690847a741566fdff"
+    },
+    {
+      "path": "shared/components/CardGrid.astro",
+      "sourcePath": "shared/components/CardGrid.astro",
+      "styleSha256": "8730472cb04d417cd77be63766e85f2c810f6aa87bfd1f1f44151693293034a0"
+    },
+    {
+      "path": "shared/components/DrawerStyles.astro",
+      "sourcePath": "shared/components/DrawerStyles.astro",
+      "styleSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared/styles/theme.css",
+      "sourcePath": "shared/styles/theme.css",
+      "kind": "stylesheet",
+      "styleSha256": "cb8e9bbb32b7888b3e7e535f998c55119b4a45a785468b478aead57d69da2773"
+    },
+    {
+      "path": "shared/lib/code-theme.mjs",
+      "sourcePath": "shared/lib/code-theme.mjs",
+      "kind": "source",
+      "styleSha256": "0b96baa6adaa8e9d9a77eb1419bc59d8922450ab2d5ae1806a63f237e866c20b"
+    },
+    {
+      "path": "shared/components/Fonts.astro",
+      "sourcePath": "shared/components/Fonts.astro",
+      "styleSha256": "32555b4988d08b683951ba00e1fd000b8f55ba5530dcac70b7dee3f0ec6bd5f9"
+    },
+    {
+      "path": "shared/lib/mount-elements.ts",
+      "sourcePath": "shared/lib/mount-elements.ts",
+      "styleSha256": "01faf79964e5348685b64d6bc65553425fe98b8f5e89d597981c31152c6c555c",
+      "kind": "source"
+    },
+    {
+      "path": "shared/lib/site-build.mjs",
+      "sourcePath": "shared/lib/site-build.mjs",
+      "styleSha256": "cfa0e125cb1c972430b9d4bd38ac0e85913ce35d3c9d35f100fe2f5d29f03e86",
+      "kind": "source"
+    }
+  ],
+  "previousCommit": "c74ec912b0d1b2209aa7647e39c205d879d7e619"
+}

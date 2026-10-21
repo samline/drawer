@@ -1,0 +1,116 @@
+---
+import { navigationHref, isHome } from '../lib/navigation'
+import NavLink from '../../../shared/components/NavLink.astro'
+import { getI18n } from '../i18n/utils'
+import Logo from '../../../shared/components/Logo.astro'
+import Box from '../../../shared/components/Box.astro'
+import Button from '../../../shared/components/Button.astro'
+import MobileMenu from '../components/MobileMenu.astro'
+import ThemeToggle from '../../../shared/components/ThemeToggle.astro'
+const i18n = getI18n(Astro)
+import { project } from '../../../shared/lib/project.mjs'
+---
+
+<package-site-header>
+  <header>
+    <nav aria-label={i18n.navigation.mainLabel} class:list={['py-5']}>
+      <Box size="wide" class:list={['flex flex-wrap items-center justify-between gap-3']}>
+        <Logo
+          href={isHome(Astro.url.pathname) ? '#top' : import.meta.env.BASE_URL}
+          version={i18n.common.version}
+        />
+
+        <div class:list={['hidden min-w-0 flex-wrap items-center gap-1 lg:flex']}>
+          {i18n.navigation.items.map(item => (
+            <NavLink
+              inline
+              href={navigationHref(item, Astro.url.pathname)}
+              current={'page' in item && !isHome(Astro.url.pathname) ? 'page' : undefined}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+
+        <div class:list={['flex items-center gap-2']}>
+          <ThemeToggle />
+          <MobileMenu />
+          <Button
+            context="nav"
+            href={project.repository}
+            target="_blank"
+            rel="noreferrer"
+            class:list={['hidden lg:inline-flex']}
+            variant="ghost"
+          >
+            <svg
+              aria-hidden="true"
+              width="1rem"
+              height="1rem"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            {i18n.common.links.github}
+          </Button>
+          <Button
+            context="nav"
+            href={navigationHref({ href: '#how' }, Astro.url.pathname)}
+            class:list={['hidden lg:inline-flex']}
+            variant="primary"
+          >
+            {i18n.common.buttons.getStarted}
+            <svg
+              aria-hidden="true"
+              width="0.875rem"
+              height="0.875rem"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="0.125rem"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14M13 5l7 7-7 7"></path>
+            </svg>
+          </Button>
+        </div>
+      </Box>
+    </nav>
+  </header>
+</package-site-header>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  mountElements('package-site-header', element => {
+    const observer = new ResizeObserver(() => {
+      const root = document.documentElement
+      const rootSize = Number.parseFloat(getComputedStyle(root).fontSize)
+      root.style.setProperty(
+        '--header-offset',
+        `${element.getBoundingClientRect().height / rootSize + 2.5}rem`
+      )
+    })
+    observer.observe(element)
+    return () => {
+      observer.disconnect()
+    }
+  })
+</script>
+
+<style>
+  package-site-header {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--color-bg);
+    border-bottom: 0.0625rem solid var(--color-border-soft);
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+interface Props {
+  scope: 'package-site-docs-menu' | 'package-site-docs-search' | 'package-site-mobile-menu'
+  css: string
+}
+const { scope, css } = Astro.props
+// The package owns motion. Adapt only its fixed lengths and stylesheet boundary.
+const styles = css.replace(/(\d*\.?\d+)px\b/g, (_, length) => `${Number(length) / 16}rem`)
+const controls = `
+[data-drawer-close] {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0.5rem;
+  border: 0.0625rem solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--duration-ui) var(--ease-ui),
+    background-color var(--duration-ui) var(--ease-ui),
+    border-color var(--duration-ui) var(--ease-ui);
+}
+[data-drawer-close]:focus-visible {
+  outline: var(--focus-width) solid var(--color-accent);
+  outline-offset: var(--focus-offset);
+}
+@media (hover: hover) {
+  [data-drawer-close]:hover {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    border-color: var(--palette-border-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-drawer], [data-drawer-overlay] {
+    animation: none !important;
+    transition: none !important;
+  }
+  [data-drawer-close] { transition: none; }
+}
+`
+---
+
+<style is:inline set:html={`@scope (${scope}) { ${styles} ${controls} }`} />

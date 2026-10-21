@@ -1,0 +1,58 @@
+---
+import Reveal from './Reveal.astro'
+import Heading from '../../../shared/components/Heading.astro'
+import type { HTMLAttributes } from 'astro/types'
+import Eyebrow from '../../../shared/components/Eyebrow.astro'
+interface Props extends HTMLAttributes<'div'> {
+  context?: 'default' | 'features' | 'runtime' | 'faq'
+  headingId?: string
+  eyebrow: string
+}
+const {
+  eyebrow,
+  headingId = `heading-${crypto.randomUUID()}`,
+  context = 'default',
+  class: className,
+  ...attributes
+} = Astro.props
+---
+
+<Reveal>
+  <div data-context={context} {...attributes} class:list={['section-heading', className]}>
+    <Eyebrow>{eyebrow}</Eyebrow>
+    <Heading id={headingId} context={context === 'faq' ? 'faq' : 'default'}>
+      <slot />
+    </Heading>
+    {Astro.slots.has('description') && (
+      <p class:list={['section-lede']}>
+        <slot name="description" />
+      </p>
+    )}
+  </div>
+</Reveal>
+
+<style>
+  .section-lede {
+    margin-top: 0.75rem;
+    color: var(--color-text-muted);
+    max-width: 36rem;
+    line-height: 1.75;
+    font-size: 0.95rem;
+  }
+  .section-heading {
+    gap: var(--heading-space);
+  }
+  .section-heading[data-context='features'] {
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2.25rem;
+  }
+  .section-heading[data-context='runtime'] {
+    margin-bottom: 2rem;
+  }
+  .section-heading[data-context='faq'] {
+    display: grid;
+    gap: 1rem;
+    text-align: left;
+  }
+</style>

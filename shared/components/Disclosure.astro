@@ -1,0 +1,102 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import Icon from './Icon.astro'
+interface Props extends HTMLAttributes<'details'> {
+  variant?: 'plain' | 'row'
+  indicator?: 'chevron' | 'plus'
+}
+const { variant = 'plain', indicator = 'chevron', class: className, ...attributes } = Astro.props
+---
+
+<details {...attributes} class:list={['disclosure', { row: variant === 'row' }, className]}>
+  <summary>
+    <span class:list={['summary-label']}>
+      <slot name="summary" />
+    </span>
+    <span class:list={['indicator', { plus: indicator === 'plus' }]} aria-hidden="true">
+      {indicator === 'chevron' && <Icon name="chevron" />}
+    </span>
+  </summary>
+  <slot />
+</details>
+
+<style>
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    min-height: 2.5rem;
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text);
+    font-size: var(--text-small);
+    font-weight: 500;
+    line-height: 1.5;
+    cursor: pointer;
+    list-style: none;
+    transition: color var(--duration-ui) var(--ease-ui);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .summary-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .indicator {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--color-text-subtle);
+    transition: transform var(--duration-ui) var(--ease-ui);
+  }
+  details[open] > summary .indicator {
+    transform: rotate(180deg);
+  }
+  .plus {
+    position: relative;
+  }
+  .plus::before,
+  .plus::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: currentColor;
+  }
+  .plus::before {
+    width: 0.75rem;
+    height: 0.09375rem;
+  }
+  .plus::after {
+    width: 0.09375rem;
+    height: 0.75rem;
+  }
+  details[open] > summary .plus {
+    transform: rotate(45deg);
+  }
+  .row > summary {
+    padding: 1.375rem 0;
+    gap: var(--space-lg);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  summary:focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius-control);
+  }
+  @media (hover: hover) {
+    summary:hover {
+      color: var(--color-accent);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    summary,
+    .indicator {
+      transition: none;
+    }
+  }
+</style>

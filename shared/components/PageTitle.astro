@@ -1,0 +1,78 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import Heading from './Heading.astro'
+import Eyebrow from './Eyebrow.astro'
+interface Props extends HTMLAttributes<'header'> {
+  title: string
+  accent?: string
+  description?: string
+  eyebrow?: string
+  headingId: string
+  size?: 'display' | 'section'
+  align?: 'start' | 'center'
+  indexTitle?: boolean
+}
+const {
+  title,
+  accent,
+  description,
+  eyebrow,
+  headingId,
+  size = 'display',
+  align = 'start',
+  indexTitle = false,
+  class: className,
+  ...attributes
+} = Astro.props
+if (accent && (!title.endsWith(accent) || accent === title)) {
+  throw new Error('A page title accent must be an explicit trailing part of its title')
+}
+const prefix = accent ? title.slice(0, -accent.length) : title
+---
+
+<header {...attributes} data-size={size} data-align={align} class:list={['page-title', className]}>
+  {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+  <Heading
+    level={1}
+    size={size}
+    id={headingId}
+    data-pagefind-meta={indexTitle ? 'title' : undefined}
+    class:list={['title']}
+  >
+    {accent ? (
+      <>
+        {prefix}
+        <span class:list={['serif']}>{accent}</span>
+      </>
+    ) : (
+      title
+    )}
+  </Heading>
+  {description && <p class:list={['description']}>{description}</p>}
+</header>
+
+<style>
+  .page-title {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--heading-space);
+    min-width: 0;
+  }
+  .page-title[data-align='center'] {
+    text-align: center;
+    justify-items: center;
+  }
+  .title {
+    margin: 0;
+  }
+  .description {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+  .page-title[data-size='section'] .description {
+    font-size: 0.95rem;
+  }
+</style>

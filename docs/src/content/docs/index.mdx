@@ -1,0 +1,45 @@
+---
+locale: en
+title: '@samline/drawer'
+titleAccent: 'drawer'
+description: 'A framework-free drawer runtime for bottom sheets, side panels and nested flows.'
+sidebar:
+  group: start
+  order: 1
+---
+
+import CardGrid from '../../../../shared/components/CardGrid.astro'
+import LinkCard from '../../../../shared/components/LinkCard.astro'
+
+Drawer is a framework-free runtime for bottom sheets, side panels and nested dialogs. Create an instance, supply your panel CSS, and let the package own gestures, dismissal and modal focus.
+
+## Start building
+
+<CardGrid>
+  <LinkCard href="getting-started/" title="Installation">
+    Choose Package / ESM or HTML / CDN and open your first drawer.
+  </LinkCard>
+  <LinkCard href="guides/examples/" title="Working examples">
+    Try every edge, snap points and nested flows. Copy complete or separate files.
+  </LinkCard>
+  <LinkCard href="reference/api/" title="API reference">
+    Factories, controllers, registry helpers, return values and cleanup.
+  </LinkCard>
+  <LinkCard href="changelog/" title="Changelog">
+    Follow recorded release changes, including breaking changes.
+  </LinkCard>
+</CardGrid>
+
+## Choose your integration
+
+Use `@samline/drawer` for named ESM or CommonJS imports. Use `@samline/drawer/browser` for the module namespace. Plain HTML loads the separate IIFE and stylesheet; it exposes `window.Drawer`. DOM integrations run in the browser. The headless `createDrawerController` can model state without the DOM.
+
+Read [entrypoints and module formats](reference/entrypoints/) for the loading terminology and [lifecycle and state](guides/lifecycle-and-state/) for instance ownership.
+
+## Styling and accessibility
+
+The runtime stylesheet supplies motion and handle behavior. Your application defines panel position, dimensions, colors, accessible content and visible focus. Modal focus management and scroll locking stay in Drawer. See [Accessibility and focus](guides/accessibility-and-focus/).
+
+## Version
+
+This site documents `@samline/drawer` **5.0.0**. Use this version when copying the pinned CDN examples.

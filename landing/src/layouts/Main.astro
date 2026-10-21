@@ -1,0 +1,96 @@
+---
+import { getLocale, getI18n } from '../i18n/utils'
+import '../styles/theme.css'
+import SEO from '../../../shared/components/SEO.astro'
+import SiteHead from '../../../shared/components/SiteHead.astro'
+import { project } from '../../../shared/lib/project.mjs'
+import Theme from '../../../shared/components/Theme.astro'
+import Header from './Header.astro'
+import Footer from './Footer.astro'
+interface Props {
+  title?: string
+  description?: string
+}
+const i18n = getI18n(Astro)
+const { title = i18n.sections.hero.seoTitle, description = project.description } = Astro.props
+---
+
+<!doctype html>
+<html
+  lang={getLocale(Astro.currentLocale)}
+  data-theme="dark"
+  data-theme-storage={`${project.namespace}-theme`}
+>
+  <head>
+    <SEO title={title} description={description} path={Astro.url.pathname} />
+
+    <SiteHead />
+    <Theme />
+  </head>
+  <body>
+    <a class:list={['skip-link']} href="#top">
+      {i18n.navigation.skipContent}
+    </a>
+    <div class:list={['grain']} aria-hidden="true"></div>
+    <Header />
+    <main id="top" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.008;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  .skip-link {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    border-radius: 0.5rem;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus {
+    transform: none;
+  }
+
+  main,
+  main :global([id]) {
+    scroll-margin-top: var(--header-offset, 9rem);
+  }
+
+  main:focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.25rem;
+  }
+</style>

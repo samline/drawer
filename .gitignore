@@ -38,3 +38,12 @@ skills-lock.json
 
 # AGENTS.md and .agents/ ARE versioned (decision 2026-07-13)
 # .local/ deprecated since 2026-07-13 — use .agents/ instead
+
+# Website build artifacts
+.astro/
+playwright-report/
+test-results/
+landing/public/fonts/
+landing/public/font-licenses/
+docs/public/fonts/
+docs/public/font-licenses/

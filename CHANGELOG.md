@@ -2,7 +2,48 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Status**: `4.2.1` is the current stable release. Publish it under the `latest` npm tag after verification.
+## [5.0.0] — 2026-10-20
+
+### Breaking changes
+
+- `createDrawer()` always creates an independent instance. Omitted ids are generated instead of sharing `default`; explicit ids must be non-empty and unique. Duplicate registration throws. Use the owned controller's `update()` for changes.
+- Registry queries require an explicit id and return stable controller objects. `getDrawers()` still returns a fresh keyed object, now containing those exact controllers.
+- Destruction is terminal. Retained handles cannot recreate a drawer or control a new instance reusing the id. `getSnapshot()`, options access, commands and subscriptions on destroyed handles throw; the id stays readable, element is null and repeated destroy is harmless.
+- Removed `configureDrawer`, `openDrawer`, `closeDrawer`, `toggleDrawer`, `updateDrawer` and `destroyDrawer`. Keep the factory's controller, or use `getDrawer(id)` and its instance methods. `destroyDrawers()` remains whole-registry cleanup.
+- Removed the browser-only `newDrawer`, `available` and `browser` aliases. Use the same `createDrawer()` factory with native HTMLElement/template content and `getDrawers()` for inspection. The named/default `Drawer` namespace and individual exports remain on `/browser`; HTML/CDN still exposes `window.Drawer`.
+- Replaced `patch()` with one `update()` method on DOM and state-only controllers. DOM `update()` now returns the resulting snapshot, matching the other state commands, instead of another controller facade. Instance ids cannot be changed by updates.
+
+- Removed the deprecated `mountElement` option. Use `container`; null or omission mounts under `document.body`.
+
+### Added
+
+- State-only controllers now support explicit, idempotent `destroy()` to dispose subscriptions and reject later operations.
+- Regression coverage for generated ids, duplicate ids, stable identity, missing lookups, stale handles after id reuse and headless disposal.
+
+### Fixed
+
+- Teardown from lifecycle callbacks or subscriptions stops further work for that instance, without scheduling orphan animation callbacks or affecting a replacement id.
+- Failed content factories now roll back partial dialog DOM and registry ownership, allowing a clean explicit retry.
+
+### Changed
+
+- Separated DOM content, modal focus/isolation, gesture listeners, snap geometry and background scaling from dialog lifecycle coordination. Existing pointer, nested, viewport, accessibility and animation capabilities are retained.
+- Reorganized onboarding around one owned controller and optional registry inspection. Updated complete/split examples, framework/CMS integrations, documentation, metadata and agent guidance. Removed-method URLs are migration notes rather than active API navigation.
+
+### Migration
+
+| v4                                                    | v5                                                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `configureDrawer(options)`                            | `createDrawer(options)` for a new instance; `drawer.update(options)` for changes.             |
+| `openDrawer(id)` / `closeDrawer(id)`                  | `getDrawer(id)?.setOpen(true/false)`; queries do not create.                                  |
+| `toggleDrawer(id)`                                    | Read the owned controller's current isOpen and pass its inverse to setOpen().                 |
+| `updateDrawer(id, options)` / `drawer.patch(options)` | `drawer.update(options)` or `getDrawer(id)?.update(options)`.                                 |
+| `destroyDrawer(id)`                                   | `drawer.destroy()` or `getDrawer(id)?.destroy()`.                                             |
+| `Drawer.available`                                    | `Drawer.getDrawers()`.                                                                        |
+| `Drawer.newDrawer({html})`                            | `Drawer.createDrawer({ content: () => template.content.firstElementChild.cloneNode(true) })`. |
+| `import { browser }`                                  | Ordinary root function imports, or `import { Drawer } from '@samline/drawer/browser'`.        |
+| `mountElement: element`                               | `container: element`.                                                                         |
+| Re-create to update the same id                       | Keep the existing controller or query it; duplicate creation now throws.                      |
 
 ## [4.2.1] — 2026-09-28
 

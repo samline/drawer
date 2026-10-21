@@ -1,0 +1,11 @@
+---
+import CodeFiles from './CodeFiles.astro'
+import { cmsFiles } from '../lib/cms-files'
+interface Props {
+  host: 'shopify' | 'wordpress'
+}
+const { host } = Astro.props
+const files = await cmsFiles(host)
+---
+
+<CodeFiles files={files} />

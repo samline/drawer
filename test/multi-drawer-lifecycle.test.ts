@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createDrawer, destroyDrawers, getDrawer, updateDrawer } from '../src'
+import { createDrawer, destroyDrawers, getDrawer } from '../src'
 
 describe('multi-drawer lifecycle', () => {
   beforeEach(() => {
@@ -147,7 +147,7 @@ describe('multi-drawer lifecycle', () => {
     createDrawer({ id: 'parent' })
     createDrawer({ id: 'child', parentId: 'parent' })
 
-    expect(() => updateDrawer('parent', { parentId: 'child' })).toThrow(
+    expect(() => getDrawer('parent')?.update({ parentId: 'child' })).toThrow(
       'Drawer parentId creates a cycle involving "parent"'
     )
     expect(getDrawer('parent')?.options.parentId).toBeUndefined()

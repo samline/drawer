@@ -1,0 +1,67 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'section'> {
+  layout?: 'default' | 'faq'
+  theme?: 'inherit' | 'light' | 'dark'
+  spacing?: 'default' | 'none'
+  main?: boolean
+  disabled?: boolean
+}
+const {
+  class: className,
+  theme = 'inherit',
+  layout = 'default',
+  spacing = 'default',
+  main = false,
+  disabled = false,
+  ...attributes
+} = Astro.props
+---
+
+{!disabled && (
+  <section
+    {...attributes}
+    data-layout={layout}
+    data-theme={theme === 'inherit' ? undefined : theme}
+    class:list={[
+      'group/section relative z-10',
+      {
+        'bg-bg text-text': theme !== 'inherit',
+        'py-10 md:py-16 lg:py-20': spacing === 'default',
+        'pt-24 lg:pt-32': main,
+      },
+      className,
+    ]}
+  >
+    <slot />
+  </section>
+)}
+
+<style>
+  .content-section {
+    --section-top-space: 6.25rem;
+    padding-top: var(--section-top-space);
+    padding-bottom: 1.5rem;
+  }
+  [data-layout='faq'] {
+    --section-top-space: 6.75rem;
+    padding-top: var(--section-top-space);
+  }
+  .content-section[id] {
+    scroll-margin-top: calc(var(--header-offset, 9rem) - var(--section-top-space));
+  }
+  .closing-section {
+    padding-bottom: 5rem;
+  }
+  @media (width < 48rem) {
+    .content-section {
+      --section-top-space: 4.5rem;
+    }
+    [data-layout='faq'] {
+      --section-top-space: 4.5rem;
+    }
+    .closing-section {
+      padding-bottom: 3rem;
+    }
+  }
+</style>

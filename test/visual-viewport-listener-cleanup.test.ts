@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import * as browserModule from '../src/runtime/browser'
 import { preventBodyScroll } from '../src/runtime/scroll-lock'
 import { browserModuleMocks } from './_test-helpers'
 

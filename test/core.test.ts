@@ -53,10 +53,10 @@ describe('drawer core controller', () => {
     expect(states).toEqual([false, true, false])
   })
 
-  it('patches partial options', () => {
+  it('updates partial options', () => {
     const controller = createDrawerController({ direction: 'bottom', dismissible: true })
 
-    controller.patch({ direction: 'left', dismissible: false, modal: false })
+    controller.update({ direction: 'left', dismissible: false, modal: false })
 
     expect(controller.getSnapshot().state.direction).toBe('left')
     expect(controller.getSnapshot().state.dismissible).toBe(false)

@@ -1,0 +1,29 @@
+---
+import ExamplesLink from '../components/ExamplesLink.astro'
+import Navigation from '../components/Navigation.astro'
+interface Props {
+  current: string
+}
+const { current } = Astro.props
+---
+
+<aside class:list={['sidebar']} data-pagefind-ignore>
+  <Navigation current={current} />
+  <ExamplesLink />
+</aside>
+
+<style>
+  .sidebar {
+    position: sticky;
+    top: var(--docs-header-height, 4.5rem);
+    height: calc(100dvh - var(--docs-header-height, 4.5rem));
+    overflow-y: auto;
+    padding: 2rem 0.5rem 2rem 0;
+    scrollbar-width: thin;
+  }
+  @media (width<64rem) {
+    .sidebar {
+      display: none;
+    }
+  }
+</style>

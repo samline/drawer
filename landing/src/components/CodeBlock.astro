@@ -1,0 +1,22 @@
+---
+import CodeFrame from '../../../shared/components/CodeFrame.astro'
+import type { ComponentProps } from 'astro/types'
+import { getI18n } from '../i18n/utils'
+import { format } from '../../../shared/i18n/format'
+interface Props {
+  code: string
+  language: ComponentProps<typeof CodeFrame>['language']
+  filename: string
+  class?: string
+}
+const { filename, code, language, class: className } = Astro.props
+const i18n = getI18n(Astro)
+---
+
+<CodeFrame
+  label={filename}
+  text={code}
+  language={language}
+  copyLabel={format(i18n.controls.code.copyLabel, { filename })}
+  class:list={['code-block', className]}
+/>

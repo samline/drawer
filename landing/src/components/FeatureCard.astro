@@ -1,0 +1,90 @@
+---
+import Surface from '../../../shared/components/Surface.astro'
+import Reveal from './Reveal.astro'
+interface Props {
+  title: string
+  number: string
+}
+const { title, number } = Astro.props
+---
+
+<Reveal>
+  <Surface as="article" interactive class:list={['feature-card']}>
+    <div class:list={['feature-icon']}>
+      <slot name="icon" />
+    </div>
+    <h3>{title}</h3>
+    <p>
+      <slot />
+    </p>
+    <span class:list={['feature-number']} aria-hidden="true">
+      {number}
+    </span>
+  </Surface>
+</Reveal>
+
+<style>
+  .feature-card {
+    --card-padding: var(--space-lg);
+    position: relative;
+    padding: var(--card-padding);
+    min-height: 13.875rem;
+    overflow-wrap: anywhere;
+  }
+  .feature-icon {
+    display: flex;
+    align-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-bottom: 1.25rem;
+    color: var(--color-accent);
+  }
+  .feature-icon :global(svg) {
+    width: 1.5rem;
+    height: 1.5rem;
+    stroke-width: 1.3;
+  }
+  h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  p {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    max-width: 30ch;
+  }
+  .feature-card :global(code) {
+    overflow-wrap: anywhere;
+  }
+  .feature-number {
+    position: absolute;
+    top: var(--card-padding);
+    right: var(--card-padding);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--palette-feature-number);
+  }
+  @media (width < 48rem) {
+    .feature-card {
+      --card-padding: 1.25rem;
+      min-height: 14.6875rem;
+    }
+    p {
+      font-size: var(--text-small);
+    }
+  }
+  @media (width < 30rem) {
+    .feature-card {
+      --card-padding: var(--space-lg);
+      min-height: 0;
+    }
+    p {
+      max-width: 40ch;
+    }
+  }
+</style>

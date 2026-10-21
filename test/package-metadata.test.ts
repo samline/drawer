@@ -22,7 +22,13 @@ describe('package metadata', () => {
       './style.css': './dist/style.css'
     })
 
-    expect(packageJson.files).toEqual(['dist'])
+    expect(packageJson.files).toEqual(['dist', 'CHANGELOG.md'])
+  })
+
+  it('keeps runtime dependencies and framework peers out of the published package', () => {
+    expect(packageJson).not.toHaveProperty('dependencies')
+    expect(packageJson).not.toHaveProperty('optionalDependencies')
+    expect(packageJson).not.toHaveProperty('peerDependencies')
   })
 
   it('preserves the CSS and global bundle side effects', () => {

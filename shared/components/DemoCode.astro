@@ -1,0 +1,39 @@
+---
+import Tabs from './Tabs.astro'
+import TabPanel from './TabPanel.astro'
+import CodeFiles from './CodeFiles.astro'
+import t, { type DemoPreset } from '../i18n/translations/en/demo'
+import { createDemoFiles } from '../lib/demo-files'
+const { preset = 'bottom' } = Astro.props as { preset?: DemoPreset }
+const id = `demo-code-${crypto.randomUUID()}`
+const modes = [
+  { id: 'cdn', label: t.cdn, note: t.note, source: await createDemoFiles(preset, 'cdn') },
+  { id: 'esm', label: t.esm, note: t.esmNote, source: await createDemoFiles(preset, 'esm') },
+]
+---
+
+<div data-ui class:list={['demo-code']}>
+  <Tabs id={id} label={t.modeLabel} items={modes}>
+    {modes.map(mode => (
+      <TabPanel id={mode.id} label={mode.label}>
+        <p class:list={['note']}>{mode.note}</p>
+        <CodeFiles
+          files={mode.source.files}
+          complete={{ code: mode.source.complete.code, copyLabel: t.copyComplete }}
+        />
+      </TabPanel>
+    ))}
+  </Tabs>
+</div>
+
+<style>
+  .demo-code {
+    min-width: 0;
+  }
+  .note {
+    margin-block: var(--space-lg);
+    color: var(--color-text-muted);
+    font-size: var(--text-small);
+    line-height: 1.75;
+  }
+</style>

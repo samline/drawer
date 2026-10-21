@@ -1,0 +1,81 @@
+---
+import { format } from '../../../shared/i18n/format'
+import LinkCard from '../../../shared/components/LinkCard.astro'
+import { getI18n } from '../i18n/utils'
+const t = getI18n(Astro)
+import { getNavigation } from '../lib/navigation'
+import { href } from '../lib/routes'
+import { manifest } from '../../../shared/lib/project.mjs'
+interface Props {
+  current: string
+}
+const { current } = Astro.props
+const groups = await getNavigation(Astro.currentLocale)
+const pages = groups.flatMap(group => group.pages)
+const index = pages.findIndex(([id]) => id === current)
+const previous = pages[index - 1],
+  next = pages[index + 1]
+---
+
+<footer class:list={['article-footer']} data-pagefind-ignore>
+  <nav class:list={['pagination']} aria-label={t.paginationLabel}>
+    {previous && (
+      <LinkCard href={href(previous[0])} variant="compact">
+        <span>{t.previous}</span>
+        <strong>← {previous[1]}</strong>
+      </LinkCard>
+    )}
+    {next && (
+      <LinkCard href={href(next[0])} variant="compact">
+        <span>{t.next}</span>
+        <strong>{next[1]} →</strong>
+      </LinkCard>
+    )}
+  </nav>
+  <div class:list={['credits']}>
+    <span>{t.footer}</span>
+    <span>
+      {t.license} · {format(t.versionLabel, { version: manifest.version })}
+    </span>
+  </div>
+</footer>
+
+<style>
+  .article-footer {
+    margin-top: 4rem;
+    border-top: 0.0625rem solid var(--color-border-soft);
+    padding-top: 1.5rem;
+  }
+  .pagination {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    margin: 0 0 var(--space-xl);
+  }
+  .pagination span {
+    font-size: 0.6875rem;
+    color: var(--color-text-subtle);
+  }
+  .pagination strong {
+    font-weight: 500;
+  }
+  .credits {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.5rem 0;
+    font-size: var(--text-caption);
+    color: var(--color-text-subtle);
+    border-top: 0.0625rem solid var(--color-border-soft);
+  }
+  @media (width < 37.5rem) {
+    .pagination {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+</style>

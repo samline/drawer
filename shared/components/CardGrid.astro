@@ -1,0 +1,31 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'div'> {
+  columns?: 2 | 3
+  class?: string
+}
+const { columns = 2, class: className, ...attributes } = Astro.props
+---
+
+<div {...attributes} class:list={['card-grid', { three: columns === 3 }, className]}>
+  <slot />
+</div>
+
+<style>
+  .card-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+    margin-block: var(--space-lg);
+  }
+  @media (width >= 48rem) {
+    .card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 64rem) {
+    .three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

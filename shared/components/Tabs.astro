@@ -1,0 +1,228 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'div'> {
+  id: string
+  label: string
+  items: readonly { readonly id: string; readonly label: string }[]
+  variant?: 'default' | 'demo'
+  class?: string
+}
+const { id, label, items, variant = 'default', class: className, ...attributes } = Astro.props
+const instanceId = `tabs-${crypto.randomUUID()}`
+---
+
+<package-site-tabs {...attributes} data-group={id}>
+  <div class:list={[{ 'studio-header': variant === 'demo' }]}>
+    <slot name="heading" />
+    <div
+      class:list={['tabs', { 'demo-tabs': variant === 'demo' }, className]}
+      data-tabs={id}
+      data-ui
+      data-pagefind-ignore
+      inert
+      aria-label={label}
+    >
+      {items.map(item => (
+        <button
+          class:list={['tab']}
+          type="button"
+          id={`${instanceId}-${item.id}`}
+          data-tab={item.id}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  </div>
+  <div class:list={['panels']}>
+    <slot />
+  </div>
+</package-site-tabs>
+
+<script>
+  import { mountElements } from '../lib/mount-elements'
+
+  mountElements('package-site-tabs', element => {
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const group = element.querySelector<HTMLElement>('[data-tabs]')
+    const tabs = Array.from(group?.querySelectorAll<HTMLButtonElement>('[data-tab]') ?? [])
+    const panels = Array.from(element.querySelectorAll<HTMLElement>('[data-panel]')).filter(
+      panel => panel.closest('package-site-tabs') === element
+    )
+    if (!group || !tabs.length || !panels.length) return
+    group.setAttribute('role', 'tablist')
+    const select = (selected: HTMLButtonElement, focus = false) => {
+      tabs.forEach(tab => {
+        const active = tab === selected
+        tab.setAttribute('aria-selected', String(active))
+        tab.tabIndex = active ? 0 : -1
+      })
+      panels.forEach(panel => {
+        panel.hidden = panel.dataset.panel !== selected.dataset.tab
+      })
+      if (focus) selected.focus()
+      element.dispatchEvent(
+        new CustomEvent('tabs:change', {
+          bubbles: true,
+          detail: { group: element.dataset.group, tab: selected.dataset.tab },
+        })
+      )
+    }
+    tabs.forEach((tab, index) => {
+      const panel = panels.find(panel => panel.dataset.panel === tab.dataset.tab)
+      if (!panel) return
+      panel.id ||= `${tab.id}-panel`
+      tab.setAttribute('role', 'tab')
+      tab.setAttribute('aria-controls', panel.id)
+      panel.setAttribute('role', 'tabpanel')
+      panel.setAttribute('aria-labelledby', tab.id)
+      panel.removeAttribute('aria-label')
+      panel.tabIndex = 0
+      tab.addEventListener('click', () => select(tab), { signal })
+      tab.addEventListener(
+        'keydown',
+        event => {
+          const next =
+            event.key === 'ArrowRight'
+              ? (index + 1) % tabs.length
+              : event.key === 'ArrowLeft'
+                ? (index - 1 + tabs.length) % tabs.length
+                : event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? tabs.length - 1
+                    : undefined
+          if (next === undefined) return
+          event.preventDefault()
+          select(tabs[next], true)
+        },
+        { signal }
+      )
+    })
+    select(tabs[0])
+    const selectFromHash = () => {
+      let target: HTMLElement | null
+      try {
+        target = document.getElementById(decodeURIComponent(location.hash.slice(1)))
+      } catch {
+        return
+      }
+      if (!target) return
+      const panel = panels.find(panel => panel.contains(target))
+      const tab = tabs.find(tab => tab.dataset.tab === panel?.dataset.panel)
+      if (!panel || !tab) return
+      const wasHidden = panel.hidden
+      select(tab)
+      if (wasHidden) target.scrollIntoView({ block: 'start' })
+    }
+    selectFromHash()
+    group.inert = false
+    window.addEventListener('hashchange', selectFromHash, { signal })
+    return () => {
+      lifecycle.abort()
+    }
+  })
+</script>
+
+<style>
+  .tabs[inert] {
+    visibility: hidden;
+  }
+  .tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
+    padding: 0.25rem;
+    background: var(--color-surface);
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 1.25rem;
+    gap: 0.125rem;
+  }
+  .tab {
+    padding: 0.4rem 0.625rem;
+    border-radius: 624.9375rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .tabs:focus-within .tab {
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui);
+  }
+  @media (hover: hover) {
+    .tabs:hover .tab {
+      transition:
+        color var(--duration-ui) var(--ease-ui),
+        background-color var(--duration-ui) var(--ease-ui);
+    }
+    .tab:not([aria-selected='true']):hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+    }
+  }
+  .tab[aria-selected='true'] {
+    color: var(--color-bg);
+    background: var(--color-accent);
+    font-weight: 500;
+  }
+  .studio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+  }
+  .demo-tabs {
+    background: var(--palette-tab-surface);
+    border-color: transparent;
+  }
+  .demo-tabs .tab {
+    min-height: 2.125rem;
+    font-size: 0.72rem;
+    padding-inline: 1rem;
+  }
+  .demo-tabs .tab[aria-selected='true'] {
+    background: var(--palette-tab-active);
+    color: var(--palette-tab-text);
+  }
+  .tabs:not(.demo-tabs) {
+    border-color: var(--palette-tabs-border);
+    background: var(--palette-tabs-surface);
+  }
+  @media (width < 48rem) {
+    .studio-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 1.125rem;
+    }
+    .demo-tabs {
+      width: 100%;
+    }
+    .demo-tabs .tab {
+      flex: 1;
+      padding-inline: 0.625rem;
+      font-size: 0.65rem;
+    }
+  }
+  package-site-tabs {
+    display: block;
+  }
+  .panels :global([hidden]) {
+    display: none !important;
+  }
+  .tab:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.25rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tabs:focus-within .tab,
+    .tabs:hover .tab {
+      transition: none;
+    }
+  }
+</style>

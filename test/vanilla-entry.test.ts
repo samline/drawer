@@ -1,19 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  closeDrawer,
-  configureDrawer,
-  createDrawer,
-  destroyDrawer,
-  destroyDrawers,
-  getChildDrawers,
-  getDrawer,
-  getDrawers,
-  getParentDrawer,
-  openDrawer,
-  toggleDrawer,
-  updateDrawer
-} from '../src'
+import { createDrawer, destroyDrawers, getChildDrawers, getDrawer, getDrawers, getParentDrawer } from '../src'
 
 describe('vanilla root entry', () => {
   beforeEach(() => {
@@ -25,24 +12,20 @@ describe('vanilla root entry', () => {
 
     expect(drawer.getSnapshot().state.direction).toBe('left')
     expect(drawer.getSnapshot().state.dismissible).toBe(false)
-    expect(getDrawer()).not.toBeNull()
+    expect(getDrawer(drawer.id)).toBe(drawer)
   })
 
-  it('updates the same shared controller via configureDrawer', () => {
+  it('updates only the explicitly owned controller', () => {
     const drawer = createDrawer({ direction: 'bottom' })
-    const updated = configureDrawer({ modal: false })
-
-    expect(updated).toBeTruthy()
-    expect(updated.getSnapshot().state.modal).toBe(false)
+    const updated = drawer.update({ modal: false })
+    expect(updated.state.modal).toBe(false)
     expect(drawer.getSnapshot().state.modal).toBe(false)
   })
 
-  it('destroys the shared vanilla controller', () => {
-    createDrawer({ direction: 'bottom' })
-
-    destroyDrawer()
-
-    expect(getDrawer()).toBeNull()
+  it('destroys the owned controller', () => {
+    const drawer = createDrawer({ direction: 'bottom' })
+    drawer.destroy()
+    expect(getDrawer(drawer.id)).toBeNull()
   })
 
   it('stores vanilla-only render options on the shared controller', () => {
@@ -90,7 +73,7 @@ describe('vanilla root entry', () => {
     createDrawer({ id: 'alpha', direction: 'left' })
     createDrawer({ id: 'beta', direction: 'right' })
 
-    destroyDrawer('alpha')
+    getDrawer('alpha')?.destroy()
 
     expect(getDrawer('alpha')).toBeNull()
     expect(getDrawer('beta')).not.toBeNull()
@@ -125,17 +108,17 @@ describe('vanilla root entry', () => {
     vi.useRealTimers()
   })
 
-  it('supports imperative helpers for opening, closing, toggling, and updating by id', () => {
-    openDrawer('helper-drawer')
+  it('supports owned commands after an explicit registry lookup', () => {
+    createDrawer({ id: 'helper-drawer' }).setOpen(true)
     expect(getDrawer('helper-drawer')?.getSnapshot().state.isOpen).toBe(true)
 
-    closeDrawer('helper-drawer')
+    getDrawer('helper-drawer')?.setOpen(false)
     expect(getDrawer('helper-drawer')?.getSnapshot().state.isOpen).toBe(false)
 
-    toggleDrawer('helper-drawer')
+    getDrawer('helper-drawer')?.setOpen(!getDrawer('helper-drawer')?.getSnapshot().state.isOpen)
     expect(getDrawer('helper-drawer')?.getSnapshot().state.isOpen).toBe(true)
 
-    updateDrawer('helper-drawer', { direction: 'left', modal: false })
+    getDrawer('helper-drawer')?.update({ direction: 'left', modal: false })
     expect(getDrawer('helper-drawer')?.getSnapshot().state.direction).toBe('left')
     expect(getDrawer('helper-drawer')?.getSnapshot().state.modal).toBe(false)
   })
@@ -155,7 +138,7 @@ describe('vanilla root entry', () => {
     drawer.setActiveSnapPoint('320px')
     expect(getDrawer('snap-vanilla')?.getSnapshot().state.activeSnapPoint).toBe('320px')
 
-    updateDrawer('snap-vanilla', { activeSnapPoint: 1 })
+    getDrawer('snap-vanilla')?.update({ activeSnapPoint: 1 })
     expect(getDrawer('snap-vanilla')?.getSnapshot().state.activeSnapPoint).toBe(1)
   })
 
@@ -168,7 +151,7 @@ describe('vanilla root entry', () => {
     expect(getDrawer('child')?.options.nested).toBe(true)
     expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(true)
 
-    closeDrawer('parent')
+    getDrawer('parent')?.setOpen(false)
 
     expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(false)
     expect(getDrawer('child')?.getSnapshot().state.isOpen).toBe(false)
@@ -179,7 +162,7 @@ describe('vanilla root entry', () => {
     createDrawer({ id: 'child-a', parentId: 'parent' })
     createDrawer({ id: 'child-b', parentId: 'parent' })
 
-    destroyDrawer('parent')
+    getDrawer('parent')?.destroy()
 
     expect(getDrawer('parent')).toBeNull()
     expect(getDrawer('child-a')).toBeNull()
@@ -197,9 +180,9 @@ describe('vanilla root entry', () => {
         content: `Content ${index}`
       })
 
-      openDrawer(id)
-      closeDrawer(id)
-      destroyDrawer(id)
+      getDrawer(id)?.setOpen(true)
+      getDrawer(id)?.setOpen(false)
+      getDrawer(id)?.destroy()
     }
 
     expect(Object.keys(getDrawers())).toHaveLength(0)

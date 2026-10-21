@@ -1,0 +1,8 @@
+---
+import Fonts from './Fonts.astro'
+import { project } from '../lib/project.mjs'
+import { customThemeCss } from '../lib/accent-theme.mjs'
+---
+
+<Fonts />
+<style is:inline set:html={customThemeCss(project)} />

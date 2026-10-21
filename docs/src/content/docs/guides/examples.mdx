@@ -1,0 +1,82 @@
+---
+locale: en
+title: Working examples
+description: Twelve runnable Drawer integrations, with complete and separately copyable HTML, CSS and JavaScript.
+sidebar:
+  group: guides
+  order: 1
+---
+
+import Playground from '../../../../../shared/components/Playground.astro'
+
+The previews use the package’s public API from this checkout. Choose Package / ESM for a bundler or HTML / CDN for the pinned 5.0.0 standalone bundle and stylesheet. Save the split files together, or open a complete HTML file. Your application owns the geometry and colors; Drawer owns gestures and modal behavior.
+
+## Bottom sheet
+
+<Playground showCode />
+
+## Side panel
+
+<Playground preset="right" showCode />
+
+Change `direction` to `top` or `left` and supply matching positioning rules. See [all four directions](../../reference/css-styling/#position-all-four-directions).
+
+## Top panel
+
+<Playground preset="top" showCode />
+
+## Left navigation
+
+<Playground preset="left" showCode />
+
+## Snap points
+
+<Playground preset="snaps" showCode />
+
+The points are ordered visible sizes. Numeric `1` means zero offset; fractional stops track the viewport. Pixel strings are also supported and use integer pixel counts. The handle cycles through the points. Learn about [gestures and snap points](../gestures-and-snap-points/).
+
+## Nested flow
+
+<Playground preset="nested" showCode />
+
+The child is related with `parentId`. Closing it leaves its parent open; destroying the parent also destroys its child. Keep ids unique when using these examples together.
+
+## Apply filters
+
+<Playground preset="form" showCode />
+
+A native labeled form reads its selected category with `FormData`, reports the result outside the drawer and calls `setOpen(false)`. It does not submit a network request.
+
+## Scroll long content
+
+<Playground preset="scroll" showCode />
+
+The panel has its own scroll container and a sticky close button. Test wheel, keyboard and touch scrolling without moving the underlying page.
+
+## Non-modal inspector
+
+<Playground preset="nonmodal" showCode />
+
+`modal: false` and `overlay: false` leave the background interactive. This intentionally does not trap focus or isolate the page; choose it for an inspector, not a blocking confirmation.
+
+## Handle-only dragging
+
+<Playground preset="handle" showCode />
+
+`handleOnly: true` restricts dragging to the native handle. The textarea is also marked `data-drawer-no-drag`. This is useful for text selection, sliders and other content gestures.
+
+## Update the same instance
+
+<Playground preset="update" showCode />
+
+The action replaces title and body through `update()`. The updated content remains when reopened. For a form or editor, keep application data outside disposable dialog DOM.
+
+## Controlled snap size
+
+<Playground preset="controlled" showCode />
+
+Compact and Expanded call `setActiveSnapPoint()` with exact members of the configured array. Direct calls update the snapshot; they do not echo `onActiveSnapPointChange`.
+
+## Cleanup
+
+Copied pages preserve listeners during a persisted `pagehide` and destroy on a real departure. In an SPA, call `drawer.destroy()` when the feature unmounts and unsubscribe any application listeners. Never call `destroyDrawers()` from one feature if unrelated features still own drawers.

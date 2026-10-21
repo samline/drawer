@@ -7,12 +7,12 @@ tsconfig.json
 tsup.config.ts
 vitest.config.ts
 
-# Docs (shipped docs go in docs/ alongside the published tarball via `files: ["dist"]`)
-# When the package is published from the dist/ output alone, this entry is moot,
-# but the npm pack step still walks the working tree to evaluate these patterns.
+# Documentation and public agent skill sources (served by the website)
 docs/
+skills/
 
 # Tooling & lockfiles
+scripts/
 .github/
 bun.lock
 bun.lockb
@@ -32,3 +32,16 @@ Thumbs.db
 # AI agent instructions (versioned in git, NOT in the npm tarball)
 AGENTS.md
 .agents/
+
+# Website and its development-only theme/tooling
+landing/
+shared/
+site-tools/
+site-tests/
+site-e2e/
+SITE*.md
+project.config.json
+content-audit.json
+design-reference.json
+playwright.site.config.ts
+site-skills-lock.json

@@ -1,0 +1,61 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'a'> {
+  href: string
+  tone?: 'default' | 'closing'
+  compact?: boolean
+}
+const { tone = 'default', compact = false, class: className, ...attributes } = Astro.props
+---
+
+<a
+  data-ui
+  {...attributes}
+  class:list={['text-link', { closing: tone === 'closing', compact }, className]}
+>
+  <slot />
+  <span aria-hidden="true">↗</span>
+</a>
+
+<style>
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.1875rem;
+    transition: color var(--duration-ui) var(--ease-ui);
+  }
+  .compact {
+    font-size: 0.875rem;
+  }
+  .closing {
+    justify-self: center;
+    color: var(--palette-closing-title);
+  }
+  .text-link:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.25rem;
+    border-radius: 0.125rem;
+  }
+  .closing:focus-visible {
+    outline-color: var(--palette-closing-title);
+  }
+  @media (hover: hover) {
+    .text-link:hover {
+      color: var(--color-text);
+    }
+    .closing:hover {
+      color: var(--palette-closing-secondary);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .text-link {
+      transition: none;
+    }
+  }
+</style>

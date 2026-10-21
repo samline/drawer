@@ -104,7 +104,8 @@ export interface CommonDrawerController {
   getSnapshot: () => CommonDrawerSnapshot
   setOpen: (open: boolean) => CommonDrawerSnapshot
   setActiveSnapPoint: (snapPoint: CommonDrawerSnapPoint | null) => CommonDrawerSnapshot
-  patch: (options: Partial<CommonDrawerOptions>) => CommonDrawerSnapshot
+  update: (options: Partial<Omit<CommonDrawerOptions, 'id'>>) => CommonDrawerSnapshot
+  destroy: () => void
   subscribe: (listener: (snapshot: CommonDrawerSnapshot) => void) => () => void
 }
 
@@ -129,6 +130,10 @@ function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
 }
 
 export function createDrawerController(initialOptions: CommonDrawerOptions = {}): CommonDrawerController {
+  let active = true
+  const assertActive = () => {
+    if (!active) throw new Error('Drawer controller has been destroyed')
+  }
   let options: CommonDrawerOptions = { ...initialOptions }
   let snapshot = toSnapshot(options)
   const listeners = new Set<(snapshot: CommonDrawerSnapshot) => void>()
@@ -141,21 +146,31 @@ export function createDrawerController(initialOptions: CommonDrawerOptions = {})
 
   return {
     getSnapshot() {
+      assertActive()
       return snapshot
     },
     setOpen(open) {
+      assertActive()
       options = { ...options, open }
       return publish()
     },
     setActiveSnapPoint(activeSnapPoint) {
+      assertActive()
       options = { ...options, activeSnapPoint }
       return publish()
     },
-    patch(nextOptions) {
+    update(nextOptions) {
+      assertActive()
+      if ('id' in nextOptions && nextOptions.id !== options.id) throw new TypeError('Drawer ids cannot be changed')
       options = { ...options, ...nextOptions }
       return publish()
     },
+    destroy() {
+      active = false
+      listeners.clear()
+    },
     subscribe(listener) {
+      assertActive()
       listeners.add(listener)
       listener(snapshot)
 

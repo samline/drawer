@@ -1,0 +1,72 @@
+---
+import Button from './Button.astro'
+import t, { type DemoPreset } from '../i18n/translations/en/demo'
+interface Props {
+  preset: DemoPreset
+}
+const { preset } = Astro.props
+const fieldId = `category-${crypto.randomUUID()}`
+---
+
+<div
+  class:list={['demo-body']}
+  tabindex={preset === 'scroll' ? 0 : undefined}
+  role={preset === 'scroll' ? 'region' : undefined}
+  aria-label={preset === 'scroll' ? t.scrollContentLabel : undefined}
+>
+  {preset === 'form' ? (
+    <form data-demo-form data-drawer-no-drag>
+      <label for={fieldId}>{t.category}</label>
+      <select id={fieldId} name="category">
+        <option>{t.all}</option>
+        <option>{t.books}</option>
+        <option>{t.tools}</option>
+      </select>
+      <Button type="submit">{t.apply}</Button>
+    </form>
+  ) : preset === 'scroll' ? (
+    <div>
+      {t.scrollSections.map(title => (
+        <section>
+          <h3>{title}</h3>
+          <p>{t.scrollParagraph}</p>
+          <p>{t.scrollParagraph}</p>
+        </section>
+      ))}
+    </div>
+  ) : (
+    <>
+      <p>{t.contentHeading}</p>
+      <ul>
+        {t.contentItems.map(item => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </>
+  )}
+  {preset === 'handle' && (
+    <label data-drawer-no-drag>
+      {t.noteLabel}
+      <textarea placeholder={t.notePlaceholder} />
+    </label>
+  )}
+  {preset === 'update' && (
+    <Button data-demo-update data-drawer-no-drag>
+      {t.loadNext}
+    </Button>
+  )}
+  {preset === 'controlled' && (
+    <div class:list={['demo-actions']} data-drawer-no-drag>
+      <Button data-demo-compact variant="secondary">
+        {t.compact}
+      </Button>
+      <Button data-demo-expanded>{t.expanded}</Button>
+    </div>
+  )}
+  {preset === 'nested' && (
+    <Button data-child data-drawer-no-drag>
+      {t.openChild}
+      <span aria-hidden="true">↗</span>
+    </Button>
+  )}
+</div>

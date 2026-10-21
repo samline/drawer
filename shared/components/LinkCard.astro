@@ -1,0 +1,68 @@
+---
+import Surface from './Surface.astro'
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'a'> {
+  href: string
+  title?: string
+  variant?: 'default' | 'compact'
+}
+const { href, title, variant = 'default', class: className, ...attributes } = Astro.props
+---
+
+<Surface
+  as="a"
+  interactive
+  {...attributes}
+  href={href}
+  class:list={['link-card', { compact: variant === 'compact' }, className]}
+>
+  {title && <strong class:list={['title']}>{title}</strong>}
+  <slot />
+</Surface>
+
+<style>
+  .link-card {
+    display: grid;
+    gap: 0.5rem;
+    padding: var(--space-md);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui);
+  }
+  .title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+  .link-card :global(p) {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-small);
+    line-height: 1.7;
+  }
+  .link-card :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+  .link-card[id] {
+    scroll-margin-top: var(--header-offset, calc(var(--docs-header-height, 5rem) + 2.5rem));
+  }
+  .compact {
+    font-size: 0.8125rem;
+  }
+  .link-card:focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .link-card {
+      transition: none;
+    }
+  }
+</style>

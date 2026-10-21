@@ -1,0 +1,37 @@
+---
+import Playground from '../../../shared/components/Playground.astro'
+import DemoStudio from '../../../shared/components/DemoStudio.astro'
+import Tabs from '../../../shared/components/Tabs.astro'
+import t, { type DemoPreset } from '../../../shared/i18n/translations/en/demo'
+const { id = 'demo' } = Astro.props
+---
+
+<div id={id} class:list={['live-demo']}>
+  <DemoStudio>
+    <Tabs id={`preview-${id}`} variant="demo" label={t.label} items={t.tabs}>
+      <span slot="heading" class:list={['studio-title']}>
+        {t.label}
+      </span>
+      {t.tabs.map(tab => (
+        <Playground data-panel={tab.id} preset={tab.id as DemoPreset} framed={false} />
+      ))}
+    </Tabs>
+  </DemoStudio>
+</div>
+
+<style>
+  .live-demo {
+    margin-top: 2.625rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .studio-title {
+    font: 0.65rem/1.6 var(--font-mono);
+    letter-spacing: 0.13em;
+    color: var(--palette-studio-title);
+  }
+  @media (width < 48rem) {
+    .live-demo {
+      margin-top: 2.5rem;
+    }
+  }
+</style>

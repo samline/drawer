@@ -1,0 +1,31 @@
+---
+import inter from '../assets/fonts/inter-latin-400-700-normal.woff2?url'
+import instrumentSerif from '../assets/fonts/instrument-serif-latin-400-italic.woff2?url'
+---
+
+<link rel="preload" href={inter} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={instrumentSerif} as="font" type="font/woff2" crossorigin />
+
+<style>
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('../assets/fonts/inter-latin-400-700-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Instrument Serif';
+    font-style: italic;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../assets/fonts/instrument-serif-latin-400-italic.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+    src: url('../assets/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  }
+</style>

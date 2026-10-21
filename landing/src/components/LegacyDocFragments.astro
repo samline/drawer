@@ -1,0 +1,18 @@
+---
+import migration from '../../../site-tools/doc-migration.json'
+import { project } from '../../../shared/lib/project.mjs'
+const originalOverview = migration.starlight.articles.find(article => article.legacyRoute === '')
+const routes = Object.fromEntries(
+  (originalOverview?.fragments ?? []).map(item => [
+    '#' + item.source,
+    project.docsBase + item.destination,
+  ])
+)
+---
+
+<script is:inline define:vars={{ routes }}>
+  ;(() => {
+    const destination = routes[location.hash]
+    if (destination) location.replace(destination)
+  })()
+</script>

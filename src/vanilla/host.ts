@@ -25,18 +25,15 @@ function canUseDOM() {
  * `container`. A dedicated host is required even for custom containers:
  * using the container itself as the host made two drawers share one
  * `DialogMountState`, so mounting either drawer destroyed the other.
- *
- * `container` is the preferred target and `mountElement` is the legacy
- * nullish fallback kept for backward compatibility.
  */
 function resolveVanillaContainer(
   state: VanillaHostState,
   id: string,
-  options: { container?: HTMLElement | null; mountElement?: HTMLElement | null }
+  options: { container?: HTMLElement | null }
 ): { container: HTMLElement; ownsElement: boolean } | null {
   if (!canUseDOM()) return null
 
-  const target = options.container ?? options.mountElement ?? document.body
+  const target = options.container ?? document.body
 
   if (state.element?.isConnected && state.element.parentElement === target) {
     return { container: state.element, ownsElement: state.ownsElement }
@@ -89,8 +86,7 @@ export function renderVanillaHost({
   onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
 }): { root: HTMLElement | null; element: HTMLElement | null; ownsElement: boolean; container: HTMLElement } | null {
   const nextContainer = resolveVanillaContainer(host, id, {
-    ...(options.container !== undefined ? { container: options.container } : {}),
-    ...(options.mountElement !== undefined ? { mountElement: options.mountElement } : {})
+    ...(options.container !== undefined ? { container: options.container } : {})
   })
   if (!nextContainer) return null
 
@@ -111,20 +107,26 @@ export function renderVanillaHost({
     nextRoot = nextContainer.container
   }
 
-  mountVanillaDrawer({
-    host: nextContainer.container,
-    id,
-    options,
-    open,
-    ...(openOrder !== undefined ? { openOrder } : {}),
-    ...(hasBeenOpened !== undefined ? { hasBeenOpened } : {}),
-    onOpenChange,
-    ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
-    ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
-    ...(onDragChange !== undefined ? { onDragChange } : {}),
-    ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
-    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
-  })
+  try {
+    mountVanillaDrawer({
+      host: nextContainer.container,
+      id,
+      options,
+      open,
+      ...(openOrder !== undefined ? { openOrder } : {}),
+      ...(hasBeenOpened !== undefined ? { hasBeenOpened } : {}),
+      onOpenChange,
+      ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
+      ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
+      ...(onDragChange !== undefined ? { onDragChange } : {}),
+      ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
+      ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
+    })
+  } catch (error) {
+    destroyVanillaDialog(nextContainer.container)
+    if (nextContainer.ownsElement) nextContainer.container.remove()
+    throw error
+  }
 
   return {
     root: nextRoot,

@@ -1,0 +1,44 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'section'> {
+  id: string
+  label: string
+  anchor?: string
+}
+const { id, label, anchor, class: className, ...attributes } = Astro.props
+---
+
+<section
+  {...attributes}
+  data-panel={id}
+  id={anchor}
+  aria-label={label}
+  class:list={['tab-panel', className]}
+>
+  <p class:list={['fallback-label']} data-ui>
+    {label}
+  </p>
+  <slot />
+</section>
+
+<style>
+  .tab-panel {
+    min-width: 0;
+    margin-block: var(--space-md);
+    scroll-margin-top: calc(var(--docs-header-height, 5rem) + 2.5rem);
+  }
+  .fallback-label {
+    margin: 0 0 var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-small);
+    color: var(--color-text);
+  }
+  .tab-panel[role='tabpanel'] > .fallback-label {
+    display: none;
+  }
+  .tab-panel:focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius-control);
+  }
+</style>

@@ -1,0 +1,4 @@
+@import 'tailwindcss' source('../');
+@import '../../../shared/styles/theme.css';
+
+@source '../../../shared/components';

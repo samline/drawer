@@ -10,13 +10,13 @@
 //     it to `window.Drawer` when the two are separate objects (raw
 //     Node + JSDOM).
 //   - No auto-mount: drawer instances are created lazily by
-//     `createDrawer()` / `configureDrawer()` calls, matching the
+//     `createDrawer()` calls, matching the
 //     documented "loading the script only attaches `window.Drawer`" contract.
 
-import Drawer, { browser, type DrawerApi } from './index'
+import Drawer, { type DrawerApi } from './index'
 
-export { browser, Drawer }
-export type { DrawerApi, NewDrawerInput } from './index'
+export { Drawer }
+export type { DrawerApi } from './index'
 
 declare global {
   interface Window {

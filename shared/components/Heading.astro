@@ -1,0 +1,82 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'h1'> {
+  context?: 'default' | 'closing' | 'faq'
+  size?: 'display' | 'section'
+  level?: 1 | 2 | 3 | 4 | 5 | 6
+}
+const {
+  level = 2,
+  size = level === 1 ? 'display' : 'section',
+  context = 'default',
+  class: className,
+  ...attributes
+} = Astro.props
+const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+---
+
+<Tag
+  data-context={context}
+  {...attributes}
+  class:list={['heading', { 'section-title': size === 'section' }, className]}
+>
+  <slot />
+</Tag>
+
+<style>
+  .heading {
+    font-family: var(--font-sans);
+    font-style: normal;
+    overflow-wrap: anywhere;
+  }
+  h1 :global(.serif),
+  .section-title :global(.serif) {
+    font-style: italic;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  h1 {
+    margin: 1.5625rem 0 0;
+    font-size: var(--text-title-display);
+    font-weight: var(--heading-weight);
+    line-height: 1.04;
+    letter-spacing: -0.055em;
+    text-wrap: balance;
+  }
+  h1 :global(.serif) {
+    color: var(--color-accent);
+    font-style: italic;
+    letter-spacing: -0.035em;
+  }
+  .section-title {
+    margin: 0;
+    font-size: var(--text-title-section);
+    line-height: var(--heading-leading);
+    font-weight: var(--heading-weight);
+    letter-spacing: var(--heading-tracking);
+    text-wrap: balance;
+    color: var(--color-text);
+  }
+  .section-title :global(.serif) {
+    font-style: italic;
+    color: var(--palette-heading-accent);
+  }
+  .section-title[data-context='faq'] {
+    font-size: clamp(2rem, 3.6vw, 2.65rem);
+  }
+  .section-title[data-context='closing'] {
+    margin: 1.25rem auto 0;
+    color: var(--palette-closing-title);
+    max-width: 43.75rem;
+    font-size: clamp(2.2rem, 4.7vw, 4rem);
+  }
+  .section-title[data-context='closing'] :global(.serif) {
+    color: var(--palette-closing-title);
+  }
+  @media (width < 48rem) {
+    h1 {
+      font-size: clamp(2.5rem, 9vw, 4.1rem);
+    }
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+type Props = (HTMLAttributes<'article'> | HTMLAttributes<'div'> | HTMLAttributes<'a'>) & {
+  as?: 'article' | 'div' | 'a' | 'aside'
+  href?: string
+  tone?: 'feature' | 'step'
+  interactive?: boolean
+}
+const {
+  as: Tag = 'div',
+  tone = 'feature',
+  interactive = false,
+  class: className,
+  ...attributes
+} = Astro.props
+---
+
+<Tag
+  data-ui
+  {...attributes}
+  class:list={['surface', { step: tone === 'step', interactive }, className]}
+>
+  <slot />
+</Tag>
+
+<style>
+  .surface {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    border: 0.0625rem solid var(--palette-feature-border);
+    border-radius: var(--radius-panel);
+    background: var(--palette-feature-surface);
+    transition:
+      border-color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui);
+  }
+  .step {
+    background: var(--palette-step-surface);
+    border-color: var(--palette-step-border);
+  }
+  @media (hover: hover) {
+    .interactive:hover {
+      background: var(--palette-feature-hover);
+      border-color: var(--palette-border-hover);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .surface {
+      transition: none;
+    }
+  }
+</style>

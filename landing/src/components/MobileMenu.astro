@@ -1,0 +1,432 @@
+---
+import Icon from '../../../shared/components/Icon.astro'
+import { format } from '../../../shared/i18n/format'
+import { navigationHref, isHome } from '../lib/navigation'
+import DrawerStyles from '../../../shared/components/DrawerStyles.astro'
+import drawerCss from '@samline/drawer/styles.css?inline'
+import { getI18n } from '../i18n/utils'
+const i18n = getI18n(Astro)
+import { project } from '../../../shared/lib/project.mjs'
+const t = i18n.navigation.mobile
+const instanceId = `mobile-menu-${crypto.randomUUID()}`
+---
+
+<package-site-mobile-menu
+  class:list={['mobile-menu']}
+  data-instance-id={instanceId}
+  data-dialog-label={t.title}
+  data-close-label={t.close}
+>
+  <button
+    type="button"
+    class:list={['menu-toggle']}
+    data-menu-trigger=""
+    hidden
+    aria-label={t.open}
+    aria-expanded="false"
+    aria-haspopup="dialog"
+  >
+    <Icon name="menu" size="1.25rem" />
+  </button>
+  <details class:list={['menu-fallback']}>
+    <summary class:list={['menu-toggle']} aria-label={t.open}>
+      <Icon name="menu" size="1.25rem" />
+    </summary>
+    <div class:list={['menu-content']} data-menu-content="" data-drawer-no-drag="">
+      <div class:list={['menu-heading']}>
+        <p class:list={['menu-brand']}>
+          <span class:list={['menu-mark']} aria-hidden="true"></span>
+          {i18n.common.packageName}
+        </p>
+        <h2>{t.title}</h2>
+        <p class:list={['menu-introduction']}>{t.introduction}</p>
+      </div>
+      <nav aria-label={t.label}>
+        <ul class:list={['menu-links']}>
+          {i18n.navigation.items.map((item, index) => (
+            <li>
+              <a
+                href={navigationHref(item, Astro.url.pathname)}
+                aria-current={'page' in item && !isHome(Astro.url.pathname) ? 'page' : undefined}
+                aria-label={item.label}
+                class:list={['menu-link']}
+              >
+                <span class:list={['menu-index']} aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span class:list={['menu-link-copy']}>
+                  <span class:list={['menu-link-label']}>{item.label}</span>
+                  <span class:list={['menu-link-description']}>{item.description}</span>
+                </span>
+                <span class:list={['menu-arrow']} aria-hidden="true">
+                  ↗
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div class:list={['menu-project']}>
+          <p class:list={['menu-resource-label']}>{t.resources}</p>
+          <ul class:list={['menu-resources']}>
+            <li>
+              <a href={project.repository} target="_blank" rel="noopener noreferrer">
+                {i18n.common.links.github}
+                <span aria-hidden="true">↗</span>
+                <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
+              </a>
+            </li>
+            <li>
+              <a href={project.docsBase} target="_blank" rel="noopener noreferrer">
+                {i18n.common.links.docs}
+                <span aria-hidden="true">↗</span>
+                <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
+              </a>
+            </li>
+          </ul>
+          <p class:list={['menu-meta']}>
+            <span>{format(i18n.common.versionLabel, { version: i18n.common.version })}</span>
+            <span aria-hidden="true">·</span>
+            <span>{i18n.common.license}</span>
+          </p>
+        </div>
+      </nav>
+    </div>
+  </details>
+</package-site-mobile-menu>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+
+  import { createDrawer } from '@samline/drawer'
+
+  mountElements('package-site-mobile-menu', element => {
+    const trigger = element.querySelector<HTMLButtonElement>('[data-menu-trigger]')
+    const fallback = element.querySelector<HTMLDetailsElement>('details')
+    const content = element.querySelector<HTMLElement>('[data-menu-content]')
+    const id = element.dataset.instanceId
+    if (!trigger || !fallback || !content || !id) return
+    const lifecycle = new AbortController()
+    const { signal } = lifecycle
+    const syncCurrentSection = () => {
+      const headerBottom =
+        document.querySelector('package-site-header')?.getBoundingClientRect().bottom ?? 0
+      const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+      const readingPosition = Math.min(headerBottom + rootSize * 1.5, innerHeight - 1)
+      const section = Array.from(document.querySelectorAll<HTMLElement>('main > section')).find(
+        element => {
+          const bounds = element.getBoundingClientRect()
+          return bounds.top <= readingPosition && bounds.bottom > readingPosition
+        }
+      )
+      for (const link of element.querySelectorAll<HTMLAnchorElement>('.menu-link')) {
+        const target = new URL(link.href)
+        if (
+          target.pathname.replace(/\/$/, '') === location.pathname.replace(/\/$/, '') &&
+          !target.hash
+        )
+          link.setAttribute('aria-current', 'page')
+        else if (section?.id && link.getAttribute('href') === `#${section.id}`)
+          link.setAttribute('aria-current', 'location')
+        else link.removeAttribute('aria-current')
+      }
+    }
+    const drawer = createDrawer({
+      id,
+      content: () => content.cloneNode(true) as HTMLElement,
+      container: element,
+      triggerElement: trigger,
+      direction: 'right',
+      autoFocus: true,
+      ariaLabel: element.dataset.dialogLabel,
+      contentClassName: 'mobile-menu-panel',
+      overlayClassName: 'mobile-menu-overlay',
+      closeButton: { className: 'menu-close', icon: '×', ariaLabel: element.dataset.closeLabel },
+      onOpenChange: open => {
+        trigger.setAttribute('aria-expanded', String(open))
+        if (open)
+          queueMicrotask(() => {
+            if (!signal.aborted) syncCurrentSection()
+          })
+      },
+    })
+    element.addEventListener(
+      'click',
+      event => {
+        if (event.target instanceof Element && event.target.closest('.mobile-menu-panel a[href]'))
+          drawer.setOpen(false)
+      },
+      { signal }
+    )
+    matchMedia('(width >= 64rem)').addEventListener(
+      'change',
+      event => {
+        if (event.matches) drawer.setOpen(false)
+      },
+      { signal }
+    )
+    fallback.hidden = true
+    trigger.hidden = false
+    return () => {
+      lifecycle.abort()
+      drawer.destroy()
+      trigger.setAttribute('aria-expanded', 'false')
+    }
+  })
+</script>
+
+<DrawerStyles scope="package-site-mobile-menu" css={drawerCss} />
+
+<style>
+  .mobile-menu {
+    display: block;
+    flex-shrink: 0;
+  }
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 0.75rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui);
+  }
+  @media (hover: hover) {
+    .menu-toggle:hover {
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      border-color: var(--palette-border-hover);
+    }
+  }
+  [hidden] {
+    display: none !important;
+  }
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .menu-fallback {
+    position: relative;
+  }
+  .menu-fallback > .menu-content {
+    position: absolute;
+    top: 3.5rem;
+    right: 0;
+    width: min(23rem, calc(100vw - 3rem));
+    min-height: 0;
+    max-height: calc(100dvh - 8rem);
+    overflow-y: auto;
+    padding: 1.25rem;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg);
+    box-shadow: 0 1rem 3rem rgb(0 0 0 / 0.2);
+  }
+  .menu-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .menu-heading {
+    padding-bottom: 1.5rem;
+    border-bottom: 0.0625rem solid var(--color-border-soft);
+    margin-bottom: 0.75rem;
+  }
+  .menu-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding-right: 3rem;
+    margin-bottom: 1.75rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .menu-mark {
+    width: 0.625rem;
+    height: 0.625rem;
+    flex: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+  }
+  .menu-heading h2 {
+    color: var(--color-accent);
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+  .menu-introduction {
+    margin-top: 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.825rem;
+    line-height: 1.65;
+  }
+  .menu-content nav {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+  .menu-links {
+    display: grid;
+    gap: 0.375rem;
+  }
+  .menu-content a {
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+    transition:
+      color var(--duration-ui) var(--ease-ui),
+      background-color var(--duration-ui) var(--ease-ui),
+      border-color var(--duration-ui) var(--ease-ui);
+  }
+  .menu-link {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 0.75rem;
+    border: 0.0625rem solid transparent;
+    border-radius: 0.875rem;
+  }
+  .menu-index {
+    align-self: start;
+    padding-top: 0.25rem;
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    line-height: 1.5;
+  }
+  .menu-link-copy {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .menu-link-label {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+  .menu-link-description {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  .menu-arrow {
+    color: var(--color-accent);
+    font-size: 1.25rem;
+  }
+  .menu-content .menu-link[aria-current='location'] {
+    color: var(--palette-on-accent);
+    background: var(--color-accent);
+  }
+  .menu-link[aria-current='location'] .menu-index,
+  .menu-link[aria-current='location'] .menu-link-description,
+  .menu-link[aria-current='location'] .menu-arrow {
+    color: inherit;
+  }
+  .menu-project {
+    margin-top: auto;
+    padding-top: 1.25rem;
+    border-top: 0.0625rem solid var(--color-border-soft);
+  }
+  .menu-resource-label {
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .menu-resources {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .menu-resources a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.75rem;
+    border: 0.0625rem solid var(--color-border);
+    border-radius: 0.625rem;
+    font-size: 0.825rem;
+    color: var(--color-text-muted);
+    background: var(--color-bg-soft);
+  }
+  .menu-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    color: var(--color-text-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+  }
+  @media (hover: hover) {
+    .menu-content a:hover {
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      border-color: var(--palette-border-hover);
+    }
+    .menu-content .menu-link[aria-current='location']:hover {
+      color: var(--palette-on-accent);
+      background: var(--palette-accent-hover);
+      border-color: transparent;
+    }
+  }
+  :focus-visible {
+    outline: 0.125rem solid var(--color-accent);
+    outline-offset: 0.1875rem;
+  }
+  /* Only the panel design lives here; runtime animation rules come from the package. */
+  .mobile-menu :global(.mobile-menu-overlay) {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgb(0 0 0 / 0.5);
+  }
+  .mobile-menu :global(.mobile-menu-panel) {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 101;
+    width: min(25rem, calc(100% - 1rem));
+    height: 100dvh;
+    padding: 1.5rem;
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-left: 0.0625rem solid var(--color-border);
+    box-shadow: -1rem 0 3rem rgb(0 0 0 / 0.2);
+  }
+  @media (width >= 64rem) {
+    .mobile-menu {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-toggle,
+    .menu-content a {
+      transition: none;
+    }
+  }
+</style>

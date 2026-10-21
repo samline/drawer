@@ -1,0 +1,30 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+interface Props extends HTMLAttributes<'svg'> {
+  name: 'search' | 'menu' | 'chevron'
+  size?: string
+}
+const { name, size = '1.125rem', class: className, ...attributes } = Astro.props
+const paths = {
+  search: 'm16 16 4 4',
+  chevron: 'M6 9l6 6 6-6',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+}
+---
+
+<svg
+  {...attributes}
+  class:list={[className]}
+  aria-hidden="true"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  {name === 'search' && <circle cx="10.5" cy="10.5" r="6.5" />}
+  <path d={paths[name]} />
+</svg>

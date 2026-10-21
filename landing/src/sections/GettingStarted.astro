@@ -1,0 +1,106 @@
+---
+import TextLink from '../../../shared/components/TextLink.astro'
+import RichText from '../components/RichText.astro'
+import { docsHref } from '../lib/docs'
+import { getI18n } from '../i18n/utils'
+import Section from '../../../shared/components/Section.astro'
+import Box from '../../../shared/components/Box.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import Disclosure from '../../../shared/components/Disclosure.astro'
+import { demoFiles } from '../../../shared/lib/demo-files'
+const source = await demoFiles
+import Tabs from '../../../shared/components/Tabs.astro'
+import CodeBlock from '../components/CodeBlock.astro'
+import StepCard from '../components/StepCard.astro'
+import Installer from '../../../shared/components/Installer.astro'
+const i18n = getI18n(Astro)
+const t = i18n.sections.gettingStarted
+const headingId = `section-heading-${crypto.randomUUID()}`
+---
+
+<Section aria-labelledby={headingId} spacing="none" id="how" class:list={['content-section']}>
+  <Box>
+    <SectionHeading
+      headingId={headingId}
+      eyebrow={t.eyebrow}
+      class:list={['mb-12 flex flex-col items-start gap-3']}
+    >
+      <RichText parts={t.heading} />
+    </SectionHeading>
+
+    <div class:list={['setup-intro']}>
+      <p>{t.integrationDescription}</p>
+      <TextLink compact href={`${import.meta.env.BASE_URL}docs/getting-started/`}>
+        {t.integrationLabel}
+      </TextLink>
+    </div>
+    <div class:list={['grid grid-cols-1 gap-6 lg:grid-cols-3']}>
+      <StepCard number={1} title={t.steps.install}>
+        <Installer class:list={['mt-4']} />
+      </StepCard>
+
+      <StepCard number={2} title={t.steps.markup}>
+        <p class:list={['text-sm text-text-muted']}>{t.markupDescription}</p>
+        <CodeBlock
+          filename={t.examples.markup.filename}
+          code={t.examples.markup.code}
+          language={t.examples.markup.language}
+          class:list={['mt-4']}
+        />
+        <Disclosure>
+          <span slot="summary">{t.stylesLabel}</span>
+          <CodeBlock filename="style.css" code={source.files[1].code} language="css" />
+        </Disclosure>
+      </StepCard>
+
+      <StepCard number={3} title={t.steps.initialize}>
+        <Tabs id="init" label={t.initLabel} class:list={['mt-4']} items={t.initTabs}>
+          <div class:list={['mt-4']}>
+            <div data-panel="script">
+              <CodeBlock
+                filename={t.examples.script.filename}
+                code={t.examples.script.code}
+                language={t.examples.script.language}
+              />
+            </div>
+            <div data-panel="complete">
+              <CodeBlock
+                filename={t.examples.complete.filename}
+                code={t.examples.complete.code}
+                language={t.examples.complete.language}
+              />
+              <p class:list={['mt-4 text-sm text-text-muted']}>{t.cdnHint}</p>
+            </div>
+          </div>
+        </Tabs>
+        <TextLink compact href={`${import.meta.env.BASE_URL}docs/getting-started/#copy-the-files`}>
+          {t.fullExampleLabel}
+        </TextLink>
+      </StepCard>
+    </div>
+    <div class:list={['setup-docs']}>
+      <p>{t.docs.description}</p>
+      <TextLink href={docsHref('options')}>{t.docs.label}</TextLink>
+    </div>
+  </Box>
+</Section>
+
+<style>
+  .setup-intro {
+    display: grid;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+  }
+  .setup-docs {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 0.0625rem solid var(--color-border);
+  }
+  p {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+</style>

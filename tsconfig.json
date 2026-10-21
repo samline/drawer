@@ -16,7 +16,9 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["src", "test", "tsup.config.ts", "vitest.config.ts"]
 }
