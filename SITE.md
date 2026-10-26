@@ -158,3 +158,26 @@ For main commit c427b06, GitHub Pages run 39662338778 published successfully; in
 The audit now defines one test per preset, retaining both themes, full-document axe checks, the 320px overflow assertion and all fourteen presets. Each uses the existing 60-second test timeout. It pins the opened drawer id and waits for DOM removal before reopening in the other theme; the top example also uses its actual top-panel fragment. All fourteen cases passed locally, taking 8.8–13.4 seconds each. This changes test isolation only; runtime behavior, accessibility rules and the independent Pages/CI workflows are unchanged.
 
 Validation on the local production build with Node 24.14.0, Bun 1.3.14, Playwright 1.62.1 and Chromium: `bun run site:verify` passed both Astro checks, 45 protected design fingerprints, formatting, nine tooling tests, alternate-base builds, 2,694 links across 50 pages, migration evidence and all 59 browser tests in 10.5 minutes, with no skips. The browser run included all 72 copied-file variants and the isolated React/Vue/Svelte and CMS fixtures. `bun run site:check:release` also passed. These results validate the local test change; remote CI and publication status must be checked separately after pushing the correction.
+
+## Current page visibility in documentation navigation
+
+Navigation.astro mounts docs/src/lib/navigation-scroll.ts through the existing
+mountElements lifecycle. It reveals aria-current="page" within the nearest docs
+scroll region on initial layout, viewport changes and navigation/font resizing.
+Only the menu scrolls. The article stays in place, and this helper does not move
+keyboard focus. On layout, the menu tries to place the active page toward the top using only
+its scrollTop. The browser clamps that position to the natural scroll range;
+last items may remain lower. Do not add padding, margins, spacers or generated
+content to force alignment. Manual menu scrolling does not snap back. ResizeObservers disconnect on removal.
+
+MobileNavigation lets Drawer focus the dialog itself (autoFocus:false), so
+revealing a deep link does not leave focus on an offscreen first control. Drawer
+continues to own modal isolation, focus trapping, Escape and trigger restoration.
+The same mounted navigation handles recreated mobile content and responsive
+changes; do not add another global scroll handler or focus trap.
+
+The mobile dialog keeps its close control outside the scrolling native
+[data-drawer-body]. The body uses the remaining flex height and reserves space
+below the close control. Scroll that body, not the entire dialog, so a deep
+current page cannot hide the close action. Regression coverage clicks the close
+control after revealing the active link and repeats at 200% text.

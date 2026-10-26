@@ -11,7 +11,7 @@ interface Props {
 const { current } = Astro.props
 ---
 
-<nav class:list={['navigation']} aria-label={t.navigation}>
+<nav class:list={['navigation']} aria-label={t.navigation} data-docs-navigation>
   {groups.map(group => (
     <div class:list={['group']}>
       <p>{group.label}</p>
@@ -27,6 +27,13 @@ const { current } = Astro.props
     </div>
   ))}
 </nav>
+
+<script>
+  import { mountElements } from '../../../shared/lib/mount-elements'
+  import { keepCurrentPageVisible } from '../lib/navigation-scroll'
+
+  mountElements('[data-docs-navigation]', keepCurrentPageVisible)
+</script>
 
 <style>
   .navigation {

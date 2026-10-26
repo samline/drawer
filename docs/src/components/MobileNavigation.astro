@@ -54,7 +54,7 @@ const id = `docs-menu-${crypto.randomUUID()}`
       container: element,
       triggerElement: button,
       direction: 'right',
-      autoFocus: true,
+      autoFocus: false,
       ariaLabel: element.dataset.label,
       contentClassName: 'docs-menu-panel',
       overlayClassName: 'docs-menu-overlay',
@@ -145,11 +145,20 @@ const id = `docs-menu-${crypto.randomUUID()}`
     width: min(22rem, calc(100% - 1rem));
     height: 100dvh;
     padding: 1.5rem;
-    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     overscroll-behavior: contain;
     background: var(--color-bg);
     color: var(--color-text);
     border-left: 0.0625rem solid var(--color-border);
+  }
+  .mobile :global(.docs-menu-panel > [data-drawer-body]) {
+    flex: 1;
+    min-height: 0;
+    margin-top: 3rem;
+    overflow: auto;
+    overscroll-behavior: contain;
   }
   .mobile :global(.docs-menu-overlay) {
     position: fixed;
