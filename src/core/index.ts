@@ -67,6 +67,7 @@ export interface CommonDrawerOptions {
   scrollLockTimeout?: number
   shouldScaleBackground?: boolean
   setBackgroundColorOnScale?: boolean
+  /** Restrict drag starts to the mandatory built-in handle; takes precedence over showHandle. */
   handleOnly?: boolean
   fixed?: boolean
   disablePreventScroll?: boolean

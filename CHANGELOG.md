@@ -2,6 +2,14 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.3] — 2026-10-28
+
+### Fixed
+
+- Orient built-in left/right grips vertically while preserving horizontal top/bottom grips.
+- Document and regression-test handleOnly precedence over explicit showHandle false, with lateral control-rail and accessible-title guidance.
+- Update vulnerable Vitest tooling without relaxing CI audits. npm publication remains a separate maintainer action.
+
 ## [5.0.2] — 2026-10-21
 
 ### Fixed

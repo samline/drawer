@@ -73,7 +73,7 @@ The full per-method reference is under [API reference](../api/).
 - Pass `closeButton: true` to render an in-drawer close control. Pass an object to override class / icon / aria-label.
 - Pass `container` when the host should live inside a specific DOM subtree instead of being appended to `document.body`. The target is `container ?? document.body`.
 - Pass `overlayClassName`, `contentClassName`, and `handleClassName` when you want a visible shell instead of only the shared runtime styles.
-- If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance.
+- If you enable `handleOnly`, the built-in handle is rendered automatically so the drawer keeps a visible drag affordance. This takes precedence even over explicit `showHandle: false`; disable `handleOnly` to hide the built-in handle. Left/right handles use a vertical grip, while top/bottom handles use a horizontal grip. Consumer CSS owns the surrounding control rail.
 - If `shouldScaleBackground` is enabled, add `data-drawer-wrapper` to the app shell element that should scale behind the drawer.
 - If a child node inside your rendered content should not start a drag gesture, add `data-drawer-no-drag` to that element.
 - Use `title` and `description` when a simple heading block above the body content is enough. If your drawer body defines its own card, panel, or header layout, render that heading block inside `content` so it stays inside the same visual shell.

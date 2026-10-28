@@ -2,7 +2,7 @@
   "package": {
     "name": "Drawer",
     "npmName": "@samline/drawer",
-    "version": "5.0.2",
+    "version": "5.0.3",
     "description": "Drawers that move with you. Bottom sheets, side panels and nested flows with a typed, framework-free API.",
     "author": "Samuel Olvera (samline)",
     "license": "MIT",
@@ -32,7 +32,7 @@
     "accentDark": "#ee9bd2"
   },
   "delivery": {
-    "cdnScript": "https://unpkg.com/@samline/drawer@5.0.2/dist/browser/global.global.js",
-    "cdnStylesheet": "https://unpkg.com/@samline/drawer@5.0.2/dist/style.css"
+    "cdnScript": "https://unpkg.com/@samline/drawer@5.0.3/dist/browser/global.global.js",
+    "cdnStylesheet": "https://unpkg.com/@samline/drawer@5.0.3/dist/style.css"
   }
 }

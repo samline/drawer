@@ -71,6 +71,23 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     document.body.innerHTML = ''
   })
 
+  it('keeps a usable handle when handleOnly overrides explicit showHandle false', () => {
+    const drawer = createDrawer({
+      id: 'mandatory-handle',
+      direction: 'right',
+      handleOnly: true,
+      showHandle: false,
+      content: 'Body'
+    })
+    drawer.setOpen(true)
+    expect(getHandle().tagName).toBe('BUTTON')
+    expect(getContent().dataset.drawerDirection).toBe('right')
+    drawer.setOpen(false)
+    drawer.update({ handleOnly: false, showHandle: false })
+    drawer.setOpen(true)
+    expect(document.querySelector('[data-drawer-handle]')).toBeNull()
+  })
+
   it('renders the handle as a named keyboard-operable button', () => {
     const drawer = createDrawer({
       id: 'accessible-handle',

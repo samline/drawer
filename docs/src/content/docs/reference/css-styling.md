@@ -20,11 +20,11 @@ import '@samline/drawer/styles.css'
 // Equivalent alias: import '@samline/drawer/style.css'
 ```
 
-With the 5.0.2 browser bundle, CSS and JavaScript are separate assets:
+With the 5.0.3 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.2/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.0.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.3/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@5.0.3/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -137,7 +137,7 @@ The dialog surface has no HTML `id`. Select one instance with `[data-drawer-id="
 | `data-state`                      | `'open' \| 'closed'`                     | Open/exit state.                                                                                                   |
 | `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | Motion, drag, and snap direction.                                                                                  |
 | `data-drawer-snap-points`         | `'true' \| 'false'`                      | Whether snap-point transforms are active.                                                                          |
-| `data-drawer-delayed-snap-points` | `'false'`                                | 5.0.2 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.    |
+| `data-drawer-delayed-snap-points` | `'false'`                                | 5.0.3 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.    |
 | `data-drawer-custom-container`    | `'true' \| 'false'`                      | `true` when a non-null `container` is used. The default-only `::after` extension is omitted for custom containers. |
 | `data-drawer-animate`             | `'true' \| 'false'`                      | Shared CSS animation gate.                                                                                         |
 | `role`                            | `'dialog'`                               | Always present while the dialog is mounted.                                                                        |
@@ -172,7 +172,7 @@ Clicking the handle advances snap points. At the final snap it closes when dismi
 
 - `[data-drawer-body]` is always created. Its children are the optional title, optional description, and resolved consumer content, in that order.
 - `[data-drawer-title]` exists only when `title !== undefined`; `[data-drawer-description]` exists only when `description !== undefined`. Passing `null` creates an empty slot, while omission does not.
-- The old `[data-drawer-vanilla-node]` and `[data-drawer-vanilla-body]` wrappers do not exist in 5.0.2. Target `[data-drawer-body]` instead. See [Configuration → Renderable content](../configuration/#renderable-content).
+- The old `[data-drawer-vanilla-node]` and `[data-drawer-vanilla-body]` wrappers do not exist in 5.0.3. Target `[data-drawer-body]` instead. See [Configuration → Renderable content](../configuration/#renderable-content).
 - `[data-drawer-close]` is the optional built-in close button; `[data-drawer-close-icon]` wraps its string or element icon and is `aria-hidden`.
 
 `titleVisuallyHidden` and `descriptionVisuallyHidden` apply inline visually-hidden styles rather than the HTML `hidden` attribute. `ariaLabel` does not create a proxy title slot.
@@ -278,7 +278,7 @@ Add your panel positioning, padding and colors as usual. Leave panel overflow vi
 
 ## Inline writes
 
-Not every live effect can be expressed by static CSS. 5.0.2 writes and later restores these values:
+Not every live effect can be expressed by static CSS. 5.0.3 writes and later restores these values:
 
 | Target                     | Runtime writes                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -306,7 +306,7 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
 - Its global keyframe names are `drawer-overlay-fade-in`, `drawer-overlay-fade-out`, `slideFromBottom`, `slideToBottom`, `slideFromTop`, `slideToTop`, `slideFromLeft`, `slideToLeft`, `slideFromRight`, and `slideToRight`. Avoid redefining those names globally.
 - Direction selectors set `touch-action` for gesture arbitration; fine pointers also disable text selection on draggable surfaces. Preserve those rules if you replace the package stylesheet.
-- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 5.0.2 JavaScript does not write it.
+- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 5.0.3 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
 - The runtime adds the exported `drawer-dragging` class to `[data-drawer]` while a drag is in progress. Target it from your stylesheet to disable selection or change the cursor.
@@ -376,3 +376,65 @@ With snap points, the stylesheet handles the overlay's opacity transition around
   transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 ```
+
+## Lateral control rail
+
+For a lateral panel, keep controls outside the scrolling content body. The built-in grip follows the panel axis. Give the drawer a row layout, reserve a narrow control rail with your application CSS, and let `[data-drawer-body]` shrink and scroll (`min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable`). Keep the close button reachable independently of the scrolling body.
+
+Use `title` together with `titleVisuallyHidden: true` when the design supplies its own visible heading; the runtime title still names the dialog. Do not remove its accessible name to hide visual chrome. `handleOnly: true` always renders the grip, including when `showHandle: false` is supplied. For a panel without a grip, set both options to false and retain a visible close control.
+
+```ts
+const panel = createDrawer({
+  id: 'lateral-recipe',
+  direction: 'right',
+  title: 'Filters',
+  titleVisuallyHidden: true,
+  handleOnly: true,
+  closeButton: true,
+  contentClassName: 'filters-panel',
+  content: () => {
+    const body = document.createElement('div')
+    body.append(document.querySelector<HTMLTemplateElement>('#filters')!.content.cloneNode(true))
+    return body
+  },
+})
+panel.setOpen(true)
+// Destroy this exact controller when the owning view leaves.
+```
+
+The template must exist before opening. Supply your translated title, close and
+handle labels in the host project. A matching consumer layout can reserve the
+native grip and close control while scrolling only the body:
+
+```css
+.filters-panel {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  grid-template-rows: 2.75rem minmax(0, 1fr);
+  width: min(28rem, 100vw);
+  height: 100dvh;
+}
+.filters-panel > [data-drawer-handle] {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: center;
+}
+.filters-panel > [data-drawer-close] {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+.filters-panel > [data-drawer-body] {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+```
+
+Keep the native close button in the first row; style its actual
+`[data-drawer-close]` hook as needed. Native scrollbar gutters are a progressive
+CSS enhancement, not JavaScript width compensation. The package continues to
+own dragging, animation, focus and scroll locking.

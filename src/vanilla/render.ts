@@ -31,6 +31,7 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
   container?: HTMLElement | null
   triggerElement?: HTMLElement | null
   triggerText?: string
+  /** Show the built-in handle. handleOnly always requires and renders it, even when false. */
   showHandle?: boolean
   handleClassName?: string
   /** Accessible name for the built-in snap-point handle button. */

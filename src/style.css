@@ -214,6 +214,15 @@
   cursor: pointer;
 }
 
+[data-drawer][data-drawer-direction='left'] > [data-drawer-handle],
+[data-drawer][data-drawer-direction='right'] > [data-drawer-handle] {
+  width: 0.3125rem;
+  height: 2rem;
+  flex-shrink: 0;
+  margin-block: auto;
+  margin-inline: 0;
+}
+
 [data-drawer-handle]:hover,
 [data-drawer-handle]:active {
   opacity: 1;

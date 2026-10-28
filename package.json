@@ -1,6 +1,6 @@
 {
   "name": "@samline/drawer",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
@@ -85,7 +85,7 @@
     "prettier": "^3.9.10",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.11",
+    "vitest": "^4.1.12",
     "@playwright/test": "1.62.1",
     "axe-core": "^4.14.0",
     "prettier-plugin-astro": "^1.1.1"

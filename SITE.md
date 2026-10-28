@@ -1,6 +1,6 @@
 # Drawer website
 
-Landing, Examples and Docs for `@samline/drawer` 5.0.2. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
+Landing, Examples and Docs for `@samline/drawer` 5.0.3. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
 
 ## Run locally
 
@@ -25,7 +25,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 
 ## Maintain
 
-- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.0.2 and correspond to the package’s real distribution outputs.
+- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.0.3 and correspond to the package’s real distribution outputs.
 - `landing/src/i18n/translations/en/` owns landing copy. Article prose lives in `docs/src/content/docs/`. Shared UI copy lives in `shared/i18n/`.
 - `shared/components/Playground.astro` supplies Home, Examples and Docs previews. `shared/i18n/translations/en/demo.ts` owns editable scenario copy, while `shared/lib/demo-source.ts` and `demo-files.ts` generate/format complete and split files for both loading modes. Previews import public APIs, resolved by each app’s Vite aliases to this checkout; never duplicate runtime gestures, focus, animation or locks.
 - Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
@@ -141,11 +141,11 @@ No new PageSpeed median, real-device Safari/iOS certification or npm publication
 
 ## Bun workspace correction — 2026-10-21
 
-The first Pages run passed runtime quality but failed before Astro checking: Bun rewrote internal npm run commands and looked for an app-only check script at the root. Workspace commands now use npm --workspace <app> run <script>, which preserves the owning app under both runners. bun run site:check passed with zero diagnostics after the correction. The workspace correction was tagged v5.0.1 with matching package/site/CDN/skill references; the follow-up below prepares 5.0.2 while preserving both published tags. No runtime API changed. The corrected Bun package build/typecheck/npm smoke test and site build passed: 25 permitted npm files, 2,688 links across 50 pages and all 14 historical articles/157 fragments. Frozen installation and formatting also passed. The full remote workflow validates the final release snapshot.
+The first Pages run passed runtime quality but failed before Astro checking: Bun rewrote internal npm run commands and looked for an app-only check script at the root. Workspace commands now use npm --workspace <app> run <script>, which preserves the owning app under both runners. bun run site:check passed with zero diagnostics after the correction. The workspace correction was tagged v5.0.1 with matching package/site/CDN/skill references; the follow-up below prepares 5.0.3 while preserving both published tags. No runtime API changed. The corrected Bun package build/typecheck/npm smoke test and site build passed: 25 permitted npm files, 2,688 links across 50 pages and all 14 historical articles/157 fragments. Frozen installation and formatting also passed. The full remote workflow validates the final release snapshot.
 
 ## Clean-checkout CSS resolution — 2026-10-21
 
-The next Linux job reached the adaptation build and found @samline/drawer/styles.css?inline unresolved. Exact-end stylesheet aliases did not match Vite's query suffix; local package resolution had masked the defect. Both Astro configurations now match the stylesheet prefix at the query/end boundary, preserving ?inline while resolving this checkout's src/style.css. A regression test imports both real app configurations and checks both stylesheet names with plain, ?inline and ?url requests, preventing self-resolution from masking missing aliases. The two alternate builds and all nine Node tooling tests passed after the fix, including the real-config alias regression. Prepared 5.0.2 retains the published earlier tags; tag the exact main commit after package quality and Pages pass, reporting the separate website CI status.
+The next Linux job reached the adaptation build and found @samline/drawer/styles.css?inline unresolved. Exact-end stylesheet aliases did not match Vite's query suffix; local package resolution had masked the defect. Both Astro configurations now match the stylesheet prefix at the query/end boundary, preserving ?inline while resolving this checkout's src/style.css. A regression test imports both real app configurations and checks both stylesheet names with plain, ?inline and ?url requests, preventing self-resolution from masking missing aliases. The two alternate builds and all nine Node tooling tests passed after the fix, including the real-config alias regression. Prepared 5.0.3 retains the published earlier tags; tag the exact main commit after package quality and Pages pass, reporting the separate website CI status.
 
 ## Fast Pages publication and independent CI — 2026-10-21
 
