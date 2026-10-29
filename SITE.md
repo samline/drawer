@@ -31,6 +31,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 - Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
 - `content-audit.json` maps the source documentation, public exports, every option/default/callback, controller members and browser additions to reviewed destinations. `site-tools/doc-migration.json` records corrections and route mappings. Keep both current when APIs change.
 - `CHANGELOG.md` remains the single release history, loaded through the docs collection. Preserve breaking-change labels and historical publication distinctions.
+- `skills/drawer/SKILL.md` is the single package-integration skill source. Its generated download is linked from the Examples closing resources, the shared Landing footer and the package README. Keep these package-specific labels and base-aware download links distinct from the template's website-adaptation skill.
 - `site-tools/assemble.mjs` merges the apps and preserves old Starlight URLs. Historical source is pinned in Git by content-audit.json and the migration manifest; the collection is the only maintained article tree.
 - Website commands use `site:`. Runtime `build`, `test`, `typecheck` and `prepublishOnly` retain their roles. The npm `files: ["dist", "CHANGELOG.md"]` allowlist excludes the website; inspect the archive before publishing.
 
@@ -46,6 +47,8 @@ npm pack --dry-run --json
 ```
 
 `site:verify` covers both Astro diagnostics, the protected component visual contract, formatting, eight tooling tests, alternate root/nested base builds, combined links, and browser regressions. The browser suite verifies themes, responsive/enlarged text, no-JS content, keyboard behavior, exact copying, copied CDN/ESM executions, local fonts, reveal, search and detach/reinsertion cleanup.
+
+Skill-link review, 2026-10-29: both app checks and 45 protected design checks passed; the combined build verified 2,703 links across 50 pages and the historical migration audit. Generated Home/footer and Examples download links retain the base path and download filename; the generated skill matches its maintained source byte for byte. Formatting and the all-route metadata/responsive browser test passed, including both themes, 320–1440px and enlarged text. This bounded link change did not run the full runtime/browser suite or publish a deployment.
 
 ## Theme provenance
 

@@ -71,6 +71,9 @@ const t = getI18n(Astro).examples
     <div class:list={['resources']}>
       <p class:list={['basis-full', 'text-center', 'text-pretty']}>{t.possibilities}</p>
       <TextLink href={`${project.docsBase}guides/examples/`}>{t.guide}</TextLink>
+      <TextLink href={`${import.meta.env.BASE_URL}skills/drawer/SKILL.md`} download="SKILL.md">
+        {t.skill}
+      </TextLink>
     </div>
   </Box>
 </Section>

@@ -24,7 +24,7 @@ export default {
       project: 'Project',
       setup: 'Installation guide',
       examples: 'Working examples',
-      skill: 'Website adaptation skill',
+      skill: 'Drawer skill for AI agents',
       changelog: 'Changelog',
       backToTop: 'Back to top',
       credit: `${project.author} · Made for the open web.`,
@@ -69,6 +69,6 @@ export default {
     navigation: 'Choose an example',
     accessibility:
       'Modal examples manage focus and restore it on close. The non-modal inspector leaves the page interactive. Each example includes named actions; the draft confirmation requires an explicit choice.',
-    skill: 'Download the website adaptation skill',
+    skill: 'Building with an AI agent? Download the Drawer skill',
   },
 } as const

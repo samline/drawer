@@ -30,6 +30,9 @@ const t = i18n.navigation.footer
         </div>
         <div class:list={['footer-group']}>
           <h2>{t.project}</h2>
+          <a href={`${import.meta.env.BASE_URL}skills/drawer/SKILL.md`} download="SKILL.md">
+            {t.skill}
+          </a>
           <a href={project.repository} target="_blank" rel="noopener noreferrer">
             {i18n.common.links.github}
             <span aria-hidden="true">↗</span>
