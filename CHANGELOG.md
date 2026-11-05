@@ -2,6 +2,12 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.2] — 2026-11-05
+
+### Fixed
+
+- Closing a drawer restores focus to the trigger (or to another open drawer) with `preventScroll`, so the page no longer jumps when the trigger is off-screen (#4).
+
 ## [5.1.1] — 2026-11-05
 
 ### Fixed

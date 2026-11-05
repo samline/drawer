@@ -255,9 +255,9 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean; keep
     document.contains(state.previouslyFocused) &&
     (!otherOpenDrawer || otherOpenDrawer.contains(state.previouslyFocused))
   ) {
-    state.previouslyFocused.focus?.()
+    state.previouslyFocused.focus?.({ preventScroll: true })
   } else if (activeElementWasClosing && otherOpenDrawer) {
-    otherOpenDrawer.focus()
+    otherOpenDrawer.focus({ preventScroll: true })
   }
   state.previouslyFocused = null
   // F6: invoke the body-scroll restore returned by

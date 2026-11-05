@@ -171,6 +171,21 @@ describe('keyboard dismissal restores authored geometry', () => {
   })
 })
 
+describe('focus restoration on close', () => {
+  it('returns focus to the trigger without scrolling the page', () => {
+    const trigger = document.createElement('button')
+    document.body.append(trigger)
+    const focus = vi.spyOn(trigger, 'focus')
+    trigger.focus()
+    focus.mockClear()
+    const drawer = createDrawer({ id: 'restore-no-scroll', content: () => document.createElement('p') })
+    drawer.setOpen(true)
+    drawer.setOpen(false)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    trigger.remove()
+  })
+})
+
 describe('drag permission follows the drawer axis', () => {
   const scroller = (overrides: Partial<DragScrollableAncestor>): DragScrollableAncestor => ({
     scrollHeight: 100,
