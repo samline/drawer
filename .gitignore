@@ -44,3 +44,6 @@ landing/public/fonts/
 landing/public/font-licenses/
 docs/public/fonts/
 docs/public/font-licenses/
+
+# Local Claude Code session config (machine-specific)
+.claude/

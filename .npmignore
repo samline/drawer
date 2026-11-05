@@ -32,6 +32,7 @@ Thumbs.db
 # AI agent instructions (versioned in git, NOT in the npm tarball)
 AGENTS.md
 .agents/
+.claude/
 
 # Website and its development-only theme/tooling
 landing/
