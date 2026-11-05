@@ -23,6 +23,10 @@ export interface DragScrollableAncestor {
   scrollHeight: number
   clientHeight: number
   scrollTop: number
+  /** Horizontal geometry; required for `left`/`right` drawers. */
+  scrollWidth?: number
+  clientWidth?: number
+  scrollLeft?: number
   role: string | null
 }
 
@@ -42,6 +46,9 @@ interface ElementLike {
   scrollHeight: number
   clientHeight: number
   scrollTop: number
+  scrollWidth?: number
+  clientWidth?: number
+  scrollLeft?: number
   getAttribute(name: string): string | null
   hasAttribute(name: string): boolean
   closest(selector: string): ElementLike | null
@@ -69,6 +76,9 @@ export function getDragTargetMetadata(target: EventTarget | null, boundary?: Eve
       scrollHeight: element.scrollHeight,
       clientHeight: element.clientHeight,
       scrollTop: element.scrollTop,
+      scrollWidth: element.scrollWidth ?? 0,
+      clientWidth: element.clientWidth ?? 0,
+      scrollLeft: element.scrollLeft ?? 0,
       role: element.getAttribute('role')
     })
 
@@ -135,9 +145,20 @@ export function getDragPermission({
     return { allow: false, updatePreventedAt: true }
   }
 
+  // A closing swipe must not hijack a scrollable ancestor that can still
+  // scroll in the same physical direction. Bottom/right drawers close
+  // toward the scroll start (scroll position 0); top/left drawers close
+  // toward the scroll end. Only the drawer's own axis is relevant: a
+  // vertical list must not block a side panel's horizontal dismissal.
+  const horizontal = direction === 'left' || direction === 'right'
+  const closesTowardScrollEnd = direction === 'top' || direction === 'left'
   for (const ancestor of ancestors) {
-    if (ancestor.scrollHeight > ancestor.clientHeight) {
-      if (ancestor.scrollTop !== 0) {
+    const scrollSize = horizontal ? (ancestor.scrollWidth ?? 0) : ancestor.scrollHeight
+    const clientSize = horizontal ? (ancestor.clientWidth ?? 0) : ancestor.clientHeight
+    const position = Math.abs(horizontal ? (ancestor.scrollLeft ?? 0) : ancestor.scrollTop)
+    if (scrollSize > clientSize) {
+      const canScrollTowardClose = closesTowardScrollEnd ? position + clientSize < scrollSize - 1 : position !== 0
+      if (canScrollTowardClose) {
         return { allow: false, updatePreventedAt: true }
       }
 

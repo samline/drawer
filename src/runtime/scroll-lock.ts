@@ -526,30 +526,6 @@ export function lockScrollRestoration(): () => void {
   }
 }
 
-/**
- * Track the current scroll Y so `setPositionFixed({ isOpen: true,
- * ... })` can apply `top: -scrollY` to preserve the user's scroll
- * position. Call this once on mount (in `dialog.ts`).
- *
- * @internal
- * Not part of the public API — exported only so the test
- * suite can verify that the scroll listener is detached by
- * the returned cleanup. The module-level `savedScrollY` it
- * updates is private to this module; consumers have no use
- * for this function.
- */
-export function trackScrollPosition(): () => void {
-  if (typeof window === 'undefined') return () => {}
-  savedScrollY = window.scrollY
-  const onScroll = () => {
-    savedScrollY = window.scrollY
-  }
-  window.addEventListener('scroll', onScroll, { passive: true })
-  return () => {
-    window.removeEventListener('scroll', onScroll)
-  }
-}
-
 /* ---------------------------------------------------------------- *
  * Pure helpers used by the two pipelines above.                    *
  * ---------------------------------------------------------------- */

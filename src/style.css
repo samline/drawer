@@ -201,8 +201,10 @@
 [data-drawer-handle] {
   display: block;
   position: relative;
-  opacity: 0.7;
-  background: #e2e2e4;
+  /* An operable control needs 3:1 non-text contrast. The previous
+     #e2e2e4 at 70% opacity measured about 1.2:1 on white. #8e8e93 is
+     3.3:1 on white and 6.4:1 on black; override the token per theme. */
+  background: var(--drawer-handle-color, #8e8e93);
   margin-left: auto;
   margin-right: auto;
   height: 5px;
@@ -221,11 +223,6 @@
   flex-shrink: 0;
   margin-block: auto;
   margin-inline: 0;
-}
-
-[data-drawer-handle]:hover,
-[data-drawer-handle]:active {
-  opacity: 1;
 }
 
 [data-drawer-handle-hitarea] {
@@ -323,5 +320,18 @@
 @keyframes slideToRight {
   to {
     transform: translate3d(var(--initial-transform, 100%), 0, 0);
+  }
+}
+
+/* Respect the user's reduced-motion preference. Opening and closing
+   still change state, but without slide, fade, snap or page-scale
+   motion. The !important flags also override the inline transitions
+   the runtime writes for snap points and the scaled page wrapper. */
+@media (prefers-reduced-motion: reduce) {
+  [data-drawer],
+  [data-drawer-overlay],
+  [data-drawer-wrapper] {
+    animation: none !important;
+    transition: none !important;
   }
 }

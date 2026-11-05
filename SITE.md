@@ -1,6 +1,6 @@
 # Drawer website
 
-Landing, Examples and Docs for `@samline/drawer` 5.0.3. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
+Landing, Examples and Docs for `@samline/drawer` 5.1.0. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
 
 ## Run locally
 
@@ -25,7 +25,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 
 ## Maintain
 
-- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.0.3 and correspond to the package’s real distribution outputs.
+- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.1.0 and correspond to the package’s real distribution outputs.
 - `landing/src/i18n/translations/en/` owns landing copy. Article prose lives in `docs/src/content/docs/`. Shared UI copy lives in `shared/i18n/`.
 - `shared/components/Playground.astro` supplies Home, Examples and Docs previews. `shared/i18n/translations/en/demo.ts` owns editable scenario copy, while `shared/lib/demo-source.ts` and `demo-files.ts` generate/format complete and split files for both loading modes. Previews import public APIs, resolved by each app’s Vite aliases to this checkout; never duplicate runtime gestures, focus, animation or locks.
 - Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
@@ -184,3 +184,7 @@ The mobile dialog keeps its close control outside the scrolling native
 below the close control. Scroll that body, not the entire dialog, so a deep
 current page cannot hide the close action. Regression coverage clicks the close
 control after revealing the active link and repeats at 200% text.
+
+## Runtime audit validation — 2026-11-05
+
+Prepared 5.1.0 on branch audit/2026-11 (see CHANGELOG). Package: build, typecheck, 351 tests across 49 files, package smoke test (25 npm files), Prettier and `npm pack --dry-run` passed. `site:verify` passed: both Astro checks with 0 errors, formatting, 9 tooling tests, alternate-base builds, 2,711 links across 50 pages, 14 historical articles/157 fragments and 57 browser tests; 5 framework/CMS browser tests were skipped because the optional external integration dependencies were not installed locally (CI installs them). `site:check:release` passed. The first browser run found that `autoFocus` scrolled the long-reading example once the non-cycling handle left the tab order; initial focus now uses `preventScroll`. Manual preview review at 375px in both themes found no page overflow and confirmed Escape/focus return. No npm publication, deployment or real Safari/iOS device evidence is claimed.

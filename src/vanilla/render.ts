@@ -200,8 +200,6 @@ export function mountVanillaDrawer(options: {
   openOrder?: number | null
   /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
-  onBuiltInTriggerMouseDown?: () => void
-  onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
@@ -215,10 +213,6 @@ export function mountVanillaDrawer(options: {
     ...(options.openOrder !== undefined ? { openOrder: options.openOrder } : {}),
     ...(options.hasBeenOpened !== undefined ? { hasBeenOpened: options.hasBeenOpened } : {}),
     onOpenChange: options.onOpenChange,
-    ...(options.onBuiltInTriggerMouseDown !== undefined
-      ? { onBuiltInTriggerMouseDown: options.onBuiltInTriggerMouseDown }
-      : {}),
-    ...(options.onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick: options.onBuiltInTriggerClick } : {}),
     ...(options.onDragChange !== undefined ? { onDragChange: options.onDragChange } : {}),
     ...(options.onReleaseChange !== undefined ? { onReleaseChange: options.onReleaseChange } : {}),
     ...(options.onActiveSnapPointChange !== undefined

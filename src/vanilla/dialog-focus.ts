@@ -83,25 +83,33 @@ export function registerOpenDialog(state: OpenDialog, openOrder?: number | null)
   else openDialogStack.splice(insertionIndex, 0, state)
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"]), [tabindex]'
+
+// Only sequentially focusable elements participate in the trap. Tag
+// selectors also match controls removed from the tab order with a
+// negative tabindex, disabled fieldset descendants and hidden subtrees;
+// treating those as the first/last stop let Tab escape the dialog.
 function getFocusableElements(content: HTMLElement) {
-  return Array.from(
-    content.querySelectorAll<HTMLElement>(
-      'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
-    )
-  ).filter(
+  return Array.from(content.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
     (element) =>
+      element.tabIndex >= 0 &&
       !(element instanceof HTMLInputElement && element.type === 'hidden') &&
+      !element.matches(':disabled') &&
       !element.closest('[hidden], [aria-hidden="true"], [inert]')
   )
 }
 
+// Initial focus must not scroll the panel body: a first control lower in
+// a long reading area would otherwise open the drawer scrolled past its
+// heading. Keyboard users still start from that control.
 export function focusFirstElement(content: HTMLElement) {
   const first = getFocusableElements(content)[0]
   if (first instanceof HTMLElement) {
-    first.focus()
+    first.focus({ preventScroll: true })
   } else {
     content.tabIndex = -1
-    content.focus()
+    content.focus({ preventScroll: true })
   }
 }
 
@@ -139,6 +147,9 @@ export const handleDialogKeyDown = (
   onOpenChange: (open: boolean) => void
 ) => {
   if (openDialogStack[openDialogStack.length - 1] !== state) return
+  // Escape while an IME composition is active cancels the composition;
+  // it must not also dismiss the drawer and discard the typed text.
+  if (event.isComposing || event.keyCode === 229) return
   if (event.key === 'Escape' && options.dismissible !== false) {
     if (handledEscapeEvents.has(event)) return
     handledEscapeEvents.add(event)

@@ -3,23 +3,23 @@ name: drawer
 description: Integrate @samline/drawer bottom sheets and side panels into websites, plain HTML, CMS templates or framework components. Use for Drawer installation, content, styling, accessible controls, snap points and lifecycle; not unrelated drawer libraries or repository maintenance.
 metadata:
   package: '@samline/drawer'
-  package-version: '5.0.3'
+  package-version: '5.1.0'
 ---
 
 # Drawer
 
-Build against the installed `@samline/drawer` version. This skill describes v5.0.3. Check the dependency version and exports before applying it to another release; read the changelog when migrating v4 code. Preserve the host project's components, colors and lifecycle conventions. Drawer supplies panel behavior and motion; the application supplies useful content and presentation.
+Build against the installed `@samline/drawer` version. This skill describes v5.1.0. Check the dependency version and exports before applying it to another release; read the changelog when migrating v4 code. Preserve the host project's components, colors and lifecycle conventions. Drawer supplies panel behavior and motion; the application supplies useful content and presentation.
 
 ## Choose loading, then keep the controller
 
 - **Package / ESM:** install with npm, pnpm, yarn or bun. Import `{ createDrawer }` from `@samline/drawer` and import `@samline/drawer/styles.css` once. Initialize in client code after the trigger exists. ESM/TypeScript and CommonJS are module formats; neither installs `window.Drawer`.
 - **HTML / CDN:** load `dist/style.css` with `<link>` and `dist/browser/global.global.js` with `<script>`, then call `window.Drawer.createDrawer(options)`. Keep CSS and JavaScript pinned to the same version. A CDN is file delivery; self-hosting the same files uses the same API. The IIFE exposes `window.Drawer`; “Global” is not a third loading mode. Avoid `async` or a deferred script followed by an immediately executed inline initializer.
 
-For 5.0.3 the documented assets are:
+For 5.1.0 the documented assets are:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.0.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@5.1.0/dist/browser/global.global.js"></script>
 ```
 
 Verify that the selected release/assets exist before using remote URLs. A repository version or tag does not prove npm/CDN publication. Use the local build when integrating an unpublished release; do not silently load an older version with newer APIs.
@@ -177,3 +177,9 @@ control rail and scroll only a min-size-zero body when composing a side panel;
 `scrollbar-gutter: stable` can reserve native scrollbar space. Use an explicit
 translated title with `titleVisuallyHidden: true` when your design supplies its
 visible heading. Preserve the dialog's accessible name and native close control.
+
+Since 5.1.0 the handle is a named, focusable button only when it can cycle
+snap points; without snap points or with `preventCycle` it is a pointer-only
+affordance (`tabindex="-1"`, `aria-hidden="true"`). Theme its color with
+`--drawer-handle-color` and keep 3:1 contrast. The package stylesheet already
+removes drawer, overlay and wrapper motion under `prefers-reduced-motion`.

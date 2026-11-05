@@ -75,7 +75,19 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
 
   if (state.overlay && options.dismissible !== false) {
     const overlay = state.overlay
+    // Dismiss only a press that both started and ended on the backdrop.
+    // A text selection or slider drag that begins inside the panel and
+    // is released over the overlay must not close the drawer.
+    let pressStartedOnOverlay = false
+    const onDocumentMouseDown = (event: MouseEvent) => {
+      pressStartedOnOverlay = event.target === overlay
+    }
+    document.addEventListener('mousedown', onDocumentMouseDown, true)
+    state.cleanups.push(() => document.removeEventListener('mousedown', onDocumentMouseDown, true))
     const onMouseUp = () => {
+      const startedOnOverlay = pressStartedOnOverlay
+      pressStartedOnOverlay = false
+      if (!startedOnOverlay) return
       // G11: 1:1 with vaul upstream — vaul routes the overlay's
       // mouseup through the same release pipeline as the
       // content's pointerup (`index.tsx:817`: `onMouseUp={onRelease}`).

@@ -151,7 +151,8 @@ function attachBuiltInTrigger(
   state: DialogMountState,
   host: HTMLElement,
   options: VanillaDrawerOptions,
-  callbacks: DialogCallbacks
+  callbacks: DialogCallbacks,
+  open: boolean
 ) {
   state.cleanupBuiltInTrigger?.()
   state.cleanupBuiltInTrigger = null
@@ -164,26 +165,21 @@ function attachBuiltInTrigger(
   if (!trigger) {
     trigger = createEl('button', {
       type: 'button',
-      'data-drawer-vanilla-trigger': ''
+      'data-drawer-vanilla-trigger': '',
+      'aria-haspopup': 'dialog'
     })
     host.appendChild(trigger)
     state.trigger = trigger
   }
   trigger.textContent = options.triggerText
+  // The package owns this button, so it also owns its disclosure state.
+  trigger.setAttribute('aria-expanded', open ? 'true' : 'false')
 
-  const onMouseDown = (event: MouseEvent) => {
-    if (options.modal === false || options.autoFocus) return
-    void event
-    callbacks.onBuiltInTriggerMouseDown?.()
-  }
   const onClick = () => {
-    callbacks.onBuiltInTriggerClick?.()
     callbacks.onOpenChange(true)
   }
-  trigger.addEventListener('mousedown', onMouseDown)
   trigger.addEventListener('click', onClick)
   state.cleanupBuiltInTrigger = () => {
-    trigger?.removeEventListener('mousedown', onMouseDown)
     trigger?.removeEventListener('click', onClick)
   }
 }
@@ -193,7 +189,7 @@ function attachBuiltInTrigger(
  * Full teardown also removes its DOM; `deferDom` keeps the closing
  * visual nodes until the exit timeout removes them.
  */
-function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {}) {
+function teardownMount(state: DialogMountState, opts: { deferDom?: boolean; keepTrigger?: boolean } = {}) {
   if (!opts.deferDom) cancelCloseRemoval(state)
   removeFromOpenDialogStack(state)
   state.releaseModalIsolation?.()
@@ -247,7 +243,7 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
 
   // Step 2 — restore the page-level side-effects we own (focus,
   // body scroll lock, history scroll restoration, viewport state).
-  if (state.trigger && document.activeElement === state.trigger) {
+  if (!opts.keepTrigger && state.trigger && document.activeElement === state.trigger) {
     if (typeof state.trigger.blur === 'function') state.trigger.blur()
   }
   const otherOpenDrawer = getTopOpenContent()
@@ -308,10 +304,12 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean } = {
   // keeps it mounted for the exit animation.
   if (opts.deferDom) return
   restoreBackgroundScale(state)
-  if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
+  if (!opts.keepTrigger) {
+    if (state.trigger?.parentNode) state.trigger.parentNode.removeChild(state.trigger)
+    state.trigger = null
+  }
   if (state.overlay?.parentNode) state.overlay.parentNode.removeChild(state.overlay)
   if (state.content?.parentNode) state.content.parentNode.removeChild(state.content)
-  state.trigger = null
   state.overlay = null
   state.content = null
   state.handle = null
@@ -444,8 +442,6 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     openOrder,
     hasBeenOpened = false,
     onOpenChange,
-    onBuiltInTriggerMouseDown,
-    onBuiltInTriggerClick,
     onDragChange,
     onReleaseChange,
     onActiveSnapPointChange
@@ -455,8 +451,6 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   const resolvedOpenOrder = open ? resolveOpenDialogOrder(openOrder, state.openOrder) : null
   const callbacks: DialogCallbacks = {
     onOpenChange,
-    ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
-    ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
     ...(onDragChange !== undefined ? { onDragChange } : {}),
     ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
     ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
@@ -531,21 +525,30 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         state.closeButton = null
       }
     }
-    attachBuiltInTrigger(state, host, options, callbacks)
+    attachBuiltInTrigger(state, host, options, callbacks, false)
     state.closeRemovalTimer = window.setTimeout(removeDom, TRANSITIONS.DURATION * 1000 + 100)
     state.mountedOptions = options
     return
   }
 
   if (!open && state.closeRemovalTimer !== null) {
-    attachBuiltInTrigger(state, host, options, callbacks)
+    attachBuiltInTrigger(state, host, options, callbacks, false)
     state.mountedOptions = options
     return
   }
 
-  // Tear down any prior mount before building the new one.
-  teardownMount(state)
-  attachBuiltInTrigger(state, host, options, callbacks)
+  // A structural update to an open drawer rebuilds it in place. Carry
+  // the original return target across that rebuild instead of letting
+  // teardown focus the background trigger for one frame (screen readers
+  // announce it and the page may scroll to it).
+  const carriedFocusReturn = hadOpenMount && open ? state.previouslyFocused : null
+  if (carriedFocusReturn) state.previouslyFocused = null
+
+  // Tear down any prior mount before building the new one. The
+  // built-in trigger persists across renders so it keeps focus and can
+  // receive it back when the drawer closes.
+  teardownMount(state, { keepTrigger: true })
+  attachBuiltInTrigger(state, host, options, callbacks, open)
 
   // Match Radix Presence: a closed drawer has no overlay/content in
   // the document. Only the optional trigger persists. This prevents
@@ -692,11 +695,17 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     state.content = content
 
     if (shouldRenderHandle) {
+      // A handle that cannot cycle snap points has no keyboard action.
+      // Keep it as a pointer drag affordance, but out of the tab order
+      // and accessibility tree instead of exposing a no-op button.
+      const handleCanCycle = hasSnapPoints && options.preventCycle !== true
       const handle = createEl('button', {
         type: 'button',
         'data-drawer-handle': '',
         'data-drawer-visible': open ? 'true' : 'false',
-        'aria-label': options.handleAriaLabel ?? 'Change drawer position'
+        ...(handleCanCycle
+          ? { 'aria-label': options.handleAriaLabel ?? 'Change drawer position' }
+          : { tabindex: '-1', 'aria-hidden': 'true' })
       })
       if (options.handleClassName) handle.className = options.handleClassName
       const hitArea = createEl('span', { 'data-drawer-handle-hitarea': '', 'aria-hidden': 'true' })
@@ -894,16 +903,17 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       }
       state.activeSnapPointOffset = snapPointOffset
 
+      // The software keyboard always shrinks the visual viewport
+      // vertically, so the keyboard layout is height-based for every
+      // direction (as in Vaul). Side panels previously fed their width
+      // into this math and received `height: <width>px`.
       const verticalAxis = isVertical(listenerDirection)
-      const totalSize = verticalAxis ? window.innerHeight : window.innerWidth
-      const drawerSize = verticalAxis ? contentEl.offsetHeight : contentEl.offsetWidth
-      // For a `bottom` / `right` drawer the natural top offset is
-      // `total - drawer`; for `top` / `left` it is `0`. The math
-      // helper uses this in the `isTallEnough` branch to compute
-      // the new drawer height when the visual viewport shrinks.
-      const offsetFromTop =
-        listenerDirection === 'bottom' || listenerDirection === 'right' ? Math.max(totalSize - drawerSize, 0) : 0
-      const visualViewportSize = verticalAxis ? visualViewport.height : visualViewport.width
+      const totalSize = window.innerHeight
+      const drawerSize = contentEl.offsetHeight
+      // For a `bottom` drawer the natural top offset is
+      // `total - drawer`; top and side panels start at the top edge.
+      const offsetFromTop = listenerDirection === 'bottom' ? Math.max(totalSize - drawerSize, 0) : 0
+      const visualViewportSize = visualViewport.height
 
       const layout = getViewportDrivenDrawerLayout({
         visualViewportHeight: visualViewportSize,
@@ -914,7 +924,9 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         previousDiffFromInitial: state.previousDiffFromInitial,
         keyboardIsOpen: state.keyboardIsOpen,
         initialDrawerHeight: state.initialDrawerHeight,
-        activeSnapPointOffset: snapPointOffset,
+        // Horizontal snap offsets are widths; they do not affect the
+        // vertical keyboard displacement.
+        ...(verticalAxis ? { activeSnapPointOffset: snapPointOffset } : {}),
         isMobileFirefox: listenerIsMobileFirefox,
         windowTopOffset: WINDOW_TOP_OFFSET
       })
@@ -946,7 +958,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   }
 
   if (open && options.modal !== false) {
-    state.previouslyFocused = (document.activeElement as HTMLElement | null) ?? null
+    state.previouslyFocused = carriedFocusReturn ?? (document.activeElement as HTMLElement | null) ?? null
     // F6: iOS Safari body-scroll prevention (1:1 with vaul upstream).
     // - `preventBodyScroll` returns a restore function that handles
     //   both the desktop `overflow: hidden` baseline AND the
@@ -994,9 +1006,10 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     // Modal dialogs always receive initial focus so assistive
     // technology announces them. `autoFocus` controls whether that
     // focus advances to the first control or stays on the dialog.
-    if (state.content) {
+    // A rebuilt parent must not pull focus out of an open child above it.
+    if (state.content && getTopOpenContent() === state.content) {
       if (options.autoFocus === true) focusFirstElement(state.content)
-      else state.content.focus()
+      else state.content.focus({ preventScroll: true })
     }
   }
 

@@ -7,7 +7,7 @@ sidebar:
   order: 7
 ---
 
-`@samline/drawer` ships motion and interaction CSS, not a finished panel theme. Its public styling surface combines data attributes, consumer classes, two internal CSS custom properties, and narrowly scoped inline styles from live runtime math.
+`@samline/drawer` ships motion and interaction CSS, not a finished panel theme. Its public styling surface combines data attributes, consumer classes, two runtime-written CSS custom properties, the `--drawer-handle-color` theme token, and narrowly scoped inline styles from live runtime math.
 
 <span id="importing-the-stylesheet"></span>
 
@@ -20,11 +20,11 @@ import '@samline/drawer/styles.css'
 // Equivalent alias: import '@samline/drawer/style.css'
 ```
 
-With the 5.0.3 browser bundle, CSS and JavaScript are separate assets:
+With the 5.1.0 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.0.3/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.0.3/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.1.0/dist/style.css" />
+<script src="https://unpkg.com/@samline/drawer@5.1.0/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -58,7 +58,8 @@ Each registered id owns a dedicated host. Closed overlay/content are absent; onl
       data-drawer-visible="true"
       aria-label="Change drawer position"
     >
-      <!-- only if showHandle or handleOnly -->
+      <!-- only if showHandle or handleOnly; without snap points or with
+           preventCycle it has tabindex="-1" aria-hidden="true" and no label -->
       <span data-drawer-handle-hitarea aria-hidden="true"></span>
     </button>
     <div data-drawer-body>
@@ -99,7 +100,7 @@ The host does not receive an HTML `id`; use `[data-drawer-vanilla-root="filters"
 
 ### `[data-drawer-vanilla-trigger]`
 
-Optional `<button type="button">` created by `triggerText`. It persists while closed, is reconciled during an exit, and opens the same id. The runtime removes it when `triggerText` becomes empty or the drawer is destroyed.
+Optional `<button type="button" aria-haspopup="dialog">` created by `triggerText`. Its `aria-expanded` follows the open state. It persists across renders, is reconciled during an exit, opens the same id and receives focus back after a modal close. The runtime removes it when `triggerText` becomes empty or the drawer is destroyed.
 
 <span id="data-drawer-overlay--the-backdrop"></span>
 
@@ -137,7 +138,7 @@ The dialog surface has no HTML `id`. Select one instance with `[data-drawer-id="
 | `data-state`                      | `'open' \| 'closed'`                     | Open/exit state.                                                                                                   |
 | `data-drawer-direction`           | `'top' \| 'bottom' \| 'left' \| 'right'` | Motion, drag, and snap direction.                                                                                  |
 | `data-drawer-snap-points`         | `'true' \| 'false'`                      | Whether snap-point transforms are active.                                                                          |
-| `data-drawer-delayed-snap-points` | `'false'`                                | 5.0.3 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.    |
+| `data-drawer-delayed-snap-points` | `'false'`                                | 5.1.0 computes the initial snap immediately; the shipped `'true'` CSS selectors are not enabled by the runtime.    |
 | `data-drawer-custom-container`    | `'true' \| 'false'`                      | `true` when a non-null `container` is used. The default-only `::after` extension is omitted for custom containers. |
 | `data-drawer-animate`             | `'true' \| 'false'`                      | Shared CSS animation gate.                                                                                         |
 | `role`                            | `'dialog'`                               | Always present while the dialog is mounted.                                                                        |
@@ -156,7 +157,9 @@ After axis intent is accepted, the runtime adds the exported `drawer-dragging` c
 
 `[data-drawer-handle]` mounts for `showHandle` or `handleOnly` and carries `data-drawer-visible="true|false"`. Its `[data-drawer-handle-hitarea]` child expands the touch target to at least 44 by 44 pixels; fine pointers use the handle's own bounds.
 
-Clicking the handle advances snap points. At the final snap it closes when dismissible or cycles to the first when not dismissible. With no snap points it is a no-op. `preventCycle` disables click behavior without disabling drag.
+Clicking the handle advances snap points. At the final snap it closes when dismissible or cycles to the first when not dismissible. Without snap points, or with `preventCycle`, it has no click action; the runtime then renders it with `tabindex="-1"`, `aria-hidden="true"` and no `aria-label`, keeping it as a pointer drag affordance only. `preventCycle` never disables drag.
+
+The default grip uses `background: var(--drawer-handle-color, #8e8e93)`, which keeps at least 3:1 contrast on white and black panels. Set `--drawer-handle-color` on your panel or theme when its background needs another color; keep the 3:1 non-text contrast of an operable control.
 
 <span id="data-drawer-body--the-inner-body-wrapper"></span>
 
@@ -172,7 +175,7 @@ Clicking the handle advances snap points. At the final snap it closes when dismi
 
 - `[data-drawer-body]` is always created. Its children are the optional title, optional description, and resolved consumer content, in that order.
 - `[data-drawer-title]` exists only when `title !== undefined`; `[data-drawer-description]` exists only when `description !== undefined`. Passing `null` creates an empty slot, while omission does not.
-- The old `[data-drawer-vanilla-node]` and `[data-drawer-vanilla-body]` wrappers do not exist in 5.0.3. Target `[data-drawer-body]` instead. See [Configuration → Renderable content](../configuration/#renderable-content).
+- The old `[data-drawer-vanilla-node]` and `[data-drawer-vanilla-body]` wrappers do not exist in 5.1.0. Target `[data-drawer-body]` instead. See [Configuration → Renderable content](../configuration/#renderable-content).
 - `[data-drawer-close]` is the optional built-in close button; `[data-drawer-close-icon]` wraps its string or element icon and is `aria-hidden`.
 
 `titleVisuallyHidden` and `descriptionVisuallyHidden` apply inline visually-hidden styles rather than the HTML `hidden` attribute. `ariaLabel` does not create a proxy title slot.
@@ -278,7 +281,7 @@ Add your panel positioning, padding and colors as usual. Leave panel overflow vi
 
 ## Inline writes
 
-Not every live effect can be expressed by static CSS. 5.0.3 writes and later restores these values:
+Not every live effect can be expressed by static CSS. 5.1.0 writes and later restores these values:
 
 | Target                     | Runtime writes                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -304,9 +307,10 @@ The body scroll lock, HTML scroll behavior, and optional history restoration are
 ## Notes
 
 - The shared stylesheet includes open/close keyframes, snap selectors, overlay fade behavior, the handle, and the default `::after` panel extension. Supply your own geometry and theme.
+- Under `prefers-reduced-motion: reduce`, the stylesheet sets `animation: none !important` and `transition: none !important` on `[data-drawer]`, `[data-drawer-overlay]` and `[data-drawer-wrapper]`. Drawers still open, close, snap and scale, but without motion; the `!important` flags also cover the runtime's inline snap and wrapper transitions.
 - Its global keyframe names are `drawer-overlay-fade-in`, `drawer-overlay-fade-out`, `slideFromBottom`, `slideToBottom`, `slideFromTop`, `slideToTop`, `slideFromLeft`, `slideToLeft`, `slideFromRight`, and `slideToRight`. Avoid redefining those names globally.
 - Direction selectors set `touch-action` for gesture arbitration; fine pointers also disable text selection on draggable surfaces. Preserve those rules if you replace the package stylesheet.
-- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 5.0.3 JavaScript does not write it.
+- `--initial-transform` is written by the runtime for snap offsets and removed before exit; close seeding uses an inline `transform`. `--snap-point-height` exists only as a fallback in the disabled delayed-snap CSS selectors; the 5.1.0 JavaScript does not write it.
 - Custom classes (`overlayClassName`, `contentClassName`, `handleClassName`, and `closeButton.className`) are the safest instance-specific styling hooks.
 - Do not remove the closed-overlay `pointer-events: none` behavior when overriding selectors.
 - The runtime adds the exported `drawer-dragging` class to `[data-drawer]` while a drag is in progress. Target it from your stylesheet to disable selection or change the cursor.

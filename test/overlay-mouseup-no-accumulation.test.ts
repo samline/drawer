@@ -61,6 +61,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
     expect(overlay).not.toBeNull()
 
     for (let i = 0; i < 10; i++) {
+      overlay!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
       overlay!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
       // Yield to the microtask queue so the controller state updates
       // and any queued renders run before the next mouseup.
@@ -83,6 +84,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
       // Click on the overlay (mouseup is the trigger that dismisses).
       const overlay = document.querySelector('[data-drawer-overlay]') as HTMLElement | null
       expect(overlay).not.toBeNull()
+      overlay!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
       overlay!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
       await new Promise<void>((resolve) => setTimeout(resolve, 5))
     }
@@ -122,6 +124,8 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
     drawer.setOpen(true)
     await new Promise<void>((resolve) => setTimeout(resolve, 5))
     expect(queryContent()?.getAttribute('data-state')).toBe('open')
+
+    queryOverlay()!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
 
     queryOverlay()!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
     await new Promise<void>((resolve) => setTimeout(resolve, 5))

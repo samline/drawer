@@ -6,6 +6,8 @@ interface ContentSlots {
   body: HTMLDivElement | null
 }
 
+// Keys are CSS property names: `setStyle` uses `style.setProperty`,
+// which silently ignores camelCase names such as `whiteSpace`.
 const VISUALLY_HIDDEN_STYLE = {
   position: 'absolute',
   width: '1px',
@@ -14,7 +16,8 @@ const VISUALLY_HIDDEN_STYLE = {
   margin: '-1px',
   overflow: 'hidden',
   clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
+  'clip-path': 'inset(50%)',
+  'white-space': 'nowrap',
   border: '0'
 } as const
 

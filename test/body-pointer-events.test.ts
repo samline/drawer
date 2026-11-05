@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createDrawer, destroyDrawers } from '../src'
-import { reset, set } from '../src/helpers'
+import { set } from '../src/helpers'
 
 /**
  * The vanilla runtime does not own `body.pointerEvents`, so opening
@@ -9,8 +9,8 @@ import { reset, set } from '../src/helpers'
  * code or another modal implementation.
  *
  * G8: `documentElement.scrollBehavior` is set to `auto` while the
- * drawer is open and restored on close (via the `set` + `reset`
- * cache from G5+G6).
+ * drawer is open and restored on close (via the shared
+ * scroll-behavior lock).
  */
 
 describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
@@ -102,10 +102,9 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       expect(document.documentElement.style.scrollBehavior).toBe('auto')
 
       drawer.setOpen(false)
-      // The pre-open value is restored from the cache.
+      // The pre-open value is restored by the shared scroll-behavior lock.
       expect(document.documentElement.style.scrollBehavior).toBe('smooth')
-      // Cleanup: clear the cache so subsequent tests start fresh.
-      reset(document.documentElement, 'scrollBehavior')
+      document.documentElement.style.removeProperty('scroll-behavior')
     })
 
     it('does not write scrollBehavior when open: false (initial close state)', () => {

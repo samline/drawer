@@ -15,7 +15,7 @@ Do not restore removed configure/open/close/toggle/update/destroy helpers, `patc
 
 `vanilla/dialog.ts` coordinates presence and viewport lifecycle; `dialog-content` renders slots/controls, `dialog-focus` owns focus/modal isolation, `dialog-gestures` wires pointer/handle input, `dialog-layout` resolves geometry, and `dialog-background` owns scaling/restoration. `dialog-state` is type-only shared state; pure interaction math stays under runtime/. Preserve cleanup order and shared side-effect ownership when moving code. A smaller coordinator is an organization improvement, not a measured performance gain.
 
-The v5 source, exact copied files, framework/CMS examples, root README, root changelog, docs collection, metadata and downloadable skills/drawer/SKILL.md are one release contract. Keep historical documentation fragments meaningful and removed helper pages out of current navigation. The package is prepared as 5.0.3; npm publication remains a separate maintainer action.
+The v5 source, exact copied files, framework/CMS examples, root README, root changelog, docs collection, metadata and downloadable skills/drawer/SKILL.md are one release contract. Keep historical documentation fragments meaningful and removed helper pages out of current navigation. The package is prepared as 5.1.0; npm publication remains a separate maintainer action.
 
 Lifecycle callbacks and immediate subscriptions may synchronously destroy their owner. Re-check runtime identity before rendering, notifying or scheduling timers after a consumer callback; never operate on a replacement that reuses the same id. Initial content factory failures must roll back both partial DOM and registry ownership. Regression coverage exercises these cases. TypeScript rejects unused imports/locals/parameters so extraction cannot leave abandoned plumbing behind.
 
@@ -131,3 +131,22 @@ Natural-scroll correction validated: both targeted browser regressions pass in
 each of the four projects (eight total). All combined artifacts rebuilt and
 passed their link audits. The SEO preview was inspected: article scroll remains
 0, the sidebar has no generated ::after content and no trailing-space variable.
+
+## Runtime audit — 2026-11-05 (5.1.0)
+
+Durable lessons: overlay dismissal requires the press to start and end on the
+overlay; Escape is ignored during IME composition; the handle is a focusable,
+named button only when it can cycle snap points; the built-in trigger persists
+across renders (`teardownMount(..., { keepTrigger: true })` on rebuild) and owns
+`aria-haspopup`/`aria-expanded`; structural rebuilds carry the original focus
+return target and never pull focus out of an open child. Keyboard viewport math
+is vertical for every direction. Drag policy checks the drawer's own axis and
+closing direction (top/left close toward the scroll end). The stylesheet owns
+reduced motion and the `--drawer-handle-color` token. `setStyle` uses CSS
+property names; `set` uses CSSOM names. Regression coverage lives in
+test/audit-regressions.test.ts.
+
+Open follow-ups: non-modal drawers still lose in-panel focus on a structural
+`update()`; consumer-owned `triggerElement` ARIA stays application-owned; RTL
+horizontal scrollers are not special-cased by the drag policy; real Safari/iOS
+keyboard behavior for side panels needs device evidence.

@@ -40,10 +40,10 @@ With the default `modal: true`, the drawer:
 
 - mounts an overlay;
 - moves focus to the dialog container by default, or its first visible control with `autoFocus: true`;
-- traps Tab and Shift+Tab inside;
+- traps Tab and Shift+Tab inside, skipping controls with a negative `tabindex`, disabled controls and hidden or inert subtrees;
 - isolates background branches with `inert` and `aria-hidden`;
 - locks page scroll;
-- restores focus when it closes.
+- restores focus when it closes. A structural `update()` while open rebuilds the panel without moving focus to the page behind it.
 
 `modal: false` omits those modal effects and, by default, the overlay. Set `overlay: true` when a modeless drawer needs a local backdrop and overlay-click dismissal; content outside its container remains interactive.
 
@@ -51,7 +51,7 @@ Set `autoFocus: true` to focus the first visible focusable control. Focus a spec
 
 ## Dismissal is a product decision
 
-`dismissible: true` enables Escape, overlay release, drag-to-close, and dismissal from the last handle state. The built-in close button and programmatic methods can still close a drawer when `dismissible: false`.
+`dismissible: true` enables Escape, overlay clicks, drag-to-close, and dismissal from the last handle state. An overlay click dismisses only when the press both starts and ends on the overlay, so a text selection that ends outside the panel keeps it open. Escape is ignored while an input method editor is composing text. The built-in close button and programmatic methods can still close a drawer when `dismissible: false`.
 
 For blocking flows, provide an explicit labeled action rather than relying on gesture dismissal:
 
@@ -65,7 +65,7 @@ createDrawer({
 })
 ```
 
-The built-in handle is a button. Set `handleAriaLabel` to describe what it does in context, especially when snap points make it cycle between heights.
+The built-in handle is a named button only when it can act: with snap points and without `preventCycle`, clicking or pressing Enter cycles heights. Set `handleAriaLabel` to describe that action in context. Without snap points, or with `preventCycle`, the handle stays a pointer drag affordance with `tabindex="-1"` and `aria-hidden="true"`, so keyboard and screen-reader users do not meet a button that does nothing.
 
 ## Interactive content and drag
 
@@ -86,7 +86,7 @@ The mobile viewport pipeline is enabled by default through `repositionInputs`. I
 - Verify Escape and the close button match the intended dismissal policy.
 - Verify focus returns to the trigger after close.
 - Test controls inside scrollable and `data-drawer-no-drag` regions with mouse, touch, and keyboard.
-- Respect reduced-motion preferences in application overrides.
+- Respect reduced-motion preferences. The package stylesheet removes drawer, overlay and scaled-wrapper animation under `prefers-reduced-motion: reduce`; apply the same preference to any motion your own overrides add.
 - Destroy drawers when their owning view unmounts so hidden hosts and triggers do not remain in the accessibility tree.
 
 ## Related

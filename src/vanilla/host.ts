@@ -64,8 +64,6 @@ export function renderVanillaHost({
   open,
   openOrder,
   hasBeenOpened,
-  onBuiltInTriggerMouseDown,
-  onBuiltInTriggerClick,
   onOpenChange,
   onDragChange,
   onReleaseChange,
@@ -78,8 +76,6 @@ export function renderVanillaHost({
   openOrder?: number | null
   /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
-  onBuiltInTriggerMouseDown?: () => void
-  onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
@@ -116,8 +112,6 @@ export function renderVanillaHost({
       ...(openOrder !== undefined ? { openOrder } : {}),
       ...(hasBeenOpened !== undefined ? { hasBeenOpened } : {}),
       onOpenChange,
-      ...(onBuiltInTriggerMouseDown !== undefined ? { onBuiltInTriggerMouseDown } : {}),
-      ...(onBuiltInTriggerClick !== undefined ? { onBuiltInTriggerClick } : {}),
       ...(onDragChange !== undefined ? { onDragChange } : {}),
       ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
       ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})

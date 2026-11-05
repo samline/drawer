@@ -59,6 +59,8 @@ describe('modeless overlays', () => {
     expect(document.body.style.overflow).toBe('')
     expect(document.activeElement).toBe(navigationLink)
 
+    overlay?.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
+
     overlay?.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
   })

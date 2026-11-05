@@ -28,8 +28,6 @@ export interface VanillaDialogOptions {
   openOrder?: number | null
   /** Whether the drawer completed an earlier open render. */
   hasBeenOpened?: boolean
-  onBuiltInTriggerMouseDown?: () => void
-  onBuiltInTriggerClick?: () => void
   onOpenChange: (open: boolean) => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
@@ -172,8 +170,6 @@ export interface DialogMountState extends BackgroundScaleState {
 
 export type DialogCallbacks = {
   onOpenChange: VanillaDialogOptions['onOpenChange']
-  onBuiltInTriggerMouseDown?: () => void
-  onBuiltInTriggerClick?: () => void
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void

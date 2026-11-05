@@ -2,6 +2,32 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] — 2026-11-05
+
+### Behavior changes
+
+- An overlay click dismisses only when the press both starts and ends on the overlay. Selecting text or dragging a control inside the panel and releasing over the backdrop no longer closes the drawer.
+- Escape is ignored while an input method editor is composing text, so cancelling a composition no longer discards the drawer.
+- The built-in handle is a named, focusable button only when it can cycle snap points. Without snap points, or with `preventCycle`, it stays a pointer drag affordance with `tabindex="-1"`, `aria-hidden="true"` and no `aria-label`.
+- Drag-to-close respects scrollable content on every edge. Top and left drawers no longer close while their list can still scroll toward the closing direction, and left/right drawers check horizontal rather than vertical scroll.
+- The default handle color changed from `#e2e2e4` at 70% opacity (about 1.2:1 on white) to `#8e8e93` (3.3:1 on white, 6.4:1 on black).
+
+### Added
+
+- `--drawer-handle-color` custom property for theming the built-in handle.
+- `prefers-reduced-motion: reduce` support in the package stylesheet: drawers, overlays and the scaled `[data-drawer-wrapper]` change state without animation or transitions.
+- The `triggerText` button now carries `aria-haspopup="dialog"` and an `aria-expanded` value that follows the open state.
+
+### Fixed
+
+- The `triggerText` button was removed and recreated on every open, so focus could not return to it after a modal close. It now persists across renders and receives focus back.
+- A structural `update()` on an open modal drawer briefly focused the background trigger before refocusing the rebuilt panel; a rebuilt parent could also pull focus out of an open child drawer.
+- Initial modal focus uses `preventScroll`, so `autoFocus` on a control lower in a long body no longer opens the drawer scrolled past its heading.
+- The focus trap treated controls with a negative `tabindex` or inside a disabled fieldset as tab stops, letting Tab leave the dialog.
+- The keyboard viewport pipeline fed side-panel widths into its height math, writing `height: <width>px` on left/right drawers when a focused input triggered a viewport resize.
+- Visually hidden title/description slots ignored `white-space: nowrap` because the property was written with a camelCase name through `setProperty`; they also gain `clip-path: inset(50%)`.
+- Removed unused internal helpers (`reset`, `assignStyle`, `isInView`, `trackScrollPosition`) and unused trigger callback plumbing. None was part of the public API.
+
 ## [5.0.3] — 2026-10-28
 
 ### Fixed

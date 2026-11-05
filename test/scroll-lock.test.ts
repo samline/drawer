@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { preventBodyScroll, setPositionFixed, trackScrollPosition } from '../src/runtime/scroll-lock'
+import { preventBodyScroll, setPositionFixed } from '../src/runtime/scroll-lock'
 
 /**
  * F6: iOS Safari body-scroll prevention.
@@ -17,9 +17,7 @@ import { preventBodyScroll, setPositionFixed, trackScrollPosition } from '../src
  * 3. `setPositionFixed` is a no-op off Safari (jsdom).
  * 4. `setPositionFixed` toggles the body position when
  *    `isSafari()` is mocked to return true.
- * 5. `trackScrollPosition` reads `window.scrollY` once and
- *    updates the module-level saved Y on scroll events.
- * 6. The restore function returned by `preventBodyScroll` is
+ * 5. The restore function returned by `preventBodyScroll` is
  *    idempotent — calling it twice does not throw and does
  *    not double-restore.
  *
@@ -193,11 +191,5 @@ describe('scroll-lock (F6)', () => {
       iosSpy.mockRestore()
       safariSpy.mockRestore()
     }
-  })
-
-  it('trackScrollPosition returns a cleanup that detaches the scroll listener', () => {
-    const remove = trackScrollPosition()
-    expect(typeof remove).toBe('function')
-    expect(() => remove()).not.toThrow()
   })
 })
