@@ -4,6 +4,8 @@ This is the single project memory for runtime, Home, Examples and Docs. Follow t
 
 <!-- codebase-memory-mcp:start -->
 
+Project agent skills live in `.agents/skills/` (versioned, excluded from npm and Prettier): the autoskills registry set for the detected stack plus codebase-memory, matching notify. Refresh them with `npx autoskills -y -a universal`; `skills-lock.json` stays local and gitignored.
+
 Use the installed codebase-memory skill for structural exploration. Check indexed-path coverage and use source reads for stale/missing Astro/CSS coverage. Graph degree alone cannot prove dead code: callbacks, build hooks, routes and assets can have no incoming graph edges.
 <!-- codebase-memory-mcp:end -->
 

@@ -25,3 +25,6 @@ content-audit.json
 design-reference.json
 project.config.json
 playwright.site.config.ts
+
+# Vendored third-party agent skills (installed by autoskills; keep upstream formatting)
+.agents/skills/
