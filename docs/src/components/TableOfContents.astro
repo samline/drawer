@@ -40,10 +40,15 @@ const items = headings.filter(h => h.depth === 2 || h.depth === 3)
     const lifecycle = new AbortController()
     const { signal } = lifecycle
     const entries = Array.from(element.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'))
-      .map(link => ({
-        link,
-        heading: document.getElementById(decodeURIComponent(link.hash.slice(1))),
-      }))
+      .map(link => {
+        let id = link.hash.slice(1)
+        // An authored fragment such as #100% is not valid percent-encoding;
+        // keep it literal instead of aborting the whole ToC setup.
+        try {
+          id = decodeURIComponent(id)
+        } catch {}
+        return { link, heading: document.getElementById(id) }
+      })
       .filter(entry => entry.heading)
     const header = document.querySelector('package-site-docs-header')
     const update = () => {

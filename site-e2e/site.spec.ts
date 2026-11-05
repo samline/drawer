@@ -539,3 +539,33 @@ test('ToC follows the clicked section and anchors retain the 2.5rem header gap',
   }))
   expect(Math.abs(spacing.gap - spacing.expected)).toBeLessThan(2)
 })
+test('a malformed ToC fragment stays literal instead of aborting ToC tracking', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 1440, height: 500 })
+  await page.route('**/docs/getting-started/', async route => {
+    const response = await route.fetch()
+    const html = (await response.text()).replace(
+      /(<nav aria-label="On this page"[^>]*><ul[^>]*>)/g,
+      '$1<li><a href="#100%">Literal fragment</a></li>'
+    )
+    await route.fulfill({ response, body: html })
+  })
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('docs/getting-started/')
+  const nav = page.locator('.desktop-toc').getByRole('navigation', { name: 'On this page' })
+  await expect(nav.getByRole('link', { name: 'Literal fragment' })).toHaveCount(1)
+  const target = nav.getByRole('link', { name: 'Your first working drawer', exact: true })
+  await target.click()
+  await expect(target).toHaveAttribute('aria-current', 'location')
+  expect(errors).toEqual([])
+})
+test('mobile menu resources link to GitHub and npm, not a duplicate Docs tab', async ({ page }) => {
+  await page.goto('./')
+  const hrefs = await page
+    .locator('package-site-mobile-menu .menu-resources a')
+    .evaluateAll(links => links.map(link => link.getAttribute('href')))
+  expect(hrefs).toEqual([project.repository, `https://www.npmjs.com/package/${project.npmName}`])
+})

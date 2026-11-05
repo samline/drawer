@@ -152,3 +152,13 @@ Open follow-ups: non-modal drawers still lose in-panel focus on a structural
 `update()`; consumer-owned `triggerElement` ARIA stays application-owned; RTL
 horizontal scrollers are not special-cased by the drag policy; real Safari/iOS
 keyboard behavior for side panels needs device evidence.
+
+## Template audit port — 2026-11-05
+
+Ported from package-landing-docs 73660c2: ToC and the link audit keep a
+malformed percent-encoded fragment (`#100%`) literal or report it instead of
+throwing; the mobile menu resources are GitHub and npm (no duplicate Docs
+new-tab link); the Docs development favicon resolves under BASE_URL; the
+browser suite port (default 4348 here, unlike the template's 4338) is
+overridable with `PACKAGE_SITE_TEST_PORT`. Drawer's Hero has no
+descriptionContinuation, so the template's line-break spacing fix is not needed.

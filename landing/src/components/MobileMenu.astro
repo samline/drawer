@@ -76,8 +76,12 @@ const instanceId = `mobile-menu-${crypto.randomUUID()}`
               </a>
             </li>
             <li>
-              <a href={project.docsBase} target="_blank" rel="noopener noreferrer">
-                {i18n.common.links.docs}
+              <a
+                href={`https://www.npmjs.com/package/${project.npmName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {i18n.common.links.npm}
                 <span aria-hidden="true">↗</span>
                 <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
               </a>

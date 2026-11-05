@@ -132,6 +132,8 @@ The gallery has eighteen presets. Keep the original fifteen keys/order and appen
 
 The custom-design example is deliberately an application variant, not a new site design system. It preserves the shared fonts/palette/buttons and native animations while changing geometry, corners and background. A transparent outer floating panel paints its own opaque ::before layer so native inherited ::after extensions remain transparent. Keep native body scrolling and runtime pseudo-elements; do not clip the panel to conceal overflow. Non-snap floating geometry uses a scoped CSS --initial-transform endpoint to carry the native exit fully out of the viewport; never apply that offset override to snap examples. Validate movement as well as reduced-motion layout. The Easytrip registration notice inspired the detached card/composition, not copied markup or another dependency.
 
+The browser suite serves the production preview on port 4348; set `PACKAGE_SITE_TEST_PORT` (1024–65535) when another site's suite already listens there. Note that `reuseExistingServer` stays enabled outside CI.
+
 For a bounded recipe follow-up, `DRAWER_RECIPE_PRESETS=wizard,independent,styled npm run site:test:browser -- site-e2e/site.spec.ts --grep "all rendered recipes"` executes all twelve loading/file variants of those three recipes and still verifies the full gallery inventory. Unknown preset names fail. CI and the default suite omit that filter and execute all seventy-two variants. Do not describe a filtered run as full-gallery execution.
 
 ## Cleanup and release validation — 2026-10-21

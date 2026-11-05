@@ -9,6 +9,14 @@ const decode = value =>
     return { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' }[name]
   })
 
+const decodePath = (value, url, from) => {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    assert.fail(`Malformed percent-encoding: ${url} in ${from}`)
+  }
+}
+
 // Inspect generated static markup, excluding inert templates and script/style contents.
 function markup(html) {
   const tags = []
@@ -50,7 +58,7 @@ export async function checkLinks({ directory, site, externalPaths = [] }) {
     }
     if (externalPaths.includes(url.pathname)) return
     assert.ok(url.pathname.startsWith(site.pathname), `Outside deployment base: ${url} in ${from}`)
-    let path = new URL(decodeURIComponent(url.pathname.slice(site.pathname.length)), directory)
+    let path = new URL(decodePath(url.pathname.slice(site.pathname.length), url, from), directory)
     const info = await stat(path).catch(() =>
       assert.fail(`Broken local destination: ${url} in ${from}`)
     )
@@ -71,7 +79,7 @@ export async function checkLinks({ directory, site, externalPaths = [] }) {
     }
     if (url.hash)
       assert.ok(
-        page?.ids.has(decodeURIComponent(url.hash.slice(1))),
+        page?.ids.has(decodePath(url.hash.slice(1), url, from)),
         `Missing fragment: ${url} in ${from}`
       )
   }
