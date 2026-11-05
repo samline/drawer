@@ -1,6 +1,6 @@
 # Drawer website
 
-Landing, Examples and Docs for `@samline/drawer` 5.1.0. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
+Landing, Examples and Docs for `@samline/drawer` 5.1.1. The package’s runtime, exports, Node 20+ requirement, README, license and release history remain the package contract. Website tooling requires Node **22.12+**.
 
 ## Run locally
 
@@ -25,7 +25,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 
 ## Maintain
 
-- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.1.0 and correspond to the package’s real distribution outputs.
+- `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.1.1 and correspond to the package’s real distribution outputs.
 - `landing/src/i18n/translations/en/` owns landing copy. Article prose lives in `docs/src/content/docs/`. Shared UI copy lives in `shared/i18n/`.
 - `shared/components/Playground.astro` supplies Home, Examples and Docs previews. `shared/i18n/translations/en/demo.ts` owns editable scenario copy, while `shared/lib/demo-source.ts` and `demo-files.ts` generate/format complete and split files for both loading modes. Previews import public APIs, resolved by each app’s Vite aliases to this checkout; never duplicate runtime gestures, focus, animation or locks.
 - Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.

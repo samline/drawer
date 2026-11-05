@@ -873,6 +873,10 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     const visualViewport = window.visualViewport
     const listenerDirection = getDirection(options)
     const listenerIsMobileFirefox = /firefox|fxios/i.test(navigator.userAgent)
+    // Authored inline height/bottom captured before the keyboard path
+    // first writes them, so closing the keyboard restores exactly what
+    // the consumer (or stylesheet) owned instead of leaving stale px.
+    let authoredLayout: { height: string; bottom: string } | null = null
 
     const onVisualViewportResize = () => {
       const contentEl = state.content
@@ -931,9 +935,24 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         windowTopOffset: WINDOW_TOP_OFFSET
       })
 
+      const wasKeyboardOpen = state.keyboardIsOpen
       state.keyboardIsOpen = layout.nextKeyboardIsOpen
       state.previousDiffFromInitial = layout.diffFromInitial
       state.initialDrawerHeight = layout.nextInitialDrawerHeight
+
+      if (wasKeyboardOpen && !layout.nextKeyboardIsOpen) {
+        // Keyboard dismissed: hand geometry back to the authored CSS.
+        if (authoredLayout) {
+          contentEl.style.height = authoredLayout.height
+          contentEl.style.bottom = authoredLayout.bottom
+          authoredLayout = null
+        }
+        state.initialDrawerHeight = 0
+        return
+      }
+      if (!authoredLayout) {
+        authoredLayout = { height: contentEl.style.height, bottom: contentEl.style.bottom }
+      }
 
       // `repositionInputs: true` writes `bottom` (the keyboard pushes
       // the drawer up). `fixed: true` only writes `height` (the

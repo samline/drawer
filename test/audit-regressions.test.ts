@@ -150,6 +150,27 @@ describe('keyboard viewport layout for side panels', () => {
   })
 })
 
+describe('keyboard dismissal restores authored geometry', () => {
+  it('clears the inline height and bottom written while the keyboard was open', () => {
+    const viewport = Object.assign(new EventTarget(), { height: 768, width: 1024 })
+    Object.defineProperty(window, 'visualViewport', { value: viewport, configurable: true, writable: true })
+    const input = document.createElement('input')
+    const drawer = createDrawer({ id: 'side-keyboard-close', direction: 'right', content: () => input })
+    drawer.setOpen(true)
+    input.focus()
+
+    viewport.height = 400
+    viewport.dispatchEvent(new Event('resize'))
+    const content = query<HTMLElement>(drawer, '[data-drawer]')!
+    expect(content.style.height).toBe('400px')
+
+    viewport.height = 768
+    viewport.dispatchEvent(new Event('resize'))
+    expect(content.style.height).toBe('')
+    expect(content.style.bottom).toBe('')
+  })
+})
+
 describe('drag permission follows the drawer axis', () => {
   const scroller = (overrides: Partial<DragScrollableAncestor>): DragScrollableAncestor => ({
     scrollHeight: 100,
