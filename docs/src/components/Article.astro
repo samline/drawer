@@ -121,12 +121,17 @@ const t = getI18n(Astro)
   .article :global(table:not([data-ui], [data-ui] *)) {
     display: block;
     overflow-x: auto;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     max-width: 100%;
     border-collapse: collapse;
     margin: 1.5rem 0;
     font-size: 0.8125rem;
     line-height: 1.7;
+    /* Article's overflow-wrap:anywhere shrinks min-content to one character, so columns
+       collapsed to equal slivers and split identifiers mid-word. Break only at spaces. */
+    overflow-wrap: normal;
+    word-break: normal;
   }
   .article :global(th:not([data-ui], [data-ui] *)),
   .article :global(td:not([data-ui], [data-ui] *)) {
@@ -135,6 +140,16 @@ const t = getI18n(Astro)
     border-bottom: 0.0625rem solid var(--color-border-soft);
     min-width: 7rem;
     vertical-align: top;
+  }
+  .article :global(th:not([data-ui], [data-ui] *)) {
+    white-space: nowrap;
+  }
+  /* Keep identifiers and type names whole; long prose in a cell still wraps at spaces. */
+  .article :global(td:not([data-ui], [data-ui] *) code:not([data-ui] *)) {
+    white-space: nowrap;
+  }
+  .article :global(td:last-child:not([data-ui], [data-ui] *)) {
+    min-width: 14rem;
   }
   .article :global(th:not([data-ui], [data-ui] *)) {
     color: var(--color-text);
