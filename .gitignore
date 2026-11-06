@@ -45,5 +45,6 @@ landing/public/font-licenses/
 docs/public/fonts/
 docs/public/font-licenses/
 
-# Local Claude Code session config (machine-specific)
-.claude/
+# Local Claude Code session config (machine-specific); only the skills symlink is tracked
+.claude/*
+!.claude/skills

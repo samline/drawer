@@ -9,6 +9,10 @@ Project agent skills live in `.agents/skills/` (versioned, excluded from npm and
 Use the installed codebase-memory skill for structural exploration. Check indexed-path coverage and use source reads for stale/missing Astro/CSS coverage. Graph degree alone cannot prove dead code: callbacks, build hooks, routes and assets can have no incoming graph edges.
 <!-- codebase-memory-mcp:end -->
 
+## Agent skills and memory location
+
+Agents, Claude included, store and read project skills and memory in `.agents/`. Skills are created and edited only in `.agents/skills/`. `.claude/skills` is a tracked relative symlink to `../.agents/skills` because Claude Code loads project skills only from `.claude/skills/`; never keep a second copy there. The rest of `.claude/` (such as `launch.json`) stays local and ignored. On Windows, clone with `git config core.symlinks true`.
+
 ## Runtime ownership
 
 The user authorized a complete major API simplification. `createDrawer()` always creates an independent instance; explicit ids are unique, queries never create and updates never change identity. Keep the returned controller. Commands are `setOpen`, `setActiveSnapPoint` and one `update` method; they return snapshots. `destroy` is terminal and idempotent. Stale handles cannot affect a replacement using the same id. Headless controllers have the same state/update/disposal contract without registry or DOM.
