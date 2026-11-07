@@ -5,8 +5,16 @@ import { getI18n } from '../i18n/utils'
 interface Props extends HTMLAttributes<'a'> {
   version?: string
   href?: string
+  /** Hide the version badge between 64rem and 75rem, where the landing header is tightest. */
+  compactVersion?: boolean
 }
-const { version, href = '#top', class: className, ...attributes } = Astro.props
+const {
+  version,
+  href = '#top',
+  compactVersion = false,
+  class: className,
+  ...attributes
+} = Astro.props
 const i18n = getI18n(Astro)
 ---
 
@@ -22,6 +30,7 @@ const i18n = getI18n(Astro)
     <span
       class:list={[
         'ml-1 hidden rounded-full border-[0.0625rem] border-border bg-surface px-2 py-0.5 font-mono text-[0.65rem] text-text-muted sm:inline-block',
+        { 'lg:hidden xl:inline-block': compactVersion },
       ]}
     >
       {format(i18n.common.versionLabel, { version })}

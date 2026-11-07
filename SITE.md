@@ -190,3 +190,21 @@ control after revealing the active link and repeats at 200% text.
 ## Runtime audit validation — 2026-11-05
 
 Prepared 5.1.0 on branch audit/2026-11 (see CHANGELOG). Package: build, typecheck, 351 tests across 49 files, package smoke test (25 npm files), Prettier and `npm pack --dry-run` passed. `site:verify` passed: both Astro checks with 0 errors, formatting, 9 tooling tests, alternate-base builds, 2,711 links across 50 pages, 14 historical articles/157 fragments and 57 browser tests; 5 framework/CMS browser tests were skipped because the optional external integration dependencies were not installed locally (CI installs them). `site:check:release` passed. The first browser run found that `autoFocus` scrolled the long-reading example once the non-cycling handle left the tab order; initial focus now uses `preventScroll`. Manual preview review at 375px in both themes found no page overflow and confirmed Escape/focus return. No npm publication, deployment or real Safari/iOS device evidence is claimed.
+
+## Header synchronization — 2026-11-06
+
+The landing Header and shared Logo carry template `61cc0d8`'s responsive fix:
+GitHub is icon-only and the version badge hides from 64rem to 75rem, while
+GitHub keeps its accessible name and Get started remains visible. Preserve
+that compact range when synchronizing the theme. The header regression covers
+Home, Examples and Docs at 1024, 1100, 1200, 1280 and 1440 pixels, including
+the longest sibling package name; it fails on the previous build at 1024px.
+This changes the website only and requires no npm release.
+
+Validation: `site:verify` and `site:check:release` passed: both Astro apps,
+protected styles, formatting, 13 tooling tests, alternate-base builds,
+2,719 links across 50 pages and the migration audit. The broad Chromium run
+passed 60 tests and skipped the five optional integration fixtures; all five
+then passed separately with the external React/Vue/Svelte/Liquid installation.
+All 65 distinct cases therefore have current passing evidence. The header
+was visually reviewed beside Ticker and Notify at 1024px.
