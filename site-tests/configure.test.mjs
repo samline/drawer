@@ -49,6 +49,7 @@ test('configuration inventories real evidence and never executes or modifies sou
     await mkdir(join(isolated, 'shared/lib'), { recursive: true })
     for (const path of [
       'site-tools/configure.mjs',
+      'site-tools/package-readme-template.md',
       'shared/lib/project.mjs',
       'project.config.json',
     ])

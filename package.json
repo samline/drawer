@@ -55,13 +55,14 @@
     "site:format:check": "prettier --plugin prettier-plugin-astro --check landing docs/src docs/scripts shared site-tools site-tests site-e2e playwright.site.config.ts project.config.json content-audit.json design-reference.json SITE*.md --ignore-path .site-prettierignore",
     "site:test": "node --test site-tests/*.test.mjs",
     "site:test:browser": "playwright test --config playwright.site.config.ts",
-    "site:verify": "npm run site:check && npm run site:format:check && npm run site:test && npm run site:test:adaptation && npm run site:build && npm run site:test:browser",
+    "site:verify": "npm run site:check && npm run site:format:check && npm run site:test && npm run site:test:adaptation && npm run site:build && npm run site:check:identity && npm run site:test:browser",
     "site:configure": "node site-tools/configure.mjs",
-    "site:check:release": "node site-tools/check-release.mjs",
+    "site:check:release": "npm run site:check:identity && node site-tools/check-release.mjs",
     "site:test:adaptation": "node site-tools/test-adaptation.mjs",
     "site:check:design": "node site-tools/check-design.mjs",
     "site:check:migration": "node site-tools/check-migration.mjs",
-    "test:package": "node scripts/test-package.mjs"
+    "test:package": "node scripts/test-package.mjs",
+    "site:check:identity": "node site-tools/check-identity.mjs"
   },
   "keywords": [
     "drawer",

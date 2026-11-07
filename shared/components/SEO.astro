@@ -1,5 +1,6 @@
 ---
 import { project } from '../lib/project.mjs'
+import { documentTitle } from '../lib/site-identity.mjs'
 import { serializeJsonLd } from '../lib/serialize'
 interface Props {
   title: string
@@ -9,6 +10,7 @@ interface Props {
   breadcrumb?: { name: string; url: string }[]
 }
 const { title, description, path, article = false, breadcrumb = [] } = Astro.props
+const metaTitle = documentTitle(title, project.npmName)
 const canonical = new URL(path, project.url).href
 const social = new URL('social.png', project.url).href
 // Docs development runs on its own origin and base; production is one combined artifact.
@@ -22,8 +24,8 @@ const schema = serializeJsonLd({
     {
       '@type': article ? 'TechArticle' : 'WebPage',
       '@id': `${canonical}#page`,
-      name: title,
-      headline: title,
+      name: metaTitle,
+      headline: metaTitle,
       description,
       url: canonical,
       inLanguage: 'en',
@@ -52,7 +54,7 @@ const schema = serializeJsonLd({
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>{title}</title>
+<title>{metaTitle}</title>
 <meta name="description" content={description} />
 <meta name="author" content={project.author} />
 <meta name="keywords" content={project.keywords.join(', ')} />
@@ -71,17 +73,17 @@ const schema = serializeJsonLd({
 <link rel="canonical" href={canonical} />
 <link rel="icon" type="image/svg+xml" href={`${assetBase}favicon.svg`} />
 <meta property="og:type" content={article ? 'article' : 'website'} />
-<meta property="og:title" content={title} />
+<meta property="og:title" content={metaTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />
-<meta property="og:site_name" content={project.name} />
+<meta property="og:site_name" content={project.npmName} />
 <meta property="og:locale" content="en_US" />
 <meta property="og:image" content={social} />
 <meta property="og:image:alt" content={imageAlt} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content={title} />
+<meta name="twitter:title" content={metaTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={social} />
 <meta name="twitter:image:alt" content={imageAlt} />

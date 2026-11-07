@@ -25,7 +25,8 @@
     "url": "https://samline.github.io/drawer/",
     "repository": "https://github.com/samline/drawer",
     "namespace": "pkg-samline-drawer",
-    "template": false
+    "template": false,
+    "credit": "samline"
   },
   "theme": {
     "accentLight": "#a32379",

@@ -30,6 +30,10 @@ export function resolveProject(input = config) {
   if (!/^[a-z][a-z0-9-]+$/.test(input.site.namespace))
     throw new Error('Use a unique lowercase namespace')
   if (typeof input.site.template !== 'boolean') throw new Error('site.template must be a boolean')
+  if (typeof input.site.credit !== 'string' || !input.site.credit.trim())
+    throw new Error(
+      'site.credit is the required public footer identity; do not infer it from npm author.'
+    )
   for (const color of Object.values(input.theme))
     if (!/^#[0-9a-f]{6}$/i.test(color))
       throw new Error('Accent colors must use six-digit hex values')

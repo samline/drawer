@@ -18,19 +18,25 @@ Accessible bottom sheets and side panels for JavaScript, TypeScript and browser-
 
 ## Installation
 
-```bash
+```sh
 npm install @samline/drawer
 ```
 
-```bash
+```sh
 pnpm add @samline/drawer
 ```
 
-```bash
+```sh
 bun add @samline/drawer
 ```
 
 Package tooling requires Node.js 20+; browser output targets ES2020.
+
+Import the stylesheet once in your application entrypoint:
+
+```js
+import '@samline/drawer/styles.css'
+```
 
 ## Quick start
 
@@ -129,15 +135,24 @@ Strings are plain text. Pass an HTMLElement or a factory returning one for custo
 
 ## API at a glance
 
-| Group                 | API                                                                     |
-| --------------------- | ----------------------------------------------------------------------- |
-| Controller factory    | `createDrawer()`                                                        |
-| Controller commands   | `setOpen()`, `update()`, `setActiveSnapPoint()`                         |
-| State and observation | `getSnapshot()`, `subscribe()`                                          |
-| Cleanup               | `destroy()`                                                             |
-| Registry queries      | `getDrawer()`, `getDrawers()`, `getParentDrawer()`, `getChildDrawers()` |
-| Registry cleanup      | `destroyDrawers()`                                                      |
-| State-only factory    | `createDrawerController()`                                              |
+| API                                                                     | Purpose               |
+| ----------------------------------------------------------------------- | --------------------- |
+| `createDrawer()`                                                        | Controller factory    |
+| `setOpen()`, `update()`, `setActiveSnapPoint()`                         | Controller commands   |
+| `getSnapshot()`, `subscribe()`                                          | State and observation |
+| `destroy()`                                                             | Cleanup               |
+| `getDrawer()`, `getDrawers()`, `getParentDrawer()`, `getChildDrawers()` | Registry queries      |
+| `destroyDrawers()`                                                      | Registry cleanup      |
+| `createDrawerController()`                                              | State-only factory    |
+
+### Entrypoints
+
+| Entrypoint                       | When to use                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `@samline/drawer`                | DOM and state-only factories, queries, cleanup and types for ESM or CommonJS. |
+| `@samline/drawer/browser`        | Browser module with a `Drawer` namespace and no global side effect.           |
+| `@samline/drawer/browser/global` | Standalone script that defines `window.Drawer`.                               |
+| `@samline/drawer/styles.css`     | Required runtime layout and motion stylesheet.                                |
 
 ### One lifecycle
 
@@ -172,9 +187,9 @@ The package includes declarations. Import `VanillaDrawerOptions`/`VanillaDrawerC
 
 ## Documentation
 
-Read the [documentation](https://samline.github.io/drawer/docs/) for the full guides and API contracts, and explore [working examples](https://samline.github.io/drawer/examples/) with complete and separate source files.
+Read the [documentation](https://samline.github.io/drawer/docs/) for the full guides and API contracts, and explore [working examples](https://samline.github.io/drawer/examples/) with complete and separate source files for both loading modes.
 
-| Guide                                                                              | Purpose                                                 |
+| Guide                                                                              | What it covers                                          |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | [Getting started](https://samline.github.io/drawer/docs/getting-started/)          | Installation and the first owned drawer.                |
 | [Configuration](https://samline.github.io/drawer/docs/reference/configuration/)    | Options, content, styling and accessibility.            |
@@ -183,7 +198,7 @@ Read the [documentation](https://samline.github.io/drawer/docs/) for the full gu
 
 ## Changelog
 
-Read [CHANGELOG.md](CHANGELOG.md) or the [published changelog](https://samline.github.io/drawer/docs/changelog/) for release history and explicitly marked breaking changes.
+Read [CHANGELOG.md](CHANGELOG.md) or the [published changelog](https://samline.github.io/drawer/docs/changelog/) for release history and explicitly marked breaking and behavior changes. Review the notes before upgrading.
 
 ### Upgrading to v5
 
@@ -194,6 +209,8 @@ V5 removes redundant factories and id-based mutators, unifies updates, makes cre
 <a id="agent-integration"></a>
 
 The [Drawer skill](https://samline.github.io/drawer/skills/drawer/SKILL.md) describes v5 integration, lifecycle, content and host ownership. Pass it to an agent or install it using a skills-compatible tool. Verify the installed package version before applying its guidance.
+
+The maintained [repository source](skills/drawer/SKILL.md) and website download are the same file.
 
 Download [SKILL.md](https://samline.github.io/drawer/skills/drawer/SKILL.md) into a `drawer/` folder in your agent's supported skill directory. For agents that discover project skills from `.agents/skills/`:
 

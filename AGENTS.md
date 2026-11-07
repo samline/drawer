@@ -166,3 +166,14 @@ new-tab link); the Docs development favicon resolves under BASE_URL; the
 browser suite port (default 4348 here, unlike the template's 4338) is
 overridable with `PACKAGE_SITE_TEST_PORT`. Drawer's Hero has no
 descriptionContinuation, so the template's line-break spacing fix is not needed.
+
+## Identity convention — 2026-11-06
+
+README structure follows the canonical template proposal, including TOC/resource
+roles, installation blocks, API/guide tables, entrypoints and skill source/download.
+Shared site-identity.mjs composes `<subject> — <npm name>` once for document and
+social titles. Footer display credit is explicitly samline, independent of npm
+author metadata. Keep the identity check in verify/release/CI, and test the real
+configured header name before a substituted sibling. The maintained policy is
+https://github.com/samline/package-landing-docs/blob/main/.agents/identity.md;
+package-specific API content and runtime publication remain separate.

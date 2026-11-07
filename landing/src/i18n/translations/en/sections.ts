@@ -28,7 +28,7 @@ const drawer = createDrawer({
 export default {
   hero: {
     kicker: 'A framework-free drawer runtime.',
-    seoTitle: `${project.name} — Bottom sheets and side panels for JavaScript`,
+    seoTitle: 'Bottom sheets and side panels',
     title: project.name,
     titleAccent: 'Make room for what’s next.',
     description: project.description,

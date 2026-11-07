@@ -1,4 +1,5 @@
 import sections from './sections'
+import { footerCredit } from '../../../../../shared/lib/site-identity.mjs'
 import common from '../../../../../shared/i18n/translations/en/common'
 import controls from '../../../../../shared/i18n/translations/en/controls'
 import { project } from '../../../../../shared/lib/project.mjs'
@@ -27,7 +28,7 @@ export default {
       skill: 'Drawer skill for AI agents',
       changelog: 'Changelog',
       backToTop: 'Back to top',
-      credit: `${project.author} · Made for the open web.`,
+      credit: footerCredit(project.credit),
     },
     items: [
       {
@@ -60,6 +61,9 @@ export default {
     recipeEyebrow: '01 / A working interaction',
     eyebrow: 'Examples',
     title: `${project.name} examples.`,
+    seoTitle: 'Examples',
+    seoDescription:
+      'Try eighteen Drawer examples: filters, nested flows, snap points and non-modal inspectors, with runnable HTML / CDN and Package / ESM files.',
     accent: 'examples.',
     description:
       'Try eighteen Drawer examples: filters, nested flows, snap points, non-modal inspectors and more. Copy runnable HTML/CDN or ESM files.',

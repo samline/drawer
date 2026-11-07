@@ -208,3 +208,27 @@ passed 60 tests and skipped the five optional integration fixtures; all five
 then passed separately with the external React/Vue/Svelte/Liquid installation.
 All 65 distinct cases therefore have current passing evidence. The header
 was visually reviewed beside Ticker and Notify at 1024px.
+
+## Shared identity convention — 2026-11-06
+
+The canonical convention lives in the template's .agents/identity.md. Runtime
+READMEs share section order, manager installation blocks, API/entrypoint and
+guide table roles, resource links and the maintained skill source/download.
+The scaffold at site-tools/package-readme-template.md supplies the common structure;
+package-specific examples and API claims remain grounded in this package.
+
+Document, Open Graph and Twitter titles compose an unbranded subject with
+` — @samline/drawer` once. Docs index uses Documentation and Examples uses Examples.
+The footer credits samline explicitly, separately from npm author metadata.
+Run site:check:identity against the combined artifact; keep the helper, checker/library
+and scaffold synchronized when porting template changes. Browser regressions
+cover title/social agreement, footer links and the real configured header name.
+These changes affect website/documentation only and require no npm release.
+
+Validation: both Astro checks, formatting and all 24 tooling tests passed, as
+did alternate-package builds at / and /tools/widget/. The combined build audited
+2,719 links across 50 pages and preserved 14 historical articles / 157 fragment
+destinations. check:release passed. The final broad Chromium run passed 61 cases,
+including every recipe copied in both modes and complete/separate files. Five
+optional framework/CMS fixtures were skipped in this run; they passed during
+the preceding header port, and their integration/runtime sources are unchanged.
