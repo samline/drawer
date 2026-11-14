@@ -2,19 +2,19 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.1.2] — 2026-11-05
+## [5.1.2] - 2026-11-05
 
 ### Fixed
 
 - Closing a drawer restores focus to the trigger (or to another open drawer) with `preventScroll`, so the page no longer jumps when the trigger is off-screen (#4).
 
-## [5.1.1] — 2026-11-05
+## [5.1.1] - 2026-11-05
 
 ### Fixed
 
 - Dismissing the soft keyboard restores the drawer's authored inline `height`/`bottom` instead of leaving the px values written while it was open (#3).
 
-## [5.1.0] — 2026-11-05
+## [5.1.0] - 2026-11-05
 
 ### Behavior changes
 
@@ -40,7 +40,7 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 - Visually hidden title/description slots ignored `white-space: nowrap` because the property was written with a camelCase name through `setProperty`; they also gain `clip-path: inset(50%)`.
 - Removed unused internal helpers (`reset`, `assignStyle`, `isInView`, `trackScrollPosition`) and unused trigger callback plumbing. None was part of the public API.
 
-## [5.0.3] — 2026-10-28
+## [5.0.3] - 2026-10-28
 
 ### Fixed
 
@@ -48,7 +48,7 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 - Document and regression-test handleOnly precedence over explicit showHandle false, with lateral control-rail and accessible-title guidance.
 - Update vulnerable Vitest tooling without relaxing CI audits. npm publication remains a separate maintainer action.
 
-## [5.0.2] — 2026-10-21
+## [5.0.2] - 2026-10-21
 
 ### Fixed
 
@@ -58,13 +58,13 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 
 - Separated Pages publication from the exhaustive CI workflow, following Ticker's deployment model. All package, app, adaptation and browser checks remain in independent CI; publishing still validates the built site's links, migration destinations and release evidence.
 
-## [5.0.1] — 2026-10-21
+## [5.0.1] - 2026-10-21
 
 ### Fixed
 
 - Website workspace scripts now work under both Bun and npm. Putting the workspace option before `run` preserves the owning app when Bun executes the parent validation script, fixing GitHub Pages validation without changing the runtime API.
 
-## [5.0.0] — 2026-10-21
+## [5.0.0] - 2026-10-21
 
 ### Breaking changes
 
@@ -109,19 +109,19 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 | `mountElement: element`                               | `container: element`.                                                                         |
 | Re-create to update the same id                       | Keep the existing controller or query it; duplicate creation now throws.                      |
 
-## [4.2.1] — 2026-09-28
+## [4.2.1] - 2026-09-28
 
 ### Fixed
 
 - Modeless overlays now settle at visible, interactive open-state styles and use package-scoped fade keyframes, preventing an invisible overlay from intercepting pointer events when application keyframes collide.
 
-## [4.2.0] — 2026-09-28
+## [4.2.0] - 2026-09-28
 
 ### Added
 
 - Added `overlay` as an independent backdrop control. `modal: false, overlay: true` now supports local dismissible overlays without focus trapping, background isolation, or body scroll locking.
 
-## [4.1.0] — 2026-09-23
+## [4.1.0] - 2026-09-23
 
 ### Added
 
@@ -129,7 +129,7 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 - Added `newDrawer({ id, html, options })` for trusted server-rendered HTML integrations.
 - Added a read-only `available` view derived from the package registry; it never creates a second source of truth.
 
-## [4.0.1] — 2026-09-20
+## [4.0.1] - 2026-09-20
 
 Documentation completeness and accuracy release. There are no runtime or public API changes.
 
@@ -141,7 +141,7 @@ Documentation completeness and accuracy release. There are no runtime or public 
 - Reorganized navigation and recipes by developer task, added complete bundler/CDN examples, and covered modal, accessibility, nested, snap-point, and headless-renderer scenarios.
 - Fixed broken internal links, invalid TypeScript examples, edit-page URLs, contradictory guidance, and incomplete snippets.
 
-## [4.0.0] — 2026-09-10
+## [4.0.0] - 2026-09-10
 
 Accessibility, package-entrypoint, and lifecycle-safety release. This is a major release because modal focus behavior, handle markup, and the `@samline/drawer/browser` module contract change.
 
@@ -163,7 +163,7 @@ Accessibility, package-entrypoint, and lifecycle-safety release. This is a major
 - Preserved the CSS and global IIFE as package side effects so bundlers do not tree-shake them.
 - Updated vulnerable development dependencies and added a reproducible lockfile for the documentation site.
 
-## [3.1.0] — 2026-07-31
+## [3.1.0] - 2026-07-31
 
 Memory hygiene hardening release. No public API change. No behavioral change for the happy path. All fixes are defensive: cleanup callbacks that throw are isolated so the teardown completes its downstream responsibilities, and event listeners that depend on a one-shot contract are now also reachable from the explicit teardown path.
 
@@ -187,7 +187,7 @@ Memory hygiene hardening release. No public API change. No behavioral change for
 
 319 tests passing (+14 new across `test/cleanup-exception-safety.test.ts`, `test/visual-viewport-listener-cleanup.test.ts`, and the new `chain` cases in `test/helpers.test.ts`).
 
-## [3.0.0] — 2026-07-28
+## [3.0.0] - 2026-07-28
 
 First stable release of the v3 vanilla line. Closes the long-running beta series by promoting the `3.0.0-beta.4` surface with two consumer-facing simplifications.
 
@@ -197,7 +197,7 @@ First stable release of the v3 vanilla line. Closes the long-running beta series
 - **HTML tree — fewer wrappers, simpler custom drawers.** Removed the inner `[data-drawer-vanilla-node]` wrapper. The `[data-drawer-vanilla-body]` wrapper was renamed to `[data-drawer-body]`. The title and description slots (when present) live inside `[data-drawer-body]`, in that order, before the consumer content. The optional close button is still appended to `[data-drawer]` after the body. Consumers targeting these slots in CSS should update their selectors accordingly.
 - **Default visibility.** The title slot renders visibly by default when an explicit `title` is passed (escape hatch `titleVisuallyHidden: true` is preserved for retro-compat). The description slot is auto-hidden by default when an explicit `description` is passed (escape hatch `descriptionVisuallyHidden: false` is preserved for retro-compat).
 
-## [3.0.0-beta.4] — 2026-07-28
+## [3.0.0-beta.4] - 2026-07-28
 
 The fourth beta hardens the vanilla renderer after the Vaul parity audits. It focuses on presence, gesture intent, multi-drawer ownership, Safari/iOS restoration, and documentation that describes the shipped vanilla behavior without claiming package-wide 1:1 parity.
 
@@ -235,7 +235,7 @@ The fourth beta hardens the vanilla renderer after the Vaul parity audits. It fo
 
 `3.0.0-beta.4` remains a pre-release. Automated coverage runs in Vitest/jsdom; final interaction validation in real Chrome, Firefox, Safari, and iOS browsers remains part of the stable-release checklist.
 
-## [3.0.0-beta.3] — 2026-07-25
+## [3.0.0-beta.3] - 2026-07-25
 
 The third beta of the v3.0.0 line. This release focuses on completing the drag pipeline that was deferred during the React→vanilla refactor (`v3.0.0-beta.0`), plus a tooling and cleanup pass to align with the `@samline/forms` and `@samline/notify` conventions.
 
@@ -303,7 +303,7 @@ The third beta of the v3.0.0 line. This release focuses on completing the drag p
 
 `3.0.0-beta.3` is a **pre-release** of the v3.0.0 line. The previous `3.0.0-beta.0` (React→vanilla baseline, `af932e3`), `3.0.0-beta.1` (version bump on the pre-Phase-A vanilla build, `e1b91fa`), and `3.0.0-beta.2` (memory-leak / CSS / a11y fixes, `6e2dc55`) are all retroactive tags that were not published to npm. `3.0.0-beta.4` later superseded the planned direct jump from beta.3 to stable.
 
-## [3.0.0-beta.2] — 2026-07-15
+## [3.0.0-beta.2] - 2026-07-15
 
 > Retroactive tag. Never published to npm. Captures the pre-`3.0.0-beta.3` working tree.
 
@@ -317,7 +317,7 @@ The third beta of the v3.0.0 line. This release focuses on completing the drag p
 
 `3.0.0-beta.2` never bumped the drawer id position; the slot id format is `${drawer.id}-title` / `${drawer.id}-description`, unique per instance.
 
-## [3.0.0-beta.1] — 2026-07-14
+## [3.0.0-beta.1] - 2026-07-14
 
 > Retroactive tag. Never published to npm. Captures the pre-`3.0.0-beta.2` working tree.
 
@@ -325,7 +325,7 @@ The third beta of the v3.0.0 line. This release focuses on completing the drag p
 
 - Version bumped to `3.0.0-beta.1` (no functional change over `3.0.0-beta.0`; this was a placeholder bump while the pre-existing React build was being torn out).
 
-## [3.0.0-beta.0] — 2026-07-13
+## [3.0.0-beta.0] - 2026-07-13
 
 > Retroactive tag. Never published to npm. Captures the React→vanilla refactor.
 
@@ -371,7 +371,7 @@ All were unit-tested in `v3.0.0-beta.0` and remained the contract for the drag p
 
 ---
 
-## [2.0.8] — 2026-07-09
+## [2.0.8] - 2026-07-09
 
 > Pre-vanilla-release. The last `2.0.x` before the React→vanilla refactor.
 

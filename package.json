@@ -4,7 +4,7 @@
   "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://samline.github.io/drawer",
+  "homepage": "https://samline.github.io/drawer/",
   "publishConfig": {
     "access": "public",
     "tag": "latest"
