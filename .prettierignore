@@ -8,6 +8,8 @@ CHANGELOG.md
 test-results
 playwright-report
 site
+# The canonical README template keeps placeholder lines Prettier would indent.
+scripts/package-readme-template.md
 # The website has its own formatter (bun run site:format).
 landing
 docs

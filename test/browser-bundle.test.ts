@@ -2,16 +2,16 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { DrawerApi } from '../src/browser/global'
-import Drawer, { Drawer as NamedDrawer } from '../src/browser'
+import * as entry from '../src/browser'
 
 describe('browser IIFE bundle', () => {
   it('also exposes a real module entrypoint', () => {
-    expect(Drawer).toBe(NamedDrawer)
-    expect(Drawer.createDrawer).toBeTypeOf('function')
+    expect('default' in entry).toBe(false)
+    expect(entry.Drawer.createDrawer).toBeTypeOf('function')
   })
 
   it('exposes the direct API on window.Drawer', () => {
-    const source = readFileSync(resolve(__dirname, '../dist/browser/global.global.js'), 'utf8')
+    const source = readFileSync(resolve(__dirname, '../dist/browser/drawer.global.js'), 'utf8')
     const previousDrawer = window.Drawer
 
     try {

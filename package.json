@@ -1,6 +1,6 @@
 {
   "name": "@samline/drawer",
-  "version": "5.1.2",
+  "version": "6.0.0",
   "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
@@ -13,6 +13,7 @@
     "node": ">=20"
   },
   "sideEffects": [
+    "./dist/browser/drawer.global.js",
     "./dist/browser/global.global.js",
     "./dist/style.css"
   ],
@@ -34,8 +35,10 @@
       "import": "./dist/browser/index.js",
       "require": "./dist/browser/index.cjs"
     },
+    "./browser/global": "./dist/browser/drawer.global.js",
+    "./style.css": "./dist/style.css",
     "./styles.css": "./dist/style.css",
-    "./style.css": "./dist/style.css"
+    "./package.json": "./package.json"
   },
   "scripts": {
     "clean": "rm -rf dist coverage",
@@ -107,6 +110,8 @@
   "size": {
     "./dist/index.js": 16800,
     "./dist/browser/index.js": 16700,
-    "./dist/browser/global.global.js": 16700
-  }
+    "./dist/browser/drawer.global.js": 16700
+  },
+  "unpkg": "./dist/browser/drawer.global.js",
+  "jsdelivr": "./dist/browser/drawer.global.js"
 }

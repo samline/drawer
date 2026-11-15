@@ -35,7 +35,7 @@ Package tooling requires Node.js 20+; browser output targets ES2020.
 Import the stylesheet once in your application entrypoint:
 
 ```js
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 ```
 
 ## Quick start
@@ -48,7 +48,7 @@ Create a trigger, load the runtime stylesheet and give the panel its own positio
 
 ```js
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 import './drawer.css'
 
 const drawer = createDrawer({
@@ -111,8 +111,8 @@ drawer.destroy()
 Load matching versioned runtime CSS and JavaScript, then replace the import with `window.Drawer.createDrawer`. Keep the same panel stylesheet and controller lifecycle.
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/browser/drawer.global.js"></script>
 ```
 
 Pin the version in production, or self-host the same matching files. ESM/CommonJS are module formats; CDN or self-hosted files are delivery choices. The optional `@samline/drawer/browser` module exports a `Drawer` namespace with the same functions and no global side effect.
@@ -152,7 +152,7 @@ Strings are plain text. Pass an HTMLElement or a factory returning one for custo
 | `@samline/drawer`                | DOM and state-only factories, queries, cleanup and types for ESM or CommonJS. |
 | `@samline/drawer/browser`        | Browser module with a `Drawer` namespace and no global side effect.           |
 | `@samline/drawer/browser/global` | Standalone script that defines `window.Drawer`.                               |
-| `@samline/drawer/styles.css`     | Required runtime layout and motion stylesheet.                                |
+| `@samline/drawer/style.css`      | Required runtime layout and motion stylesheet.                                |
 
 ### One lifecycle
 

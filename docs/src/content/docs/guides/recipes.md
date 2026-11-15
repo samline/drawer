@@ -328,7 +328,7 @@ When `shouldScaleBackground: true`, the page shell (the element with `data-drawe
 
 ```ts
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 
 const drawer = createDrawer({
   id: 'filters',
@@ -712,7 +712,7 @@ Every direction uses its matching axis for open, close, drag, and snap behavior:
 
 ```ts
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 
 const drawers = {
   top: createDrawer({ id: 'from-top', direction: 'top', content: 'Top drawer' }),

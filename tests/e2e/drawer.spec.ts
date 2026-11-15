@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { expect, test } from './fixtures'
 
-// The bundle keeps its v5 name, dist/browser/global.global.js (CDN URLs depend on it).
+// The 6.0.0 bundle name; dist/browser/global.global.js stays as an identical alias.
 const bundle = 'global'
 const styles = fileURLToPath(new URL('../../dist/style.css', import.meta.url))
 

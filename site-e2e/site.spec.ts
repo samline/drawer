@@ -150,7 +150,7 @@ test('all rendered recipes execute in both modes as separate and complete files'
   test.setTimeout(360000)
   await page.goto('examples/')
   const bundle = await readFile(
-    new URL('../dist/browser/global.global.js', import.meta.url),
+    new URL('../dist/browser/drawer.global.js', import.meta.url),
     'utf8'
   )
   const runtimeCss = await readFile(new URL('../dist/style.css', import.meta.url), 'utf8')
@@ -208,7 +208,7 @@ test('all rendered recipes execute in both modes as separate and complete files'
               resolve: {
                 alias: [
                   {
-                    find: /^@samline\/drawer\/styles\.css$/,
+                    find: /^@samline\/drawer\/styles?\.css$/,
                     replacement: fileURLToPath(new URL('../dist/style.css', import.meta.url)),
                   },
                   {

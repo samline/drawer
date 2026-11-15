@@ -16,7 +16,7 @@ Drawer moved from Bun installs to pnpm with the family tooling (CI, Prettier, si
 - pnpm reads overrides only from `pnpm-workspace.yaml`; the npm `overrides` field and `pnpm.overrides` in package.json are ignored. Repository pins go in the `# Repository overrides` block at the end of that file, which sync keeps. tsup still pulls esbuild 0.27, so esbuild is pinned to `^0.28.1`.
 - The family CI is managed and has no website job: `.github/workflows/site.yml` runs `pnpm audit`, test:package, the site checks and the full site browser suite.
 - `homepage` ends with a slash and CDN snippets use jsDelivr, as in the rest of the family.
-- The browser bundle keeps its v5 name, `dist/browser/global.global.js`, because CDN URLs depend on it. Renaming it to `drawer.global.js` waits for the next major.
+- 6.0.0: the browser bundle is `dist/browser/drawer.global.js`; `dist/browser/global.global.js` is still built from the same entry as an identical alias. The browser entries export named members only (no `default`); docs import `@samline/drawer/style.css` (`styles.css` stays an alias export).
 - Coverage meets the family 90/95/95/95. The `test/coverage-*.test.ts` files cover the iOS/Safari scroll paths, gesture edge cases, the focus trap and registry callbacks. Spying on `runtime/browser` goes through `test/_test-helpers.ts`; never call `vi.restoreAllMocks()` in a file that uses it, or the shared spies detach.
 - Removed the unreachable `container` result from `resolveRenderable` (it only returns `text` or `element`).
 

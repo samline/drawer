@@ -2,10 +2,19 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [6.0.0] - 2026-11-15
+
+The browser bundle and stylesheet take the family names. The 5.x file names still ship as aliases.
+
+### Breaking changes
+
+- `@samline/drawer/browser` and the classic script no longer have a `default` export. Use `import { Drawer } from '@samline/drawer/browser'` or the named functions; `window.Drawer` is unchanged.
+- The standalone script is now `dist/browser/drawer.global.js`, also exported as `@samline/drawer/browser/global`. `dist/browser/global.global.js` is still built as an identical alias, so pinned 5.x URLs that you bump to 6.0.0 keep working.
 
 ### Changed
 
+- The documented stylesheet import is `@samline/drawer/style.css`; `@samline/drawer/styles.css` stays as an alias of the same file.
+- The package installs with pnpm and runs its scripts with Bun. `./package.json` is exported.
 - CDN snippets in the README, docs, skill and copied examples load from jsDelivr (`https://cdn.jsdelivr.net/npm/@samline/drawer@<version>/…`) instead of unpkg. The files are the same.
 - `homepage` is the canonical site URL with its trailing slash, `https://samline.github.io/drawer/`.
 

@@ -16,15 +16,15 @@ sidebar:
 With a bundler:
 
 ```ts
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 // Equivalent alias: import '@samline/drawer/style.css'
 ```
 
 With the 5.1.2 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/browser/drawer.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.

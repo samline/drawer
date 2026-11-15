@@ -28,4 +28,3 @@ export {
   getParentDrawer,
   getChildDrawers,
 }
-export default Drawer

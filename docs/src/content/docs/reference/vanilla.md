@@ -20,7 +20,7 @@ Use the [installation tabs and complete files](../../getting-started/) for npm, 
 ## Quick Start
 
 ```ts
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 import { createDrawer } from '@samline/drawer'
 
 document.querySelector('#app-shell')?.setAttribute('data-drawer-wrapper', '')
@@ -184,7 +184,7 @@ console.log(next.state.isOpen) // true
 - `title`, `description`, and `content` accept strings, numbers, `HTMLElement`, functions returning `HTMLElement`, `null`, or `undefined`. See [Renderable content](../configuration/#renderable-content) for the full rules.
 - Use `ariaLabel` or `ariaLabelledBy` for drawers like galleries or custom shells that should not render a top-level title node.
 - `title` and `description` are rendered before `content` inside the shared vanilla content wrapper.
-- `@samline/drawer/styles.css` provides the shared runtime animations, transforms, and handle styles. It does not provide a complete overlay or panel theme for your app.
+- `@samline/drawer/style.css` provides the shared runtime animations, transforms, and handle styles. It does not provide a complete overlay or panel theme for your app.
 - When `container` is omitted, a dedicated vanilla host is created automatically and appended to `document.body`. Closed drawers retain this host and an optional trigger, but not an overlay or dialog surface.
 - The root entry exposes per-drawer hosts through a programmatic API instead of framework-specific component composition.
 - Duplicate explicit ids throw. Omit id for independent generated ids; update an owned controller instead of creating again.

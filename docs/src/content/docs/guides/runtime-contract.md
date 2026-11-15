@@ -32,7 +32,7 @@ The controller returned by `createDrawer` has a small, focused method surface. S
 
 ```ts
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 
 const drawer = createDrawer({
   id: 'filters',

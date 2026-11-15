@@ -12,14 +12,14 @@ Build against the installed `@samline/drawer` version. This skill describes v5.1
 
 ## Choose loading, then keep the controller
 
-- **Package / ESM:** install with npm, pnpm, yarn or bun. Import `{ createDrawer }` from `@samline/drawer` and import `@samline/drawer/styles.css` once. Initialize in client code after the trigger exists. ESM/TypeScript and CommonJS are module formats; neither installs `window.Drawer`.
-- **HTML / CDN:** load `dist/style.css` with `<link>` and `dist/browser/global.global.js` with `<script>`, then call `window.Drawer.createDrawer(options)`. Keep CSS and JavaScript pinned to the same version. A CDN is file delivery; self-hosting the same files uses the same API. The IIFE exposes `window.Drawer`; “Global” is not a third loading mode. Avoid `async` or a deferred script followed by an immediately executed inline initializer.
+- **Package / ESM:** install with npm, pnpm, yarn or bun. Import `{ createDrawer }` from `@samline/drawer` and import `@samline/drawer/style.css` once. Initialize in client code after the trigger exists. ESM/TypeScript and CommonJS are module formats; neither installs `window.Drawer`.
+- **HTML / CDN:** load `dist/style.css` with `<link>` and `dist/browser/drawer.global.js` with `<script>`, then call `window.Drawer.createDrawer(options)`. Keep CSS and JavaScript pinned to the same version. A CDN is file delivery; self-hosting the same files uses the same API. The IIFE exposes `window.Drawer`; “Global” is not a third loading mode. Avoid `async` or a deferred script followed by an immediately executed inline initializer.
 
 For 5.1.2 the documented assets are:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/browser/drawer.global.js"></script>
 ```
 
 Verify that the selected release/assets exist before using remote URLs. A repository version or tag does not prove npm/CDN publication. Use the local build when integrating an unpublished release; do not silently load an older version with newer APIs.
@@ -38,7 +38,7 @@ Use an existing native button and the host's styling. These three snippets work 
 
 ```js
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 import './drawer.css'
 
 const setupFilters = trigger => {

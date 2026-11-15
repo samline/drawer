@@ -64,7 +64,7 @@ for (const framework of ['React', 'Vue', 'Svelte']) {
           conditions: ['browser'],
           alias: [
             {
-              find: /^@samline\/drawer\/styles\.css$/,
+              find: /^@samline\/drawer\/styles?\.css$/,
               replacement: fileURLToPath(new URL('../dist/style.css', import.meta.url)),
             },
             {

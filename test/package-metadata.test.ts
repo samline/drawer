@@ -18,8 +18,9 @@ describe('package metadata', () => {
         import: './dist/browser/index.js',
         require: './dist/browser/index.cjs',
       },
-      './styles.css': './dist/style.css',
+      './browser/global': './dist/browser/drawer.global.js',
       './style.css': './dist/style.css',
+      './styles.css': './dist/style.css',
     })
 
     expect(packageJson.files).toEqual(['dist', 'CHANGELOG.md'])
@@ -32,6 +33,10 @@ describe('package metadata', () => {
   })
 
   it('preserves the CSS and global bundle side effects', () => {
-    expect(packageJson.sideEffects).toEqual(['./dist/browser/global.global.js', './dist/style.css'])
+    expect(packageJson.sideEffects).toEqual([
+      './dist/browser/drawer.global.js',
+      './dist/browser/global.global.js',
+      './dist/style.css',
+    ])
   })
 })

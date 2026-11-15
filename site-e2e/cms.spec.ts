@@ -76,7 +76,7 @@ echo json_encode(['html'=>$GLOBALS['markup'],'styles'=>$GLOBALS['styles'],'scrip
           result.styles.map((item: any) => `<link rel="stylesheet" href="${item.url}">`).join('') +
           result.scripts.map((item: any) => `<script src="${item.url}" defer></script>`).join('')
       }
-      const runtime = await readFile(new URL('dist/browser/global.global.js', root), 'utf8')
+      const runtime = await readFile(new URL('dist/browser/drawer.global.js', root), 'utf8')
       const css = await readFile(new URL('dist/style.css', root), 'utf8')
       const errors: string[] = []
       example.on('pageerror', error => errors.push(error.message))

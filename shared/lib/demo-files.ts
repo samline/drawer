@@ -9,7 +9,7 @@ const options = await resolveConfig(process.cwd())
 export type DemoMode = 'cdn' | 'esm'
 const behaviorFor = (preset: DemoPreset, mode: DemoMode) =>
   mode === 'esm'
-    ? `import { createDrawer } from '@samline/drawer'\nimport '@samline/drawer/styles.css'\nimport './style.css'\n\n${javascriptFor(preset).replaceAll('window.Drawer.createDrawer', 'createDrawer')}`
+    ? `import { createDrawer } from '@samline/drawer'\nimport '@samline/drawer/style.css'\nimport './style.css'\n\n${javascriptFor(preset).replaceAll('window.Drawer.createDrawer', 'createDrawer')}`
     : javascriptFor(preset)
 const documentFor = (separate: boolean, preset: DemoPreset, mode: DemoMode) => `<!doctype html>
 <html lang="en">

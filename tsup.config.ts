@@ -12,14 +12,14 @@ import { resolve } from 'node:path'
 //      webpack/etc.). `clean: true` wipes `dist/` before writing so
 //      leftovers from previous runs do not leak into the new bundle.
 //
-//   2. IIFE (`browser/global`) — loaded standalone via a single `<script>`
+//   2. IIFE (`browser/drawer`, alias `browser/global`) — loaded standalone via a single `<script>`
 //      tag. `clean: false` keeps the index entry's assets in place; the
 //      entry only adds its own files under `dist/browser/`. The entry
 //      assigns `window.Drawer` itself, so the IIFE intentionally has no
 //      `globalName` wrapper (which would leak a second browser global).
 //
 // `src/style.css` is a static asset that ships as
-// `@samline/drawer/styles.css` (see `package.json` exports). The
+// `@samline/drawer/style.css` (alias `styles.css`, see `package.json` exports). The
 // `onSuccess` hook copies it to `dist/style.css` after the index
 // build runs so consumers can import it without going through a
 // bundler.
@@ -64,6 +64,8 @@ export default defineConfig([
   },
   {
     entry: {
+      'browser/drawer': 'src/browser/global.ts',
+      // 5.x name, kept as an identical alias so existing CDN URLs keep working.
       'browser/global': 'src/browser/global.ts',
     },
     format: ['iife'],

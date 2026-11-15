@@ -17,7 +17,8 @@ const require = createRequire(import.meta.url)
 const esm = await import('../dist/index.js')
 const cjs = require('../dist/index.cjs')
 const browser = await import('../dist/browser/index.js')
-for (const api of [esm, cjs, browser.default]) {
+assert.equal('default' in browser, false, 'The browser entry has no default export')
+for (const api of [esm, cjs, browser.Drawer]) {
   assert.deepEqual(
     Object.keys(api)
       .filter(key => typeof api[key] === 'function')
@@ -36,12 +37,19 @@ for (const api of [esm, cjs, browser.default]) {
 assert.equal(globalThis.Drawer, undefined, 'Module imports must not install a global')
 const context = { console }
 vm.runInNewContext(
-  readFileSync(new URL('../dist/browser/global.global.js', import.meta.url), 'utf8'),
+  readFileSync(new URL('../dist/browser/drawer.global.js', import.meta.url), 'utf8'),
   context
 )
 assert.deepEqual(Object.keys(context.Drawer).sort(), functions)
-const [packed] = JSON.parse(
-  execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { encoding: 'utf8' })
+const withoutMap = file =>
+  readFileSync(new URL(file, import.meta.url), 'utf8').replace(/\n\/\/# sourceMappingURL=.*$/, '')
+assert.equal(
+  withoutMap('../dist/browser/global.global.js'),
+  withoutMap('../dist/browser/drawer.global.js'),
+  'The 5.x bundle name stays an identical alias'
+)
+const packed = JSON.parse(
+  execFileSync('pnpm', ['pack', '--dry-run', '--json'], { encoding: 'utf8' })
 )
 const paths = new Set(packed.files.map(file => file.path))
 for (const file of [
@@ -49,6 +57,7 @@ for (const file of [
   'README.md',
   'LICENSE.md',
   'CHANGELOG.md',
+  'dist/browser/drawer.global.js',
   'dist/browser/global.global.js',
 ]) {
   assert.ok(paths.has(file), `Missing published file: ${file}`)

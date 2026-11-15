@@ -13,7 +13,7 @@
 //     `createDrawer()` calls, matching the
 //     documented "loading the script only attaches `window.Drawer`" contract.
 
-import Drawer, { type DrawerApi } from './index'
+import { Drawer, type DrawerApi } from './index'
 
 export { Drawer }
 export type { DrawerApi } from './index'
@@ -37,9 +37,3 @@ if (typeof globalThis !== 'undefined') {
 if (typeof window !== 'undefined' && (window as typeof globalThis) !== globalThis) {
   ;(window as { Drawer?: DrawerApi }).Drawer = Drawer
 }
-
-// Default export — mirrors the pattern used by `@samline/forms`
-// (`export default Forms`) and `@samline/notify` (`export default Notify`).
-// Lets bundlers / consumers that default-import the IIFE entry get
-// the same namespace as the named export.
-export default Drawer

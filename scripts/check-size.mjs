@@ -4,7 +4,7 @@
  * Managed by package-landing-docs (family/templates/package). Edit there, then run node family/scripts/sync.mjs.
  *
  * Each entry is bundled the way a consumer's bundler would see it (minified,
- * framework packages external) and gzipped. Budgets live in `package.json`
+ * framework packages and peer dependencies external) and gzipped. Budgets live in `package.json`
  * under `"size": { "<entry file>": <max gzip bytes> }`.
  */
 import { existsSync, readFileSync } from 'node:fs'
@@ -14,7 +14,18 @@ import { build } from 'esbuild'
 
 const root = new URL('..', import.meta.url).pathname
 const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-const external = ['react', 'react-dom', 'vue', 'svelte', 'svelte/store']
+// Peers are resolved by the consumer's bundler, so they never count here. A
+// prebuilt IIFE that bundles a peer still measures it: esbuild only re-reads it.
+const peers = Object.keys(manifest.peerDependencies ?? {})
+const external = [
+  'react',
+  'react-dom',
+  'vue',
+  'svelte',
+  'svelte/store',
+  ...peers,
+  ...peers.map(peer => `${peer}/*`),
+]
 
 if (!manifest.size) {
   console.error(`✗ ${manifest.name}: every public entry needs a budget in package.json → size`)

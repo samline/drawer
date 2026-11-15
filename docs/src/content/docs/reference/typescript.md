@@ -362,7 +362,7 @@ Override the shared easing/duration in your own stylesheet by targeting `[data-d
 The optional browser subpath exports the `DrawerApi` type, the named/default `Drawer` namespace and the same seven named functions as the root. There is no second registry or browser-only factory.
 
 ```ts
-import Drawer, { type DrawerApi } from '@samline/drawer/browser'
+import { Drawer, type DrawerApi } from '@samline/drawer/browser'
 const drawer = Drawer.createDrawer({ title: 'Filters' })
 ```
 

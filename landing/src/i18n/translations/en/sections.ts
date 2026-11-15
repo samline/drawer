@@ -12,7 +12,7 @@ const code = (filename: string, source: string, language: 'html' | 'javascript' 
 })
 const source = await demoFiles
 const moduleCode = `import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 import './style.css'
 
 const drawer = createDrawer({
@@ -106,7 +106,7 @@ export default {
       },
       style: {
         label: 'Styles',
-        entrypoint: '@samline/drawer/styles.css',
+        entrypoint: '@samline/drawer/style.css',
         description:
           'Import runtime motion and handle styles first. Add your own positioning, surface and theme CSS after it.',
       },

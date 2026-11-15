@@ -15,7 +15,7 @@ test('copied lateral recipe preserves a vertical grip, accessible title and sepa
   await page.setContent(
     `<style>${readFileSync('dist/style.css', 'utf8')}\n${css}</style><template id="filters">${'<p>Filter choice</p>'.repeat(100)}</template>`
   )
-  await page.addScriptTag({ path: 'dist/browser/global.global.js' })
+  await page.addScriptTag({ path: 'dist/browser/drawer.global.js' })
   await page.addScriptTag({
     content: ts.transpileModule(`const { createDrawer } = window.Drawer;\n${recipe}`, {
       compilerOptions: { target: ts.ScriptTarget.ES2020 },

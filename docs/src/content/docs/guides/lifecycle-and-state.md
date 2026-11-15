@@ -23,7 +23,7 @@ This is why `setOpen(false)` and `destroy()` are not interchangeable. Closing pr
 
 ```ts
 import { createDrawer } from '@samline/drawer'
-import '@samline/drawer/styles.css'
+import '@samline/drawer/style.css'
 
 const drawer = createDrawer({ id: 'filters', title: 'Filters' })
 
