@@ -16,7 +16,6 @@ const modes = [
   <Tabs id={id} label={t.modeLabel} items={modes}>
     {modes.map(mode => (
       <TabPanel id={mode.id} label={mode.label}>
-
         <CodeFiles
           files={mode.source.files}
           complete={{ code: mode.source.complete.code, copyLabel: t.copyComplete }}
