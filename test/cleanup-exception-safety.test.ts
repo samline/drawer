@@ -164,7 +164,7 @@ describe('teardownMount isolates cleanup exceptions (F18)', () => {
       id: 'cleanup-built-in-trigger',
       open: true,
       triggerText: 'Open',
-      content: 'Body'
+      content: 'Body',
     })
     const trigger = document.querySelector('[data-drawer-vanilla-trigger]') as HTMLButtonElement
     expect(trigger).toBeTruthy()
@@ -193,14 +193,14 @@ describe('teardownMount isolates cleanup exceptions (F18)', () => {
       Object.assign(new window.Event('pointerdown', { bubbles: true }), {
         clientX: 50,
         clientY: 50,
-        pointerId: 1
+        pointerId: 1,
       })
     )
     content.dispatchEvent(
       Object.assign(new window.Event('pointermove', { bubbles: true }), {
         clientX: 100,
         clientY: 50,
-        pointerId: 1
+        pointerId: 1,
       })
     )
 

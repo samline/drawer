@@ -17,7 +17,7 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'close' })
   })
@@ -36,7 +36,7 @@ describe('snap release runtime helpers', () => {
         dismissible: false,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'snap', targetOffset: 680 })
   })
@@ -55,7 +55,7 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'snap', targetOffset: 0 })
   })
@@ -74,7 +74,7 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'snap', targetOffset: 0 })
   })
@@ -93,7 +93,7 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'snap', targetOffset: 400 })
   })
@@ -111,7 +111,7 @@ describe('snap release runtime helpers', () => {
         dismissible: true,
         snapToSequentialPoint: false,
         velocityThreshold: 0.4,
-        viewportSize: 800
+        viewportSize: 800,
       })
     ).toEqual({ type: 'noop' })
   })

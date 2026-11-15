@@ -110,11 +110,12 @@ export interface CommonDrawerController {
   subscribe: (listener: (snapshot: CommonDrawerSnapshot) => void) => () => void
 }
 
-const DEFAULT_OPTIONS: Required<Pick<CommonDrawerOptions, 'direction' | 'dismissible' | 'modal'>> = {
-  direction: 'bottom',
-  dismissible: true,
-  modal: true
-}
+const DEFAULT_OPTIONS: Required<Pick<CommonDrawerOptions, 'direction' | 'dismissible' | 'modal'>> =
+  {
+    direction: 'bottom',
+    dismissible: true,
+    modal: true,
+  }
 
 function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
   return {
@@ -125,12 +126,14 @@ function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
       direction: options.direction ?? DEFAULT_OPTIONS.direction,
       snapPoints: options.snapPoints ?? [],
       dismissible: options.dismissible ?? DEFAULT_OPTIONS.dismissible,
-      modal: options.modal ?? DEFAULT_OPTIONS.modal
-    }
+      modal: options.modal ?? DEFAULT_OPTIONS.modal,
+    },
   }
 }
 
-export function createDrawerController(initialOptions: CommonDrawerOptions = {}): CommonDrawerController {
+export function createDrawerController(
+  initialOptions: CommonDrawerOptions = {}
+): CommonDrawerController {
   let active = true
   const assertActive = () => {
     if (!active) throw new Error('Drawer controller has been destroyed')
@@ -141,7 +144,7 @@ export function createDrawerController(initialOptions: CommonDrawerOptions = {})
 
   function publish() {
     snapshot = toSnapshot(options)
-    listeners.forEach((listener) => listener(snapshot))
+    listeners.forEach(listener => listener(snapshot))
     return snapshot
   }
 
@@ -162,7 +165,8 @@ export function createDrawerController(initialOptions: CommonDrawerOptions = {})
     },
     update(nextOptions) {
       assertActive()
-      if ('id' in nextOptions && nextOptions.id !== options.id) throw new TypeError('Drawer ids cannot be changed')
+      if ('id' in nextOptions && nextOptions.id !== options.id)
+        throw new TypeError('Drawer ids cannot be changed')
       options = { ...options, ...nextOptions }
       return publish()
     },
@@ -178,6 +182,6 @@ export function createDrawerController(initialOptions: CommonDrawerOptions = {})
       return () => {
         listeners.delete(listener)
       }
-    }
+    },
   }
 }

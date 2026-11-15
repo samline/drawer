@@ -41,7 +41,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
 
   afterEach(() => {
     destroyDrawers()
-    pendingRestores.splice(0).forEach((restore) => restore())
+    pendingRestores.splice(0).forEach(restore => restore())
     browserModuleMocks.reset()
     document.body.style.overflow = ''
   })
@@ -52,7 +52,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: false
+      justReleased: false,
     })
     expect(bodyOverflow()).toBe('hidden')
     restore()
@@ -65,7 +65,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: false
+      justReleased: false,
     })
     expect(bodyOverflow()).toBe('')
     expect(() => restore()).not.toThrow()
@@ -76,7 +76,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: false,
       isDragging: false,
       modal: true,
-      justReleased: false
+      justReleased: false,
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -87,7 +87,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: true,
       modal: true,
-      justReleased: false
+      justReleased: false,
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -98,7 +98,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: false,
-      justReleased: false
+      justReleased: false,
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -109,7 +109,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: false,
       modal: true,
-      justReleased: true
+      justReleased: true,
     })
     expect(bodyOverflow()).toBe('')
     restore()
@@ -134,7 +134,7 @@ describe('preventBodyScroll gate (G3 + G11 + G12)', () => {
       isOpen: true,
       isDragging: true, // gate 1
       modal: true,
-      justReleased: true // gate 2
+      justReleased: true, // gate 2
     })
     expect(bodyOverflow()).toBe('')
     restore()

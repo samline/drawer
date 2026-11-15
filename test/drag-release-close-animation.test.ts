@@ -25,7 +25,7 @@ function createPointerEvent(
   Object.assign(event, {
     clientX: init.clientX,
     clientY: init.clientY,
-    pointerId: init.pointerId ?? 1
+    pointerId: init.pointerId ?? 1,
   })
   return event
 }
@@ -46,10 +46,13 @@ function dragPastCloseThreshold(direction: CommonDrawerDirection) {
   // 30% of the drawer dimension is well above the 25% close
   // threshold for both axes. The drag-release path picks the
   // 'close' action.
-  const drawerDimension = direction === 'bottom' || direction === 'top' ? window.innerHeight : window.innerWidth
+  const drawerDimension =
+    direction === 'bottom' || direction === 'top' ? window.innerHeight : window.innerWidth
   const startY = 100
   const endY = startY + drawerDimension * 0.3
-  dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 1 }))
+  dispatchOnContent(
+    createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 1 })
+  )
   // 30 ms keeps the velocity above VELOCITY_THRESHOLD.
   vi.advanceTimersByTime(30)
   dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 1 }))
@@ -76,7 +79,7 @@ describe('drag-release close animation', () => {
       direction: 'bottom',
       title: 'Drag close bottom',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -99,7 +102,7 @@ describe('drag-release close animation', () => {
       direction: 'right',
       title: 'Drag close right',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -110,9 +113,13 @@ describe('drag-release close animation', () => {
     // horizontal.
     const startX = 50
     const endX = startX + window.innerWidth * 0.3
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 1 })
+    )
     vi.advanceTimersByTime(30)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 1 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: endX, clientY: 50, pointerId: 1 }))
 
     const content = getContent()
@@ -138,16 +145,20 @@ describe('drag-release close animation', () => {
       direction: 'bottom',
       title: 'Drag snap back',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
     // 5% drag — well below the 25% close threshold. Slow velocity.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 1 })
+    )
     vi.advanceTimersByTime(1000)
     const endY = 100 + window.innerHeight * 0.05
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 1 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 1 }))
 
     const content = getContent()
@@ -180,7 +191,7 @@ describe('drag-release close animation', () => {
       snapPoints: [0.25, 0.5, 1],
       activeSnapPoint: 0.25,
       fadeFromIndex: 0,
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -192,11 +203,15 @@ describe('drag-release close animation', () => {
     // movement), so `draggedDistance = startX - endX` is NEGATIVE.
     const startX = 100
     const endX = 200
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 1 })
+    )
     // 5 ms — high velocity (100px / 5ms = 20 px/ms, above
     // highVelocityThreshold = 2).
     vi.advanceTimersByTime(5)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 1 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 1 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: endX, clientY: 50, pointerId: 1 }))
 
     const content = getContent()

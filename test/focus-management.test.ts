@@ -26,7 +26,11 @@ import { createDrawer, destroyDrawers } from '../src'
  * dialog while it is open.
  */
 
-function el(tag: string, attrs: Record<string, string> = {}, children: (Node | string)[] = []): HTMLElement {
+function el(
+  tag: string,
+  attrs: Record<string, string> = {},
+  children: (Node | string)[] = []
+): HTMLElement {
   const node = document.createElement(tag)
   for (const [key, value] of Object.entries(attrs)) {
     node.setAttribute(key, value)
@@ -51,14 +55,14 @@ describe('drawer initial focus management', () => {
   it('focuses the dialog without auto-focusing its first descendant by default', () => {
     const wrapper = el('div', {}, [
       el('a', { href: 'https://example.com' }, ['A link']),
-      el('button', {}, ['A button'])
+      el('button', {}, ['A button']),
     ])
 
     const drawer = createDrawer({
       id: 'no-autofocus',
       direction: 'right',
       title: 'No autoFocus',
-      content: wrapper
+      content: wrapper,
     })
     drawer.setOpen(true)
 
@@ -73,7 +77,7 @@ describe('drawer initial focus management', () => {
       id: 'no-autofocus-unset',
       direction: 'right',
       title: 'No autoFocus unset',
-      content: wrapper
+      content: wrapper,
     })
     drawer.setOpen(true)
 
@@ -89,7 +93,7 @@ describe('drawer initial focus management', () => {
       direction: 'right',
       title: 'autoFocus true',
       content: wrapper,
-      autoFocus: true
+      autoFocus: true,
     })
     drawer.setOpen(true)
 
@@ -101,7 +105,7 @@ describe('drawer initial focus management', () => {
   it('autoFocus: true focuses the first anchor when that is what comes first', () => {
     const wrapper = el('div', {}, [
       el('a', { href: '#test', id: 'first-anchor' }, ['A link']),
-      el('button', { id: 'second' }, ['A button'])
+      el('button', { id: 'second' }, ['A button']),
     ])
 
     const drawer = createDrawer({
@@ -109,7 +113,7 @@ describe('drawer initial focus management', () => {
       direction: 'right',
       title: 'autoFocus anchor first',
       content: wrapper,
-      autoFocus: true
+      autoFocus: true,
     })
     drawer.setOpen(true)
 
@@ -124,7 +128,7 @@ describe('drawer initial focus management', () => {
         const p = document.createElement('p')
         p.textContent = 'Just text'
         return p
-      })()
+      })(),
     ])
 
     const drawer = createDrawer({
@@ -132,7 +136,7 @@ describe('drawer initial focus management', () => {
       direction: 'right',
       title: 'No focusables',
       content: wrapper,
-      autoFocus: true
+      autoFocus: true,
     })
     drawer.setOpen(true)
 
@@ -146,7 +150,11 @@ describe('drawer initial focus management', () => {
   it('skips hidden controls when auto-focusing', () => {
     const hidden = el('input', { type: 'hidden' })
     const button = el('button', { id: 'visible-control' }, ['Continue'])
-    const drawer = createDrawer({ id: 'hidden-first', content: el('div', {}, [hidden, button]), autoFocus: true })
+    const drawer = createDrawer({
+      id: 'hidden-first',
+      content: el('div', {}, [hidden, button]),
+      autoFocus: true,
+    })
 
     drawer.setOpen(true)
 

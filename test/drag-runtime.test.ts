@@ -6,7 +6,7 @@ import {
   getDraggedDistance,
   isDraggingTowardExpandedState,
   isReleaseTowardExpandedState,
-  shouldCloseDrawerOnRelease
+  shouldCloseDrawerOnRelease,
 } from '../src/runtime/drag'
 
 describe('drag runtime helpers', () => {
@@ -18,8 +18,12 @@ describe('drag runtime helpers', () => {
   })
 
   it('calculates dragged distance per direction', () => {
-    expect(getDraggedDistance({ pointerStart: 100, currentPointer: 40, direction: 'bottom' })).toBe(60)
-    expect(getDraggedDistance({ pointerStart: 100, currentPointer: 140, direction: 'top' })).toBe(40)
+    expect(getDraggedDistance({ pointerStart: 100, currentPointer: 40, direction: 'bottom' })).toBe(
+      60
+    )
+    expect(getDraggedDistance({ pointerStart: 100, currentPointer: 140, direction: 'top' })).toBe(
+      40
+    )
   })
 
   it('detects dragging toward the expanded state', () => {
@@ -28,9 +32,15 @@ describe('drag runtime helpers', () => {
   })
 
   it('prefers snap point drag percentage when present', () => {
-    expect(getDragPercentage({ draggedDistance: 40, drawerDimension: 200, snapPointPercentageDragged: 0.75 })).toEqual({
+    expect(
+      getDragPercentage({
+        draggedDistance: 40,
+        drawerDimension: 200,
+        snapPointPercentageDragged: 0.75,
+      })
+    ).toEqual({
       absDraggedDistance: 40,
-      percentageDragged: 0.75
+      percentageDragged: 0.75,
     })
   })
 
@@ -48,7 +58,7 @@ describe('drag runtime helpers', () => {
         velocityThreshold: 0.5,
         swipeAmount: 10,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe(true)
 
@@ -58,7 +68,7 @@ describe('drag runtime helpers', () => {
         velocityThreshold: 0.5,
         swipeAmount: 60,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe(true)
 
@@ -68,7 +78,7 @@ describe('drag runtime helpers', () => {
         velocityThreshold: 0.5,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe(false)
   })

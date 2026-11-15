@@ -23,5 +23,5 @@ export const browserModuleMocks = {
   },
   get isIOSSpy() {
     return isIOSSpy
-  }
+  },
 }

@@ -7,13 +7,15 @@ import {
   getSnapDragValue,
   getSnapPointOffset,
   getSnapPointPercentageDragged,
-  getSnapPointsOffset
+  getSnapPointsOffset,
 } from '../src/runtime/snap-points'
 
 describe('snap points runtime helpers', () => {
   it('resolves the active snap point index', () => {
     expect(getActiveSnapPointIndex({ snapPoints: ['120px', 0.5, 1], activeSnapPoint: 0.5 })).toBe(1)
-    expect(getActiveSnapPointIndex({ snapPoints: ['120px', 0.5, 1], activeSnapPoint: null })).toBe(-1)
+    expect(getActiveSnapPointIndex({ snapPoints: ['120px', 0.5, 1], activeSnapPoint: null })).toBe(
+      -1
+    )
   })
 
   it('computes snap point offsets for vertical and horizontal drawers', () => {
@@ -21,7 +23,7 @@ describe('snap points runtime helpers', () => {
       getSnapPointOffset({
         snapPoint: '120px',
         direction: 'bottom',
-        containerSize: { width: 400, height: 800 }
+        containerSize: { width: 400, height: 800 },
       })
     ).toBe(680)
 
@@ -29,7 +31,7 @@ describe('snap points runtime helpers', () => {
       getSnapPointOffset({
         snapPoint: 0.5,
         direction: 'left',
-        containerSize: { width: 400, height: 800 }
+        containerSize: { width: 400, height: 800 },
       })
     ).toBe(-200)
   })
@@ -39,19 +41,27 @@ describe('snap points runtime helpers', () => {
       getSnapPointsOffset({
         snapPoints: ['120px', 0.5, 1],
         direction: 'bottom',
-        containerSize: { width: 400, height: 800 }
+        containerSize: { width: 400, height: 800 },
       })
     ).toEqual([680, 400, 0])
   })
 
   it('detects fade state from the configured snap point', () => {
-    expect(getShouldFade({ snapPoints: ['120px', 0.5, 1], fadeFromIndex: 2, activeSnapPoint: 1 })).toBe(true)
-    expect(getShouldFade({ snapPoints: ['120px', 0.5, 1], fadeFromIndex: 2, activeSnapPoint: 0.5 })).toBe(false)
+    expect(
+      getShouldFade({ snapPoints: ['120px', 0.5, 1], fadeFromIndex: 2, activeSnapPoint: 1 })
+    ).toBe(true)
+    expect(
+      getShouldFade({ snapPoints: ['120px', 0.5, 1], fadeFromIndex: 2, activeSnapPoint: 0.5 })
+    ).toBe(false)
   })
 
   it('computes drag value from the active snap point offset', () => {
-    expect(getSnapDragValue({ activeSnapPointOffset: 400, draggedDistance: 50, direction: 'bottom' })).toBe(350)
-    expect(getSnapDragValue({ activeSnapPointOffset: -200, draggedDistance: 50, direction: 'left' })).toBe(-150)
+    expect(
+      getSnapDragValue({ activeSnapPointOffset: 400, draggedDistance: 50, direction: 'bottom' })
+    ).toBe(350)
+    expect(
+      getSnapDragValue({ activeSnapPointOffset: -200, draggedDistance: 50, direction: 'left' })
+    ).toBe(-150)
   })
 
   it('finds the closest snap point to the current position', () => {
@@ -67,7 +77,7 @@ describe('snap points runtime helpers', () => {
         fadeFromIndex: 2,
         shouldFade: false,
         absDraggedDistance: 100,
-        isDraggingDown: false
+        isDraggingDown: false,
       })
     ).toBe(1)
 
@@ -79,7 +89,7 @@ describe('snap points runtime helpers', () => {
         fadeFromIndex: 2,
         shouldFade: true,
         absDraggedDistance: 100,
-        isDraggingDown: false
+        isDraggingDown: false,
       })
     ).toBe(0.25)
   })

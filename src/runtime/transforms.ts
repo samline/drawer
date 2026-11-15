@@ -21,7 +21,7 @@ export function getAxisAwareTranslate(direction: CommonDrawerDirection, value: n
 export function getScaleTranslateTransform({
   direction,
   scale,
-  translate
+  translate,
 }: {
   direction: CommonDrawerDirection
   scale: number
@@ -36,7 +36,7 @@ export function getNestedDrawerTransform({
   direction,
   isOpen,
   viewportSize,
-  displacement
+  displacement,
 }: {
   direction: CommonDrawerDirection
   isOpen: boolean
@@ -49,7 +49,7 @@ export function getNestedDrawerTransform({
   return {
     scale,
     translate,
-    transform: getScaleTranslateTransform({ direction, scale, translate: `${translate}px` })
+    transform: getScaleTranslateTransform({ direction, scale, translate: `${translate}px` }),
   }
 }
 
@@ -57,7 +57,7 @@ export function getNestedDragTransform({
   direction,
   viewportSize,
   displacement,
-  percentageDragged
+  percentageDragged,
 }: {
   direction: CommonDrawerDirection
   viewportSize: number
@@ -72,13 +72,13 @@ export function getNestedDragTransform({
   return {
     scale,
     translate,
-    transform: getScaleTranslateTransform({ direction, scale, translate: `${translate}px` })
+    transform: getScaleTranslateTransform({ direction, scale, translate: `${translate}px` }),
   }
 }
 
 export function getBackgroundDragState({
   baseScale,
-  percentageDragged
+  percentageDragged,
 }: {
   baseScale: number
   percentageDragged: number
@@ -91,13 +91,13 @@ export function getBackgroundDragState({
   return {
     scaleValue,
     borderRadiusValue,
-    translateValue
+    translateValue,
   }
 }
 
 export function getBackgroundResetState({
   direction,
-  baseScale
+  baseScale,
 }: {
   direction: CommonDrawerDirection
   baseScale: number
@@ -108,9 +108,9 @@ export function getBackgroundResetState({
     transform: getScaleTranslateTransform({
       direction,
       scale: baseScale,
-      translate: 'calc(env(safe-area-inset-top) + 14px)'
+      translate: 'calc(env(safe-area-inset-top) + 14px)',
     }),
-    transformOrigin: direction === 'top' || direction === 'bottom' ? 'top' : 'left'
+    transformOrigin: direction === 'top' || direction === 'bottom' ? 'top' : 'left',
   }
 }
 
@@ -126,20 +126,23 @@ export function getBackgroundResetState({
  * does not match a supported matrix/translate shape. Parsing strings
  * directly keeps this path available when `DOMMatrix` is absent.
  */
-export function getTranslate(element: HTMLElement | null, direction: CommonDrawerDirection): number | null {
+export function getTranslate(
+  element: HTMLElement | null,
+  direction: CommonDrawerDirection
+): number | null {
   if (!element) return null
   const transform = window.getComputedStyle(element).transform
   if (!transform || transform === 'none') return null
 
   const matrix3d = transform.match(/^matrix3d\((.+)\)$/)
   if (matrix3d?.[1]) {
-    const values = matrix3d[1].split(',').map((value) => Number.parseFloat(value.trim()))
+    const values = matrix3d[1].split(',').map(value => Number.parseFloat(value.trim()))
     return values[direction === 'top' || direction === 'bottom' ? 13 : 12] ?? null
   }
 
   const matrix = transform.match(/^matrix\((.+)\)$/)
   if (matrix?.[1]) {
-    const values = matrix[1].split(',').map((value) => Number.parseFloat(value.trim()))
+    const values = matrix[1].split(',').map(value => Number.parseFloat(value.trim()))
     return values[direction === 'top' || direction === 'bottom' ? 5 : 4] ?? null
   }
 

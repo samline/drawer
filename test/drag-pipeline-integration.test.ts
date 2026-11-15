@@ -20,7 +20,7 @@ function createPointerEvent(
   Object.assign(event, {
     clientX: init.clientX,
     clientY: init.clientY,
-    pointerId: init.pointerId ?? 1
+    pointerId: init.pointerId ?? 1,
   })
   return event
 }
@@ -67,7 +67,7 @@ describe('drag pipeline integration (Phase A)', () => {
       content: 'Body',
       onOpenChange,
       onReleaseChange,
-      onDragChange
+      onDragChange,
     })
     drawer.setOpen(true)
     // Advance past the 500 ms grace period and add some time so the
@@ -79,17 +79,23 @@ describe('drag pipeline integration (Phase A)', () => {
     const startY = 100
     const endY = startY + drawerHeight * 0.3
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 7 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 7 })
+    )
     // Advance a tick so the velocity is not infinite — the drag is
     // 30% over a 30 ms span = high enough to clear VELOCITY_THRESHOLD.
     vi.advanceTimersByTime(30)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 7 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 7 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 7 }))
 
     expect(onDragChange).toHaveBeenCalled()
     // The last onDragChange call should report a percentage dragged
     // greater than 0.25 (the close threshold).
-    const lastPercentage = onDragChange.mock.calls[onDragChange.mock.calls.length - 1]?.[0] as number
+    const lastPercentage = onDragChange.mock.calls[
+      onDragChange.mock.calls.length - 1
+    ]?.[0] as number
     expect(lastPercentage).toBeGreaterThan(0.25)
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -110,7 +116,7 @@ describe('drag pipeline integration (Phase A)', () => {
       content: 'Body',
       onOpenChange,
       onReleaseChange,
-      onDragChange
+      onDragChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -118,11 +124,17 @@ describe('drag pipeline integration (Phase A)', () => {
     // Drag down by 5% — well below the 25% close threshold. We
     // advance the fake clock by a long interval so the velocity
     // (5% over 1 s) stays well under VELOCITY_THRESHOLD.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 11 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 11 })
+    )
     vi.advanceTimersByTime(1000)
     const endY = 100 + window.innerHeight * 0.05
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 11 }))
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 11 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 11 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 11 })
+    )
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
     expect(onReleaseChange).toHaveBeenCalledWith(true)
@@ -140,20 +152,30 @@ describe('drag pipeline integration (Phase A)', () => {
       direction: 'bottom',
       title: 'Drag progress',
       content: 'Body',
-      onDragChange
+      onDragChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
     const drawerHeight = window.innerHeight
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 21 }))
-    vi.advanceTimersByTime(10)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 50, clientY: 200 + drawerHeight * 0.1, pointerId: 21 })
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 21 })
     )
     vi.advanceTimersByTime(10)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 50, clientY: 200 + drawerHeight * 0.5, pointerId: 21 })
+      createPointerEvent('pointermove', {
+        clientX: 50,
+        clientY: 200 + drawerHeight * 0.1,
+        pointerId: 21,
+      })
+    )
+    vi.advanceTimersByTime(10)
+    dispatchOnContent(
+      createPointerEvent('pointermove', {
+        clientX: 50,
+        clientY: 200 + drawerHeight * 0.5,
+        pointerId: 21,
+      })
     )
     // Release without crossing the threshold; the slow advance keeps
     // velocity low so the action resolves to 'reset' (and we focus
@@ -185,7 +207,7 @@ describe('drag pipeline integration (Phase A)', () => {
       content: 'Body',
       onDragChange,
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -203,13 +225,23 @@ describe('drag pipeline integration (Phase A)', () => {
     // Dispatch the pointerdown on the inner button — the policy
     // walks ancestors to find data-drawer-no-drag and rejects the
     // gesture before any pointermove listener is attached.
-    inner.dispatchEvent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 31 }))
+    inner.dispatchEvent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 31 })
+    )
     vi.advanceTimersByTime(30)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 50, clientY: 100 + drawerHeight * 0.5, pointerId: 31 })
+      createPointerEvent('pointermove', {
+        clientX: 50,
+        clientY: 100 + drawerHeight * 0.5,
+        pointerId: 31,
+      })
     )
     dispatchOnContent(
-      createPointerEvent('pointerup', { clientX: 50, clientY: 100 + drawerHeight * 0.5, pointerId: 31 })
+      createPointerEvent('pointerup', {
+        clientX: 50,
+        clientY: 100 + drawerHeight * 0.5,
+        pointerId: 31,
+      })
     )
 
     expect(onDragChange).not.toHaveBeenCalled()
@@ -232,20 +264,30 @@ describe('drag pipeline integration (Phase A)', () => {
       content: 'Body',
       onDragChange,
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     // Do NOT advance the clock — the grace period is 500 ms, so
     // attempting a drag immediately must be rejected by the policy.
 
     const drawerHeight = window.innerHeight
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 41 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 41 })
+    )
     vi.advanceTimersByTime(30)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 50, clientY: 100 + drawerHeight * 0.5, pointerId: 41 })
+      createPointerEvent('pointermove', {
+        clientX: 50,
+        clientY: 100 + drawerHeight * 0.5,
+        pointerId: 41,
+      })
     )
     dispatchOnContent(
-      createPointerEvent('pointerup', { clientX: 50, clientY: 100 + drawerHeight * 0.5, pointerId: 41 })
+      createPointerEvent('pointerup', {
+        clientX: 50,
+        clientY: 100 + drawerHeight * 0.5,
+        pointerId: 41,
+      })
     )
 
     expect(onDragChange).not.toHaveBeenCalled()
@@ -263,19 +305,31 @@ describe('drag pipeline integration (Phase A)', () => {
       direction: 'right' as CommonDrawerDirection,
       title: 'Drag horizontal',
       content: 'Body',
-      onDragChange
+      onDragChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
     const drawerWidth = window.innerWidth
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 100, clientY: 50, pointerId: 51 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 100, clientY: 50, pointerId: 51 })
+    )
     vi.advanceTimersByTime(30)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 100 + drawerWidth * 0.4, clientY: 50, pointerId: 51 })
+      createPointerEvent('pointermove', {
+        clientX: 100 + drawerWidth * 0.4,
+        clientY: 50,
+        pointerId: 51,
+      })
     )
     vi.advanceTimersByTime(1000)
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 100 + drawerWidth * 0.4, clientY: 50, pointerId: 51 }))
+    dispatchOnContent(
+      createPointerEvent('pointerup', {
+        clientX: 100 + drawerWidth * 0.4,
+        clientY: 50,
+        pointerId: 51,
+      })
+    )
 
     const percentages = onDragChange.mock.calls.map(([value]) => value as number)
     expect(percentages.length).toBeGreaterThan(0)
@@ -293,12 +347,16 @@ describe('drag pipeline integration (Phase A)', () => {
       snapPoints: [],
       content: 'Body',
       onDragChange,
-      onOpenChange
+      onOpenChange,
     })
     vi.advanceTimersByTime(600)
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 61 }))
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 500, pointerId: 61 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 61 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 500, pointerId: 61 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 500, pointerId: 61 }))
 
     expect(onDragChange).not.toHaveBeenCalled()
@@ -312,11 +370,19 @@ describe('drag pipeline integration (Phase A)', () => {
     const drawer = createDrawer({ id: 'intent-cleanup', open: true, content: 'Body', onDragChange })
     vi.advanceTimersByTime(600)
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 71 }))
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 200, clientY: 100, pointerId: 71 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 71 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 200, clientY: 100, pointerId: 71 })
+    )
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 72 }))
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 100, clientY: 200, pointerId: 72 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 72 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 100, clientY: 200, pointerId: 72 })
+    )
 
     expect(onDragChange).toHaveBeenCalledTimes(1)
     expect(drawer.getSnapshot().state.isOpen).toBe(true)
@@ -329,11 +395,19 @@ describe('drag pipeline integration (Phase A)', () => {
     vi.advanceTimersByTime(600)
 
     const content = getContent()
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 81 }))
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 150, pointerId: 81 }))
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 600, pointerId: 82 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 81 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 150, pointerId: 81 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 600, pointerId: 82 })
+    )
     vi.advanceTimersByTime(1000)
-    dispatchOnContent(createPointerEvent('pointerout', { clientX: 50, clientY: 150, pointerId: 81 }))
+    dispatchOnContent(
+      createPointerEvent('pointerout', { clientX: 50, clientY: 150, pointerId: 81 })
+    )
 
     expect(content.classList.contains('drawer-dragging')).toBe(false)
     expect(onReleaseChange).toHaveBeenCalledWith(true)
@@ -342,13 +416,20 @@ describe('drag pipeline integration (Phase A)', () => {
   it('closes consistently in all four directions', () => {
     vi.useFakeTimers()
     for (const direction of ['bottom', 'top', 'right', 'left'] as const) {
-      const drawer = createDrawer({ id: `direction-${direction}`, open: true, direction, content: direction })
+      const drawer = createDrawer({
+        id: `direction-${direction}`,
+        open: true,
+        direction,
+        content: direction,
+      })
       vi.advanceTimersByTime(600)
       const horizontal = direction === 'left' || direction === 'right'
       const closingSign = direction === 'bottom' || direction === 'right' ? 1 : -1
       const start = 400
       const end = start + closingSign * (horizontal ? window.innerWidth : window.innerHeight) * 0.3
-      const startPoint = horizontal ? { clientX: start, clientY: 50 } : { clientX: 50, clientY: start }
+      const startPoint = horizontal
+        ? { clientX: start, clientY: 50 }
+        : { clientX: 50, clientY: start }
       const endPoint = horizontal ? { clientX: end, clientY: 50 } : { clientX: 50, clientY: end }
 
       dispatchOnContent(createPointerEvent('pointerdown', { ...startPoint, pointerId: 90 }))

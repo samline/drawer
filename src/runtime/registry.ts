@@ -2,7 +2,7 @@ import {
   createDrawerController,
   type CommonDrawerController,
   type CommonDrawerId,
-  type CommonDrawerSnapshot
+  type CommonDrawerSnapshot,
 } from '../core'
 import { TRANSITIONS } from '../constants'
 import { set } from '../helpers'
@@ -116,7 +116,8 @@ function openAncestorChain(parentId: CommonDrawerId) {
 
 function allocateDrawerId(id?: CommonDrawerId) {
   if (id !== undefined) {
-    if (typeof id !== 'string' || !id.trim()) throw new TypeError('Drawer id must be a non-empty string')
+    if (typeof id !== 'string' || !id.trim())
+      throw new TypeError('Drawer id must be a non-empty string')
     return id
   }
   let generated: string
@@ -147,7 +148,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   if (!runtime.options.triggerElement) {
     runtime.cleanupTriggerElement = cleanups.length
       ? () => {
-          cleanups.forEach((cleanup) => cleanup())
+          cleanups.forEach(cleanup => cleanup())
         }
       : null
     return
@@ -164,7 +165,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   })
 
   runtime.cleanupTriggerElement = () => {
-    cleanups.forEach((cleanup) => cleanup())
+    cleanups.forEach(cleanup => cleanup())
   }
 }
 
@@ -186,7 +187,7 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   }
 
   if (!open) {
-    getChildDrawerIds(runtime.id).forEach((childId) => {
+    getChildDrawerIds(runtime.id).forEach(childId => {
       const childRuntime = drawerInstances.get(childId)
       if (childRuntime) setRuntimeOpen(childRuntime, false)
     })
@@ -302,14 +303,16 @@ function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?:
   }
 
   const openChildren = getChildDrawerIds(parentId)
-    .map((childId) => drawerInstances.get(childId))
-    .filter((runtime): runtime is DrawerRuntimeInstance => Boolean(runtime?.controller.getSnapshot().state.isOpen))
+    .map(childId => drawerInstances.get(childId))
+    .filter((runtime): runtime is DrawerRuntimeInstance =>
+      Boolean(runtime?.controller.getSnapshot().state.isOpen)
+    )
 
   const visualState = getParentNestedVisualState({
     direction: parentDirection,
     viewportSize: getViewportSizeForDirection(parentDirection),
     hasOpenChild: openChildren.length > 0,
-    ...(percentageDragged !== undefined ? { percentageDragged } : {})
+    ...(percentageDragged !== undefined ? { percentageDragged } : {}),
   })
 
   set(parentElement, visualState)
@@ -325,7 +328,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
     host: {
       root: runtime.root,
       element: runtime.element,
-      ownsElement: runtime.ownsElement
+      ownsElement: runtime.ownsElement,
     },
     id: runtime.id,
     options: runtime.options,
@@ -347,7 +350,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
         syncParentNestedTransform(runtime.options.parentId as CommonDrawerId)
       }
     },
-    onActiveSnapPointChange: (snapPoint) => {
+    onActiveSnapPointChange: snapPoint => {
       // Phase B: the drag pipeline picked a new active snap from
       // the snap-point release action. Push it through both the
       // controller and `runtime.options` so the re-render reads
@@ -364,7 +367,7 @@ function renderVanillaDrawer(id: CommonDrawerId) {
       // callback). The drawer's controller is the source of truth,
       // so the callback fires AFTER the state updates.
       runtime.options.onActiveSnapPointChange?.(snapPoint)
-    }
+    },
   })
 
   if (!nextHost) return null
@@ -378,14 +381,19 @@ function renderVanillaDrawer(id: CommonDrawerId) {
   runtime.ownsElement = nextHost.ownsElement
 
   bindTriggerElement(runtime)
-  if (getChildDrawerIds(id).some((childId) => drawerInstances.get(childId)?.controller.getSnapshot().state.isOpen)) {
+  if (
+    getChildDrawerIds(id).some(
+      childId => drawerInstances.get(childId)?.controller.getSnapshot().state.isOpen
+    )
+  ) {
     syncParentNestedTransform(id)
   }
   return nextHost.container
 }
 
 function updateRuntime(runtime: DrawerRuntimeInstance, options: Omit<VanillaDrawerOptions, 'id'>) {
-  if ('id' in options && options.id !== runtime.id) throw new TypeError('Drawer ids cannot be changed')
+  if ('id' in options && options.id !== runtime.id)
+    throw new TypeError('Drawer ids cannot be changed')
   const previousSnapshot = runtime.controller.getSnapshot()
   const previousOpen = previousSnapshot.state.isOpen
   const nextOptions = { ...runtime.options, ...options, id: runtime.id }
@@ -395,7 +403,8 @@ function updateRuntime(runtime: DrawerRuntimeInstance, options: Omit<VanillaDraw
   runtime.options = nextOptions
   if (previousOpen && !requestedOpen) runtime.options.onClose?.()
   if (!isRegistered(runtime)) return previousSnapshot
-  if (!previousOpen && requestedOpen && runtime.options.parentId) openAncestorChain(runtime.options.parentId)
+  if (!previousOpen && requestedOpen && runtime.options.parentId)
+    openAncestorChain(runtime.options.parentId)
   if (!isRegistered(runtime)) return previousSnapshot
   if (!previousOpen && requestedOpen) assignOpenOrder(runtime)
   const snapshot = runtime.controller.update(runtime.options)
@@ -446,14 +455,16 @@ function buildVanillaController(runtime: DrawerRuntimeInstance): VanillaDrawerCo
     },
     destroy() {
       if (drawerInstances.get(id) === runtime) destroyDrawer(id)
-    }
+    },
   }
 }
 
 export function createDrawer(options: VanillaDrawerOptions = {}): VanillaDrawerController {
   const id = allocateDrawerId(options.id)
   if (drawerInstances.has(id))
-    throw new TypeError(`Drawer "${id}" is already registered; use getDrawer(id) or controller.update()`)
+    throw new TypeError(
+      `Drawer "${id}" is already registered; use getDrawer(id) or controller.update()`
+    )
   const nextOptions = { ...options, id }
   assertValidParent(id, nextOptions.parentId)
   if (nextOptions.parentId) nextOptions.nested = true
@@ -469,7 +480,7 @@ export function createDrawer(options: VanillaDrawerOptions = {}): VanillaDrawerC
     openOrder: null,
     hasBeenOpened: false,
     pendingAnimationEndTimer: null,
-    pendingSnapResetTimer: null
+    pendingSnapResetTimer: null,
   }
   drawerInstances.set(id, runtime)
   const controller = buildVanillaController(runtime)
@@ -493,7 +504,9 @@ export function getDrawer(id: CommonDrawerId): VanillaDrawerController | null {
 }
 
 export function getDrawers(): Record<string, VanillaDrawerController> {
-  return Object.fromEntries(Array.from(drawerInstances, ([id, runtime]) => [id, runtime.publicController!]))
+  return Object.fromEntries(
+    Array.from(drawerInstances, ([id, runtime]) => [id, runtime.publicController!])
+  )
 }
 
 export function getParentDrawer(id: CommonDrawerId) {
@@ -505,7 +518,7 @@ export function getParentDrawer(id: CommonDrawerId) {
 export function getChildDrawers(id: CommonDrawerId) {
   if (typeof id !== 'string' || !id) return []
   const drawerId = id
-  return getChildDrawerIds(drawerId).map((childId) => drawerInstances.get(childId)!.publicController!)
+  return getChildDrawerIds(drawerId).map(childId => drawerInstances.get(childId)!.publicController!)
 }
 
 function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId>) {
@@ -519,7 +532,7 @@ function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId
 
   const parentId = runtime.options.parentId
 
-  getChildDrawerIds(drawerId).forEach((childId) => {
+  getChildDrawerIds(drawerId).forEach(childId => {
     destroyDrawerTree(childId, visited)
   })
 
@@ -543,7 +556,7 @@ function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId
   const nextHost = destroyVanillaHost({
     root: runtime.root,
     element: runtime.element,
-    ownsElement: runtime.ownsElement
+    ownsElement: runtime.ownsElement,
   })
   runtime.root = nextHost.root
   runtime.element = nextHost.element
@@ -561,7 +574,7 @@ function destroyDrawer(id: CommonDrawerId) {
 }
 
 export function destroyDrawers() {
-  Array.from(drawerInstances.keys()).forEach((id) => {
+  Array.from(drawerInstances.keys()).forEach(id => {
     destroyDrawer(id)
   })
 }

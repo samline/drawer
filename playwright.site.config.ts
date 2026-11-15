@@ -16,11 +16,11 @@ export default defineConfig({
     baseURL: origin + project.base,
     browserName: 'chromium',
     actionTimeout: 10000,
-    screenshot: 'only-on-failure'
+    screenshot: 'only-on-failure',
   },
   webServer: {
     command: `npm run preview --workspace landing -- --host 127.0.0.1 --port ${port} --ignore-lock`,
     url: origin + project.base,
-    reuseExistingServer: !process.env.CI
-  }
+    reuseExistingServer: !process.env.CI,
+  },
 })

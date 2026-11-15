@@ -18,7 +18,7 @@ function createPointerEvent(
   Object.assign(event, {
     clientX: init.clientX,
     clientY: init.clientY,
-    pointerId: init.pointerId ?? 1
+    pointerId: init.pointerId ?? 1,
   })
   return event
 }
@@ -63,7 +63,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       snapPoints: ['120px', '320px', 1],
       activeSnapPoint: '120px',
       title: 'Snap initial',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -71,7 +71,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const expectedOffset = getSnapPointOffset({
       snapPoint: '120px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
     expect(content.style.getPropertyValue('--initial-transform')).toBe(`${expectedOffset}px`)
 
@@ -82,7 +82,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
 
   it('animates from the closed edge to the active snap on a later open', () => {
     const frames: FrameRequestCallback[] = []
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       frames.push(callback)
       return frames.length
     })
@@ -94,7 +94,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       activeSnapPoint: '120px',
       fadeFromIndex: 0,
       title: 'Snap entrance',
-      content: 'Body'
+      content: 'Body',
     })
 
     drawer.setOpen(true)
@@ -104,14 +104,14 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const expectedOffset = getSnapPointOffset({
       snapPoint: '120px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
 
     expect(content.style.transform).toBe('translate3d(0, 100%, 0)')
     expect(content.style.transition).toBe('none')
     expect(overlay.style.opacity).toBe('0')
 
-    frames.forEach((callback) => callback(0))
+    frames.forEach(callback => callback(0))
 
     expect(content.style.transform).toBe(`translate3d(0, ${expectedOffset}px, 0)`)
     expect(content.style.transition).toContain('transform 0.5s')
@@ -132,7 +132,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       dismissible: true,
       title: 'Snap drag',
       content: 'Body',
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -146,10 +146,16 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const startY = 200
     const endY = 100
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 71 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 71 })
+    )
     vi.advanceTimersByTime(100)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 71 }))
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 71 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 71 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 71 })
+    )
 
     expect(onReleaseChange).toHaveBeenCalledWith(true)
     expect(getDrawer('snap-drag')?.getSnapshot().state.activeSnapPoint).toBe('320px')
@@ -160,7 +166,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const expectedOffset = getSnapPointOffset({
       snapPoint: '320px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
     expect(newContent.style.getPropertyValue('--initial-transform')).toBe(`${expectedOffset}px`)
   })
@@ -180,7 +186,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       title: 'Snap close velocity',
       content: 'Body',
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -189,9 +195,13 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     // release helper should resolve to `close`. The dragged
     // distance for a 60px downward drag is -60, velocity over 20ms
     // is 3.0 px/ms, well above the 2.0 high-velocity threshold.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 73 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 73 })
+    )
     vi.advanceTimersByTime(20)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 160, pointerId: 73 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 160, pointerId: 73 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 160, pointerId: 73 }))
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -215,7 +225,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       dismissible: true,
       title: 'Snap expand velocity',
       content: 'Body',
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -224,9 +234,13 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     // release helper should jump to the last snap. `snapToSequentialPoint`
     // is the default (false), so high velocity is allowed to
     // skip ahead.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 400, pointerId: 75 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 400, pointerId: 75 })
+    )
     vi.advanceTimersByTime(20)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 340, pointerId: 75 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 340, pointerId: 75 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 340, pointerId: 75 }))
 
     expect(onReleaseChange).toHaveBeenCalledWith(true)
@@ -249,7 +263,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       title: 'Snap sequential',
       content: 'Body',
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -259,9 +273,13 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     // a time; from snap 0 the only "next" in the close direction
     // is to close, since snap 0 is the smallest. Verify the drawer
     // closes.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 77 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 77 })
+    )
     vi.advanceTimersByTime(20)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 160, pointerId: 77 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 160, pointerId: 77 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 160, pointerId: 77 }))
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -275,7 +293,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       snapPoints: ['120px', '320px', 1],
       activeSnapPoint: '120px',
       title: 'Snap external',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -283,7 +301,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const initialOffset = getSnapPointOffset({
       snapPoint: '120px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
     expect(content.style.getPropertyValue('--initial-transform')).toBe(`${initialOffset}px`)
 
@@ -293,7 +311,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
     const newOffset = getSnapPointOffset({
       snapPoint: '320px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
     expect(newContent.style.getPropertyValue('--initial-transform')).toBe(`${newOffset}px`)
     expect(getDrawer('snap-set-external')?.getSnapshot().state.activeSnapPoint).toBe('320px')
@@ -310,7 +328,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       activeSnapPoint: '120px',
       fadeFromIndex: 1,
       title: 'Below fade',
-      content: 'Body'
+      content: 'Body',
     })
     drawerAtSmallest.setOpen(true)
     expect(getOverlay().dataset.drawerSnapPointsOverlay).toBe('false')
@@ -324,7 +342,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       activeSnapPoint: '320px',
       fadeFromIndex: 1,
       title: 'At fade',
-      content: 'Body'
+      content: 'Body',
     })
     drawerAtFade.setOpen(true)
     expect(getOverlay().dataset.drawerSnapPointsOverlay).toBe('true')
@@ -338,7 +356,7 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       activeSnapPoint: 1,
       fadeFromIndex: 1,
       title: 'Above fade',
-      content: 'Body'
+      content: 'Body',
     })
     drawerAboveFade.setOpen(true)
     expect(getOverlay().dataset.drawerSnapPointsOverlay).toBe('true')
@@ -352,14 +370,18 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       snapPoints: ['120px', '320px', 1],
       activeSnapPoint: '120px',
       fadeFromIndex: 1,
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 78 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 78 })
+    )
     vi.advanceTimersByTime(100)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: 100, pointerId: 78 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: 100, pointerId: 78 })
+    )
     dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: 100, pointerId: 78 }))
 
     expect(drawer.getSnapshot().state.activeSnapPoint).toBe('320px')
@@ -376,21 +398,29 @@ describe('drag pipeline integration (Phase B — snap points)', () => {
       activeSnapPoint: '120px',
       fadeFromIndex: 1,
       title: 'Snap drag math',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
     const content = getContent()
     const containerSize = { width: window.innerWidth, height: window.innerHeight }
-    const offsets = getSnapPointsOffset({ snapPoints: ['120px', '320px', 1], direction: 'bottom', containerSize })
+    const offsets = getSnapPointsOffset({
+      snapPoints: ['120px', '320px', 1],
+      direction: 'bottom',
+      containerSize,
+    })
     const activeOffset = offsets[0]!
 
     const startY = 200
     const endY = 180 // drag UP by 20px → draggedDistance = +20 (expand)
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 79 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 79 })
+    )
     vi.advanceTimersByTime(10)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 79 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 79 })
+    )
 
     // For bottom direction, getSnapDragValue(activeOffset, +20, 'bottom')
     // = activeOffset - 20. The inline transform should match.

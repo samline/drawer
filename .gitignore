@@ -1,50 +1,37 @@
-# Dependencies
+# Managed by package-landing-docs (family/templates/package). Edit there, then run node family/scripts/sync.mjs.
 node_modules/
-
-# Build output
 dist/
 coverage/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor / IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-bun-debug.log*
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Bun legacy binary lockfile (the modern text lockfile is `bun.lock` and IS tracked)
-bun.lockb
-
-# Auto-generated
-skills-lock.json
-
-# npm pack output
+.astro/
+.vite/
+.cache/
+*.tsbuildinfo
 *.tgz
 
-# Website build artifacts
-.astro/
-playwright-report/
-test-results/
-landing/public/fonts/
-landing/public/font-licenses/
-docs/public/fonts/
-docs/public/font-licenses/
+# Installs use pnpm only (pnpm-lock.yaml). Lockfiles of other package
+# managers are never committed.
+bun.lock
+bun.lockb
+package-lock.json
+yarn.lock
 
-# Local Claude Code session config (machine-specific); only the skills symlink is tracked
-.claude/*
-!.claude/skills
+# Browser-test output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Local environment, logs, OS metadata and per-machine agent config
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.claude/settings.local.json
+.claude/launch.json
+
+# Website build output and generated assets (package-landing-docs)
+brief/
+shared/generated/
+**/public/fonts/
+**/public/font-licenses/

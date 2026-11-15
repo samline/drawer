@@ -66,7 +66,7 @@ describe('title slot — only mounts when the consumer passes an explicit title'
       id: 'visible-title',
       open: true,
       title: 'Visible title',
-      content: 'body'
+      content: 'body',
     })
 
     const title = getTitleEl()
@@ -83,7 +83,7 @@ describe('title slot — only mounts when the consumer passes an explicit title'
       open: true,
       title: 'Visible title (forced hidden)',
       titleVisuallyHidden: true,
-      content: 'body'
+      content: 'body',
     })
 
     const title = getTitleEl()
@@ -101,7 +101,7 @@ describe('title slot — only mounts when the consumer passes an explicit title'
       id: 'proxy-only',
       open: true,
       ariaLabel: 'Accessibility-only title',
-      content: 'body'
+      content: 'body',
     })
 
     // The accessible name comes from `aria-label`, not from
@@ -125,7 +125,7 @@ describe('title slot — only mounts when the consumer passes an explicit title'
       open: true,
       title: 'Visible title',
       ariaLabel: 'A11y label',
-      content: 'body'
+      content: 'body',
     })
 
     const title = getTitleEl()
@@ -154,7 +154,7 @@ describe('description slot — only mounts when the consumer passes an explicit 
       open: true,
       title: 'Title',
       description: 'A helpful description',
-      content: 'body'
+      content: 'body',
     })
 
     const desc = getDescriptionEl()
@@ -170,7 +170,7 @@ describe('description slot — only mounts when the consumer passes an explicit 
       id: 'no-description',
       open: true,
       ariaLabel: 'Some label',
-      content: 'body'
+      content: 'body',
     })
 
     expect(getDescriptionEl()).toBeNull()
@@ -188,7 +188,7 @@ describe('description slot — only mounts when the consumer passes an explicit 
       title: 'Title',
       description: 'Visible description text',
       descriptionVisuallyHidden: false,
-      content: 'body'
+      content: 'body',
     })
 
     const desc = getDescriptionEl()
@@ -214,7 +214,7 @@ describe('default-props accessibility wiring (minimalist case)', () => {
     createDrawer({
       id: 'minimalist-drawer',
       open: true,
-      content: 'body'
+      content: 'body',
     })
 
     const content = getContentEl()
@@ -232,7 +232,7 @@ describe('default-props accessibility wiring (minimalist case)', () => {
     createDrawer({
       id: 'all-hidden',
       open: true,
-      content: 'body'
+      content: 'body',
     })
 
     // The minimalist case has nothing to render in the title
@@ -258,7 +258,7 @@ describe('simplified body tree (no data-drawer-vanilla-node, renamed body)', () 
       id: 'no-node',
       open: true,
       title: 'Visible',
-      content: 'body'
+      content: 'body',
     })
 
     expect(document.querySelector('[data-drawer-vanilla-node]')).toBeNull()
@@ -269,7 +269,7 @@ describe('simplified body tree (no data-drawer-vanilla-node, renamed body)', () 
       id: 'body-rename',
       open: true,
       title: 'Visible',
-      content: 'body'
+      content: 'body',
     })
 
     const body = getBodyEl()
@@ -285,7 +285,7 @@ describe('simplified body tree (no data-drawer-vanilla-node, renamed body)', () 
     createDrawer({
       id: 'body-empty',
       open: true,
-      content: 'body'
+      content: 'body',
     })
 
     const body = getBodyEl()

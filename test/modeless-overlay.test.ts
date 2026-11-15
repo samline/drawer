@@ -43,7 +43,7 @@ describe('modeless overlays', () => {
       container: main,
       modal: false,
       overlay: true,
-      content: 'Drawer content'
+      content: 'Drawer content',
     })
     drawer.setOpen(true)
 
@@ -66,7 +66,12 @@ describe('modeless overlays', () => {
   })
 
   it('supports a modal drawer with its overlay explicitly disabled', () => {
-    const drawer = createDrawer({ id: 'overlay-disabled', modal: true, overlay: false, content: 'Modal' })
+    const drawer = createDrawer({
+      id: 'overlay-disabled',
+      modal: true,
+      overlay: false,
+      content: 'Modal',
+    })
     drawer.setOpen(true)
 
     expect(drawer.element?.querySelector('[data-drawer-overlay]')).toBeNull()

@@ -7,7 +7,8 @@ interface OpenDialog {
 
 const openDialogStack: OpenDialog[] = []
 let fallbackOpenOrder = 0
-export const resolveOpenDialogOrder = (order?: number | null, current = 0) => order ?? (current || ++fallbackOpenOrder)
+export const resolveOpenDialogOrder = (order?: number | null, current = 0) =>
+  order ?? (current || ++fallbackOpenOrder)
 
 interface ModalIsolationSnapshot {
   ariaHidden: string | null
@@ -46,7 +47,7 @@ function updateModalIsolation() {
     if (!modalIsolationSnapshots.has(element)) {
       modalIsolationSnapshots.set(element, {
         ariaHidden: element.getAttribute('aria-hidden'),
-        inert: Boolean(element.inert)
+        inert: Boolean(element.inert),
       })
     }
     element.setAttribute('aria-hidden', 'true')
@@ -55,7 +56,7 @@ function updateModalIsolation() {
 }
 
 export function acquireModalIsolation(state: OpenDialog, host: HTMLElement) {
-  const existingIndex = modalIsolationOwners.findIndex((owner) => owner.state === state)
+  const existingIndex = modalIsolationOwners.findIndex(owner => owner.state === state)
   if (existingIndex !== -1) modalIsolationOwners.splice(existingIndex, 1)
   modalIsolationOwners.push({ state, host })
   updateModalIsolation()
@@ -64,7 +65,7 @@ export function acquireModalIsolation(state: OpenDialog, host: HTMLElement) {
   return () => {
     if (released) return
     released = true
-    const index = modalIsolationOwners.findIndex((owner) => owner.state === state)
+    const index = modalIsolationOwners.findIndex(owner => owner.state === state)
     if (index !== -1) modalIsolationOwners.splice(index, 1)
     updateModalIsolation()
   }
@@ -78,7 +79,9 @@ export function removeFromOpenDialogStack(state: OpenDialog) {
 export function registerOpenDialog(state: OpenDialog, openOrder?: number | null) {
   removeFromOpenDialogStack(state)
   state.openOrder = openOrder ?? ++fallbackOpenOrder
-  const insertionIndex = openDialogStack.findIndex((candidate) => candidate.openOrder > state.openOrder)
+  const insertionIndex = openDialogStack.findIndex(
+    candidate => candidate.openOrder > state.openOrder
+  )
   if (insertionIndex === -1) openDialogStack.push(state)
   else openDialogStack.splice(insertionIndex, 0, state)
 }
@@ -92,7 +95,7 @@ const FOCUSABLE_SELECTOR =
 // treating those as the first/last stop let Tab escape the dialog.
 function getFocusableElements(content: HTMLElement) {
   return Array.from(content.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) =>
+    element =>
       element.tabIndex >= 0 &&
       !(element instanceof HTMLInputElement && element.type === 'hidden') &&
       !element.matches(':disabled') &&

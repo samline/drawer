@@ -23,8 +23,8 @@ import '@samline/drawer/styles.css'
 With the 5.1.2 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.1.2/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.

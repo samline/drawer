@@ -50,7 +50,9 @@ describe('overlay initial-mount flicker', () => {
     // The snap-points-overlay rule must remain present.
     expect(css).toMatch(/\[data-drawer-overlay\]\[data-drawer-snap-points-overlay=['"]true['"]/)
     // The boost must NOT include the open state.
-    expect(css).not.toMatch(/\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]open['"]/)
+    expect(css).not.toMatch(
+      /\[data-drawer-overlay\]\[data-drawer-overlay\]\[data-state=['"]open['"]/
+    )
   })
 
   it('uses package-scoped overlay keyframes', () => {

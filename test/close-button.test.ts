@@ -42,7 +42,7 @@ describe('closeButton option', () => {
       id: 'cb-default',
       open: true,
       closeButton: true,
-      content: 'body'
+      content: 'body',
     })
 
     const btn = getCloseButton()
@@ -66,9 +66,9 @@ describe('closeButton option', () => {
       closeButton: {
         className: 'absolute top-5 right-5 z-10',
         icon: 'x-circle',
-        ariaLabel: 'Dismiss this drawer'
+        ariaLabel: 'Dismiss this drawer',
       },
-      content: 'body'
+      content: 'body',
     })
 
     const btn = getCloseButton()
@@ -87,7 +87,7 @@ describe('closeButton option', () => {
       id: 'cb-custom-icon-el',
       open: true,
       closeButton: { icon: customIcon },
-      content: 'body'
+      content: 'body',
     })
 
     const btn = getCloseButton()
@@ -101,22 +101,22 @@ describe('closeButton option', () => {
     const drawer = createDrawer({
       id: 'cb-clicks',
       closeButton: true,
-      content: 'body'
+      content: 'body',
     })
 
     drawer.setOpen(true)
-    await new Promise<void>((resolve) => setTimeout(resolve, 5))
+    await new Promise<void>(resolve => setTimeout(resolve, 5))
     expect(drawer.getSnapshot().state.isOpen).toBe(true)
 
     getCloseButton()!.click()
-    await new Promise<void>((resolve) => setTimeout(resolve, 5))
+    await new Promise<void>(resolve => setTimeout(resolve, 5))
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
   })
 
   it('does not render a close button when closeButton is omitted', () => {
     createDrawer({
       id: 'cb-omitted',
-      content: 'body'
+      content: 'body',
     })
 
     expect(getCloseButton()).toBeNull()
@@ -126,7 +126,7 @@ describe('closeButton option', () => {
     createDrawer({
       id: 'cb-explicit-false',
       closeButton: false,
-      content: 'body'
+      content: 'body',
     })
 
     expect(getCloseButton()).toBeNull()
@@ -137,7 +137,7 @@ describe('closeButton option', () => {
       id: 'cb-hmr',
       open: true,
       closeButton: true,
-      content: 'body'
+      content: 'body',
     })
     expect(getCloseButton()).not.toBeNull()
 
@@ -147,7 +147,7 @@ describe('closeButton option', () => {
       id: 'cb-hmr',
       open: true,
       closeButton: true,
-      content: 'body'
+      content: 'body',
     })
 
     // Exactly one close button is in the DOM (the new one). The
@@ -165,7 +165,7 @@ describe('closeButton option', () => {
       id: 'cb-no-bubble',
       open: true,
       closeButton: true,
-      content: 'body'
+      content: 'body',
     })
     const content = document.querySelector('[data-drawer]') as HTMLElement
     content.addEventListener('click', () => {

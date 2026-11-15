@@ -15,7 +15,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: []
+        ancestors: [],
       })
     ).toEqual({ allow: false, updatePreventedAt: false })
 
@@ -30,7 +30,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: []
+        ancestors: [],
       })
     ).toEqual({ allow: false, updatePreventedAt: false })
   })
@@ -47,7 +47,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: []
+        ancestors: [],
       })
     ).toEqual({ allow: true, updatePreventedAt: false })
   })
@@ -64,7 +64,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: 50,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: []
+        ancestors: [],
       })
     ).toEqual({ allow: false, updatePreventedAt: true })
 
@@ -79,7 +79,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: true,
-        ancestors: []
+        ancestors: [],
       })
     ).toEqual({ allow: false, updatePreventedAt: true })
   })
@@ -96,7 +96,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 20, role: null }]
+        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 20, role: null }],
       })
     ).toEqual({ allow: false, updatePreventedAt: true })
   })
@@ -113,7 +113,7 @@ describe('drag policy runtime helpers', () => {
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: 100,
         isDraggingInDirection: false,
-        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 0, role: 'dialog' }]
+        ancestors: [{ scrollHeight: 500, clientHeight: 200, scrollTop: 0, role: 'dialog' }],
       })
     ).toEqual({ allow: true, updatePreventedAt: false })
   })
@@ -125,7 +125,7 @@ describe('drag policy runtime helpers', () => {
     expect(getDragTargetMetadata(doc)).toEqual({
       targetTagName: '',
       hasNoDragAttribute: false,
-      ancestors: []
+      ancestors: [],
     })
   })
 
@@ -139,7 +139,7 @@ describe('drag policy runtime helpers', () => {
 
     expect(getDragTargetMetadata(target)).toMatchObject({
       targetTagName: 'BUTTON',
-      hasNoDragAttribute: true
+      hasNoDragAttribute: true,
     })
     expect(getDragTargetMetadata(target).ancestors.length).toBeGreaterThan(0)
   })

@@ -7,7 +7,7 @@ import {
   getNestedDragTransform,
   getNestedDrawerTransform,
   getScaleTranslateTransform,
-  getTranslate
+  getTranslate,
 } from '../src/runtime/transforms'
 
 describe('transform runtime helpers', () => {
@@ -29,35 +29,50 @@ describe('transform runtime helpers', () => {
     expect(getBackgroundDragState({ baseScale: 0.95, percentageDragged: 0.5 })).toEqual({
       scaleValue: 0.975,
       borderRadiusValue: 4,
-      translateValue: 7
+      translateValue: 7,
     })
   })
 
   it('computes nested drawer transform state', () => {
     expect(
-      getNestedDrawerTransform({ direction: 'bottom', isOpen: true, viewportSize: 400, displacement: 16 })
+      getNestedDrawerTransform({
+        direction: 'bottom',
+        isOpen: true,
+        viewportSize: 400,
+        displacement: 16,
+      })
     ).toEqual({
       scale: 0.96,
       translate: -16,
-      transform: 'scale(0.96) translate3d(0, -16px, 0)'
+      transform: 'scale(0.96) translate3d(0, -16px, 0)',
     })
 
-    expect(getNestedDrawerTransform({ direction: 'left', isOpen: false, viewportSize: 400, displacement: 16 })).toEqual(
-      {
-        scale: 1,
-        translate: 0,
-        transform: 'scale(1) translate3d(0px, 0, 0)'
-      }
-    )
+    expect(
+      getNestedDrawerTransform({
+        direction: 'left',
+        isOpen: false,
+        viewportSize: 400,
+        displacement: 16,
+      })
+    ).toEqual({
+      scale: 1,
+      translate: 0,
+      transform: 'scale(1) translate3d(0px, 0, 0)',
+    })
   })
 
   it('computes nested drag transform state', () => {
     expect(
-      getNestedDragTransform({ direction: 'bottom', viewportSize: 400, displacement: 16, percentageDragged: 0.5 })
+      getNestedDragTransform({
+        direction: 'bottom',
+        viewportSize: 400,
+        displacement: 16,
+        percentageDragged: 0.5,
+      })
     ).toEqual({
       scale: 0.98,
       translate: -8,
-      transform: 'scale(0.98) translate3d(0, -8px, 0)'
+      transform: 'scale(0.98) translate3d(0, -8px, 0)',
     })
   })
 
@@ -66,7 +81,7 @@ describe('transform runtime helpers', () => {
       borderRadius: '8px',
       overflow: 'hidden',
       transform: 'scale(0.95) translate3d(0, calc(env(safe-area-inset-top) + 14px), 0)',
-      transformOrigin: 'top'
+      transformOrigin: 'top',
     })
   })
 

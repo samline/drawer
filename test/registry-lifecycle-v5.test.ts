@@ -6,7 +6,7 @@ import {
   getDrawer,
   getDrawers,
   getChildDrawers,
-  getParentDrawer
+  getParentDrawer,
 } from '../src'
 
 afterEach(() => {
@@ -55,7 +55,7 @@ describe('v5 explicit instance ownership', () => {
       () => stale.setActiveSnapPoint(1),
       () => stale.subscribe(() => {}),
       () => stale.getSnapshot(),
-      () => stale.options
+      () => stale.options,
     ])
       expect(action).toThrow(/destroyed/)
     stale.destroy()
@@ -90,7 +90,7 @@ describe('v5 explicit instance ownership', () => {
         open: true,
         content: () => {
           throw new Error('Content unavailable')
-        }
+        },
       })
     ).toThrow('Content unavailable')
     expect(getDrawer('retry')).toBeNull()
@@ -100,7 +100,7 @@ describe('v5 explicit instance ownership', () => {
   })
   it.each(['onClose', 'onOpenChange', 'subscribe'] as const)(
     'permits owner teardown during %s without orphan effects',
-    (during) => {
+    during => {
       vi.useFakeTimers()
       const animation = vi.fn()
       const drawer = createDrawer({ id: 'callback-owner', onAnimationEnd: animation })
@@ -108,7 +108,7 @@ describe('v5 explicit instance ownership', () => {
       if (during === 'onClose') drawer.update({ onClose: () => drawer.destroy() })
       if (during === 'onOpenChange') drawer.update({ onOpenChange: () => drawer.destroy() })
       if (during === 'subscribe')
-        drawer.subscribe((snapshot) => {
+        drawer.subscribe(snapshot => {
           if (!snapshot.state.isOpen) drawer.destroy()
         })
       expect(() => drawer.setOpen(false)).not.toThrow()

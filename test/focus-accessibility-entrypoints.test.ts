@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { destroyDrawers } from '../src'
 
 async function flushTimers() {
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  await new Promise((resolve) => setTimeout(resolve, 20))
+  await new Promise(resolve => setTimeout(resolve, 0))
+  await new Promise(resolve => setTimeout(resolve, 20))
 }
 
 function getVanillaTrigger(id: string) {
@@ -37,7 +37,7 @@ describe('focus accessibility across entrypoints', () => {
       triggerText: 'Open drawer',
       title: 'Vanilla focus',
       content: 'Drawer body',
-      autoFocus: false
+      autoFocus: false,
     })
 
     await flushTimers()
@@ -64,7 +64,7 @@ describe('focus accessibility across entrypoints', () => {
       triggerText: 'Open drawer',
       title: 'Browser focus',
       content: 'Drawer body',
-      autoFocus: false
+      autoFocus: false,
     })
 
     await flushTimers()
@@ -91,7 +91,7 @@ describe('focus accessibility across entrypoints', () => {
       triggerText: 'Open drawer',
       title: 'Vanilla trigger focus',
       content: 'Drawer body',
-      autoFocus: false
+      autoFocus: false,
     })
 
     await flushTimers()
@@ -118,7 +118,7 @@ describe('focus accessibility across entrypoints', () => {
       triggerText: 'Open drawer',
       title: 'Browser trigger focus',
       content: 'Drawer body',
-      autoFocus: false
+      autoFocus: false,
     })
 
     await flushTimers()

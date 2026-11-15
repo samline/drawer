@@ -1,30 +1,26 @@
-# Build output
-dist/
-coverage/
-
-# Dependencies
-node_modules/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor / IDE
-.idea/
-.vscode/
-
-landing/
-shared/
-site-tools/
-site-tests/
-site-e2e/
-docs/src/
-docs/scripts/
-SITE*.md
+# Managed by package-landing-docs (family/templates/package). Edit there, then run node family/scripts/sync.mjs.
+dist
+coverage
+node_modules
+.astro
+pnpm-lock.yaml
+CHANGELOG.md
+test-results
+playwright-report
+site
+# The website has its own formatter (bun run site:format).
+landing
+docs
+shared
+brief
+site-tools
+site-tests
+site-e2e
+SITE.md
+REFERENCE.md
+playwright.site.config.ts
+project.config.json
 content-audit.json
 design-reference.json
-project.config.json
-playwright.site.config.ts
-
-# Vendored third-party agent skills (installed by autoskills; keep upstream formatting)
-.agents/skills/
+# Third-party agent skills keep their upstream formatting.
+.agents/skills

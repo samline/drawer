@@ -28,7 +28,7 @@ describe('drawer core controller', () => {
   it('tracks snap points and active snap point', () => {
     const controller = createDrawerController({
       snapPoints: ['120px', 0.5, 1],
-      activeSnapPoint: 0.5
+      activeSnapPoint: 0.5,
     })
 
     expect(controller.getSnapshot().state.snapPoints).toEqual(['120px', 0.5, 1])
@@ -42,7 +42,7 @@ describe('drawer core controller', () => {
   it('publishes snapshots to subscribers', () => {
     const controller = createDrawerController()
     const states: boolean[] = []
-    const unsubscribe = controller.subscribe((snapshot) => {
+    const unsubscribe = controller.subscribe(snapshot => {
       states.push(snapshot.state.isOpen)
     })
 

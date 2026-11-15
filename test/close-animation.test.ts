@@ -34,7 +34,7 @@ describe('close animation', () => {
       id: 'close-anim',
       direction: 'right',
       title: 'Close anim',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -58,7 +58,7 @@ describe('close animation', () => {
       id: 'init-closed',
       direction: 'right',
       title: 'Init closed',
-      content: 'Body'
+      content: 'Body',
     })
     expect(drawer.getSnapshot().state.isOpen).toBe(false)
 
@@ -71,7 +71,7 @@ describe('close animation', () => {
       id: 'open-anim',
       direction: 'right',
       title: 'Open anim',
-      content: 'Body'
+      content: 'Body',
     })
 
     expect(document.querySelector('[data-drawer]')).toBeNull()
@@ -91,7 +91,7 @@ describe('close animation', () => {
       id: 'teardown-timing',
       direction: 'right',
       title: 'Teardown timing',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     drawer.setOpen(false)
@@ -102,7 +102,7 @@ describe('close animation', () => {
     // animation + 100 ms safety) the drawer is fully removed.
     expect(document.querySelector('[data-drawer]')).not.toBeNull()
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(resolve => {
       window.setTimeout(() => {
         expect(document.querySelector('[data-drawer]')).toBeNull()
         resolve()
@@ -115,7 +115,7 @@ describe('close animation', () => {
       id: 'cascade-takes-over',
       direction: 'bottom',
       title: 'Cascade',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     const content = document.querySelector('[data-drawer]') as HTMLElement
@@ -127,7 +127,12 @@ describe('close animation', () => {
   })
 
   it('moves directly to the closed endpoint when animation is disabled', () => {
-    const drawer = createDrawer({ id: 'close-no-animation', open: true, direction: 'left', content: 'Body' })
+    const drawer = createDrawer({
+      id: 'close-no-animation',
+      open: true,
+      direction: 'left',
+      content: 'Body',
+    })
     const content = document.querySelector('[data-drawer]') as HTMLElement
     content.dataset.drawerAnimate = 'false'
 

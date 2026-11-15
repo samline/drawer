@@ -11,7 +11,7 @@ describe('handle runtime helpers', () => {
         shouldCancelInteraction: false,
         snapPoints: ['100px', '200px'],
         activeSnapPoint: '100px',
-        dismissible: true
+        dismissible: true,
       })
     ).toEqual({ type: 'noop' })
   })
@@ -23,7 +23,7 @@ describe('handle runtime helpers', () => {
         preventCycle: false,
         shouldCancelInteraction: false,
         activeSnapPoint: null,
-        dismissible: false
+        dismissible: false,
       })
     ).toEqual({ type: 'noop' })
   })
@@ -36,7 +36,7 @@ describe('handle runtime helpers', () => {
         shouldCancelInteraction: false,
         snapPoints: ['100px', '200px'],
         activeSnapPoint: '100px',
-        dismissible: true
+        dismissible: true,
       })
     ).toEqual({ type: 'snap', snapPoint: '200px' })
   })
@@ -49,7 +49,7 @@ describe('handle runtime helpers', () => {
         shouldCancelInteraction: false,
         snapPoints: ['100px', '200px'],
         activeSnapPoint: '200px',
-        dismissible: true
+        dismissible: true,
       })
     ).toEqual({ type: 'close' })
   })

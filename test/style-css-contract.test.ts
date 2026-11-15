@@ -17,7 +17,9 @@ describe('style.css — animation / transition contract', () => {
     const baseRuleMatch = CSS.match(/\[data-drawer\]\s*\{[^}]*\}/)
     expect(baseRuleMatch, 'expected a [data-drawer] base rule in style.css').not.toBeNull()
     const baseRule = baseRuleMatch![0]
-    expect(baseRule).toMatch(/transition\s*:\s*transform\s+0\.5s\s+cubic-bezier\(0\.32,\s*0\.72,\s*0,\s*1\)/)
+    expect(baseRule).toMatch(
+      /transition\s*:\s*transform\s+0\.5s\s+cubic-bezier\(0\.32,\s*0\.72,\s*0,\s*1\)/
+    )
     expect(CSS).toMatch(
       /\[data-drawer\]\[data-drawer-direction='top'\],[\s\S]*?\[data-drawer\]\[data-drawer-direction='bottom'\]\s*\{\s*touch-action:\s*pan-x;/
     )
@@ -29,7 +31,9 @@ describe('style.css — animation / transition contract', () => {
 
   it('[data-state="closed"] rule (without data-drawer-closing) declares animation-fill-mode: forwards so the to-frame holds after the close animation', () => {
     // Match the bottom closed rule specifically (the pattern repeats per direction)
-    const closedRuleMatch = CSS.match(/\[data-drawer\][^}]*\[data-state=['"]closed['"]\]\s*\{[^}]*\}/)
+    const closedRuleMatch = CSS.match(
+      /\[data-drawer\][^}]*\[data-state=['"]closed['"]\]\s*\{[^}]*\}/
+    )
     expect(closedRuleMatch, 'expected a [data-state="closed"] rule in style.css').not.toBeNull()
     expect(closedRuleMatch![0]).toMatch(/animation-fill-mode\s*:\s*forwards/)
   })
@@ -45,7 +49,9 @@ describe('style.css — animation / transition contract', () => {
 
   it('slideToX keyframes use the current transform as their implicit start frame', () => {
     for (const direction of ['Bottom', 'Top', 'Left', 'Right']) {
-      expect(CSS_WITHOUT_COMMENTS).toMatch(new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*to\\s*\\{`))
+      expect(CSS_WITHOUT_COMMENTS).toMatch(
+        new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*to\\s*\\{`)
+      )
       expect(CSS_WITHOUT_COMMENTS).not.toMatch(
         new RegExp(`@keyframes\\s+slideTo${direction}\\s*\\{\\s*(?:from|0%)\\s*\{`)
       )

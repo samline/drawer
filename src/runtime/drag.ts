@@ -29,7 +29,7 @@ export function getDragDirectionMultiplier(direction: CommonDrawerDirection) {
 export function getDraggedDistance({
   pointerStart,
   currentPointer,
-  direction
+  direction,
 }: {
   pointerStart: number
   currentPointer: number
@@ -74,7 +74,7 @@ export function dampenValue(distance: number): number {
  */
 export function isDraggingInCloseDirection({
   direction,
-  draggedDistance
+  draggedDistance,
 }: {
   direction: CommonDrawerDirection
   draggedDistance: number
@@ -93,12 +93,13 @@ export function isDraggingInCloseDirection({
  */
 export function getDraggableOffset({
   direction,
-  draggedDistance
+  draggedDistance,
 }: {
   direction: CommonDrawerDirection
   draggedDistance: number
 }) {
-  const baseOffset = direction === 'bottom' || direction === 'right' ? -draggedDistance : draggedDistance
+  const baseOffset =
+    direction === 'bottom' || direction === 'right' ? -draggedDistance : draggedDistance
   const outOfBounds = !isDraggingInCloseDirection({ direction, draggedDistance })
   if (!outOfBounds) return baseOffset
   // `dampenValue` expects a non-negative distance. The opposite-
@@ -112,7 +113,7 @@ export function getDraggableOffset({
 export function getDragPercentage({
   draggedDistance,
   drawerDimension,
-  snapPointPercentageDragged
+  snapPointPercentageDragged,
 }: {
   draggedDistance: number
   drawerDimension: number
@@ -127,13 +128,13 @@ export function getDragPercentage({
 
   return {
     absDraggedDistance,
-    percentageDragged
+    percentageDragged,
   }
 }
 
 export function isReleaseTowardExpandedState({
   direction,
-  distMoved
+  distMoved,
 }: {
   direction: CommonDrawerDirection
   distMoved: number
@@ -151,7 +152,7 @@ export function shouldCloseDrawerOnRelease({
   velocityThreshold,
   swipeAmount,
   drawerDimension,
-  closeThreshold
+  closeThreshold,
 }: {
   velocity: number
   velocityThreshold: number

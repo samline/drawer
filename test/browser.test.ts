@@ -9,9 +9,9 @@ async function importBrowser() {
 
 function collectConsoleMessages(spies: Array<ReturnType<typeof vi.spyOn>>) {
   return spies
-    .flatMap((spy) => spy.mock.calls)
+    .flatMap(spy => spy.mock.calls)
     .flat()
-    .map((entry) => String(entry))
+    .map(entry => String(entry))
     .join('\n')
 }
 
@@ -25,7 +25,7 @@ describe('browser entry', () => {
       'getChildDrawers',
       'getDrawer',
       'getDrawers',
-      'getParentDrawer'
+      'getParentDrawer',
     ])
   })
 
@@ -71,14 +71,16 @@ describe('browser entry', () => {
 
     Drawer.getDrawer('browser-a')?.setOpen(true)
     Drawer.getDrawer('browser-b')?.update({ modal: false })
-    Drawer.getDrawer('browser-b')?.setOpen(!Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen)
+    Drawer.getDrawer('browser-b')?.setOpen(
+      !Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen
+    )
     Drawer.createDrawer({ id: 'browser-child', parentId: 'browser-a', open: true })
 
     expect(Drawer.getDrawer('browser-a')?.getSnapshot().state.isOpen).toBe(true)
     expect(Drawer.getDrawer('browser-b')?.getSnapshot().state.modal).toBe(false)
     expect(Drawer.getDrawer('browser-b')?.getSnapshot().state.isOpen).toBe(true)
     expect(Drawer.getParentDrawer('browser-child')?.id).toBe('browser-a')
-    expect(Drawer.getChildDrawers('browser-a').map((drawer) => drawer.id)).toEqual(['browser-child'])
+    expect(Drawer.getChildDrawers('browser-a').map(drawer => drawer.id)).toEqual(['browser-child'])
   })
 
   it('keeps snap point state and release callbacks observable through the browser namespace', async () => {
@@ -90,7 +92,7 @@ describe('browser entry', () => {
       id: 'browser-snap',
       snapPoints: ['120px', '320px', 1],
       activeSnapPoint: '120px',
-      onReleaseChange
+      onReleaseChange,
     })
 
     expect(Drawer.getDrawer('browser-snap')?.getSnapshot().state.activeSnapPoint).toBe('120px')
@@ -110,11 +112,13 @@ describe('browser entry', () => {
     Drawer.createDrawer({
       id: 'browser-handle-options',
       showHandle: true,
-      handleClassName: 'browser-handle'
+      handleClassName: 'browser-handle',
     })
 
     expect(Drawer.getDrawer('browser-handle-options')?.options.showHandle).toBe(true)
-    expect(Drawer.getDrawer('browser-handle-options')?.options.handleClassName).toBe('browser-handle')
+    expect(Drawer.getDrawer('browser-handle-options')?.options.handleClassName).toBe(
+      'browser-handle'
+    )
   })
 
   it('opens from a real trigger element and mounts a host when DOM is available', async () => {
@@ -132,11 +136,11 @@ describe('browser entry', () => {
         showHandle: true,
         handleClassName: 'browser-dom-handle',
         title: 'DOM drawer',
-        content: 'Body'
+        content: 'Body',
       })
 
       trigger.click()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(Drawer.getDrawer('browser-dom')?.getSnapshot().state.isOpen).toBe(true)
       expect(document.querySelector('[data-drawer-vanilla-root="browser-dom"]')).not.toBeNull()
@@ -157,10 +161,10 @@ describe('browser entry', () => {
       triggerText: 'Open drawer',
       title: 'Focus release',
       content: 'Drawer body',
-      autoFocus: false
+      autoFocus: false,
     })
 
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise(resolve => setTimeout(resolve, 0))
 
     const trigger = document.querySelector('[data-drawer-vanilla-trigger]') as HTMLElement | null
     if (!trigger) throw new Error('Missing built-in trigger element for focus test')
@@ -169,7 +173,7 @@ describe('browser entry', () => {
     expect(document.activeElement).toBe(trigger)
 
     drawer.setOpen(true)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(Drawer.getDrawer('browser-focus-release')?.getSnapshot().state.isOpen).toBe(true)
     expect(document.activeElement).not.toBe(trigger)
@@ -189,18 +193,18 @@ describe('browser entry', () => {
         id: 'browser-trigger-rebind',
         triggerElement: triggerA,
         title: 'Trigger rebind',
-        content: 'Body'
+        content: 'Body',
       })
 
       Drawer.getDrawer('browser-trigger-rebind')?.setOpen(false)
       Drawer.getDrawer('browser-trigger-rebind')?.update({ triggerElement: triggerB })
 
       triggerA.click()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
       expect(Drawer.getDrawer('browser-trigger-rebind')?.getSnapshot().state.isOpen).toBe(false)
 
       triggerB.click()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
       expect(Drawer.getDrawer('browser-trigger-rebind')?.getSnapshot().state.isOpen).toBe(true)
     } finally {
       Drawer.destroyDrawers()
@@ -253,7 +257,7 @@ describe('browser entry', () => {
           id: `browser-balance-${index}`,
           triggerElement: triggerA,
           title: `Balance ${index}`,
-          content: `Body ${index}`
+          content: `Body ${index}`,
         })
 
         Drawer.getDrawer(`browser-balance-${index}`)?.update({ triggerElement: triggerB })
@@ -291,10 +295,10 @@ describe('browser entry', () => {
           const wrapper = document.createElement('div')
           wrapper.innerHTML = [
             `<h2 id="${titleId}">A controlled drawer.</h2>`,
-            `<p id="${descriptionId}">Accessible custom content.</p>`
+            `<p id="${descriptionId}">Accessible custom content.</p>`,
           ].join('')
           return wrapper
-        }
+        },
       })
 
       const messages = collectConsoleMessages([errorSpy, warnSpy])
@@ -350,20 +354,20 @@ describe('browser entry', () => {
         triggerElement: trigger,
         title: `Browser drawer ${index}`,
         content: `Body ${index}`,
-        showHandle: index % 2 === 0
+        showHandle: index % 2 === 0,
       })
 
       trigger.click()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       Drawer.getDrawer(`browser-cycle-${index}`)?.destroy()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
     }
 
     expect(Object.keys(Drawer.getDrawers())).toHaveLength(0)
     // jsdom keeps the document body across tests; clean up the cycle's
     // own hosts before asserting the absence against the global DOM.
-    document.querySelectorAll('[data-drawer-vanilla-root]').forEach((node) => node.remove())
+    document.querySelectorAll('[data-drawer-vanilla-root]').forEach(node => node.remove())
     expect(document.querySelector('[data-drawer-vanilla-root]')).toBeNull()
   })
 

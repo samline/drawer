@@ -28,7 +28,12 @@ describe('multi-drawer lifecycle', () => {
 
   it('keeps an initially open nested child above its opened ancestors', () => {
     const parent = createDrawer({ id: 'nested-parent', content: 'Parent' })
-    const child = createDrawer({ id: 'nested-child', parentId: 'nested-parent', open: true, content: 'Child' })
+    const child = createDrawer({
+      id: 'nested-child',
+      parentId: 'nested-parent',
+      open: true,
+      content: 'Child',
+    })
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
 
@@ -43,7 +48,7 @@ describe('multi-drawer lifecycle', () => {
       content: 'First',
       onOpenChange(open) {
         if (open) second.setOpen(true)
-      }
+      },
     })
 
     first.setOpen(true)
@@ -93,7 +98,9 @@ describe('multi-drawer lifecycle', () => {
 
     expect(container.querySelectorAll('[data-drawer-vanilla-root]').length).toBe(2)
     first.destroy()
-    expect(container.querySelector('[data-drawer-id="container-second"]')?.getAttribute('data-state')).toBe('open')
+    expect(
+      container.querySelector('[data-drawer-id="container-second"]')?.getAttribute('data-state')
+    ).toBe('open')
   })
 
   it('cancels stale close removal when reopened', () => {
@@ -105,12 +112,19 @@ describe('multi-drawer lifecycle', () => {
     drawer.setOpen(true)
     vi.advanceTimersByTime(301)
 
-    expect(document.querySelector('[data-drawer-id="rapid-reopen"]')?.getAttribute('data-state')).toBe('open')
+    expect(
+      document.querySelector('[data-drawer-id="rapid-reopen"]')?.getAttribute('data-state')
+    ).toBe('open')
   })
 
   it('reconciles the built-in trigger while the drawer is exiting', () => {
     vi.useFakeTimers()
-    const drawer = createDrawer({ id: 'trigger-exit', triggerText: 'Open', open: true, content: 'Body' })
+    const drawer = createDrawer({
+      id: 'trigger-exit',
+      triggerText: 'Open',
+      open: true,
+      content: 'Body',
+    })
 
     drawer.setOpen(false)
     drawer.update({ triggerText: 'Open again' })

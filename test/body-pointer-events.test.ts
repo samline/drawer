@@ -33,7 +33,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
         id: 'g7-modal-true',
         modal: true,
         title: 'Modal true',
-        content: 'Body'
+        content: 'Body',
       })
       drawer.setOpen(true)
       // modal: true → no rAF should write pointer-events.
@@ -49,10 +49,10 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
         id: 'g7-modal-false',
         modal: false,
         title: 'Modal false',
-        content: 'Body'
+        content: 'Body',
       })
       drawer.setOpen(true)
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
       expect(document.body.style.pointerEvents).toBe('none')
     })
 
@@ -63,7 +63,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
         id: 'g7-close',
         modal: true,
         title: 'Close',
-        content: 'Body'
+        content: 'Body',
       })
       drawer.setOpen(true)
       vi.advanceTimersByTime(100)
@@ -83,7 +83,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       const drawer = createDrawer({
         id: 'g8-set',
         title: 'Scroll set',
-        content: 'Body'
+        content: 'Body',
       })
       drawer.setOpen(true)
       expect(document.documentElement.style.scrollBehavior).toBe('auto')
@@ -96,7 +96,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
       const drawer = createDrawer({
         id: 'g8-restore',
         title: 'Scroll restore',
-        content: 'Body'
+        content: 'Body',
       })
       drawer.setOpen(true)
       expect(document.documentElement.style.scrollBehavior).toBe('auto')
@@ -114,7 +114,7 @@ describe('body pointer-events + scrollBehavior (G7 + G8)', () => {
         id: 'g8-closed',
         open: false,
         title: 'Closed',
-        content: 'Body'
+        content: 'Body',
       })
       // No setOpen(true) call → mount should not have written.
       expect(document.documentElement.style.scrollBehavior).toBe('smooth')

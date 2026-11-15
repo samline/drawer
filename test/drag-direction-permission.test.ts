@@ -38,7 +38,7 @@ describe('drag direction permission (horizontal)', () => {
           timeSinceLastPreventedMs: null,
           scrollLockTimeout: 100,
           isDraggingInDirection: false,
-          ancestors: []
+          ancestors: [],
         }).allow
       ).toBe(true)
     }
@@ -57,7 +57,7 @@ describe('drag direction permission (horizontal)', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: false,
-      ancestors: []
+      ancestors: [],
     })
     expect(result.allow).toBe(true)
   })
@@ -74,7 +74,7 @@ describe('drag direction permission (horizontal)', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: true,
-      ancestors: []
+      ancestors: [],
     })
     expect(result.allow).toBe(false)
   })
@@ -91,7 +91,7 @@ describe('drag direction permission (horizontal)', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: false,
-      ancestors: []
+      ancestors: [],
     })
     expect(result.allow).toBe(true)
   })
@@ -107,7 +107,7 @@ describe('drag direction permission (horizontal)', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: true,
-      ancestors: []
+      ancestors: [],
     })
     expect(result.allow).toBe(false)
   })
@@ -123,7 +123,7 @@ describe('drag direction permission (horizontal)', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: false,
-      ancestors: []
+      ancestors: [],
     })
     expect(result.allow).toBe(false)
   })

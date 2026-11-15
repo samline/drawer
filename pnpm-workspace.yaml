@@ -1,0 +1,21 @@
+# Managed by package-landing-docs (family/templates/package). Edit there, then run node family/scripts/sync.mjs.
+# pnpm settings for this package and its website (landing, docs, shared).
+
+packages:
+  - landing
+  - docs
+  - shared
+
+# Fresh @samline releases install right away; every other version waits pnpm's
+# minimumReleaseAge before it can be installed.
+minimumReleaseAgeExclude:
+  - '@samline/*'
+
+# Dependencies allowed to run install scripts. Everything else is blocked.
+allowBuilds:
+  esbuild: true
+
+# Repository overrides (kept by sync): tsup still pulls esbuild 0.27, which has
+# GHSA-g7r4-m6w7-qqqr.
+overrides:
+  esbuild: ^0.28.1

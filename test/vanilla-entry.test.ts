@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createDrawer, destroyDrawers, getChildDrawers, getDrawer, getDrawers, getParentDrawer } from '../src'
+import {
+  createDrawer,
+  destroyDrawers,
+  getChildDrawers,
+  getDrawer,
+  getDrawers,
+  getParentDrawer,
+} from '../src'
 
 describe('vanilla root entry', () => {
   beforeEach(() => {
@@ -40,7 +47,7 @@ describe('vanilla root entry', () => {
       titleVisuallyHidden: true,
       description: 'Drawer description',
       descriptionVisuallyHidden: true,
-      content: 'Drawer content'
+      content: 'Drawer content',
     })
 
     expect(drawer.options.triggerText).toBe('Open drawer')
@@ -89,7 +96,7 @@ describe('vanilla root entry', () => {
       id: 'callbacks',
       onOpenChange,
       onClose,
-      onAnimationEnd
+      onAnimationEnd,
     })
 
     drawer.setOpen(true)
@@ -129,7 +136,7 @@ describe('vanilla root entry', () => {
       id: 'snap-vanilla',
       snapPoints: ['120px', '320px', 1],
       activeSnapPoint: '120px',
-      onReleaseChange
+      onReleaseChange,
     })
 
     expect(drawer.getSnapshot().state.activeSnapPoint).toBe('120px')
@@ -147,7 +154,7 @@ describe('vanilla root entry', () => {
     createDrawer({ id: 'child', parentId: 'parent', open: true, direction: 'right' })
 
     expect(getParentDrawer('child')?.id).toBe('parent')
-    expect(getChildDrawers('parent').map((drawer) => drawer.id)).toEqual(['child'])
+    expect(getChildDrawers('parent').map(drawer => drawer.id)).toEqual(['child'])
     expect(getDrawer('child')?.options.nested).toBe(true)
     expect(getDrawer('parent')?.getSnapshot().state.isOpen).toBe(true)
 
@@ -177,7 +184,7 @@ describe('vanilla root entry', () => {
         id,
         direction: index % 2 === 0 ? 'bottom' : 'right',
         title: `Drawer ${index}`,
-        content: `Content ${index}`
+        content: `Content ${index}`,
       })
 
       getDrawer(id)?.setOpen(true)
@@ -204,7 +211,7 @@ describe('vanilla root entry', () => {
       id: 'state-test',
       title: 'State test',
       content: 'Body',
-      direction: 'bottom'
+      direction: 'bottom',
     })
 
     const getContent = () => document.querySelector('[data-drawer]') as HTMLElement | null

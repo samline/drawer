@@ -43,7 +43,7 @@ const nonTextInputTypes = new Set<string>([
   'image',
   'button',
   'submit',
-  'reset'
+  'reset',
 ])
 
 // The number of active `preventScrollMobileSafari` calls. Used to
@@ -60,7 +60,7 @@ type BodyPositionProperty = 'position' | 'top' | 'left' | 'right' | 'height'
 function readInlineStyle(element: HTMLElement, property: string): InlineStyleSnapshot {
   return {
     value: element.style.getPropertyValue(property),
-    priority: element.style.getPropertyPriority(property)
+    priority: element.style.getPropertyPriority(property),
   }
 }
 
@@ -365,7 +365,9 @@ function preventScrollMobileSafari(): () => void {
       'padding-right',
       `${window.innerWidth - document.documentElement.clientWidth}px`
     ),
-    document.body.style.position !== 'fixed' ? setStyle(document.body, 'margin-top', `${-scrollY}px`) : undefined
+    document.body.style.position !== 'fixed'
+      ? setStyle(document.body, 'margin-top', `${-scrollY}px`)
+      : undefined
   )
 
   // Scroll to the top. The negative margin on the body will make
@@ -416,7 +418,11 @@ function preventScrollMobileSafari(): () => void {
  *
  * No-op when not on Safari. No-op when `noBodyStyles: true`.
  */
-export function setPositionFixed(options: { isOpen: boolean; modal: boolean; noBodyStyles: boolean }): () => void {
+export function setPositionFixed(options: {
+  isOpen: boolean
+  modal: boolean
+  noBodyStyles: boolean
+}): () => void {
   if (isSafari() !== true || options.modal === false || options.noBodyStyles) {
     return () => {}
   }
@@ -458,7 +464,7 @@ export function setPositionFixed(options: { isOpen: boolean; modal: boolean; noB
       top: readInlineStyle(document.body, 'top'),
       left: readInlineStyle(document.body, 'left'),
       right: readInlineStyle(document.body, 'right'),
-      height: readInlineStyle(document.body, 'height')
+      height: readInlineStyle(document.body, 'height'),
     }
 
     const innerHeight = window.innerHeight
@@ -474,7 +480,11 @@ export function setPositionFixed(options: { isOpen: boolean; modal: boolean; noB
         if (fixedPositionCount === 0) return
         const bottomBarHeight = innerHeight - window.innerHeight
         if (bottomBarHeight && savedScrollY >= innerHeight) {
-          document.body.style.setProperty('top', `${-(savedScrollY + bottomBarHeight)}px`, 'important')
+          document.body.style.setProperty(
+            'top',
+            `${-(savedScrollY + bottomBarHeight)}px`,
+            'important'
+          )
         }
       })
     }, 300)
@@ -559,7 +569,11 @@ function scrollIntoView(target: Element): void {
     // Find the parent scrollable element and adjust the scroll
     // position if the target is not already in view.
     const scrollable = getScrollParent(current)
-    if (scrollable !== document.documentElement && scrollable !== document.body && scrollable !== current) {
+    if (
+      scrollable !== document.documentElement &&
+      scrollable !== document.body &&
+      scrollable !== current
+    ) {
       const scrollableTop = scrollable.getBoundingClientRect().top
       const targetTop = (current as HTMLElement).getBoundingClientRect().top
       const targetBottom = (current as HTMLElement).getBoundingClientRect().bottom

@@ -49,7 +49,7 @@ function installVisualViewportPolyfill(initialHeight: number = 768): MockVisualV
   Object.defineProperty(window, 'visualViewport', {
     value: mock,
     writable: true,
-    configurable: true
+    configurable: true,
   })
   return mock
 }
@@ -129,7 +129,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       repositionInputs: true,
       title: 'Reposition inputs',
-      content: input
+      content: input,
     })
     drawer.setOpen(true)
 
@@ -160,7 +160,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       initialDrawerHeight: 0,
       activeSnapPointOffset: 0,
       isMobileFirefox: false,
-      windowTopOffset: WINDOW_TOP_OFFSET
+      windowTopOffset: WINDOW_TOP_OFFSET,
     })
     expect(content.style.bottom).toBe(expectedLayout.bottom)
     // The expected bottom is positive (the keyboard pushed the
@@ -175,7 +175,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       fixed: true,
       title: 'Fixed',
-      content: input
+      content: input,
     })
     drawer.setOpen(true)
 
@@ -201,7 +201,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       initialDrawerHeight: 0,
       activeSnapPointOffset: 0,
       isMobileFirefox: false,
-      windowTopOffset: WINDOW_TOP_OFFSET
+      windowTopOffset: WINDOW_TOP_OFFSET,
     })
 
     // `fixed` controls height while input repositioning remains
@@ -217,7 +217,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       repositionInputs: false,
       title: 'No viewport',
-      content: input
+      content: input,
     })
     drawer.setOpen(true)
 
@@ -243,7 +243,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       preventScrollRestoration: true,
       title: 'Prevent scroll',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -265,7 +265,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       preventScrollRestoration: true,
       title: 'Already manual',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -288,7 +288,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       direction: 'bottom',
       repositionInputs: true,
       title: 'Listener lifecycle',
-      content: 'Body'
+      content: 'Body',
     })
 
     // Closed: no listener yet.
@@ -314,7 +314,9 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     expect(addCallsAfterOpen2).toBeGreaterThan(addCallsBeforeOpen2)
 
     // Close 2: listener detached again.
-    const removeCallsBeforeClose2 = removeSpy.mock.calls.filter(([type]) => type === 'resize').length
+    const removeCallsBeforeClose2 = removeSpy.mock.calls.filter(
+      ([type]) => type === 'resize'
+    ).length
     drawer.setOpen(false)
     const removeCallsAfterClose2 = removeSpy.mock.calls.filter(([type]) => type === 'resize').length
     expect(removeCallsAfterClose2).toBeGreaterThan(removeCallsBeforeClose2)
@@ -329,7 +331,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       repositionInputs: true,
       fixed: true,
       title: 'Desktop',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -352,7 +354,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       activeSnapPoint: '120px',
       repositionInputs: true,
       title: 'Snap viewport',
-      content: input
+      content: input,
     })
     drawer.setOpen(true)
 
@@ -373,7 +375,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
     const snapOffset = getSnapPointOffset({
       snapPoint: '120px',
       direction: 'bottom',
-      containerSize: { width: window.innerWidth, height: window.innerHeight }
+      containerSize: { width: window.innerWidth, height: window.innerHeight },
     })
     const drawerHeight = content.offsetHeight
     const totalHeight = window.innerHeight
@@ -389,7 +391,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       initialDrawerHeight: 0,
       activeSnapPointOffset: snapOffset,
       isMobileFirefox: false,
-      windowTopOffset: WINDOW_TOP_OFFSET
+      windowTopOffset: WINDOW_TOP_OFFSET,
     })
     expect(content.style.bottom).toBe(expectedLayout.bottom)
   })
@@ -404,7 +406,7 @@ describe('drag pipeline integration (Phase E — viewport / mobile-keyboard)', (
       activeSnapPoint: '120px',
       preventScrollRestoration: true,
       title: 'Prevent scroll re-render',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     expect(window.history.scrollRestoration).toBe('manual')

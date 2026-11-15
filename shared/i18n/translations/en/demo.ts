@@ -516,7 +516,7 @@ const demo = {
   noscript:
     'Enable JavaScript to open the drawer. All guides and source files are readable without it.',
   openCode: 'Explore the code',
-  note: 'Save the HTML, CSS and JavaScript files together, or copy the complete file. Both load the pinned browser bundle and stylesheet from unpkg; an internet connection is required.',
+  note: 'Save the HTML, CSS and JavaScript files together, or copy the complete file. Both load the pinned browser bundle and stylesheet from jsDelivr; an internet connection is required.',
   copyComplete: 'Copy the complete example',
 }
 export default demo

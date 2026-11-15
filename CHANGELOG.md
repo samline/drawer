@@ -2,6 +2,13 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- CDN snippets in the README, docs, skill and copied examples load from jsDelivr (`https://cdn.jsdelivr.net/npm/@samline/drawer@<version>/…`) instead of unpkg. The files are the same.
+- `homepage` is the canonical site URL with its trailing slash, `https://samline.github.io/drawer/`.
+
 ## [5.1.2] - 2026-11-05
 
 ### Fixed

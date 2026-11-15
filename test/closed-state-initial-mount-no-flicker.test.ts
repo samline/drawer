@@ -103,11 +103,11 @@ describe('closed-state initial mount (no flicker)', () => {
   describe('runtime: closed drawer uses lazy presence', () => {
     it.each(['top', 'bottom', 'left', 'right'] as const)(
       'direction=%s does not mount hidden dialog content',
-      (direction) => {
+      direction => {
         createDrawer({
           id: `mt-${direction}`,
           direction,
-          content: 'body'
+          content: 'body',
         })
         expect(document.querySelector('[data-drawer]')).toBeNull()
       }
@@ -117,7 +117,7 @@ describe('closed-state initial mount (no flicker)', () => {
       createDrawer({
         id: 'mt-overlay',
         direction: 'right',
-        content: 'body'
+        content: 'body',
       })
       expect(document.querySelector('[data-drawer-overlay]')).toBeNull()
     })

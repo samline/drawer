@@ -226,7 +226,7 @@ test('all rendered recipes execute in both modes as separate and complete files'
             const css = url.pathname.endsWith('.css')
             const javascript = url.pathname.endsWith('.js')
             const body =
-              url.hostname === 'unpkg.com'
+              url.hostname === 'cdn.jsdelivr.net'
                 ? css
                   ? runtimeCss
                   : bundle

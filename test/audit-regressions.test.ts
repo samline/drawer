@@ -77,7 +77,11 @@ describe('focus trap boundaries', () => {
 
 describe('visually hidden slots', () => {
   it('applies white-space: nowrap to the hidden title', () => {
-    const drawer = createDrawer({ id: 'hidden-title', title: 'Order details', titleVisuallyHidden: true })
+    const drawer = createDrawer({
+      id: 'hidden-title',
+      title: 'Order details',
+      titleVisuallyHidden: true,
+    })
     drawer.setOpen(true)
     const title = query<HTMLElement>(drawer, '[data-drawer-title]')!
     expect(title.style.whiteSpace).toBe('nowrap')
@@ -87,7 +91,11 @@ describe('visually hidden slots', () => {
 
 describe('built-in trigger state', () => {
   it('announces a dialog popup and reflects its expanded state', () => {
-    const drawer = createDrawer({ id: 'built-in-trigger', triggerText: 'Open cart', content: 'Cart' })
+    const drawer = createDrawer({
+      id: 'built-in-trigger',
+      triggerText: 'Open cart',
+      content: 'Cart',
+    })
     const trigger = query<HTMLButtonElement>(drawer, '[data-drawer-vanilla-trigger]')!
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
@@ -116,9 +124,16 @@ describe('handle semantics', () => {
   })
 
   it('keeps preventCycle handles out of the tab order', () => {
-    const drawer = createDrawer({ id: 'locked-handle', showHandle: true, snapPoints: [0.4, 1], preventCycle: true })
+    const drawer = createDrawer({
+      id: 'locked-handle',
+      showHandle: true,
+      snapPoints: [0.4, 1],
+      preventCycle: true,
+    })
     drawer.setOpen(true)
-    expect(query<HTMLButtonElement>(drawer, '[data-drawer-handle]')!.getAttribute('aria-hidden')).toBe('true')
+    expect(
+      query<HTMLButtonElement>(drawer, '[data-drawer-handle]')!.getAttribute('aria-hidden')
+    ).toBe('true')
   })
 
   it('exposes a named button when the handle cycles snap points', () => {
@@ -134,7 +149,11 @@ describe('handle semantics', () => {
 describe('keyboard viewport layout for side panels', () => {
   it('uses vertical viewport geometry for a right drawer', () => {
     const viewport = Object.assign(new EventTarget(), { height: 768, width: 1024 })
-    Object.defineProperty(window, 'visualViewport', { value: viewport, configurable: true, writable: true })
+    Object.defineProperty(window, 'visualViewport', {
+      value: viewport,
+      configurable: true,
+      writable: true,
+    })
     const input = document.createElement('input')
     const drawer = createDrawer({ id: 'side-keyboard', direction: 'right', content: () => input })
     drawer.setOpen(true)
@@ -153,9 +172,17 @@ describe('keyboard viewport layout for side panels', () => {
 describe('keyboard dismissal restores authored geometry', () => {
   it('clears the inline height and bottom written while the keyboard was open', () => {
     const viewport = Object.assign(new EventTarget(), { height: 768, width: 1024 })
-    Object.defineProperty(window, 'visualViewport', { value: viewport, configurable: true, writable: true })
+    Object.defineProperty(window, 'visualViewport', {
+      value: viewport,
+      configurable: true,
+      writable: true,
+    })
     const input = document.createElement('input')
-    const drawer = createDrawer({ id: 'side-keyboard-close', direction: 'right', content: () => input })
+    const drawer = createDrawer({
+      id: 'side-keyboard-close',
+      direction: 'right',
+      content: () => input,
+    })
     drawer.setOpen(true)
     input.focus()
 
@@ -178,7 +205,10 @@ describe('focus restoration on close', () => {
     const focus = vi.spyOn(trigger, 'focus')
     trigger.focus()
     focus.mockClear()
-    const drawer = createDrawer({ id: 'restore-no-scroll', content: () => document.createElement('p') })
+    const drawer = createDrawer({
+      id: 'restore-no-scroll',
+      content: () => document.createElement('p'),
+    })
     drawer.setOpen(true)
     drawer.setOpen(false)
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
@@ -195,9 +225,12 @@ describe('drag permission follows the drawer axis', () => {
     clientWidth: 100,
     scrollLeft: 0,
     role: null,
-    ...overrides
+    ...overrides,
   })
-  const permission = (direction: 'top' | 'bottom' | 'left' | 'right', ancestor: DragScrollableAncestor) =>
+  const permission = (
+    direction: 'top' | 'bottom' | 'left' | 'right',
+    ancestor: DragScrollableAncestor
+  ) =>
     getDragPermission({
       targetTagName: 'DIV',
       hasNoDragAttribute: false,
@@ -208,24 +241,40 @@ describe('drag permission follows the drawer axis', () => {
       timeSinceLastPreventedMs: null,
       scrollLockTimeout: 100,
       isDraggingInDirection: false,
-      ancestors: [ancestor, scroller({ role: 'dialog' })]
+      ancestors: [ancestor, scroller({ role: 'dialog' })],
     }).allow
 
   it('lets a top drawer list scroll forward instead of closing at scrollTop 0', () => {
-    expect(permission('top', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 0 }))).toBe(false)
-    expect(permission('top', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 300 }))).toBe(true)
+    expect(
+      permission('top', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 0 }))
+    ).toBe(false)
+    expect(
+      permission('top', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 300 }))
+    ).toBe(true)
   })
 
   it('keeps the bottom drawer contract: dismiss only from the scroll start', () => {
-    expect(permission('bottom', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 0 }))).toBe(true)
-    expect(permission('bottom', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 40 }))).toBe(false)
+    expect(
+      permission('bottom', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 0 }))
+    ).toBe(true)
+    expect(
+      permission('bottom', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 40 }))
+    ).toBe(false)
   })
 
   it('ignores vertical scroll position for side panels and checks horizontal scroll', () => {
-    expect(permission('right', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 40 }))).toBe(true)
-    expect(permission('right', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 30 }))).toBe(false)
-    expect(permission('left', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 0 }))).toBe(false)
-    expect(permission('left', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 300 }))).toBe(true)
+    expect(
+      permission('right', scroller({ scrollHeight: 500, clientHeight: 200, scrollTop: 40 }))
+    ).toBe(true)
+    expect(
+      permission('right', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 30 }))
+    ).toBe(false)
+    expect(
+      permission('left', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 0 }))
+    ).toBe(false)
+    expect(
+      permission('left', scroller({ scrollWidth: 600, clientWidth: 300, scrollLeft: 300 }))
+    ).toBe(true)
   })
 })
 
@@ -254,7 +303,11 @@ describe('focus across structural updates', () => {
     parent.setOpen(true)
     const choice = document.createElement('button')
     choice.textContent = 'Express'
-    const child = createDrawer({ id: 'focus-child', parentId: 'focus-parent', content: () => choice })
+    const child = createDrawer({
+      id: 'focus-child',
+      parentId: 'focus-parent',
+      content: () => choice,
+    })
     child.setOpen(true)
     choice.focus()
 

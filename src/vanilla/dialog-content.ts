@@ -18,7 +18,7 @@ const VISUALLY_HIDDEN_STYLE = {
   clip: 'rect(0, 0, 0, 0)',
   'clip-path': 'inset(50%)',
   'white-space': 'nowrap',
-  border: '0'
+  border: '0',
 } as const
 
 export function createEl<K extends keyof HTMLElementTagNameMap>(
@@ -53,7 +53,6 @@ export function setStyle(element: HTMLElement, styles: Record<string, string>) {
 export function resolveRenderable(value: VanillaRenderable | undefined): {
   text?: string
   element?: HTMLElement
-  container?: HTMLDivElement
 } {
   if (value === null || value === undefined) return {}
   if (typeof value === 'string' || typeof value === 'number') {
@@ -83,8 +82,6 @@ export function buildTitleContent(state: ContentSlots, options: VanillaDrawerOpt
     title.appendChild(document.createTextNode(resolved.text))
   } else if (resolved.element) {
     title.appendChild(resolved.element)
-  } else if (resolved.container) {
-    title.appendChild(resolved.container)
   }
 
   // `titleVisuallyHidden: true` is the escape hatch for
@@ -112,8 +109,6 @@ export function buildDescriptionContent(state: ContentSlots, options: VanillaDra
     desc.appendChild(document.createTextNode(resolved.text))
   } else if (resolved.element) {
     desc.appendChild(resolved.element)
-  } else if (resolved.container) {
-    desc.appendChild(resolved.container)
   }
 
   if (options.descriptionVisuallyHidden !== false) {
@@ -137,7 +132,7 @@ export function normalizeCloseButtonOptions(
   return {
     className: options.className ?? 'drawer-close-button',
     icon: options.icon ?? 'xmark',
-    ariaLabel: options.ariaLabel ?? 'Close'
+    ariaLabel: options.ariaLabel ?? 'Close',
   }
 }
 
@@ -161,7 +156,7 @@ export function buildCloseButton(
   const button = createEl('button', {
     type: 'button',
     'data-drawer-close': '',
-    'aria-label': options.ariaLabel
+    'aria-label': options.ariaLabel,
   }) as HTMLButtonElement
   button.className = options.className
   if (options.icon instanceof HTMLElement) {
@@ -169,9 +164,11 @@ export function buildCloseButton(
     iconSpan.appendChild(options.icon)
     button.appendChild(iconSpan)
   } else {
-    button.appendChild(createEl('span', { 'data-drawer-close-icon': '', 'aria-hidden': 'true' }, [options.icon]))
+    button.appendChild(
+      createEl('span', { 'data-drawer-close-icon': '', 'aria-hidden': 'true' }, [options.icon])
+    )
   }
-  button.addEventListener('click', (event) => {
+  button.addEventListener('click', event => {
     event.stopPropagation()
     callbacks.onOpenChange(false)
   })
@@ -199,7 +196,5 @@ export function buildBodyContent(
     body.appendChild(document.createTextNode(resolvedContent.text))
   } else if (resolvedContent.element) {
     body.appendChild(resolvedContent.element)
-  } else if (resolvedContent.container) {
-    body.appendChild(resolvedContent.container)
   }
 }

@@ -22,7 +22,9 @@ export function getActiveSnapPoint(options: VanillaDrawerOptions): CommonDrawerS
 
 export function getFadeFromIndex(options: VanillaDrawerOptions): number | undefined {
   if (options.fadeFromIndex !== undefined) return options.fadeFromIndex
-  return options.snapPoints && options.snapPoints.length > 0 ? options.snapPoints.length - 1 : undefined
+  return options.snapPoints && options.snapPoints.length > 0
+    ? options.snapPoints.length - 1
+    : undefined
 }
 
 /**
@@ -67,7 +69,7 @@ export function findSnapPointByOffset(
   targetOffset: number
 ): CommonDrawerSnapPoint | null {
   if (!snapPoints) return null
-  const index = snapPointsOffset.findIndex((offset) => offset === targetOffset)
+  const index = snapPointsOffset.findIndex(offset => offset === targetOffset)
   if (index === -1) return null
   return snapPoints[index] ?? null
 }
@@ -86,7 +88,7 @@ export function shouldShowSnapOverlay(
 ): boolean {
   if (!snapPoints || snapPoints.length === 0) return true
   if (fadeFromIndex === undefined) return true
-  const activeIndex = snapPoints.findIndex((snap) => snap === activeSnapPoint)
+  const activeIndex = snapPoints.findIndex(snap => snap === activeSnapPoint)
   if (activeIndex === -1) return false
   if (activeIndex === snapPoints.length - 1) return true
   return activeIndex >= fadeFromIndex

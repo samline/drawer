@@ -14,7 +14,7 @@ export function getNextHandleState({
   shouldCancelInteraction,
   snapPoints,
   activeSnapPoint,
-  dismissible
+  dismissible,
 }: {
   isDragging: boolean
   preventCycle: boolean
@@ -39,13 +39,13 @@ export function getNextHandleState({
     return { type: 'snap' as const, snapPoint: snapPoints[0] ?? null }
   }
 
-  const currentSnapIndex = snapPoints.findIndex((point) => point === activeSnapPoint)
+  const currentSnapIndex = snapPoints.findIndex(point => point === activeSnapPoint)
   if (currentSnapIndex === -1) {
     return { type: 'noop' as const }
   }
 
   return {
     type: 'snap' as const,
-    snapPoint: snapPoints[currentSnapIndex + 1] ?? null
+    snapPoint: snapPoints[currentSnapIndex + 1] ?? null,
   }
 }

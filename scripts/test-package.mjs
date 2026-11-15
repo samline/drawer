@@ -11,7 +11,7 @@ const functions = [
   'getChildDrawers',
   'getDrawer',
   'getDrawers',
-  'getParentDrawer'
+  'getParentDrawer',
 ].sort()
 const require = createRequire(import.meta.url)
 const esm = await import('../dist/index.js')
@@ -20,7 +20,7 @@ const browser = await import('../dist/browser/index.js')
 for (const api of [esm, cjs, browser.default]) {
   assert.deepEqual(
     Object.keys(api)
-      .filter((key) => typeof api[key] === 'function')
+      .filter(key => typeof api[key] === 'function')
       .sort(),
     functions
   )
@@ -35,25 +35,38 @@ for (const api of [esm, cjs, browser.default]) {
 }
 assert.equal(globalThis.Drawer, undefined, 'Module imports must not install a global')
 const context = { console }
-vm.runInNewContext(readFileSync(new URL('../dist/browser/global.global.js', import.meta.url), 'utf8'), context)
+vm.runInNewContext(
+  readFileSync(new URL('../dist/browser/global.global.js', import.meta.url), 'utf8'),
+  context
+)
 assert.deepEqual(Object.keys(context.Drawer).sort(), functions)
 const [packed] = JSON.parse(
   execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { encoding: 'utf8' })
 )
-const paths = new Set(packed.files.map((file) => file.path))
-for (const file of ['package.json', 'README.md', 'LICENSE.md', 'CHANGELOG.md', 'dist/browser/global.global.js']) {
+const paths = new Set(packed.files.map(file => file.path))
+for (const file of [
+  'package.json',
+  'README.md',
+  'LICENSE.md',
+  'CHANGELOG.md',
+  'dist/browser/global.global.js',
+]) {
   assert.ok(paths.has(file), `Missing published file: ${file}`)
 }
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-const checkExport = (entry) => {
-  if (typeof entry === 'string') assert.ok(paths.has(entry.replace(/^\.\//, '')), `Missing published export: ${entry}`)
+const checkExport = entry => {
+  if (typeof entry === 'string')
+    assert.ok(paths.has(entry.replace(/^\.\//, '')), `Missing published export: ${entry}`)
   else Object.values(entry).forEach(checkExport)
 }
 checkExport(manifest.exports)
 for (const file of paths) {
   assert.ok(
-    file.startsWith('dist/') || ['package.json', 'README.md', 'LICENSE.md', 'CHANGELOG.md'].includes(file),
+    file.startsWith('dist/') ||
+      ['package.json', 'README.md', 'LICENSE.md', 'CHANGELOG.md'].includes(file),
     `Development or website file leaked into npm: ${file}`
   )
 }
-console.log(`Package smoke test passed: ESM, CommonJS, IIFE, types/CSS exports and ${paths.size} allowed npm files.`)
+console.log(
+  `Package smoke test passed: ESM, CommonJS, IIFE, types/CSS exports and ${paths.size} allowed npm files.`
+)

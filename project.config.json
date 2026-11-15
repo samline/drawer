@@ -28,12 +28,17 @@
     "template": false,
     "credit": "samline"
   },
+  "dev": {
+    "landingPort": 4340,
+    "docsPort": 4341,
+    "testPort": 4348
+  },
   "theme": {
     "accentLight": "#a32379",
     "accentDark": "#ee9bd2"
   },
   "delivery": {
-    "cdnScript": "https://unpkg.com/@samline/drawer@5.1.2/dist/browser/global.global.js",
-    "cdnStylesheet": "https://unpkg.com/@samline/drawer@5.1.2/dist/style.css"
+    "cdnScript": "https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js",
+    "cdnStylesheet": "https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css"
   }
 }

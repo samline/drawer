@@ -5,7 +5,7 @@ import {
   getDrawer,
   getDrawers,
   getParentDrawer,
-  getChildDrawers
+  getChildDrawers,
 } from '../index'
 
 /** The standalone script and optional module namespace expose the same public API. */
@@ -16,8 +16,16 @@ export const Drawer = {
   getDrawer,
   getDrawers,
   getParentDrawer,
-  getChildDrawers
+  getChildDrawers,
 }
 export type DrawerApi = typeof Drawer
-export { createDrawer, createDrawerController, destroyDrawers, getDrawer, getDrawers, getParentDrawer, getChildDrawers }
+export {
+  createDrawer,
+  createDrawerController,
+  destroyDrawers,
+  getDrawer,
+  getDrawers,
+  getParentDrawer,
+  getChildDrawers,
+}
 export default Drawer

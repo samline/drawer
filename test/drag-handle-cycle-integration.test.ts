@@ -26,7 +26,7 @@ function createPointerEvent(
   Object.assign(event, {
     clientX: init.clientX,
     clientY: init.clientY,
-    pointerId: init.pointerId ?? 1
+    pointerId: init.pointerId ?? 1,
   })
   return event
 }
@@ -77,7 +77,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       direction: 'right',
       handleOnly: true,
       showHandle: false,
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     expect(getHandle().tagName).toBe('BUTTON')
@@ -94,7 +94,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       snapPoints: ['120px', '320px'],
       showHandle: true,
       handleAriaLabel: 'Resize filters',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -113,7 +113,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       dismissible: true,
       showHandle: true,
       title: 'Handle cycle next',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     expect(getDrawer('handle-cycle-next')?.getSnapshot().state.activeSnapPoint).toBe('120px')
@@ -136,7 +136,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       title: 'Handle cycle close',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     expect(getDrawer('handle-cycle-close')?.getSnapshot().state.isOpen).toBe(true)
@@ -159,7 +159,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       title: 'Handle cycle no close',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     expect(getDrawer('handle-cycle-no-close')?.getSnapshot().state.isOpen).toBe(true)
@@ -187,7 +187,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       title: 'Handle no snap dismissible',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     // `setOpen(true)` fires `onOpenChange(true)` — that is the
@@ -211,7 +211,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       title: 'Handle no snap not dismissible',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     drawer.setOpen(true)
     expect(getDrawer('handle-no-snap-no-dismissible')?.getSnapshot().state.isOpen).toBe(true)
@@ -233,7 +233,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       dismissible: true,
       showHandle: true,
       title: 'Handle cycle during drag',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     // Advance past the 500 ms grace period so the drag policy allows
@@ -241,7 +241,9 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
     vi.advanceTimersByTime(600)
 
     // Start a drag on the content. `state.drag` is now non-null.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 91 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 91 })
+    )
 
     // Mid-drag, dispatch a click on the handle. The dialog's
     // `onHandleClick` reads `state.drag !== null` and forwards
@@ -264,7 +266,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       preventCycle: true,
       title: 'Handle prevent cycle',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     expect(getDrawer('handle-prevent-cycle')?.getSnapshot().state.activeSnapPoint).toBe('120px')
@@ -289,7 +291,7 @@ describe('drag pipeline integration (Phase D — handle cycle)', () => {
       showHandle: true,
       title: 'Handle click closed',
       content: 'Body',
-      onOpenChange
+      onOpenChange,
     })
     // Drawer is closed (default).
     expect(getDrawer('handle-click-closed')?.getSnapshot().state.isOpen).toBe(false)

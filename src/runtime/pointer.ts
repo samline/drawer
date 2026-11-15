@@ -14,7 +14,7 @@ export function getSwipeIntent({
   delta,
   direction,
   threshold = 0,
-  wasBeyondThePoint
+  wasBeyondThePoint,
 }: {
   delta: { x: number; y: number }
   direction: CommonDrawerDirection

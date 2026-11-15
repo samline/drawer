@@ -23,7 +23,7 @@ export function getReleaseAction({
   velocityThreshold,
   swipeAmount,
   drawerDimension,
-  closeThreshold
+  closeThreshold,
 }: {
   direction: CommonDrawerDirection
   distMoved: number
@@ -43,7 +43,7 @@ export function getReleaseAction({
       velocityThreshold,
       swipeAmount,
       drawerDimension,
-      closeThreshold
+      closeThreshold,
     })
   ) {
     return 'close' as const
@@ -60,7 +60,7 @@ export function getDismissibleReleaseResult({
   swipeAmount,
   drawerDimension,
   closeThreshold,
-  focusVelocityThreshold
+  focusVelocityThreshold,
 }: {
   direction: CommonDrawerDirection
   distMoved: number
@@ -78,13 +78,13 @@ export function getDismissibleReleaseResult({
     velocityThreshold,
     swipeAmount,
     drawerDimension,
-    closeThreshold
+    closeThreshold,
   })
 
   return {
     action,
     shouldPreventFocus: shouldPreventFocusOnRelease(velocity, focusVelocityThreshold),
-    nextOpen: action !== 'close'
+    nextOpen: action !== 'close',
   }
 }
 
@@ -101,7 +101,7 @@ export function getSnapPointReleaseAction({
   snapToSequentialPoint,
   velocityThreshold,
   highVelocityThreshold = 2,
-  viewportSize
+  viewportSize,
 }: {
   fadeFromIndex?: number
   direction: CommonDrawerDirection
@@ -134,7 +134,11 @@ export function getSnapPointReleaseAction({
   const hasDraggedTowardExpandedState = draggedDistance > 0
   const isLastSnapPoint = activeSnapPointIndex === snapPointsCount - 1
 
-  if (!snapToSequentialPoint && velocity > highVelocityThreshold && !hasDraggedTowardExpandedState) {
+  if (
+    !snapToSequentialPoint &&
+    velocity > highVelocityThreshold &&
+    !hasDraggedTowardExpandedState
+  ) {
     if (dismissible) {
       return { type: 'close' as const }
     }

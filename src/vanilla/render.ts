@@ -20,7 +20,8 @@
 import type { CommonDrawerOptions, CommonDrawerSnapPoint } from '../core'
 import { mountVanillaDialog } from './dialog'
 
-export type VanillaRenderable = string | number | HTMLElement | (() => HTMLElement) | null | undefined
+export type VanillaRenderable =
+  string | number | HTMLElement | (() => HTMLElement) | null | undefined
 
 export interface VanillaDrawerOptions extends CommonDrawerOptions {
   /**
@@ -217,6 +218,6 @@ export function mountVanillaDrawer(options: {
     ...(options.onReleaseChange !== undefined ? { onReleaseChange: options.onReleaseChange } : {}),
     ...(options.onActiveSnapPointChange !== undefined
       ? { onActiveSnapPointChange: options.onActiveSnapPointChange }
-      : {})
+      : {}),
   })
 }

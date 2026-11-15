@@ -5,7 +5,7 @@ Landing, Examples and Docs for `@samline/drawer` 5.1.2. The package’s runtime,
 ## Run locally
 
 ```sh
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 bun run site:dev
 ```
 
@@ -28,7 +28,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 - `project.config.json` owns site identity, public URL, namespace, accent palette, CDN assets and package version. Keep it aligned with `package.json`. CDN paths are pinned to 5.1.2 and correspond to the package’s real distribution outputs.
 - `landing/src/i18n/translations/en/` owns landing copy. Article prose lives in `docs/src/content/docs/`. Shared UI copy lives in `shared/i18n/`.
 - `shared/components/Playground.astro` supplies Home, Examples and Docs previews. `shared/i18n/translations/en/demo.ts` owns editable scenario copy, while `shared/lib/demo-source.ts` and `demo-files.ts` generate/format complete and split files for both loading modes. Previews import public APIs, resolved by each app’s Vite aliases to this checkout; never duplicate runtime gestures, focus, animation or locks.
-- Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for unpkg. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
+- Examples cover eighteen useful scenarios; the reset/usefulness audit below defines their content and behavior. Copied browser files require network access for jsDelivr. Browser tests intercept those exact URLs with the locally built distribution to test reproducibly; they do not establish CDN availability or npm publication.
 - `content-audit.json` maps the source documentation, public exports, every option/default/callback, controller members and browser additions to reviewed destinations. `site-tools/doc-migration.json` records corrections and route mappings. Keep both current when APIs change.
 - `CHANGELOG.md` remains the single release history, loaded through the docs collection. Preserve breaking-change labels and historical publication distinctions.
 - `skills/drawer/SKILL.md` is the single package-integration skill source. Its generated download is linked from the Examples closing resources, the shared Landing footer and the package README. Keep these package-specific labels and base-aware download links distinct from the template's website-adaptation skill.
@@ -38,9 +38,7 @@ The combined Pages artifact is `landing/dist/`, including Pagefind search, asset
 ## Verification
 
 ```sh
-bun run build
-bun run typecheck
-bun run test
+bun run check
 bun run site:verify
 bun run site:check:release
 npm pack --dry-run --json

@@ -27,7 +27,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
     const onAnimationEnd = vi.fn()
     const drawer = createDrawer({
       id: 'f5-rapid',
-      onAnimationEnd
+      onAnimationEnd,
     })
 
     drawer.setOpen(true)
@@ -48,7 +48,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
     const onAnimationEnd = vi.fn()
     createDrawer({
       id: 'f5-destroy',
-      onAnimationEnd
+      onAnimationEnd,
     }).setOpen(true)
 
     getDrawer('f5-destroy')?.destroy()
@@ -65,7 +65,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
     const onAnimationEnd = vi.fn()
     const drawer = createDrawer({
       id: 'f5-rerender',
-      onAnimationEnd
+      onAnimationEnd,
     })
 
     drawer.setOpen(true)
@@ -84,7 +84,7 @@ describe('onAnimationEnd debounce (F5/F17)', () => {
     const onAnimationEnd = vi.fn()
     const drawer = createDrawer({
       id: 'f5-configure',
-      onAnimationEnd
+      onAnimationEnd,
     })
 
     drawer.setOpen(true)

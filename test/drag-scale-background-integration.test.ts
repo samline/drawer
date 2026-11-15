@@ -20,7 +20,7 @@ function createPointerEvent(
   Object.assign(event, {
     clientX: init.clientX,
     clientY: init.clientY,
-    pointerId: init.pointerId ?? 1
+    pointerId: init.pointerId ?? 1,
   })
   return event
 }
@@ -45,7 +45,7 @@ function attachWrapper() {
 }
 
 function removeWrapper() {
-  document.querySelectorAll('[data-drawer-wrapper]').forEach((node) => node.remove())
+  document.querySelectorAll('[data-drawer-wrapper]').forEach(node => node.remove())
 }
 
 /**
@@ -84,13 +84,13 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       direction,
       shouldScaleBackground: true,
       title: 'Scale open',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
     const { borderRadius, overflow, transform, transformOrigin } = getBackgroundResetState({
       direction,
-      baseScale
+      baseScale,
     })
     expect(wrapper.style.transform).toBe(transform)
     expect(wrapper.style.borderRadius).toBe(borderRadius)
@@ -110,7 +110,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       direction,
       shouldScaleBackground: true,
       title: 'Scale drag',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -119,9 +119,13 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const startY = 200
     const endY = 200 + drawerHeight * 0.5
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 91 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 91 })
+    )
     vi.advanceTimersByTime(10)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 91 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 91 })
+    )
 
     // Compute the expected wrapper transform from the runtime helper
     // (the single source of truth for the drag-state math). The
@@ -130,7 +134,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const percentageDragged = 0.5
     const { scaleValue, borderRadiusValue, translateValue } = getBackgroundDragState({
       baseScale,
-      percentageDragged
+      percentageDragged,
     })
     const expectedTransform = `scale(${scaleValue}) translate3d(0, ${translateValue}px, 0)`
 
@@ -154,7 +158,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       title: 'Scale close release',
       content: 'Body',
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -166,10 +170,16 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const startY = 100
     const endY = startY + drawerHeight * 0.4
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 93 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 93 })
+    )
     vi.advanceTimersByTime(10)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 93 }))
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 93 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 93 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 93 })
+    )
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(onReleaseChange).toHaveBeenCalledWith(false)
@@ -206,7 +216,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       title: 'Scale reset release',
       content: 'Body',
       onOpenChange,
-      onReleaseChange
+      onReleaseChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -214,11 +224,17 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     // Drag down by 5% — well below the 25% close threshold. The
     // slow advance keeps velocity low so the release resolves to
     // the in-place reset path.
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 95 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 100, pointerId: 95 })
+    )
     vi.advanceTimersByTime(1000)
     const endY = 100 + window.innerHeight * 0.05
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 95 }))
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 95 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 95 })
+    )
+    dispatchOnContent(
+      createPointerEvent('pointerup', { clientX: 50, clientY: endY, pointerId: 95 })
+    )
 
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
     expect(onReleaseChange).toHaveBeenCalledWith(true)
@@ -228,7 +244,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     // baseScale for the remainder of the open session.
     const { borderRadius, overflow, transform, transformOrigin } = getBackgroundResetState({
       direction,
-      baseScale
+      baseScale,
     })
     expect(wrapper.style.transform).toBe(transform)
     expect(wrapper.style.borderRadius).toBe(borderRadius)
@@ -252,16 +268,22 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       // shouldScaleBackground: undefined → false by default
       title: 'No scale',
       content: 'Body',
-      onDragChange
+      onDragChange,
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
 
     const drawerHeight = window.innerHeight
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 97 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: 200, pointerId: 97 })
+    )
     vi.advanceTimersByTime(10)
     dispatchOnContent(
-      createPointerEvent('pointermove', { clientX: 50, clientY: 200 + drawerHeight * 0.5, pointerId: 97 })
+      createPointerEvent('pointermove', {
+        clientX: 50,
+        clientY: 200 + drawerHeight * 0.5,
+        pointerId: 97,
+      })
     )
 
     // Drag fired (so the pipeline ran), but the wrapper is untouched.
@@ -280,7 +302,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       direction: 'bottom',
       shouldScaleBackground: true,
       title: 'Scale color',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -289,16 +311,22 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const startY = 200
     const endY = 200 + drawerHeight * 0.5
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 99 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: 50, clientY: startY, pointerId: 99 })
+    )
     vi.advanceTimersByTime(10)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 99 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: 50, clientY: endY, pointerId: 99 })
+    )
 
     // The overlay is a translucent black at the drag percentage
     // (50% of the drawer height → 0.5 × 0.5 = 0.25 alpha). The
     // exact value comes from `applyWrapperDragState`; the spec
     // accepts the `rgba(0, 0, 0, percentageDragged * 0.5)`
     // approximation documented in the deliverable.
-    const match = wrapper.style.backgroundColor.match(/^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([0-9.]+)\s*\)$/)
+    const match = wrapper.style.backgroundColor.match(
+      /^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([0-9.]+)\s*\)$/
+    )
     expect(match).not.toBeNull()
     const alpha = Number(match?.[1] ?? -1)
     expect(alpha).toBeGreaterThan(0)
@@ -307,7 +335,9 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     // Release with reset (slow, below threshold) → background-color
     // is cleared from the wrapper along with the rest-state apply.
     vi.advanceTimersByTime(1000)
-    dispatchOnContent(createPointerEvent('pointerup', { clientX: 50, clientY: startY, pointerId: 99 }))
+    dispatchOnContent(
+      createPointerEvent('pointerup', { clientX: 50, clientY: startY, pointerId: 99 })
+    )
 
     expect(wrapper.style.backgroundColor).toBe('')
   })
@@ -322,7 +352,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       direction,
       shouldScaleBackground: true,
       title: 'Scale horizontal',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -331,14 +361,18 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
     const startX = 100
     const endX = startX + drawerWidth * 0.5
 
-    dispatchOnContent(createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 101 }))
+    dispatchOnContent(
+      createPointerEvent('pointerdown', { clientX: startX, clientY: 50, pointerId: 101 })
+    )
     vi.advanceTimersByTime(10)
-    dispatchOnContent(createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 101 }))
+    dispatchOnContent(
+      createPointerEvent('pointermove', { clientX: endX, clientY: 50, pointerId: 101 })
+    )
 
     const percentageDragged = 0.5
     const { scaleValue, translateValue } = getBackgroundDragState({
       baseScale,
-      percentageDragged
+      percentageDragged,
     })
     const expectedTransform = `scale(${scaleValue}) translate3d(${translateValue}px, 0, 0)`
     expect(wrapper.style.transform).toBe(expectedTransform)
@@ -356,7 +390,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       direction,
       shouldScaleBackground: true,
       title: 'Scale programmatic close',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -385,18 +419,18 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       open: true,
       direction: 'bottom',
       shouldScaleBackground: true,
-      content: 'First'
+      content: 'First',
     })
     const second = createDrawer({
       id: 'scale-owner-second',
       open: true,
       direction: 'right',
       shouldScaleBackground: true,
-      content: 'Second'
+      content: 'Second',
     })
     const secondTransform = getBackgroundResetState({
       direction: 'right',
-      baseScale: computeBaseScale('right')
+      baseScale: computeBaseScale('right'),
     }).transform
 
     expect(wrapper.style.transform).toBe(secondTransform)
@@ -416,18 +450,18 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       open: true,
       direction: 'bottom',
       shouldScaleBackground: true,
-      content: 'First'
+      content: 'First',
     })
     const second = createDrawer({
       id: 'scale-stack-second',
       open: true,
       direction: 'right',
       shouldScaleBackground: true,
-      content: 'Second'
+      content: 'Second',
     })
     const firstTransform = getBackgroundResetState({
       direction: 'bottom',
-      baseScale: computeBaseScale('bottom')
+      baseScale: computeBaseScale('bottom'),
     }).transform
 
     second.setOpen(false)
@@ -444,18 +478,18 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       open: true,
       direction: 'bottom',
       shouldScaleBackground: true,
-      content: 'First'
+      content: 'First',
     })
     createDrawer({
       id: 'scale-remount-second',
       open: true,
       direction: 'right',
       shouldScaleBackground: true,
-      content: 'Second'
+      content: 'Second',
     })
     const foregroundTransform = getBackgroundResetState({
       direction: 'right',
-      baseScale: computeBaseScale('right')
+      baseScale: computeBaseScale('right'),
     }).transform
 
     first.update({ content: 'Updated first' })
@@ -470,14 +504,14 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-stale-first',
       open: true,
       shouldScaleBackground: true,
-      content: 'First'
+      content: 'First',
     })
     first.setOpen(false)
     const second = createDrawer({
       id: 'scale-stale-second',
       open: true,
       shouldScaleBackground: true,
-      content: 'Second'
+      content: 'Second',
     })
     second.setOpen(false)
     vi.advanceTimersByTime(TRANSITIONS.DURATION * 1000)
@@ -486,7 +520,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-stale-third',
       open: true,
       shouldScaleBackground: true,
-      content: 'Third'
+      content: 'Third',
     })
     const activeTransform = wrapper.style.transform
     first.destroy()
@@ -502,7 +536,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-wrapper-first',
       open: true,
       shouldScaleBackground: true,
-      content: 'First'
+      content: 'First',
     })
     firstWrapper.remove()
     const secondWrapper = attachWrapper()
@@ -510,7 +544,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-wrapper-second',
       open: true,
       shouldScaleBackground: true,
-      content: 'Second'
+      content: 'Second',
     })
 
     first.setOpen(false)
@@ -531,7 +565,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-option-flip',
       open: true,
       shouldScaleBackground: true,
-      content: 'Body'
+      content: 'Body',
     })
 
     drawer.update({ open: false, shouldScaleBackground: false })
@@ -548,7 +582,7 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
       id: 'scale-removed-wrapper',
       open: true,
       shouldScaleBackground: true,
-      content: 'Body'
+      content: 'Body',
     })
 
     wrapper.remove()
@@ -559,7 +593,12 @@ describe('drag pipeline integration (Phase C — scale background)', () => {
 
   it('does not change the body when no scale wrapper exists', () => {
     document.body.style.backgroundColor = 'navy'
-    createDrawer({ id: 'scale-no-wrapper', open: true, shouldScaleBackground: true, content: 'Body' })
+    createDrawer({
+      id: 'scale-no-wrapper',
+      open: true,
+      shouldScaleBackground: true,
+      content: 'Body',
+    })
 
     expect(document.body.style.backgroundColor).toBe('navy')
   })

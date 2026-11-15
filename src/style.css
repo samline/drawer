@@ -188,9 +188,9 @@
   width: 200%;
 }
 
-[data-drawer-overlay][data-drawer-snap-points='true']:not([data-drawer-snap-points-overlay='true']):not(
-    [data-state='closed']
-  ) {
+[data-drawer-overlay][data-drawer-snap-points='true']:not(
+    [data-drawer-snap-points-overlay='true']
+  ):not([data-state='closed']) {
   opacity: 0;
 }
 

@@ -4,10 +4,21 @@ This is the single project memory for runtime, Home, Examples and Docs. Follow t
 
 <!-- codebase-memory-mcp:start -->
 
-Project agent skills live in `.agents/skills/` (versioned, excluded from npm and Prettier): the autoskills registry set for the detected stack plus codebase-memory, matching notify. Refresh them with `npx autoskills -y -a universal`; `skills-lock.json` stays local and gitignored.
+Project agent skills live in `.agents/skills/` (versioned, excluded from npm and Prettier): the autoskills registry set for the detected stack plus codebase-memory, matching notify. Refresh them with `npx autoskills -y -a universal`; `skills-lock.json` records their sources and is tracked, as in notify. They stay out of the root formatter (`.prettierignore`).
 
 Use the installed codebase-memory skill for structural exploration. Check indexed-path coverage and use source reads for stale/missing Astro/CSS coverage. Graph degree alone cannot prove dead code: callbacks, build hooks, routes and assets can have no incoming graph edges.
 <!-- codebase-memory-mcp:end -->
+
+## pnpm migration — 2026-11-15
+
+Drawer moved from Bun installs to pnpm with the family tooling (CI, Prettier, size budgets, `tests/e2e`). Lessons:
+
+- pnpm reads overrides only from `pnpm-workspace.yaml`; the npm `overrides` field and `pnpm.overrides` in package.json are ignored. Repository pins go in the `# Repository overrides` block at the end of that file, which sync keeps. tsup still pulls esbuild 0.27, so esbuild is pinned to `^0.28.1`.
+- The family CI is managed and has no website job: `.github/workflows/site.yml` runs `pnpm audit`, test:package, the site checks and the full site browser suite.
+- `homepage` ends with a slash and CDN snippets use jsDelivr, as in the rest of the family.
+- The browser bundle keeps its v5 name, `dist/browser/global.global.js`, because CDN URLs depend on it. Renaming it to `drawer.global.js` waits for the next major.
+- Coverage meets the family 90/95/95/95. The `test/coverage-*.test.ts` files cover the iOS/Safari scroll paths, gesture edge cases, the focus trap and registry callbacks. Spying on `runtime/browser` goes through `test/_test-helpers.ts`; never call `vi.restoreAllMocks()` in a file that uses it, or the shared spies detach.
+- Removed the unreachable `container` result from `resolveRenderable` (it only returns `text` or `element`).
 
 ## Agent skills and memory location
 
@@ -95,9 +106,9 @@ Ticker measurements belong to the upstream repository and are not a Drawer score
 
 ## Maintenance and release
 
-Keep package.json, bun.lock, project.config.json, CDN pins, metadata, CHANGELOG, collection, public skill and copied files aligned. A prepared version or intercepted local CDN request does not establish npm publication. Workspace commands use `npm --workspace <app> run <script>`; Bun rewrites the `npm run ... --workspace` form to a root Bun command. Verify the actual CI executor, not only npm. Npm publication remains the maintainer's action. Inspect the runtime-only archive: dist/, CHANGELOG.md and automatic package.json/README.md/LICENSE.md.
+Keep package.json, pnpm-lock.yaml, project.config.json, CDN pins, metadata, CHANGELOG, collection, public skill and copied files aligned. A prepared version or intercepted local CDN request does not establish npm publication. pnpm installs (`pnpm install --frozen-lockfile`), Bun runs scripts. Workspace commands use `npm --workspace <app> run <script>`; Bun rewrites the `npm run ... --workspace` form to a root Bun command. Verify the actual CI executor, not only npm. Npm publication remains the maintainer's action. Inspect the runtime-only archive: dist/, CHANGELOG.md and automatic package.json/README.md/LICENSE.md.
 
-Run runtime build/typecheck/tests/test:package/formatting plus site:verify and site:check:release. Site validation includes both apps, visual fingerprints, Node tooling, alternate bases, combined links/migration and full browser coverage. Filtered recipe runs are not the full suite. Browser loops across rich pages should be separate route/viewport cases; capture the opened drawer id and wait for DOM removal rather than letting a generic first-dialog selector rebind during close. Record actual evidence/limits in SITE.md, not duplicated chronological logs. Preserve font notices, WOFF2, social TTF inputs, meaningful tests and Git-backed migration records.
+Run `bun run check` (format, typecheck, coverage, build, size, test:package, e2e in three engines) plus site:verify and site:check:release. Site validation includes both apps, visual fingerprints, Node tooling, alternate bases, combined links/migration and full browser coverage. Filtered recipe runs are not the full suite. Browser loops across rich pages should be separate route/viewport cases; capture the opened drawer id and wait for DOM removal rather than letting a generic first-dialog selector rebind during close. Record actual evidence/limits in SITE.md, not duplicated chronological logs. Preserve font notices, WOFF2, social TTF inputs, meaningful tests and Git-backed migration records.
 
 Canonical theme/adaptation skill: https://github.com/samline/package-landing-docs (../package-landing-docs). Visual source: https://github.com/samline/ticker at 8a30c9ca8486953fdc2801f0ceff8b17d0cb5615 (../ticker). Consult committed source before changing design-reference.json; never bless a failing fingerprint automatically or copy another agent's uncommitted work. Keep package-specific behavior and performance claims out of theme ports. Accent preference must come from the maintainer, recorded in content-audit.json.themeReview.
 

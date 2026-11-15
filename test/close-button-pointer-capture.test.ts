@@ -34,7 +34,11 @@ import { createDrawer, destroyDrawers } from '../src'
  *     `isOpen === false`.
  */
 
-function el(tag: string, attrs: Record<string, string> = {}, children: (Node | string)[] = []): HTMLElement {
+function el(
+  tag: string,
+  attrs: Record<string, string> = {},
+  children: (Node | string)[] = []
+): HTMLElement {
   const node = document.createElement(tag)
   for (const [key, value] of Object.entries(attrs)) {
     node.setAttribute(key, value)
@@ -65,8 +69,8 @@ describe('close button does not lose click events to pointer capture', () => {
       content: el('div', {}, ['Body']),
       closeButton: {
         className: 'absolute top-5 right-5',
-        ariaLabel: 'Close'
-      }
+        ariaLabel: 'Close',
+      },
     })
     drawer.setOpen(true)
 
@@ -103,7 +107,7 @@ describe('close button does not lose click events to pointer capture', () => {
       id: 'drag-still-works',
       direction: 'bottom',
       title: 'Drag still works',
-      content: el('div', {}, ['Body'])
+      content: el('div', {}, ['Body']),
     })
     drawer.setOpen(true)
     vi.advanceTimersByTime(600)
@@ -119,7 +123,7 @@ describe('close button does not lose click events to pointer capture', () => {
       Object.assign(new window.Event('pointerdown', { bubbles: true }), {
         clientY: 100,
         clientX: 50,
-        pointerId: 7
+        pointerId: 7,
       })
     )
     expect(setPointerCapture).not.toHaveBeenCalled()
@@ -128,7 +132,7 @@ describe('close button does not lose click events to pointer capture', () => {
       Object.assign(new window.Event('pointermove', { bubbles: true }), {
         clientY: 110,
         clientX: 50,
-        pointerId: 7
+        pointerId: 7,
       })
     )
     expect(setPointerCapture).toHaveBeenCalledWith(7)
@@ -137,7 +141,7 @@ describe('close button does not lose click events to pointer capture', () => {
       Object.assign(new window.Event('pointerup', { bubbles: true }), {
         clientY: 110,
         clientX: 50,
-        pointerId: 7
+        pointerId: 7,
       })
     )
     expect(releasePointerCapture).toHaveBeenCalledWith(7)
@@ -148,7 +152,12 @@ describe('close button does not lose click events to pointer capture', () => {
 
   it('releases pointer capture when the drawer closes during a drag', () => {
     vi.useFakeTimers()
-    const drawer = createDrawer({ id: 'capture-close', open: true, direction: 'bottom', content: 'Body' })
+    const drawer = createDrawer({
+      id: 'capture-close',
+      open: true,
+      direction: 'bottom',
+      content: 'Body',
+    })
     vi.advanceTimersByTime(600)
     const content = document.querySelector('[data-drawer]') as HTMLElement
     const releasePointerCapture = vi.fn()
@@ -160,14 +169,14 @@ describe('close button does not lose click events to pointer capture', () => {
       Object.assign(new window.Event('pointerdown', { bubbles: true }), {
         clientY: 100,
         clientX: 50,
-        pointerId: 17
+        pointerId: 17,
       })
     )
     content.dispatchEvent(
       Object.assign(new window.Event('pointermove', { bubbles: true }), {
         clientY: 140,
         clientX: 50,
-        pointerId: 17
+        pointerId: 17,
       })
     )
     expect(content.classList.contains('drawer-dragging')).toBe(true)
@@ -187,7 +196,7 @@ describe('close button does not lose click events to pointer capture', () => {
       id: 'input-cb',
       direction: 'right',
       title: 'Input',
-      content: el('div', {}, [input])
+      content: el('div', {}, [input]),
     })
     drawer.setOpen(true)
 
@@ -211,7 +220,7 @@ describe('close button does not lose click events to pointer capture', () => {
       id: 'link-cb',
       direction: 'right',
       title: 'Link',
-      content: el('div', {}, [link])
+      content: el('div', {}, [link]),
     })
     drawer.setOpen(true)
 
@@ -230,7 +239,7 @@ describe('close button does not lose click events to pointer capture', () => {
       id: 'no-drag-cb',
       direction: 'bottom',
       title: 'No drag',
-      content: el('div', {}, [noDragChild])
+      content: el('div', {}, [noDragChild]),
     })
     drawer.setOpen(true)
 
@@ -242,14 +251,14 @@ describe('close button does not lose click events to pointer capture', () => {
       Object.assign(new window.Event('pointermove', { bubbles: true }), {
         clientY: 200,
         clientX: 50,
-        pointerId: 9
+        pointerId: 9,
       })
     )
     found.dispatchEvent(
       Object.assign(new window.Event('pointerup', { bubbles: true }), {
         clientY: 200,
         clientX: 50,
-        pointerId: 9
+        pointerId: 9,
       })
     )
 

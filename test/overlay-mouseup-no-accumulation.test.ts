@@ -40,7 +40,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
       id: 'mount-once',
       open: true,
       direction: 'right',
-      content: 'body'
+      content: 'body',
     })
 
     expect(document.querySelectorAll('[data-drawer]').length).toBe(1)
@@ -51,7 +51,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
       id: 'mouseup-no-leak',
       open: true,
       direction: 'right',
-      content: 'body'
+      content: 'body',
     })
 
     const initialCount = document.querySelectorAll('[data-drawer]').length
@@ -65,7 +65,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
       overlay!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
       // Yield to the microtask queue so the controller state updates
       // and any queued renders run before the next mouseup.
-      await new Promise<void>((resolve) => setTimeout(resolve, 5))
+      await new Promise<void>(resolve => setTimeout(resolve, 5))
     }
 
     expect(document.querySelectorAll('[data-drawer]').length).toBe(initialCount)
@@ -75,18 +75,18 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
     const drawer = createDrawer({
       id: 'cycle-no-leak',
       direction: 'right',
-      content: 'body'
+      content: 'body',
     })
 
     for (let i = 0; i < 5; i++) {
       drawer.setOpen(true)
-      await new Promise<void>((resolve) => setTimeout(resolve, 5))
+      await new Promise<void>(resolve => setTimeout(resolve, 5))
       // Click on the overlay (mouseup is the trigger that dismisses).
       const overlay = document.querySelector('[data-drawer-overlay]') as HTMLElement | null
       expect(overlay).not.toBeNull()
       overlay!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
       overlay!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
-      await new Promise<void>((resolve) => setTimeout(resolve, 5))
+      await new Promise<void>(resolve => setTimeout(resolve, 5))
     }
 
     expect(document.querySelectorAll('[data-drawer]').length).toBe(1)
@@ -108,7 +108,7 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
     const drawer = createDrawer({
       id: 'dismiss-renders',
       direction: 'right',
-      content: 'body'
+      content: 'body',
     })
 
     // Helper: each re-render replaces the `[data-drawer]` element
@@ -122,13 +122,13 @@ describe('overlay mouseup listener does not accumulate [data-drawer] wrappers', 
     expect(queryOverlay()).toBeNull()
 
     drawer.setOpen(true)
-    await new Promise<void>((resolve) => setTimeout(resolve, 5))
+    await new Promise<void>(resolve => setTimeout(resolve, 5))
     expect(queryContent()?.getAttribute('data-state')).toBe('open')
 
     queryOverlay()!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }))
 
     queryOverlay()!.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }))
-    await new Promise<void>((resolve) => setTimeout(resolve, 5))
+    await new Promise<void>(resolve => setTimeout(resolve, 5))
     // After dismiss the data-state must be `closed` again — proves
     // the dismiss path re-rendered the dialog.
     expect(queryContent()?.getAttribute('data-state')).toBe('closed')

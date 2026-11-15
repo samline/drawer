@@ -40,7 +40,9 @@ describe('overlay closed-state pointer-events', () => {
 
     // Match the closed-state overlay rule (multi-line, attribute
     // selector) and assert it carries `pointer-events: none`.
-    const closedRuleMatch = css.match(/\[data-drawer-overlay\]\[data-state=['"]closed['"]\]\s*\{[^}]*\}/m)
+    const closedRuleMatch = css.match(
+      /\[data-drawer-overlay\]\[data-state=['"]closed['"]\]\s*\{[^}]*\}/m
+    )
     expect(closedRuleMatch).not.toBeNull()
 
     const closedRuleBody = closedRuleMatch![0]
@@ -62,7 +64,9 @@ describe('overlay closed-state pointer-events', () => {
     // `[data-drawer-snap-points='false']` attribute selector in
     // addition to `[data-state="open"]`, so the regex matches any
     // overlay rule whose final state attribute is `open`.
-    const openRuleMatch = css.match(/\[data-drawer-overlay\][^{}]*\[data-state=['"]open['"]\]\s*\{[^}]*\}/m)
+    const openRuleMatch = css.match(
+      /\[data-drawer-overlay\][^{}]*\[data-state=['"]open['"]\]\s*\{[^}]*\}/m
+    )
     expect(openRuleMatch).not.toBeNull()
 
     const openRuleBody = openRuleMatch![0]
@@ -75,7 +79,7 @@ describe('overlay closed-state pointer-events', () => {
     createDrawer({
       id: 'overlay-closed-pe',
       direction: 'right',
-      overlayClassName: 'consumer-overlay'
+      overlayClassName: 'consumer-overlay',
     })
 
     expect(document.querySelector('[data-drawer-overlay]')).toBeNull()

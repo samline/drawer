@@ -15,7 +15,7 @@ export function getKeyboardOpenState({
   previousDiffFromInitial,
   diffFromInitial,
   keyboardIsOpen,
-  threshold = 60
+  threshold = 60,
 }: {
   previousDiffFromInitial: number
   diffFromInitial: number
@@ -40,7 +40,7 @@ export function getViewportDrivenDrawerLayout({
   initialDrawerHeight,
   activeSnapPointOffset,
   isMobileFirefox,
-  windowTopOffset
+  windowTopOffset,
 }: {
   visualViewportHeight: number
   totalHeight: number
@@ -65,7 +65,7 @@ export function getViewportDrivenDrawerLayout({
   const nextKeyboardIsOpen = getKeyboardOpenState({
     previousDiffFromInitial,
     diffFromInitial,
-    keyboardIsOpen
+    keyboardIsOpen,
   })
 
   let height: string | null = null
@@ -85,13 +85,15 @@ export function getViewportDrivenDrawerLayout({
   }
 
   const bottom =
-    activeSnapPointOffset !== undefined && !nextKeyboardIsOpen ? '0px' : `${Math.max(diffFromInitial, 0)}px`
+    activeSnapPointOffset !== undefined && !nextKeyboardIsOpen
+      ? '0px'
+      : `${Math.max(diffFromInitial, 0)}px`
 
   return {
     diffFromInitial,
     nextKeyboardIsOpen,
     nextInitialDrawerHeight,
     height,
-    bottom
+    bottom,
   }
 }

@@ -7,14 +7,28 @@ import {
   getFadeFromIndex,
   getContainerSize,
   findSnapPointByOffset,
-  shouldShowSnapOverlay
+  shouldShowSnapOverlay,
 } from './dialog-layout'
 import { handleDialogKeyDown } from './dialog-focus'
-import { applyWrapperDragState, applyBackgroundScaleOpen, isActiveBackgroundScaleOwner } from './dialog-background'
-import { CLOSE_THRESHOLD, DRAG_CLASS, SCROLL_LOCK_TIMEOUT, TRANSITIONS, VELOCITY_THRESHOLD } from '../constants'
+import {
+  applyWrapperDragState,
+  applyBackgroundScaleOpen,
+  isActiveBackgroundScaleOwner,
+} from './dialog-background'
+import {
+  CLOSE_THRESHOLD,
+  DRAG_CLASS,
+  SCROLL_LOCK_TIMEOUT,
+  TRANSITIONS,
+  VELOCITY_THRESHOLD,
+} from '../constants'
 import { isVertical, set } from '../helpers'
 import { getDraggableOffset, getDraggedDistance, getDragPercentage } from '../runtime/drag'
-import { getDragPermission, getDragTargetMetadata, type DragTargetMetadata } from '../runtime/drag-policy'
+import {
+  getDragPermission,
+  getDragTargetMetadata,
+  type DragTargetMetadata,
+} from '../runtime/drag-policy'
 import { getNextHandleState } from '../runtime/handle'
 import { getSwipeIntent } from '../runtime/pointer'
 import { getDismissibleReleaseResult, getSnapPointReleaseAction } from '../runtime/release'
@@ -23,7 +37,7 @@ import {
   getShouldFade,
   getSnapDragValue,
   getSnapPointPercentageDragged,
-  getSnapPointsOffset
+  getSnapPointsOffset,
 } from '../runtime/snap-points'
 import { getAxisAwareTranslate, getTranslate } from '../runtime/transforms'
 
@@ -64,7 +78,11 @@ function isInteractiveDragTarget(target: Element): boolean {
   return interactiveAncestor !== null
 }
 
-export function attachListeners(state: DialogMountState, options: VanillaDrawerOptions, callbacks: DialogCallbacks) {
+export function attachListeners(
+  state: DialogMountState,
+  options: VanillaDrawerOptions,
+  callbacks: DialogCallbacks
+) {
   if (state.content) {
     const content = state.content
     const onKeyDown = (event: KeyboardEvent) =>
@@ -173,7 +191,8 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         eventTarget instanceof Element &&
         eventTarget !== content &&
         !eventTarget.closest('[data-drawer-handle]') &&
-        (isInteractiveDragTarget(eventTarget) || Boolean(eventTarget.closest('[data-drawer-close]')))
+        (isInteractiveDragTarget(eventTarget) ||
+          Boolean(eventTarget.closest('[data-drawer-close]')))
 
       if (isInteractiveChild) {
         return
@@ -196,7 +215,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         timeSinceLastPreventedMs: null,
         scrollLockTimeout: dragOptions.scrollLockTimeout ?? scrollLockTimeout,
         isDraggingInDirection: false,
-        ancestors: metadata.ancestors
+        ancestors: metadata.ancestors,
       })
 
       if (!permission.allow) {
@@ -220,11 +239,11 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
       const currentSnapPointsOffset = getSnapPointsOffset({
         ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
         direction,
-        containerSize: getContainerSize(dragOptions.container ?? null)
+        containerSize: getContainerSize(dragOptions.container ?? null),
       })
       const currentActiveSnapPointIndex = getActiveSnapPointIndex({
         ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
-        activeSnapPoint: currentActiveSnapPoint
+        activeSnapPoint: currentActiveSnapPoint,
       })
       const currentActiveSnapPointOffset =
         currentActiveSnapPointIndex !== null && currentActiveSnapPointIndex >= 0
@@ -234,7 +253,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
       const currentShouldFade = getShouldFade({
         ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
         ...(gestureFadeFromIndex !== undefined ? { fadeFromIndex: gestureFadeFromIndex } : {}),
-        activeSnapPoint: currentActiveSnapPoint
+        activeSnapPoint: currentActiveSnapPoint,
       })
       state.drag = {
         pointerStart: { x: event.clientX, y: event.clientY },
@@ -258,7 +277,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         shouldFade: currentShouldFade,
         lastPointerEvent: null,
         reachedIntentBoundary: false,
-        isAllowed: false
+        isAllowed: false,
       }
 
       // F3 / F11: stash the most recent pointermove so the synthetic
@@ -280,23 +299,25 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         const draggedDistance = getDraggedDistance({
           pointerStart: isVerticalAxis ? drag.pointerStart.y : drag.pointerStart.x,
           currentPointer,
-          direction
+          direction,
         })
         const absDraggedDistance = Math.abs(draggedDistance)
         const isDraggingDown =
-          direction === 'bottom' || direction === 'right' ? draggedDistance < 0 : draggedDistance > 0
+          direction === 'bottom' || direction === 'right'
+            ? draggedDistance < 0
+            : draggedDistance > 0
 
         if (!drag.reachedIntentBoundary) {
           const delta = {
             x: moveEvent.clientX - drag.pointerStart.x,
-            y: moveEvent.clientY - drag.pointerStart.y
+            y: moveEvent.clientY - drag.pointerStart.y,
           }
           const threshold = moveEvent.pointerType === 'touch' ? 10 : 2
           const intent = getSwipeIntent({
             delta,
             direction,
             threshold,
-            wasBeyondThePoint: false
+            wasBeyondThePoint: false,
           })
           if (!intent.isAllowed) {
             if (Math.abs(delta.x) > threshold || Math.abs(delta.y) > threshold) {
@@ -309,7 +330,9 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
 
           const liveOptions = state.options
           const timeSinceLastPreventedMs =
-            state.lastTimeDragPrevented === null ? null : performance.now() - state.lastTimeDragPrevented
+            state.lastTimeDragPrevented === null
+              ? null
+              : performance.now() - state.lastTimeDragPrevented
           const movePermission = getDragPermission({
             targetTagName: metadata.targetTagName,
             hasNoDragAttribute: metadata.hasNoDragAttribute,
@@ -320,7 +343,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
             timeSinceLastPreventedMs,
             scrollLockTimeout: liveOptions.scrollLockTimeout ?? scrollLockTimeout,
             isDraggingInDirection: draggedDistance > 0,
-            ancestors: metadata.ancestors
+            ancestors: metadata.ancestors,
           })
           if (!movePermission.allow) {
             if (movePermission.updatePreventedAt) state.lastTimeDragPrevented = performance.now()
@@ -350,28 +373,31 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         // The percentage reported to the parent is the snap-point
         // percentage so the nested-drawer transform tracks the
         // active snap rather than the raw pixel drag.
-        const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
+        const hasSnapPoints =
+          drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
         const snapPointPercentageDragged = hasSnapPoints
           ? getSnapPointPercentageDragged({
               ...(currentSnapPoints !== undefined ? { snapPoints: currentSnapPoints } : {}),
               activeSnapPointIndex: drag.activeSnapPointIndex,
               snapPointsOffset: drag.snapPointsOffset,
-              ...(gestureFadeFromIndex !== undefined ? { fadeFromIndex: gestureFadeFromIndex } : {}),
+              ...(gestureFadeFromIndex !== undefined
+                ? { fadeFromIndex: gestureFadeFromIndex }
+                : {}),
               shouldFade: drag.shouldFade,
               absDraggedDistance,
-              isDraggingDown
+              isDraggingDown,
             })
           : null
         const { percentageDragged } = getDragPercentage({
           draggedDistance,
           drawerDimension: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth,
-          snapPointPercentageDragged
+          snapPointPercentageDragged,
         })
 
         state.drag = {
           ...drag,
           draggedDistance,
-          isDraggingDown
+          isDraggingDown,
         }
 
         // Phase A: the snap-free path delegates the
@@ -389,12 +415,12 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
           ? getSnapDragValue({
               activeSnapPointOffset: drag.activeSnapPointOffset ?? 0,
               draggedDistance,
-              direction
+              direction,
             })
           : getDraggableOffset({ direction, draggedDistance })
         set(content, {
           transform: getAxisAwareTranslate(direction, draggableOffset),
-          transition: 'none'
+          transition: 'none',
         })
 
         // Phase B: fade the overlay while dragging in close direction
@@ -413,7 +439,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         ) {
           set(state.overlay, {
             opacity: `${Math.max(0, Math.min(1, 1 - percentageDragged))}`,
-            transition: 'none'
+            transition: 'none',
           })
         }
 
@@ -431,7 +457,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
             percentageDragged,
             direction,
             setBackgroundColorOnScale:
-              dragOptions.setBackgroundColorOnScale !== false && dragOptions.noBodyStyles !== true
+              dragOptions.setBackgroundColorOnScale !== false && dragOptions.noBodyStyles !== true,
           })
         }
 
@@ -448,7 +474,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         )
         set(state.overlay, {
           opacity: overlayVisible ? '1' : '0',
-          transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+          transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
         })
       }
 
@@ -474,7 +500,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         const draggedDistance = getDraggedDistance({
           pointerStart: isVerticalAxis ? drag.pointerStart.y : drag.pointerStart.x,
           currentPointer: releasedPointer,
-          direction
+          direction,
         })
         const now = performance.now()
         const velocity = Math.abs(draggedDistance) / Math.max(now - drag.startedAt, 1)
@@ -496,7 +522,8 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
           }, 200)
         }
 
-        const hasSnapPoints = drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
+        const hasSnapPoints =
+          drag.snapPointsOffset.length > 0 && drag.activeSnapPointOffset !== null
 
         if (hasSnapPoints) {
           // Phase B release: delegate to `getSnapPointReleaseAction`.
@@ -521,7 +548,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
               ? { snapToSequentialPoint: dragOptions.snapToSequentialPoint }
               : {}),
             velocityThreshold: VELOCITY_THRESHOLD,
-            viewportSize: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth
+            viewportSize: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth,
           })
 
           if (release.type === 'close') {
@@ -549,7 +576,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
               // pre-render frame.
               set(content, {
                 transform: getAxisAwareTranslate(direction, release.targetOffset),
-                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
               })
               // Phase C: settle the wrapper on its rest state with
               // the CSS transition enabled so the visual change
@@ -564,7 +591,10 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
               // drag-to-close. Without this, the grace period
               // expires 500ms after the initial open and a
               // follow-up scroll can be hijacked as a drag.
-              if (currentSnapPoints && matchedSnapPoint === currentSnapPoints[currentSnapPoints.length - 1]) {
+              if (
+                currentSnapPoints &&
+                matchedSnapPoint === currentSnapPoints[currentSnapPoints.length - 1]
+              ) {
                 state.openedAt = performance.now()
               }
             } else {
@@ -573,7 +603,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
               // snap.
               set(content, {
                 transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
-                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+                transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
               })
               settleBackgroundScale()
             }
@@ -587,7 +617,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
           // drawer stays at the active snap.
           set(content, {
             transform: getAxisAwareTranslate(direction, drag.activeSnapPointOffset ?? 0),
-            transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+            transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
           })
           settleBackgroundScale()
           settleOverlay()
@@ -604,7 +634,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
           velocityThreshold: VELOCITY_THRESHOLD,
           swipeAmount: draggedDistance,
           drawerDimension: isVerticalAxis ? drag.drawerHeight : drag.drawerWidth,
-          closeThreshold
+          closeThreshold,
         })
 
         if (release.action === 'close') {
@@ -624,7 +654,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         // drawer stays open).
         set(content, {
           transform: getAxisAwareTranslate(direction, 0),
-          transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+          transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
         })
         // Phase C: settle the wrapper on its rest state with the
         // CSS transition enabled so the visual change from the drag
@@ -647,10 +677,14 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         const drag = state.drag
         if (!drag) return
         const pointerEvent = synthetic as DragPointerEvent
-        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId) return
+        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId)
+          return
         const relatedTarget = pointerEvent.relatedTarget
         if (relatedTarget instanceof Node && content.contains(relatedTarget)) return
-        if (typeof content.hasPointerCapture === 'function' && content.hasPointerCapture(drag.pointerId)) {
+        if (
+          typeof content.hasPointerCapture === 'function' &&
+          content.hasPointerCapture(drag.pointerId)
+        ) {
           return
         }
         if (typeof synthetic.preventDefault === 'function') {
@@ -669,13 +703,14 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         const drag = state.drag
         if (!drag) return
         const pointerEvent = synthetic as DragPointerEvent
-        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId) return
+        if (pointerEvent.pointerId !== undefined && pointerEvent.pointerId !== drag.pointerId)
+          return
         const resetEvent = {
           clientX: drag.pointerStart.x,
           clientY: drag.pointerStart.y,
           pointerId: drag.pointerId,
           target: synthetic.target,
-          currentTarget: content
+          currentTarget: content,
         } as unknown as DragPointerEvent
         onPointerUp(resetEvent as unknown as Event)
       }
@@ -688,7 +723,10 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         content.removeEventListener('pointercancel', onPointerCancel)
         if (pointerCaptured && typeof content.releasePointerCapture === 'function') {
           try {
-            if (typeof content.hasPointerCapture !== 'function' || content.hasPointerCapture(event.pointerId)) {
+            if (
+              typeof content.hasPointerCapture !== 'function' ||
+              content.hasPointerCapture(event.pointerId)
+            ) {
               content.releasePointerCapture(event.pointerId)
             }
           } catch {
@@ -752,7 +790,7 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         shouldCancelInteraction: false,
         ...(handleSnapPoints !== undefined ? { snapPoints: handleSnapPoints } : {}),
         activeSnapPoint: handleActiveSnapPoint,
-        dismissible: liveOptions.dismissible !== false
+        dismissible: liveOptions.dismissible !== false,
       })
 
       if (result.type === 'close') {
@@ -771,7 +809,10 @@ export function attachListeners(state: DialogMountState, options: VanillaDrawerO
         // G8: 1:1 with vaul upstream — handle-cycle that reaches
         // the last snap also extends the post-open grace period.
         const handleSnapPoints = getSnapPoints(liveOptions)
-        if (handleSnapPoints && result.snapPoint === handleSnapPoints[handleSnapPoints.length - 1]) {
+        if (
+          handleSnapPoints &&
+          result.snapPoint === handleSnapPoints[handleSnapPoints.length - 1]
+        ) {
           state.openedAt = performance.now()
         }
         return

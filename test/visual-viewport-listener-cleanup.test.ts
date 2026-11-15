@@ -80,11 +80,11 @@ describe('visualViewport listener cleanup in mobile-safari scroll lock (F18)', (
       offsetTop: 0,
       pageLeft: 0,
       pageTop: 0,
-      scale: 1
+      scale: 1,
     } as unknown as VisualViewport
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
-      get: () => mockViewport
+      get: () => mockViewport,
     })
     return {
       listeners,
@@ -92,7 +92,7 @@ describe('visualViewport listener cleanup in mobile-safari scroll lock (F18)', (
         for (const handler of Array.from(listeners)) {
           handler(new Event('resize'))
         }
-      }
+      },
     }
   }
 

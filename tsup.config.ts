@@ -51,7 +51,7 @@ export default defineConfig([
   {
     entry: {
       index: 'src/index.ts',
-      'browser/index': 'src/browser/index.ts'
+      'browser/index': 'src/browser/index.ts',
     },
     format: ['esm', 'cjs'],
     dts: true,
@@ -60,17 +60,17 @@ export default defineConfig([
     target: 'es2020',
     outDir: 'dist',
     external: [],
-    onSuccess: copyStylesHook
+    onSuccess: copyStylesHook,
   },
   {
     entry: {
-      'browser/global': 'src/browser/global.ts'
+      'browser/global': 'src/browser/global.ts',
     },
     format: ['iife'],
     dts: true,
     sourcemap: true,
     clean: false,
     target: 'es2020',
-    outDir: 'dist'
-  }
+    outDir: 'dist',
+  },
 ])

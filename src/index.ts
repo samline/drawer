@@ -4,16 +4,20 @@ export {
   getChildDrawers,
   getDrawer,
   getDrawers,
-  getParentDrawer
+  getParentDrawer,
 } from './runtime/registry'
-export type { VanillaDrawerController, VanillaDrawerOptions, VanillaRenderable } from './runtime/registry'
+export type {
+  VanillaDrawerController,
+  VanillaDrawerOptions,
+  VanillaRenderable,
+} from './runtime/registry'
 export type {
   CommonDrawerId,
   CommonDrawerController,
   CommonDrawerDirection,
   CommonDrawerOptions,
   CommonDrawerSnapshot,
-  CommonDrawerSnapPoint
+  CommonDrawerSnapPoint,
 } from './core'
 export { createDrawerController } from './core'
 export {
@@ -24,5 +28,5 @@ export {
   SCROLL_LOCK_TIMEOUT,
   TRANSITIONS,
   VELOCITY_THRESHOLD,
-  WINDOW_TOP_OFFSET
+  WINDOW_TOP_OFFSET,
 } from './constants'

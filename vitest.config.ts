@@ -11,9 +11,14 @@ export default defineConfig({
     environment: 'jsdom',
     environmentOptions: {
       jsdom: {
-        url: 'http://localhost/'
-      }
+        url: 'http://localhost/',
+      },
     },
-    include: ['test/**/*.test.ts']
-  }
+    include: ['test/**/*.test.ts'],
+    coverage: {
+      include: ['src/**'],
+      exclude: ['src/browser/global.ts', 'src/style.css'],
+      thresholds: { branches: 90, functions: 95, lines: 95, statements: 95 },
+    },
+  },
 })

@@ -8,13 +8,13 @@ import {
   getActiveSnapPoint,
   getFadeFromIndex,
   getContainerSize,
-  shouldShowSnapOverlay
+  shouldShowSnapOverlay,
 } from './dialog-layout'
 import {
   getWrapperElement,
   acquireBackgroundScale,
   releaseBackgroundScale,
-  restoreBackgroundScale
+  restoreBackgroundScale,
 } from './dialog-background'
 import {
   createEl,
@@ -23,7 +23,7 @@ import {
   buildDescriptionContent,
   normalizeCloseButtonOptions,
   buildCloseButton,
-  buildBodyContent
+  buildBodyContent,
 } from './dialog-content'
 import {
   acquireModalIsolation,
@@ -31,7 +31,7 @@ import {
   removeFromOpenDialogStack,
   getTopOpenContent,
   focusFirstElement,
-  resolveOpenDialogOrder
+  resolveOpenDialogOrder,
 } from './dialog-focus'
 
 // Vanilla dialog primitives. Direct DOM manipulation — no framework
@@ -63,7 +63,7 @@ import {
   lockDocumentScrollBehavior,
   lockScrollRestoration,
   preventBodyScroll,
-  setPositionFixed
+  setPositionFixed,
 } from '../runtime/scroll-lock'
 import type { VanillaDrawerOptions } from './render'
 
@@ -105,7 +105,7 @@ function getHostState(host: HTMLElement): DialogMountState {
       restoreScrollRestoration: null,
       justReleased: false,
       justReleasedTimer: null,
-      releaseModalIsolation: null
+      releaseModalIsolation: null,
     }
     hostState.set(host, state)
   }
@@ -124,14 +124,17 @@ const IN_PLACE_OPTION_KEYS = new Set<keyof VanillaDrawerOptions>([
   'onAnimationEnd',
   'onActiveSnapPointChange',
   'onDragChange',
-  'onReleaseChange'
+  'onReleaseChange',
 ])
 
-function canUpdateOpenMount(previous: VanillaDrawerOptions | null, next: VanillaDrawerOptions): boolean {
+function canUpdateOpenMount(
+  previous: VanillaDrawerOptions | null,
+  next: VanillaDrawerOptions
+): boolean {
   if (!previous) return false
   const keys = new Set<keyof VanillaDrawerOptions>([
     ...(Object.keys(previous) as Array<keyof VanillaDrawerOptions>),
-    ...(Object.keys(next) as Array<keyof VanillaDrawerOptions>)
+    ...(Object.keys(next) as Array<keyof VanillaDrawerOptions>),
   ])
   for (const key of keys) {
     if (IN_PLACE_OPTION_KEYS.has(key)) continue
@@ -166,7 +169,7 @@ function attachBuiltInTrigger(
     trigger = createEl('button', {
       type: 'button',
       'data-drawer-vanilla-trigger': '',
-      'aria-haspopup': 'dialog'
+      'aria-haspopup': 'dialog',
     })
     host.appendChild(trigger)
     state.trigger = trigger
@@ -189,7 +192,10 @@ function attachBuiltInTrigger(
  * Full teardown also removes its DOM; `deferDom` keeps the closing
  * visual nodes until the exit timeout removes them.
  */
-function teardownMount(state: DialogMountState, opts: { deferDom?: boolean; keepTrigger?: boolean } = {}) {
+function teardownMount(
+  state: DialogMountState,
+  opts: { deferDom?: boolean; keepTrigger?: boolean } = {}
+) {
   if (!opts.deferDom) cancelCloseRemoval(state)
   removeFromOpenDialogStack(state)
   state.releaseModalIsolation?.()
@@ -248,7 +254,9 @@ function teardownMount(state: DialogMountState, opts: { deferDom?: boolean; keep
   }
   const otherOpenDrawer = getTopOpenContent()
   const activeElementWasClosing = Boolean(
-    state.content && document.activeElement instanceof Node && state.content.contains(document.activeElement)
+    state.content &&
+    document.activeElement instanceof Node &&
+    state.content.contains(document.activeElement)
   )
   if (
     state.previouslyFocused &&
@@ -338,7 +346,11 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   const fadeFromIndex = getFadeFromIndex(options)
   if (state.overlay) {
     state.overlay.dataset.drawerSnapPoints = open && hasSnapPoints ? 'true' : 'false'
-    state.overlay.dataset.drawerSnapPointsOverlay = shouldShowSnapOverlay(snapPoints, fadeFromIndex, activeSnapPoint)
+    state.overlay.dataset.drawerSnapPointsOverlay = shouldShowSnapOverlay(
+      snapPoints,
+      fadeFromIndex,
+      activeSnapPoint
+    )
       ? 'true'
       : 'false'
   }
@@ -367,7 +379,11 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   if (open && state.content) {
     const snapPoints = getSnapPoints(options)
     const activeSnapPoint = getActiveSnapPoint(options)
-    if (snapPoints && snapPoints.length > 0 && activeSnapPoint === snapPoints[snapPoints.length - 1]) {
+    if (
+      snapPoints &&
+      snapPoints.length > 0 &&
+      activeSnapPoint === snapPoints[snapPoints.length - 1]
+    ) {
       state.openedAt = performance.now()
     }
   }
@@ -383,18 +399,20 @@ function updateOpenSnapState(state: DialogMountState, options: VanillaDrawerOpti
   const offset = getSnapPointOffset({
     snapPoint: activeSnapPoint,
     direction: getDirection(options),
-    containerSize: getContainerSize(options.container ?? null)
+    containerSize: getContainerSize(options.container ?? null),
   })
   state.content.style.setProperty('--initial-transform', `${offset}px`)
   set(state.content, {
     transform: getAxisAwareTranslate(getDirection(options), offset),
-    transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+    transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
   })
 
   if (state.overlay) {
     set(state.overlay, {
-      opacity: shouldShowSnapOverlay(snapPoints, getFadeFromIndex(options), activeSnapPoint) ? '1' : '0',
-      transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+      opacity: shouldShowSnapOverlay(snapPoints, getFadeFromIndex(options), activeSnapPoint)
+        ? '1'
+        : '0',
+      transition: `opacity ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
     })
   }
 }
@@ -422,9 +440,18 @@ function isKeyboardInput(element: Element | null): boolean {
   if (element instanceof HTMLTextAreaElement) return true
   if (element instanceof HTMLElement && element.isContentEditable) return true
   if (!(element instanceof HTMLInputElement)) return false
-  return !new Set(['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit']).has(
-    element.type
-  )
+  return !new Set([
+    'button',
+    'checkbox',
+    'color',
+    'file',
+    'hidden',
+    'image',
+    'radio',
+    'range',
+    'reset',
+    'submit',
+  ]).has(element.type)
 }
 
 /**
@@ -444,7 +471,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     onOpenChange,
     onDragChange,
     onReleaseChange,
-    onActiveSnapPointChange
+    onActiveSnapPointChange,
   } = dialogOptions
   const state = getHostState(host)
   state.options = options
@@ -453,7 +480,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
     onOpenChange,
     ...(onDragChange !== undefined ? { onDragChange } : {}),
     ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
-    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
+    ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {}),
   }
 
   // Beta.4 keeps an open mount in place for close, freezes its current
@@ -594,13 +621,17 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
 
   // --- Overlay -------------------------------------------------------
   if (shouldRenderOverlay) {
-    const overlayShouldShow = shouldShowSnapOverlay(snapPoints, getFadeFromIndex(options), activeSnapPoint)
+    const overlayShouldShow = shouldShowSnapOverlay(
+      snapPoints,
+      getFadeFromIndex(options),
+      activeSnapPoint
+    )
     const overlay = createEl('div', {
       'data-drawer-overlay': '',
       'data-state': open ? 'open' : 'closed',
       'data-drawer-snap-points': hasSnapPoints ? 'true' : 'false',
       'data-drawer-snap-points-overlay': overlayShouldShow ? 'true' : 'false',
-      'data-drawer-animate': shouldAnimateEntrance ? 'true' : 'false'
+      'data-drawer-animate': shouldAnimateEntrance ? 'true' : 'false',
     })
     if (hasSnapPoints && shouldAnimateEntrance) {
       overlay.style.opacity = '0'
@@ -624,7 +655,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       'data-drawer-animate': shouldAnimateEntrance ? 'true' : 'false',
       role: 'dialog',
       'aria-modal': options.modal === false ? 'false' : 'true',
-      tabIndex: -1
+      tabIndex: -1,
     })
     if (options.contentClassName) content.className = options.contentClassName
     // Beta.4 fix: the drawer id used to be
@@ -678,7 +709,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
               direction,
               // G3: pass the container so the snap math uses the
               // container's bounding rect when set.
-              containerSize: getContainerSize(options.container ?? null)
+              containerSize: getContainerSize(options.container ?? null),
             })
           : 0
       content.style.setProperty('--initial-transform', `${initialOffset}px`)
@@ -705,7 +736,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         'data-drawer-visible': open ? 'true' : 'false',
         ...(handleCanCycle
           ? { 'aria-label': options.handleAriaLabel ?? 'Change drawer position' }
-          : { tabindex: '-1', 'aria-hidden': 'true' })
+          : { tabindex: '-1', 'aria-hidden': 'true' }),
       })
       if (options.handleClassName) handle.className = options.handleClassName
       const hitArea = createEl('span', { 'data-drawer-handle-hitarea': '', 'aria-hidden': 'true' })
@@ -882,7 +913,10 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       const contentEl = state.content
       if (!contentEl) return
       const focusedElement = document.activeElement
-      if (!state.keyboardIsOpen && (!isKeyboardInput(focusedElement) || !contentEl.contains(focusedElement))) {
+      if (
+        !state.keyboardIsOpen &&
+        (!isKeyboardInput(focusedElement) || !contentEl.contains(focusedElement))
+      ) {
         return
       }
 
@@ -902,7 +936,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         snapPointOffset = getSnapPointOffset({
           snapPoint: activeSnapPoint,
           direction: listenerDirection,
-          containerSize: getContainerSize(liveOptions.container ?? null)
+          containerSize: getContainerSize(liveOptions.container ?? null),
         })
       }
       state.activeSnapPointOffset = snapPointOffset
@@ -932,7 +966,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
         // vertical keyboard displacement.
         ...(verticalAxis ? { activeSnapPointOffset: snapPointOffset } : {}),
         isMobileFirefox: listenerIsMobileFirefox,
-        windowTopOffset: WINDOW_TOP_OFFSET
+        windowTopOffset: WINDOW_TOP_OFFSET,
       })
 
       const wasKeyboardOpen = state.keyboardIsOpen
@@ -977,7 +1011,8 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
   }
 
   if (open && options.modal !== false) {
-    state.previouslyFocused = carriedFocusReturn ?? (document.activeElement as HTMLElement | null) ?? null
+    state.previouslyFocused =
+      carriedFocusReturn ?? (document.activeElement as HTMLElement | null) ?? null
     // F6: iOS Safari body-scroll prevention (1:1 with vaul upstream).
     // - `preventBodyScroll` returns a restore function that handles
     //   both the desktop `overflow: hidden` baseline AND the
@@ -1006,14 +1041,14 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
           // We're inside the `options.modal !== false` branch
           // (line 2104), so this is always `true` here.
           modal: true,
-          noBodyStyles: options.noBodyStyles === true
+          noBodyStyles: options.noBodyStyles === true,
         })
       }
     }
     state.unlockBodyScroll = preventBodyScroll({
       disablePreventScroll: options.disablePreventScroll === true,
       modal: true,
-      isOpen: true
+      isOpen: true,
     })
     // G8: 1:1 with vaul upstream — while the drawer is open, set
     // `html { scroll-behavior: auto }` to override any consumer
@@ -1057,7 +1092,10 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
       }
     })
   }
-  if (mountedContent?.dataset.drawerAnimate === 'false' || mountedOverlay?.dataset.drawerAnimate === 'false') {
+  if (
+    mountedContent?.dataset.drawerAnimate === 'false' ||
+    mountedOverlay?.dataset.drawerAnimate === 'false'
+  ) {
     window.requestAnimationFrame(() => {
       if (mountedContent?.isConnected) mountedContent.dataset.drawerAnimate = 'true'
       if (mountedOverlay?.isConnected) mountedOverlay.dataset.drawerAnimate = 'true'

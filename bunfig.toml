@@ -1,0 +1,4 @@
+# Managed by package-landing-docs (family/templates/package). Edit there, then run node family/scripts/sync.mjs.
+# Bun runs scripts; pnpm installs. Never let Bun install or auto-install packages.
+[install]
+auto = "disable"

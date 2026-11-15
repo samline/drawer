@@ -66,7 +66,10 @@ function isElementLike(target: unknown): target is ElementLike {
   )
 }
 
-export function getDragTargetMetadata(target: EventTarget | null, boundary?: EventTarget | null): DragTargetMetadata {
+export function getDragTargetMetadata(
+  target: EventTarget | null,
+  boundary?: EventTarget | null
+): DragTargetMetadata {
   const targetElement = isElementLike(target) ? target : null
   const ancestors: DragScrollableAncestor[] = []
   let element: ElementLike | null = targetElement
@@ -79,7 +82,7 @@ export function getDragTargetMetadata(target: EventTarget | null, boundary?: Eve
       scrollWidth: element.scrollWidth ?? 0,
       clientWidth: element.clientWidth ?? 0,
       scrollLeft: element.scrollLeft ?? 0,
-      role: element.getAttribute('role')
+      role: element.getAttribute('role'),
     })
 
     if (element === (boundary as unknown as ElementLike)) break
@@ -90,8 +93,9 @@ export function getDragTargetMetadata(target: EventTarget | null, boundary?: Eve
   return {
     targetTagName: targetElement?.tagName ?? '',
     hasNoDragAttribute:
-      targetElement?.hasAttribute('data-drawer-no-drag') || Boolean(targetElement?.closest('[data-drawer-no-drag]')),
-    ancestors
+      targetElement?.hasAttribute('data-drawer-no-drag') ||
+      Boolean(targetElement?.closest('[data-drawer-no-drag]')),
+    ancestors,
   }
 }
 
@@ -105,7 +109,7 @@ export function getDragPermission({
   timeSinceLastPreventedMs,
   scrollLockTimeout,
   isDraggingInDirection,
-  ancestors
+  ancestors,
 }: {
   targetTagName: string
   hasNoDragAttribute: boolean
@@ -127,7 +131,8 @@ export function getDragPermission({
   }
 
   if (swipeAmount !== null) {
-    const isClosingSwipeOffset = direction === 'bottom' || direction === 'right' ? swipeAmount > 0 : swipeAmount < 0
+    const isClosingSwipeOffset =
+      direction === 'bottom' || direction === 'right' ? swipeAmount > 0 : swipeAmount < 0
     if (isClosingSwipeOffset) {
       return { allow: true, updatePreventedAt: false }
     }
@@ -137,7 +142,11 @@ export function getDragPermission({
     return { allow: false, updatePreventedAt: false }
   }
 
-  if (timeSinceLastPreventedMs !== null && timeSinceLastPreventedMs < scrollLockTimeout && swipeAmount === 0) {
+  if (
+    timeSinceLastPreventedMs !== null &&
+    timeSinceLastPreventedMs < scrollLockTimeout &&
+    swipeAmount === 0
+  ) {
     return { allow: false, updatePreventedAt: true }
   }
 
@@ -157,7 +166,9 @@ export function getDragPermission({
     const clientSize = horizontal ? (ancestor.clientWidth ?? 0) : ancestor.clientHeight
     const position = Math.abs(horizontal ? (ancestor.scrollLeft ?? 0) : ancestor.scrollTop)
     if (scrollSize > clientSize) {
-      const canScrollTowardClose = closesTowardScrollEnd ? position + clientSize < scrollSize - 1 : position !== 0
+      const canScrollTowardClose = closesTowardScrollEnd
+        ? position + clientSize < scrollSize - 1
+        : position !== 0
       if (canScrollTowardClose) {
         return { allow: false, updatePreventedAt: true }
       }

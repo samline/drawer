@@ -1,7 +1,11 @@
 import type { CommonDrawerDirection } from '../core'
 import { TRANSITIONS, WINDOW_TOP_OFFSET } from '../constants'
 import { set } from '../helpers'
-import { getBackgroundDragState, getBackgroundResetState, getScaleTranslateTransform } from '../runtime/transforms'
+import {
+  getBackgroundDragState,
+  getBackgroundResetState,
+  getScaleTranslateTransform,
+} from '../runtime/transforms'
 
 export interface BackgroundScaleState {
   backgroundScale: BackgroundScaleOwner | null
@@ -63,7 +67,7 @@ export function applyWrapperDragState({
   baseScale,
   percentageDragged,
   direction,
-  setBackgroundColorOnScale
+  setBackgroundColorOnScale,
 }: {
   wrapper: HTMLElement
   baseScale: number
@@ -73,12 +77,12 @@ export function applyWrapperDragState({
 }) {
   const { scaleValue, borderRadiusValue, translateValue } = getBackgroundDragState({
     baseScale,
-    percentageDragged
+    percentageDragged,
   })
   const transform = getScaleTranslateTransform({
     direction,
     scale: scaleValue,
-    translate: `${translateValue}px`
+    translate: `${translateValue}px`,
   })
   set(wrapper, {
     transform,
@@ -90,7 +94,9 @@ export function applyWrapperDragState({
     // backdrop during drag. The value scales linearly with drag
     // progress so the user feels the page "dimming" as the drawer
     // opens. Cleared on release.
-    ...(setBackgroundColorOnScale ? { backgroundColor: `rgba(0, 0, 0, ${percentageDragged * 0.5})` } : {})
+    ...(setBackgroundColorOnScale
+      ? { backgroundColor: `rgba(0, 0, 0, ${percentageDragged * 0.5})` }
+      : {}),
   })
 }
 
@@ -103,7 +109,7 @@ export function applyWrapperDragState({
 function applyWrapperOpenState({
   wrapper,
   direction,
-  baseScale
+  baseScale,
 }: {
   wrapper: HTMLElement
   direction: CommonDrawerDirection
@@ -114,7 +120,7 @@ function applyWrapperOpenState({
     ...resetState,
     transitionProperty: 'transform, border-radius',
     transitionDuration: `${TRANSITIONS.DURATION}s`,
-    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
   })
 }
 
@@ -124,14 +130,19 @@ function applyWrapperClosedState(wrapper: HTMLElement) {
     borderRadius: '0px',
     transitionProperty: 'transform, border-radius',
     transitionDuration: `${TRANSITIONS.DURATION}s`,
-    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+    transitionTimingFunction: `cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
   })
 }
 
 const backgroundScaleGroups = new Map<HTMLElement, BackgroundScaleGroup>()
 let backgroundScaleBodySnapshot: { value: string; priority: string } | null = null
 
-function restoreStyleProperty(element: HTMLElement, property: string, value: string, priority: string) {
+function restoreStyleProperty(
+  element: HTMLElement,
+  property: string,
+  value: string,
+  priority: string
+) {
   if (value) element.style.setProperty(property, value, priority)
   else element.style.removeProperty(property)
 }
@@ -140,7 +151,7 @@ export function applyBackgroundScaleOpen(owner: BackgroundScaleOwner) {
   applyWrapperOpenState({
     wrapper: owner.group.wrapper,
     direction: owner.direction,
-    baseScale: owner.baseScale
+    baseScale: owner.baseScale,
   })
   restoreStyleProperty(
     owner.group.wrapper,
@@ -162,8 +173,8 @@ function clearPendingBackgroundScaleStates(group: BackgroundScaleGroup) {
 function updateBackgroundScaleBody() {
   const groups = Array.from(backgroundScaleGroups.values())
   const shouldSetBackground = groups.some(
-    (group) =>
-      group.owners.some((owner) => owner.setBodyBackground) ||
+    group =>
+      group.owners.some(owner => owner.setBodyBackground) ||
       (group.clearTimeout !== null && group.closingSetBodyBackground)
   )
   if (shouldSetBackground) {
@@ -209,7 +220,7 @@ export function acquireBackgroundScale(
     if (!backgroundScaleBodySnapshot) {
       backgroundScaleBodySnapshot = {
         value: document.body.style.getPropertyValue('background-color'),
-        priority: document.body.style.getPropertyPriority('background-color')
+        priority: document.body.style.getPropertyPriority('background-color'),
       }
     }
     group = {
@@ -220,7 +231,7 @@ export function acquireBackgroundScale(
       owners: [],
       clearTimeout: null,
       closingSetBodyBackground: false,
-      pendingStates: new Set()
+      pendingStates: new Set(),
     }
     backgroundScaleGroups.set(wrapper, group)
   }
@@ -236,9 +247,9 @@ export function acquireBackgroundScale(
     baseScale: computeBaseScale(),
     direction,
     setBodyBackground,
-    openOrder
+    openOrder,
   }
-  const insertionIndex = group.owners.findIndex((candidate) => candidate.openOrder > openOrder)
+  const insertionIndex = group.owners.findIndex(candidate => candidate.openOrder > openOrder)
   if (insertionIndex === -1) group.owners.push(owner)
   else group.owners.splice(insertionIndex, 0, owner)
   state.backgroundScale = owner

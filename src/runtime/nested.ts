@@ -14,7 +14,7 @@ export function getParentNestedVisualState({
   viewportSize,
   hasOpenChild,
   percentageDragged,
-  displacement = NESTED_DISPLACEMENT
+  displacement = NESTED_DISPLACEMENT,
 }: {
   direction: CommonDrawerDirection
   viewportSize: number
@@ -27,12 +27,12 @@ export function getParentNestedVisualState({
       direction,
       viewportSize,
       displacement,
-      percentageDragged
+      percentageDragged,
     })
 
     return {
       transform,
-      transition: 'none'
+      transition: 'none',
     }
   }
 
@@ -40,11 +40,11 @@ export function getParentNestedVisualState({
     direction,
     isOpen: hasOpenChild,
     viewportSize,
-    displacement
+    displacement,
   })
 
   return {
     transform,
-    transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`
+    transition: `transform ${TRANSITIONS.DURATION}s cubic-bezier(${TRANSITIONS.EASE.join(',')})`,
   }
 }

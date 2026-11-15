@@ -47,7 +47,7 @@ describe('drawer id collision', () => {
       id: 'contact-form-drawer',
       direction: 'bottom',
       title: 'Contact form',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -68,7 +68,7 @@ describe('drawer id collision', () => {
       id: 'contact-form-drawer',
       direction: 'bottom',
       title: 'Contact form',
-      content: 'Body'
+      content: 'Body',
     })
     drawer.setOpen(true)
 
@@ -93,7 +93,7 @@ describe('drawer id collision', () => {
       id: 'contact-form-drawer',
       direction: 'bottom',
       title: 'Contact form',
-      content: formEl
+      content: formEl,
     })
     drawer.setOpen(true)
 
@@ -117,7 +117,7 @@ describe('drawer id collision', () => {
       direction: 'bottom',
       title: 'Contact form',
       content: 'Body',
-      container: mountEl
+      container: mountEl,
     })
     drawer.setOpen(true)
 
@@ -141,7 +141,7 @@ describe('drawer id collision', () => {
       id: 'shared-id',
       direction: 'bottom',
       title: 'Shared id',
-      content: nestedEl
+      content: nestedEl,
     })
     drawer.setOpen(true)
 

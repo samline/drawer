@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { getDismissibleReleaseResult, getReleaseAction, shouldPreventFocusOnRelease } from '../src/runtime/release'
+import {
+  getDismissibleReleaseResult,
+  getReleaseAction,
+  shouldPreventFocusOnRelease,
+} from '../src/runtime/release'
 
 describe('release runtime helpers', () => {
   it('marks high-velocity releases to prevent focus', () => {
@@ -17,7 +21,7 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe('reset')
   })
@@ -31,7 +35,7 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 70,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe('close')
   })
@@ -45,7 +49,7 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toBe('reset')
   })
@@ -59,12 +63,12 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 70,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toEqual({
       action: 'close',
       shouldPreventFocus: true,
-      nextOpen: false
+      nextOpen: false,
     })
 
     expect(
@@ -75,12 +79,12 @@ describe('release runtime helpers', () => {
         velocityThreshold: 0.4,
         swipeAmount: 20,
         drawerDimension: 200,
-        closeThreshold: 0.25
+        closeThreshold: 0.25,
       })
     ).toEqual({
       action: 'reset',
       shouldPreventFocus: false,
-      nextOpen: true
+      nextOpen: true,
     })
   })
 })

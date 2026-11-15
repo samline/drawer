@@ -9,7 +9,7 @@ describe('pointer runtime helpers', () => {
         delta: { x: 50, y: 2 },
         direction: 'right',
         threshold: 10,
-        wasBeyondThePoint: true
+        wasBeyondThePoint: true,
       })
     ).toEqual({ isAllowed: true, reachedIntentBoundary: true })
   })
@@ -20,7 +20,7 @@ describe('pointer runtime helpers', () => {
         delta: { x: 6, y: 1 },
         direction: 'right',
         threshold: 10,
-        wasBeyondThePoint: false
+        wasBeyondThePoint: false,
       })
     ).toEqual({ isAllowed: true, reachedIntentBoundary: false })
 
@@ -29,7 +29,7 @@ describe('pointer runtime helpers', () => {
         delta: { x: 1, y: 6 },
         direction: 'right',
         threshold: 10,
-        wasBeyondThePoint: false
+        wasBeyondThePoint: false,
       })
     ).toEqual({ isAllowed: false, reachedIntentBoundary: false })
   })
@@ -40,7 +40,7 @@ describe('pointer runtime helpers', () => {
         delta: { x: 0, y: 20 },
         direction: 'bottom',
         threshold: 10,
-        wasBeyondThePoint: false
+        wasBeyondThePoint: false,
       })
     ).toEqual({ isAllowed: true, reachedIntentBoundary: true })
   })

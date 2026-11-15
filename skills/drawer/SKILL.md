@@ -18,8 +18,8 @@ Build against the installed `@samline/drawer` version. This skill describes v5.1
 For 5.1.2 the documented assets are:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/@samline/drawer@5.1.2/dist/style.css" />
-<script src="https://unpkg.com/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@5.1.2/dist/browser/global.global.js"></script>
 ```
 
 Verify that the selected release/assets exist before using remote URLs. A repository version or tag does not prove npm/CDN publication. Use the local build when integrating an unpublished release; do not silently load an older version with newer APIs.
@@ -31,7 +31,9 @@ The optional `@samline/drawer/browser` module exports the same seven functions a
 Use an existing native button and the host's styling. These three snippets work together in a bundler; the application calls the returned cleanup on unmount or real page departure.
 
 ```html
-<button id="open-filters" type="button" aria-haspopup="dialog" aria-expanded="false">Open filters</button>
+<button id="open-filters" type="button" aria-haspopup="dialog" aria-expanded="false">
+  Open filters
+</button>
 ```
 
 ```js
@@ -39,7 +41,7 @@ import { createDrawer } from '@samline/drawer'
 import '@samline/drawer/styles.css'
 import './drawer.css'
 
-const setupFilters = (trigger) => {
+const setupFilters = trigger => {
   const drawer = createDrawer({
     triggerElement: trigger,
     title: 'Filters',
@@ -48,7 +50,7 @@ const setupFilters = (trigger) => {
     overlayClassName: 'filters-overlay',
     closeButton: { icon: '×', ariaLabel: 'Close filters' },
     autoFocus: true,
-    onOpenChange: (open) => trigger.setAttribute('aria-expanded', String(open))
+    onOpenChange: open => trigger.setAttribute('aria-expanded', String(open)),
   })
 
   return () => {

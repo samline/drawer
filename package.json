@@ -4,7 +4,7 @@
   "description": "Framework-agnostic drawer runtime with a vanilla/browser API and an IIFE bundle for direct CDN use.",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://samline.github.io/drawer",
+  "homepage": "https://samline.github.io/drawer/",
   "publishConfig": {
     "access": "public",
     "tag": "latest"
@@ -44,9 +44,15 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:package": "node scripts/test-package.mjs",
+    "size": "node scripts/check-size.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run clean && npm run build && npm run typecheck && npm test && npm run test:package",
+    "check": "bun run format:check && bun run typecheck && bun run test:coverage && bun run build && bun run size && bun run test:package && bun run test:e2e",
+    "prepublishOnly": "bun run clean && bun run build && bun run typecheck && bun run test:coverage && bun run test:package",
+    "release": "bun run check && pnpm publish",
     "site:dev": "node site-tools/assets.mjs && node site-tools/dev.mjs",
     "site:build": "node site-tools/assets.mjs && npm --workspace docs run build && npm --workspace landing run build && node site-tools/assemble.mjs && node site-tools/check-site.mjs && npm run site:check:migration",
     "site:preview": "npm --workspace landing run preview -- --host 127.0.0.1 --port 4340 --ignore-lock",
@@ -61,7 +67,6 @@
     "site:test:adaptation": "node site-tools/test-adaptation.mjs",
     "site:check:design": "node site-tools/check-design.mjs",
     "site:check:migration": "node site-tools/check-migration.mjs",
-    "test:package": "node scripts/test-package.mjs",
     "site:check:identity": "node site-tools/check-identity.mjs"
   },
   "keywords": [
@@ -81,25 +86,27 @@
     "url": "https://github.com/samline/drawer/issues"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^4.1.12",
+    "axe-core": "^4.14.0",
+    "esbuild": "^0.28.2",
     "jsdom": "^26.1.0",
     "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.12",
-    "@playwright/test": "1.62.1",
-    "axe-core": "^4.14.0",
-    "prettier-plugin-astro": "^1.1.1"
-  },
-  "overrides": {
-    "esbuild": "^0.28.1",
-    "nanoid": "^3.3.18",
-    "vite": "8.3.4",
-    "source-map-js": "^1.2.2"
+    "vitest": "^4.1.12"
   },
   "workspaces": [
     "landing",
     "docs",
     "shared"
-  ]
+  ],
+  "packageManager": "pnpm@12.9.1",
+  "size": {
+    "./dist/index.js": 16800,
+    "./dist/browser/index.js": 16700,
+    "./dist/browser/global.global.js": 16700
+  }
 }

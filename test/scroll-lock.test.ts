@@ -70,7 +70,10 @@ describe('scroll-lock (F6)', () => {
   it('desktop path adds scrollbar padding-right when the page has a scrollbar', () => {
     // Force a non-zero scrollbar width
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
-    Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: 1185 })
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: 1185,
+    })
 
     const restore = preventBodyScroll()
     // 1200 - 1185 = 15px scrollbar → padding-right should be 15

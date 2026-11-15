@@ -67,7 +67,7 @@ export function renderVanillaHost({
   onOpenChange,
   onDragChange,
   onReleaseChange,
-  onActiveSnapPointChange
+  onActiveSnapPointChange,
 }: {
   host: VanillaHostState
   id: string
@@ -80,9 +80,14 @@ export function renderVanillaHost({
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
-}): { root: HTMLElement | null; element: HTMLElement | null; ownsElement: boolean; container: HTMLElement } | null {
+}): {
+  root: HTMLElement | null
+  element: HTMLElement | null
+  ownsElement: boolean
+  container: HTMLElement
+} | null {
   const nextContainer = resolveVanillaContainer(host, id, {
-    ...(options.container !== undefined ? { container: options.container } : {})
+    ...(options.container !== undefined ? { container: options.container } : {}),
   })
   if (!nextContainer) return null
 
@@ -114,7 +119,7 @@ export function renderVanillaHost({
       onOpenChange,
       ...(onDragChange !== undefined ? { onDragChange } : {}),
       ...(onReleaseChange !== undefined ? { onReleaseChange } : {}),
-      ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {})
+      ...(onActiveSnapPointChange !== undefined ? { onActiveSnapPointChange } : {}),
     })
   } catch (error) {
     destroyVanillaDialog(nextContainer.container)
@@ -126,7 +131,7 @@ export function renderVanillaHost({
     root: nextRoot,
     element: nextElement,
     ownsElement: nextOwnsElement,
-    container: nextContainer.container
+    container: nextContainer.container,
   }
 }
 
