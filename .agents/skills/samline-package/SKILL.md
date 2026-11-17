@@ -21,7 +21,7 @@ Apply these rules in every @samline repository. The repository's own `AGENTS.md`
 
 ## Shape
 
-- `src/index.ts` is side-effect free. `src/core/` has no DOM. `src/vanilla/` owns DOM controllers. `src/browser/global.ts` builds `dist/browser/<name>.global.js`, exposes named members on `window.<PascalName>` and auto-inits unless the script tag has `data-manual`.
+- `src/index.ts` is side-effect free. `src/core/` has no DOM. `src/vanilla/` owns DOM controllers. `src/browser/global.ts` builds `dist/browser/<name>.global.js`, exposes named members on `window.<PascalName>` (when that name is a JavaScript or DOM built-in such as `String`, use a plain non-colliding word such as `Strings`; never a `Samline` prefix in any public name) and auto-inits unless the script tag has `data-manual`.
 - Declarative API: `data-<name>` plus `data-<name>-<option>`; attributes win over options; state in `data-<name>-state`.
 - Controllers return a cleanup or `{ refresh, destroy }`; `destroy` is idempotent and restores the original markup.
 - Arrow functions and closures; no classes, no `this`. TypeScript strict with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`.
