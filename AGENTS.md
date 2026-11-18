@@ -4,7 +4,7 @@ This is the single project memory for runtime, Home, Examples and Docs. Follow t
 
 <!-- codebase-memory-mcp:start -->
 
-Project agent skills live in `.agents/skills/` (versioned, excluded from npm and Prettier): the autoskills registry set for the detected stack plus codebase-memory, matching notify. Refresh them with `npx autoskills -y -a universal`; `skills-lock.json` records their sources and is tracked, as in notify. They stay out of the root formatter (`.prettierignore`).
+Project agent skills live in `.agents/skills/` (versioned, excluded from npm and Prettier): the autoskills registry set for the detected stack plus codebase-memory. Refresh them with `npx autoskills -y -a universal`, then delete the `bun` skill; `skills-lock.json` records their sources and is tracked. They stay out of the root formatter (`.prettierignore`).
 
 Use the installed codebase-memory skill for structural exploration. Check indexed-path coverage and use source reads for stale/missing Astro/CSS coverage. Graph degree alone cannot prove dead code: callbacks, build hooks, routes and assets can have no incoming graph edges.
 <!-- codebase-memory-mcp:end -->
@@ -206,6 +206,8 @@ This block is synced from the template that owns the family conventions ([packag
 - README is the package guide and the site's source of truth; public text in English. Any public API change updates tests, README, docs, examples and `skills/<name>/SKILL.md` together.
 - Releases: Keep a Changelog entry for every user-facing change, semver, pinned CDN URLs bumped before release. Publishing is manual (`bun run release` by the maintainer); CI never publishes; no `--provenance`.
 - Public repository: no dated reports, handoff notes, transcripts or client names; private notes go in the ignored `.local/`. Site examples with state offer Reset; icons are SVG, never Unicode glyphs.
+- Work skills: `npx autoskills -y -a universal`, tracked with `skills-lock.json`, minus the `bun` skill (it contradicts pnpm installs), plus `modern-web-guidance`, consulted before HTML, CSS or client-side JavaScript work.
+- Always explore code through the `codebase-memory` skill and graph when `codebase-memory-mcp` is installed; read source for gaps.
 - Never add AI attribution to commits, tags or pull requests.
 
 <!-- samline:family:end -->
