@@ -6,6 +6,7 @@ All notable changes to `@samline/drawer` are documented in this file. The format
 
 ### Changed
 
+- Internal: source uses arrow functions throughout, and clearing rendered content uses `replaceChildren()`. No API or behavior change.
 - `closeButton.icon` accepts any `Element`, so an `<svg>` icon no longer needs a cast to `HTMLElement`. It was already appended as-is at runtime.
 
 ### Fixed

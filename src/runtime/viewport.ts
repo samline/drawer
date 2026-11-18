@@ -11,7 +11,7 @@
  * Extracting it to a shared helper is a follow-up.
  */
 
-export function getKeyboardOpenState({
+export const getKeyboardOpenState = ({
   previousDiffFromInitial,
   diffFromInitial,
   keyboardIsOpen,
@@ -21,7 +21,7 @@ export function getKeyboardOpenState({
   diffFromInitial: number
   keyboardIsOpen: boolean
   threshold?: number
-}) {
+}) => {
   if (Math.abs(previousDiffFromInitial - diffFromInitial) > threshold) {
     return !keyboardIsOpen
   }
@@ -29,7 +29,7 @@ export function getKeyboardOpenState({
   return keyboardIsOpen
 }
 
-export function getViewportDrivenDrawerLayout({
+export const getViewportDrivenDrawerLayout = ({
   visualViewportHeight,
   totalHeight,
   drawerHeight,
@@ -53,7 +53,7 @@ export function getViewportDrivenDrawerLayout({
   activeSnapPointOffset?: number
   isMobileFirefox: boolean
   windowTopOffset: number
-}) {
+}) => {
   let diffFromInitial = totalHeight - visualViewportHeight
   const isTallEnough = drawerHeight > totalHeight * 0.8
   const nextInitialDrawerHeight = initialDrawerHeight || drawerHeight

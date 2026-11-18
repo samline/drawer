@@ -41,7 +41,7 @@ import {
 } from '../runtime/snap-points'
 import { getAxisAwareTranslate, getTranslate } from '../runtime/transforms'
 
-function isInteractiveDragTarget(target: Element): boolean {
+const isInteractiveDragTarget = (target: Element): boolean => {
   const tagName = target.tagName
   if (
     tagName === 'BUTTON' ||
@@ -78,11 +78,11 @@ function isInteractiveDragTarget(target: Element): boolean {
   return interactiveAncestor !== null
 }
 
-export function attachListeners(
+export const attachListeners = (
   state: DialogMountState,
   options: VanillaDrawerOptions,
   callbacks: DialogCallbacks
-) {
+) => {
   if (state.content) {
     const content = state.content
     const onKeyDown = (event: KeyboardEvent) =>

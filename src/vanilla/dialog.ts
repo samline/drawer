@@ -68,7 +68,7 @@ import {
 import type { VanillaDrawerOptions } from './render'
 
 const hostState = new WeakMap<HTMLElement, DialogMountState>()
-function getHostState(host: HTMLElement): DialogMountState {
+const getHostState = (host: HTMLElement): DialogMountState => {
   let state = hostState.get(host)
   if (!state) {
     state = {
@@ -112,7 +112,7 @@ function getHostState(host: HTMLElement): DialogMountState {
   return state
 }
 
-function canUseDOM() {
+const canUseDOM = () => {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
@@ -127,10 +127,10 @@ const IN_PLACE_OPTION_KEYS = new Set<keyof VanillaDrawerOptions>([
   'onReleaseChange',
 ])
 
-function canUpdateOpenMount(
+const canUpdateOpenMount = (
   previous: VanillaDrawerOptions | null,
   next: VanillaDrawerOptions
-): boolean {
+): boolean => {
   if (!previous) return false
   const keys = new Set<keyof VanillaDrawerOptions>([
     ...(Object.keys(previous) as Array<keyof VanillaDrawerOptions>),
@@ -143,20 +143,20 @@ function canUpdateOpenMount(
   return true
 }
 
-function cancelCloseRemoval(state: DialogMountState) {
+const cancelCloseRemoval = (state: DialogMountState) => {
   if (state.closeRemovalTimer !== null) {
     clearTimeout(state.closeRemovalTimer)
     state.closeRemovalTimer = null
   }
 }
 
-function attachBuiltInTrigger(
+const attachBuiltInTrigger = (
   state: DialogMountState,
   host: HTMLElement,
   options: VanillaDrawerOptions,
   callbacks: DialogCallbacks,
   open: boolean
-) {
+) => {
   state.cleanupBuiltInTrigger?.()
   state.cleanupBuiltInTrigger = null
   if (!options.triggerText) {
@@ -192,10 +192,10 @@ function attachBuiltInTrigger(
  * Full teardown also removes its DOM; `deferDom` keeps the closing
  * visual nodes until the exit timeout removes them.
  */
-function teardownMount(
+const teardownMount = (
   state: DialogMountState,
   opts: { deferDom?: boolean; keepTrigger?: boolean } = {}
-) {
+) => {
   if (!opts.deferDom) cancelCloseRemoval(state)
   removeFromOpenDialogStack(state)
   state.releaseModalIsolation?.()
@@ -328,7 +328,7 @@ function teardownMount(
   state.mountedOptions = null
 }
 
-function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, open: boolean) {
+const applyOpenState = (state: DialogMountState, options: VanillaDrawerOptions, open: boolean) => {
   if (state.overlay) {
     state.overlay.dataset.state = open ? 'open' : 'closed'
   }
@@ -389,7 +389,7 @@ function applyOpenState(state: DialogMountState, options: VanillaDrawerOptions, 
   }
 }
 
-function updateOpenSnapState(state: DialogMountState, options: VanillaDrawerOptions) {
+const updateOpenSnapState = (state: DialogMountState, options: VanillaDrawerOptions) => {
   if (!state.content) return
   const snapPoints = getSnapPoints(options)
   const activeSnapPoint = getActiveSnapPoint(options)
@@ -436,7 +436,7 @@ function updateOpenSnapState(state: DialogMountState, options: VanillaDrawerOpti
  * inside the close button) are NOT `HTMLElement` instances but they
  * ARE clickable children and must not start a drag.
  */
-function isKeyboardInput(element: Element | null): boolean {
+const isKeyboardInput = (element: Element | null): boolean => {
   if (element instanceof HTMLTextAreaElement) return true
   if (element instanceof HTMLElement && element.isContentEditable) return true
   if (!(element instanceof HTMLInputElement)) return false
@@ -459,7 +459,7 @@ function isKeyboardInput(element: Element | null): boolean {
  * calling twice with the same `host` updates the existing mount in
  * place — it does not detach listeners or recreate the dialog tree.
  */
-export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
+export const mountVanillaDialog = (dialogOptions: VanillaDialogOptions): void => {
   if (!canUseDOM()) return
   const {
     host,
@@ -1128,7 +1128,7 @@ export function mountVanillaDialog(dialogOptions: VanillaDialogOptions): void {
  * The host is unchanged by the call (no element is removed here);
  * the host module owns the DOM removal.
  */
-export function destroyVanillaDialog(host: HTMLElement): void {
+export const destroyVanillaDialog = (host: HTMLElement): void => {
   const state = hostState.get(host)
   if (state) {
     teardownMount(state)

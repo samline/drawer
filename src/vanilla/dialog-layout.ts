@@ -1,26 +1,28 @@
 import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
 import type { VanillaDrawerOptions } from './render'
 
-export function getDirection(options: VanillaDrawerOptions): CommonDrawerDirection {
+export const getDirection = (options: VanillaDrawerOptions): CommonDrawerDirection => {
   return (options.direction ?? 'bottom') as CommonDrawerDirection
 }
 
-export function getClosedTransform(direction: CommonDrawerDirection) {
+export const getClosedTransform = (direction: CommonDrawerDirection) => {
   if (direction === 'bottom') return 'translate3d(0, 100%, 0)'
   if (direction === 'top') return 'translate3d(0, -100%, 0)'
   if (direction === 'right') return 'translate3d(100%, 0, 0)'
   return 'translate3d(-100%, 0, 0)'
 }
 
-export function getSnapPoints(options: VanillaDrawerOptions): CommonDrawerSnapPoint[] | undefined {
+export const getSnapPoints = (
+  options: VanillaDrawerOptions
+): CommonDrawerSnapPoint[] | undefined => {
   return options.snapPoints
 }
 
-export function getActiveSnapPoint(options: VanillaDrawerOptions): CommonDrawerSnapPoint | null {
+export const getActiveSnapPoint = (options: VanillaDrawerOptions): CommonDrawerSnapPoint | null => {
   return options.activeSnapPoint ?? options.snapPoints?.[0] ?? null
 }
 
-export function getFadeFromIndex(options: VanillaDrawerOptions): number | undefined {
+export const getFadeFromIndex = (options: VanillaDrawerOptions): number | undefined => {
   if (options.fadeFromIndex !== undefined) return options.fadeFromIndex
   return options.snapPoints && options.snapPoints.length > 0
     ? options.snapPoints.length - 1
@@ -33,7 +35,7 @@ export function getFadeFromIndex(options: VanillaDrawerOptions): number | undefi
  * helpers degrade to `NaN` offsets, which the dialog treats as
  * "no snap points configured" downstream).
  */
-export function getContainerSize(container?: HTMLElement | null) {
+export const getContainerSize = (container?: HTMLElement | null) => {
   if (typeof window === 'undefined') {
     return { width: 0, height: 0 }
   }
@@ -63,11 +65,11 @@ export function getContainerSize(container?: HTMLElement | null) {
  * `findIndex` returns `-1` and we return `null` (the caller should
  * keep the previous active snap).
  */
-export function findSnapPointByOffset(
+export const findSnapPointByOffset = (
   snapPoints: CommonDrawerSnapPoint[] | undefined,
   snapPointsOffset: number[],
   targetOffset: number
-): CommonDrawerSnapPoint | null {
+): CommonDrawerSnapPoint | null => {
   if (!snapPoints) return null
   const index = snapPointsOffset.findIndex(offset => offset === targetOffset)
   if (index === -1) return null
@@ -81,11 +83,11 @@ export function findSnapPointByOffset(
  * AND is not the last snap point. The last snap is always visible
  * because the user has fully expanded the drawer.
  */
-export function shouldShowSnapOverlay(
+export const shouldShowSnapOverlay = (
   snapPoints: CommonDrawerSnapPoint[] | undefined,
   fadeFromIndex: number | undefined,
   activeSnapPoint: CommonDrawerSnapPoint | null
-): boolean {
+): boolean => {
   if (!snapPoints || snapPoints.length === 0) return true
   if (fadeFromIndex === undefined) return true
   const activeIndex = snapPoints.findIndex(snap => snap === activeSnapPoint)

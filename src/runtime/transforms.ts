@@ -12,13 +12,13 @@ import { BORDER_RADIUS } from '../constants'
  * `vanilla/dialog.ts#applyWrapperDragState` and `applyWrapperOpenState`.
  */
 
-export function getAxisAwareTranslate(direction: CommonDrawerDirection, value: number | string) {
+export const getAxisAwareTranslate = (direction: CommonDrawerDirection, value: number | string) => {
   return direction === 'top' || direction === 'bottom'
     ? `translate3d(0, ${value}px, 0)`
     : `translate3d(${value}px, 0, 0)`
 }
 
-export function getScaleTranslateTransform({
+export const getScaleTranslateTransform = ({
   direction,
   scale,
   translate,
@@ -26,13 +26,13 @@ export function getScaleTranslateTransform({
   direction: CommonDrawerDirection
   scale: number
   translate: number | string
-}) {
+}) => {
   return direction === 'top' || direction === 'bottom'
     ? `scale(${scale}) translate3d(0, ${translate}, 0)`
     : `scale(${scale}) translate3d(${translate}, 0, 0)`
 }
 
-export function getNestedDrawerTransform({
+export const getNestedDrawerTransform = ({
   direction,
   isOpen,
   viewportSize,
@@ -42,7 +42,7 @@ export function getNestedDrawerTransform({
   isOpen: boolean
   viewportSize: number
   displacement: number
-}) {
+}) => {
   const scale = isOpen && viewportSize > 0 ? (viewportSize - displacement) / viewportSize : 1
   const translate = isOpen ? -displacement : 0
 
@@ -53,7 +53,7 @@ export function getNestedDrawerTransform({
   }
 }
 
-export function getNestedDragTransform({
+export const getNestedDragTransform = ({
   direction,
   viewportSize,
   displacement,
@@ -63,7 +63,7 @@ export function getNestedDragTransform({
   viewportSize: number
   displacement: number
   percentageDragged: number
-}) {
+}) => {
   const initialScale = viewportSize > 0 ? (viewportSize - displacement) / viewportSize : 1
   const progress = Math.max(0, Math.min(1, percentageDragged))
   const scale = initialScale + progress * (1 - initialScale)
@@ -76,13 +76,13 @@ export function getNestedDragTransform({
   }
 }
 
-export function getBackgroundDragState({
+export const getBackgroundDragState = ({
   baseScale,
   percentageDragged,
 }: {
   baseScale: number
   percentageDragged: number
-}) {
+}) => {
   const progress = Math.max(0, Math.min(1, percentageDragged))
   const scaleValue = Math.min(baseScale + progress * (1 - baseScale), 1)
   const borderRadiusValue = BORDER_RADIUS - progress * BORDER_RADIUS
@@ -95,13 +95,13 @@ export function getBackgroundDragState({
   }
 }
 
-export function getBackgroundResetState({
+export const getBackgroundResetState = ({
   direction,
   baseScale,
 }: {
   direction: CommonDrawerDirection
   baseScale: number
-}) {
+}) => {
   return {
     borderRadius: `${BORDER_RADIUS}px`,
     overflow: 'hidden',
@@ -126,10 +126,10 @@ export function getBackgroundResetState({
  * does not match a supported matrix/translate shape. Parsing strings
  * directly keeps this path available when `DOMMatrix` is absent.
  */
-export function getTranslate(
+export const getTranslate = (
   element: HTMLElement | null,
   direction: CommonDrawerDirection
-): number | null {
+): number | null => {
   if (!element) return null
   const transform = window.getComputedStyle(element).transform
   if (!transform || transform === 'none') return null

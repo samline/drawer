@@ -57,14 +57,18 @@ let desktopScrollRestore: (() => void) | null = null
 type InlineStyleSnapshot = { value: string; priority: string }
 type BodyPositionProperty = 'position' | 'top' | 'left' | 'right' | 'height'
 
-function readInlineStyle(element: HTMLElement, property: string): InlineStyleSnapshot {
+const readInlineStyle = (element: HTMLElement, property: string): InlineStyleSnapshot => {
   return {
     value: element.style.getPropertyValue(property),
     priority: element.style.getPropertyPriority(property),
   }
 }
 
-function restoreInlineStyle(element: HTMLElement, property: string, snapshot: InlineStyleSnapshot) {
+const restoreInlineStyle = (
+  element: HTMLElement,
+  property: string,
+  snapshot: InlineStyleSnapshot
+) => {
   if (snapshot.value) element.style.setProperty(property, snapshot.value, snapshot.priority)
   else element.style.removeProperty(property)
 }
@@ -102,7 +106,7 @@ let previousScrollRestoration: ScrollRestoration | null = null
  * regardless of the gates (the gate only controls whether to
  * invoke the iOS pipeline at all).
  */
-export function preventBodyScroll(
+export const preventBodyScroll = (
   options: {
     disablePreventScroll?: boolean
     isOpen?: boolean
@@ -110,7 +114,7 @@ export function preventBodyScroll(
     modal?: boolean
     justReleased?: boolean
   } = {}
-): () => void {
+): (() => void) => {
   const isDisabled =
     options.disablePreventScroll === true ||
     options.isOpen === false ||
@@ -145,7 +149,7 @@ export function preventBodyScroll(
   return lockBodyScrollDesktop()
 }
 
-function lockBodyScrollDesktop(): () => void {
+const lockBodyScrollDesktop = (): (() => void) => {
   if (typeof document === 'undefined') return () => {}
 
   desktopScrollCount++
@@ -217,7 +221,7 @@ function lockBodyScrollDesktop(): () => void {
  *    back to the top. This can happen when navigating to an input
  *    outside a modal with the next/previous keyboard buttons.
  */
-function preventScrollMobileSafari(): () => void {
+const preventScrollMobileSafari = (): (() => void) => {
   let scrollable: Element | undefined
   let lastY = 0
   // F18 (memory hygiene): the `onFocus` path adds a
@@ -418,11 +422,11 @@ function preventScrollMobileSafari(): () => void {
  *
  * No-op when not on Safari. No-op when `noBodyStyles: true`.
  */
-export function setPositionFixed(options: {
+export const setPositionFixed = (options: {
   isOpen: boolean
   modal: boolean
   noBodyStyles: boolean
-}): () => void {
+}): (() => void) => {
   if (isSafari() !== true || options.modal === false || options.noBodyStyles) {
     return () => {}
   }
@@ -498,7 +502,7 @@ export function setPositionFixed(options: {
   }
 }
 
-export function lockDocumentScrollBehavior(): () => void {
+export const lockDocumentScrollBehavior = (): (() => void) => {
   if (typeof document === 'undefined') return () => {}
   if (scrollBehaviorCount === 0) {
     previousScrollBehavior = readInlineStyle(document.documentElement, 'scroll-behavior')
@@ -517,7 +521,7 @@ export function lockDocumentScrollBehavior(): () => void {
   }
 }
 
-export function lockScrollRestoration(): () => void {
+export const lockScrollRestoration = (): (() => void) => {
   if (typeof window === 'undefined' || !window.history) return () => {}
   if (scrollRestorationCount === 0) {
     previousScrollRestoration = window.history.scrollRestoration
@@ -540,7 +544,7 @@ export function lockScrollRestoration(): () => void {
  * Pure helpers used by the two pipelines above.                    *
  * ---------------------------------------------------------------- */
 
-function setStyle(element: HTMLElement, style: string, value: string): () => void {
+const setStyle = (element: HTMLElement, style: string, value: string): (() => void) => {
   const previous = readInlineStyle(element, style)
   element.style.setProperty(style, value)
   return () => {
@@ -548,12 +552,12 @@ function setStyle(element: HTMLElement, style: string, value: string): () => voi
   }
 }
 
-function addEvent<K extends keyof GlobalEventHandlersEventMap>(
+const addEvent = <K extends keyof GlobalEventHandlersEventMap>(
   target: EventTarget,
   event: K,
   handler: (ev: GlobalEventHandlersEventMap[K]) => void,
   options?: boolean | AddEventListenerOptions
-): () => void {
+): (() => void) => {
   // Cast through `unknown` because the typed overload above is
   // not strict enough for the runtime call.
   target.addEventListener(event, handler as EventListener, options)
@@ -562,7 +566,7 @@ function addEvent<K extends keyof GlobalEventHandlersEventMap>(
   }
 }
 
-function scrollIntoView(target: Element): void {
+const scrollIntoView = (target: Element): void => {
   const root = document.scrollingElement || document.documentElement
   let current: Element | null = target
   while (current && current !== root) {
@@ -587,12 +591,12 @@ function scrollIntoView(target: Element): void {
   }
 }
 
-function isScrollable(node: Element): boolean {
+const isScrollable = (node: Element): boolean => {
   const style = window.getComputedStyle(node)
   return /(auto|scroll)/.test(style.overflow + style.overflowX + style.overflowY)
 }
 
-function getScrollParent(node: Element): Element {
+const getScrollParent = (node: Element): Element => {
   if (isScrollable(node)) {
     node = node.parentElement as HTMLElement
   }
@@ -602,7 +606,7 @@ function getScrollParent(node: Element): Element {
   return node || document.scrollingElement || document.documentElement
 }
 
-function isInput(target: Element): boolean {
+const isInput = (target: Element): boolean => {
   return (
     (target instanceof HTMLInputElement && !nonTextInputTypes.has(target.type)) ||
     target instanceof HTMLTextAreaElement ||

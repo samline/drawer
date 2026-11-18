@@ -13,25 +13,25 @@ import type { CommonDrawerDirection, CommonDrawerSnapPoint } from '../core'
  * `runtime/release.ts` to settle on release.
  */
 
-function isVerticalDirection(direction: CommonDrawerDirection) {
+const isVerticalDirection = (direction: CommonDrawerDirection) => {
   return direction === 'top' || direction === 'bottom'
 }
 
-function toSnapPointNumber(snapPoint: CommonDrawerSnapPoint) {
+const toSnapPointNumber = (snapPoint: CommonDrawerSnapPoint) => {
   return typeof snapPoint === 'string' ? parseInt(snapPoint, 10) : snapPoint
 }
 
-export function getActiveSnapPointIndex({
+export const getActiveSnapPointIndex = ({
   snapPoints,
   activeSnapPoint,
 }: {
   snapPoints?: CommonDrawerSnapPoint[]
   activeSnapPoint?: CommonDrawerSnapPoint | null
-}) {
+}) => {
   return snapPoints?.findIndex(snapPoint => snapPoint === activeSnapPoint) ?? null
 }
 
-export function getShouldFade({
+export const getShouldFade = ({
   snapPoints,
   fadeFromIndex,
   activeSnapPoint,
@@ -39,7 +39,7 @@ export function getShouldFade({
   snapPoints?: CommonDrawerSnapPoint[]
   fadeFromIndex?: number
   activeSnapPoint?: CommonDrawerSnapPoint | null
-}) {
+}) => {
   return (
     (snapPoints &&
       snapPoints.length > 0 &&
@@ -50,7 +50,7 @@ export function getShouldFade({
   )
 }
 
-export function getSnapPointOffset({
+export const getSnapPointOffset = ({
   snapPoint,
   direction,
   containerSize,
@@ -58,7 +58,7 @@ export function getSnapPointOffset({
   snapPoint: CommonDrawerSnapPoint
   direction: CommonDrawerDirection
   containerSize: { width: number; height: number }
-}) {
+}) => {
   const isPx = typeof snapPoint === 'string'
   const snapPointAsNumber = toSnapPointNumber(snapPoint)
 
@@ -71,7 +71,7 @@ export function getSnapPointOffset({
   return direction === 'right' ? containerSize.width - width : -containerSize.width + width
 }
 
-export function getSnapPointsOffset({
+export const getSnapPointsOffset = ({
   snapPoints,
   direction,
   containerSize,
@@ -79,13 +79,13 @@ export function getSnapPointsOffset({
   snapPoints?: CommonDrawerSnapPoint[]
   direction: CommonDrawerDirection
   containerSize: { width: number; height: number }
-}) {
+}) => {
   return (
     snapPoints?.map(snapPoint => getSnapPointOffset({ snapPoint, direction, containerSize })) ?? []
   )
 }
 
-export function getSnapDragValue({
+export const getSnapDragValue = ({
   activeSnapPointOffset,
   draggedDistance,
   direction,
@@ -93,19 +93,19 @@ export function getSnapDragValue({
   activeSnapPointOffset: number
   draggedDistance: number
   direction: CommonDrawerDirection
-}) {
+}) => {
   return direction === 'bottom' || direction === 'right'
     ? activeSnapPointOffset - draggedDistance
     : activeSnapPointOffset + draggedDistance
 }
 
-export function getClosestSnapPoint({
+export const getClosestSnapPoint = ({
   snapPointsOffset,
   currentPosition,
 }: {
   snapPointsOffset?: number[]
   currentPosition: number
-}) {
+}) => {
   return snapPointsOffset?.reduce((prev, curr) => {
     if (typeof prev !== 'number' || typeof curr !== 'number') return prev
 
@@ -113,7 +113,7 @@ export function getClosestSnapPoint({
   })
 }
 
-export function getSnapPointPercentageDragged({
+export const getSnapPointPercentageDragged = ({
   snapPoints,
   activeSnapPointIndex,
   snapPointsOffset,
@@ -129,7 +129,7 @@ export function getSnapPointPercentageDragged({
   shouldFade: boolean
   absDraggedDistance: number
   isDraggingDown: boolean
-}) {
+}) => {
   if (
     !snapPoints ||
     typeof activeSnapPointIndex !== 'number' ||

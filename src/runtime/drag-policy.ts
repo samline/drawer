@@ -55,7 +55,7 @@ interface ElementLike {
   parentElement: ElementLike | null
 }
 
-function isElementLike(target: unknown): target is ElementLike {
+const isElementLike = (target: unknown): target is ElementLike => {
   const element = target as Partial<ElementLike> | null
 
   return Boolean(
@@ -66,10 +66,10 @@ function isElementLike(target: unknown): target is ElementLike {
   )
 }
 
-export function getDragTargetMetadata(
+export const getDragTargetMetadata = (
   target: EventTarget | null,
   boundary?: EventTarget | null
-): DragTargetMetadata {
+): DragTargetMetadata => {
   const targetElement = isElementLike(target) ? target : null
   const ancestors: DragScrollableAncestor[] = []
   let element: ElementLike | null = targetElement
@@ -99,7 +99,7 @@ export function getDragTargetMetadata(
   }
 }
 
-export function getDragPermission({
+export const getDragPermission = ({
   targetTagName,
   hasNoDragAttribute,
   direction,
@@ -121,7 +121,7 @@ export function getDragPermission({
   scrollLockTimeout: number
   isDraggingInDirection: boolean
   ancestors: DragScrollableAncestor[]
-}): DragPermissionResult {
+}): DragPermissionResult => {
   if (targetTagName === 'SELECT' || hasNoDragAttribute) {
     return { allow: false, updatePreventedAt: false }
   }

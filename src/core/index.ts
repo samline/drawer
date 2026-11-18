@@ -117,7 +117,7 @@ const DEFAULT_OPTIONS: Required<Pick<CommonDrawerOptions, 'direction' | 'dismiss
     modal: true,
   }
 
-function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
+const toSnapshot = (options: CommonDrawerOptions): CommonDrawerSnapshot => {
   return {
     options,
     state: {
@@ -131,9 +131,9 @@ function toSnapshot(options: CommonDrawerOptions): CommonDrawerSnapshot {
   }
 }
 
-export function createDrawerController(
+export const createDrawerController = (
   initialOptions: CommonDrawerOptions = {}
-): CommonDrawerController {
+): CommonDrawerController => {
   let active = true
   const assertActive = () => {
     if (!active) throw new Error('Drawer controller has been destroyed')
@@ -142,7 +142,7 @@ export function createDrawerController(
   let snapshot = toSnapshot(options)
   const listeners = new Set<(snapshot: CommonDrawerSnapshot) => void>()
 
-  function publish() {
+  const publish = () => {
     snapshot = toSnapshot(options)
     listeners.forEach(listener => listener(snapshot))
     return snapshot

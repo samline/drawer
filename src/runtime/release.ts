@@ -12,11 +12,11 @@ import { getClosestSnapPoint } from './snap-points'
  * release.
  */
 
-export function shouldPreventFocusOnRelease(velocity: number, threshold = 0.05) {
+export const shouldPreventFocusOnRelease = (velocity: number, threshold = 0.05) => {
   return velocity > threshold
 }
 
-export function getReleaseAction({
+export const getReleaseAction = ({
   direction,
   distMoved,
   velocity,
@@ -32,7 +32,7 @@ export function getReleaseAction({
   swipeAmount: number
   drawerDimension: number
   closeThreshold: number
-}) {
+}) => {
   if (isReleaseTowardExpandedState({ direction, distMoved })) {
     return 'reset' as const
   }
@@ -52,7 +52,7 @@ export function getReleaseAction({
   return 'reset' as const
 }
 
-export function getDismissibleReleaseResult({
+export const getDismissibleReleaseResult = ({
   direction,
   distMoved,
   velocity,
@@ -70,7 +70,7 @@ export function getDismissibleReleaseResult({
   drawerDimension: number
   closeThreshold: number
   focusVelocityThreshold?: number
-}) {
+}) => {
   const action = getReleaseAction({
     direction,
     distMoved,
@@ -88,7 +88,7 @@ export function getDismissibleReleaseResult({
   }
 }
 
-export function getSnapPointReleaseAction({
+export const getSnapPointReleaseAction = ({
   fadeFromIndex,
   direction,
   activeSnapPointOffset,
@@ -116,7 +116,7 @@ export function getSnapPointReleaseAction({
   velocityThreshold: number
   highVelocityThreshold?: number
   viewportSize: number
-}) {
+}) => {
   // Overlay fading and snap release are independent. Vaul defaults
   // `fadeFromIndex` to the last snap, but omitting a visual fade option
   // must never disable the entire release pipeline.

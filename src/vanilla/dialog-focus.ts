@@ -18,7 +18,7 @@ interface ModalIsolationSnapshot {
 const modalIsolationOwners: Array<{ state: OpenDialog; host: HTMLElement }> = []
 const modalIsolationSnapshots = new Map<HTMLElement, ModalIsolationSnapshot>()
 
-function getModalIsolationTargets(host: HTMLElement) {
+const getModalIsolationTargets = (host: HTMLElement) => {
   const targets = new Set<HTMLElement>()
   let current: HTMLElement | null = host
   while (current?.parentElement) {
@@ -31,7 +31,7 @@ function getModalIsolationTargets(host: HTMLElement) {
   return targets
 }
 
-function updateModalIsolation() {
+const updateModalIsolation = () => {
   const topOwner = modalIsolationOwners[modalIsolationOwners.length - 1]
   const targets = topOwner ? getModalIsolationTargets(topOwner.host) : new Set<HTMLElement>()
 
@@ -55,7 +55,7 @@ function updateModalIsolation() {
   }
 }
 
-export function acquireModalIsolation(state: OpenDialog, host: HTMLElement) {
+export const acquireModalIsolation = (state: OpenDialog, host: HTMLElement) => {
   const existingIndex = modalIsolationOwners.findIndex(owner => owner.state === state)
   if (existingIndex !== -1) modalIsolationOwners.splice(existingIndex, 1)
   modalIsolationOwners.push({ state, host })
@@ -71,12 +71,12 @@ export function acquireModalIsolation(state: OpenDialog, host: HTMLElement) {
   }
 }
 
-export function removeFromOpenDialogStack(state: OpenDialog) {
+export const removeFromOpenDialogStack = (state: OpenDialog) => {
   const index = openDialogStack.indexOf(state)
   if (index !== -1) openDialogStack.splice(index, 1)
 }
 
-export function registerOpenDialog(state: OpenDialog, openOrder?: number | null) {
+export const registerOpenDialog = (state: OpenDialog, openOrder?: number | null) => {
   removeFromOpenDialogStack(state)
   state.openOrder = openOrder ?? ++fallbackOpenOrder
   const insertionIndex = openDialogStack.findIndex(
@@ -93,7 +93,7 @@ const FOCUSABLE_SELECTOR =
 // selectors also match controls removed from the tab order with a
 // negative tabindex, disabled fieldset descendants and hidden subtrees;
 // treating those as the first/last stop let Tab escape the dialog.
-function getFocusableElements(content: HTMLElement) {
+const getFocusableElements = (content: HTMLElement) => {
   return Array.from(content.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
     element =>
       element.tabIndex >= 0 &&
@@ -106,7 +106,7 @@ function getFocusableElements(content: HTMLElement) {
 // Initial focus must not scroll the panel body: a first control lower in
 // a long reading area would otherwise open the drawer scrolled past its
 // heading. Keyboard users still start from that control.
-export function focusFirstElement(content: HTMLElement) {
+export const focusFirstElement = (content: HTMLElement) => {
   const first = getFocusableElements(content)[0]
   if (first instanceof HTMLElement) {
     first.focus({ preventScroll: true })
@@ -116,7 +116,7 @@ export function focusFirstElement(content: HTMLElement) {
   }
 }
 
-function trapFocus(content: HTMLElement, event: KeyboardEvent) {
+const trapFocus = (content: HTMLElement, event: KeyboardEvent) => {
   if (event.key !== 'Tab') return
   const focusables = getFocusableElements(content)
   if (focusables.length === 0) {

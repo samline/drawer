@@ -74,17 +74,17 @@ let nextOpenOrder = 0
 
 const isRegistered = (runtime: DrawerRuntimeInstance) => drawerInstances.get(runtime.id) === runtime
 
-function assignOpenOrder(runtime: DrawerRuntimeInstance) {
+const assignOpenOrder = (runtime: DrawerRuntimeInstance) => {
   if (runtime.openOrder === null) runtime.openOrder = ++nextOpenOrder
 }
 
-function getChildDrawerIds(parentId: CommonDrawerId) {
+const getChildDrawerIds = (parentId: CommonDrawerId) => {
   return Array.from(drawerInstances.entries())
     .filter(([, runtime]) => runtime.options.parentId === parentId)
     .map(([id]) => id)
 }
 
-function assertValidParent(id: CommonDrawerId, parentId?: CommonDrawerId) {
+const assertValidParent = (id: CommonDrawerId, parentId?: CommonDrawerId) => {
   if (!parentId) return
 
   const visited = new Set<CommonDrawerId>()
@@ -98,7 +98,7 @@ function assertValidParent(id: CommonDrawerId, parentId?: CommonDrawerId) {
   }
 }
 
-function openAncestorChain(parentId: CommonDrawerId) {
+const openAncestorChain = (parentId: CommonDrawerId) => {
   const parentRuntime = drawerInstances.get(parentId)
   if (!parentRuntime) {
     return
@@ -114,7 +114,7 @@ function openAncestorChain(parentId: CommonDrawerId) {
   }
 }
 
-function allocateDrawerId(id?: CommonDrawerId) {
+const allocateDrawerId = (id?: CommonDrawerId) => {
   if (id !== undefined) {
     if (typeof id !== 'string' || !id.trim())
       throw new TypeError('Drawer id must be a non-empty string')
@@ -126,7 +126,7 @@ function allocateDrawerId(id?: CommonDrawerId) {
   return generated
 }
 
-function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
+const cleanupRuntimeTrigger = (runtime: DrawerRuntimeInstance) => {
   runtime.cleanupTriggerElement?.()
   runtime.cleanupTriggerElement = null
   // Note: we intentionally do NOT cancel the pending
@@ -140,7 +140,7 @@ function cleanupRuntimeTrigger(runtime: DrawerRuntimeInstance) {
   // `destroyDrawer`).
 }
 
-function bindTriggerElement(runtime: DrawerRuntimeInstance) {
+const bindTriggerElement = (runtime: DrawerRuntimeInstance) => {
   cleanupRuntimeTrigger(runtime)
 
   const cleanups: Array<() => void> = []
@@ -169,7 +169,7 @@ function bindTriggerElement(runtime: DrawerRuntimeInstance) {
   }
 }
 
-function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
+const notifyOpenStateChange = (runtime: DrawerRuntimeInstance, open: boolean) => {
   if (!isRegistered(runtime)) return
   runtime.options.onOpenChange?.(open)
   if (!isRegistered(runtime)) return
@@ -233,11 +233,11 @@ function notifyOpenStateChange(runtime: DrawerRuntimeInstance, open: boolean) {
   }, TRANSITIONS.DURATION * 1000)
 }
 
-function setRuntimeOpen(
+const setRuntimeOpen = (
   runtime: DrawerRuntimeInstance,
   open: boolean,
   options: { render?: boolean; openAncestors?: boolean } = {}
-) {
+) => {
   const previousSnapshot = runtime.controller.getSnapshot()
   const previousOpen = previousSnapshot.state.isOpen
   if (previousOpen === open) {
@@ -266,11 +266,11 @@ function setRuntimeOpen(
   return snapshot
 }
 
-function canUseDOM() {
+const canUseDOM = () => {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
-function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
+const getRuntimeDrawerElement = (runtime: DrawerRuntimeInstance) => {
   if (!runtime.element) {
     return null
   }
@@ -278,7 +278,7 @@ function getRuntimeDrawerElement(runtime: DrawerRuntimeInstance) {
   return runtime.element.querySelector('[data-drawer]') as HTMLElement | null
 }
 
-function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions['direction']>) {
+const getViewportSizeForDirection = (direction: NonNullable<VanillaDrawerOptions['direction']>) => {
   if (!canUseDOM()) {
     return 0
   }
@@ -286,7 +286,7 @@ function getViewportSizeForDirection(direction: NonNullable<VanillaDrawerOptions
   return direction === 'top' || direction === 'bottom' ? window.innerHeight : window.innerWidth
 }
 
-function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?: number) {
+const syncParentNestedTransform = (parentId: CommonDrawerId, percentageDragged?: number) => {
   if (!canUseDOM()) {
     return
   }
@@ -318,7 +318,7 @@ function syncParentNestedTransform(parentId: CommonDrawerId, percentageDragged?:
   set(parentElement, visualState)
 }
 
-function renderVanillaDrawer(id: CommonDrawerId) {
+const renderVanillaDrawer = (id: CommonDrawerId) => {
   const runtime = drawerInstances.get(id)
   if (!runtime) return null
 
@@ -391,7 +391,10 @@ function renderVanillaDrawer(id: CommonDrawerId) {
   return nextHost.container
 }
 
-function updateRuntime(runtime: DrawerRuntimeInstance, options: Omit<VanillaDrawerOptions, 'id'>) {
+const updateRuntime = (
+  runtime: DrawerRuntimeInstance,
+  options: Omit<VanillaDrawerOptions, 'id'>
+) => {
   if ('id' in options && options.id !== runtime.id)
     throw new TypeError('Drawer ids cannot be changed')
   const previousSnapshot = runtime.controller.getSnapshot()
@@ -414,7 +417,7 @@ function updateRuntime(runtime: DrawerRuntimeInstance, options: Omit<VanillaDraw
   return snapshot
 }
 
-function buildVanillaController(runtime: DrawerRuntimeInstance): VanillaDrawerController {
+const buildVanillaController = (runtime: DrawerRuntimeInstance): VanillaDrawerController => {
   const { id } = runtime
   const assertActive = () => {
     if (drawerInstances.get(id) !== runtime) throw new Error(`Drawer "${id}" has been destroyed`)
@@ -459,7 +462,7 @@ function buildVanillaController(runtime: DrawerRuntimeInstance): VanillaDrawerCo
   }
 }
 
-export function createDrawer(options: VanillaDrawerOptions = {}): VanillaDrawerController {
+export const createDrawer = (options: VanillaDrawerOptions = {}): VanillaDrawerController => {
   const id = allocateDrawerId(options.id)
   if (drawerInstances.has(id))
     throw new TypeError(
@@ -499,29 +502,29 @@ export function createDrawer(options: VanillaDrawerOptions = {}): VanillaDrawerC
   }
 }
 
-export function getDrawer(id: CommonDrawerId): VanillaDrawerController | null {
+export const getDrawer = (id: CommonDrawerId): VanillaDrawerController | null => {
   return drawerInstances.get(id)?.publicController ?? null
 }
 
-export function getDrawers(): Record<string, VanillaDrawerController> {
+export const getDrawers = (): Record<string, VanillaDrawerController> => {
   return Object.fromEntries(
     Array.from(drawerInstances, ([id, runtime]) => [id, runtime.publicController!])
   )
 }
 
-export function getParentDrawer(id: CommonDrawerId) {
+export const getParentDrawer = (id: CommonDrawerId) => {
   const drawer = getDrawer(id)
   const parentId = drawer?.options.parentId
   return parentId ? getDrawer(parentId) : null
 }
 
-export function getChildDrawers(id: CommonDrawerId) {
+export const getChildDrawers = (id: CommonDrawerId) => {
   if (typeof id !== 'string' || !id) return []
   const drawerId = id
   return getChildDrawerIds(drawerId).map(childId => drawerInstances.get(childId)!.publicController!)
 }
 
-function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId>) {
+const destroyDrawerTree = (drawerId: CommonDrawerId, visited: Set<CommonDrawerId>) => {
   if (visited.has(drawerId)) return
   visited.add(drawerId)
 
@@ -569,11 +572,11 @@ function destroyDrawerTree(drawerId: CommonDrawerId, visited: Set<CommonDrawerId
   }
 }
 
-function destroyDrawer(id: CommonDrawerId) {
+const destroyDrawer = (id: CommonDrawerId) => {
   destroyDrawerTree(id, new Set())
 }
 
-export function destroyDrawers() {
+export const destroyDrawers = () => {
   Array.from(drawerInstances.keys()).forEach(id => {
     destroyDrawer(id)
   })

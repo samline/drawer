@@ -21,11 +21,11 @@ const VISUALLY_HIDDEN_STYLE = {
   border: '0',
 } as const
 
-export function createEl<K extends keyof HTMLElementTagNameMap>(
+export const createEl = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
   attrs?: Record<string, string | number | boolean | null | undefined>,
   children?: Array<Node | string | null | undefined>
-): HTMLElementTagNameMap[K] {
+): HTMLElementTagNameMap[K] => {
   const element = document.createElement(tag)
   if (attrs) {
     for (const [name, value] of Object.entries(attrs)) {
@@ -44,16 +44,18 @@ export function createEl<K extends keyof HTMLElementTagNameMap>(
   return element
 }
 
-export function setStyle(element: HTMLElement, styles: Record<string, string>) {
+export const setStyle = (element: HTMLElement, styles: Record<string, string>) => {
   for (const [key, value] of Object.entries(styles)) {
     element.style.setProperty(key, value)
   }
 }
 
-export function resolveRenderable(value: VanillaRenderable | undefined): {
+export const resolveRenderable = (
+  value: VanillaRenderable | undefined
+): {
   text?: string
   element?: HTMLElement
-} {
+} => {
   if (value === null || value === undefined) return {}
   if (typeof value === 'string' || typeof value === 'number') {
     return { text: String(value) }
@@ -67,7 +69,7 @@ export function resolveRenderable(value: VanillaRenderable | undefined): {
   return {}
 }
 
-export function buildTitleContent(state: ContentSlots, options: VanillaDrawerOptions) {
+export const buildTitleContent = (state: ContentSlots, options: VanillaDrawerOptions) => {
   // The title slot only exists when the consumer passed an
   // explicit `title` (the mount block skips creating it in
   // the proxy / minimalist cases — `aria-label` is the
@@ -75,7 +77,7 @@ export function buildTitleContent(state: ContentSlots, options: VanillaDrawerOpt
   // title and applies the `titleVisuallyHidden` opt-out.
   if (!state.title) return
   const title = state.title
-  title.innerHTML = ''
+  title.replaceChildren()
 
   const resolved = resolveRenderable(options.title)
   if (resolved.text !== undefined) {
@@ -93,7 +95,7 @@ export function buildTitleContent(state: ContentSlots, options: VanillaDrawerOpt
   }
 }
 
-export function buildDescriptionContent(state: ContentSlots, options: VanillaDrawerOptions) {
+export const buildDescriptionContent = (state: ContentSlots, options: VanillaDrawerOptions) => {
   // The description slot only exists when the consumer passed
   // an explicit `description` (the mount block skips creating
   // it in the no-description case — `aria-describedby` is
@@ -102,7 +104,7 @@ export function buildDescriptionContent(state: ContentSlots, options: VanillaDra
   // hatch for consumers who want a visible description.
   if (!state.description) return
   const desc = state.description
-  desc.innerHTML = ''
+  desc.replaceChildren()
 
   const resolved = resolveRenderable(options.description)
   if (resolved.text !== undefined) {
@@ -122,9 +124,9 @@ export function buildDescriptionContent(state: ContentSlots, options: VanillaDra
  * the `boolean | { className, icon, ariaLabel }` contract so the
  * mount path can stay short.
  */
-export function normalizeCloseButtonOptions(
+export const normalizeCloseButtonOptions = (
   options: boolean | VanillaCloseButtonOptions | undefined
-): false | { className: string; icon: string | Element | null; ariaLabel: string } {
+): false | { className: string; icon: string | Element | null; ariaLabel: string } => {
   if (!options) return false
   if (options === true) {
     return { className: 'drawer-close-button', icon: null, ariaLabel: 'Close' }
@@ -170,10 +172,10 @@ const createCloseIcon = (): SVGSVGElement => {
  * The icon is rendered as a `<span aria-hidden="true">` so
  * screen readers only announce the button's `aria-label`.
  */
-export function buildCloseButton(
+export const buildCloseButton = (
   options: { className: string; icon: string | Element | null; ariaLabel: string },
   callbacks: { onOpenChange: (open: boolean) => void }
-): HTMLButtonElement {
+): HTMLButtonElement => {
   const button = createEl('button', {
     type: 'button',
     'data-drawer-close': '',
@@ -196,11 +198,11 @@ export function buildCloseButton(
   return button
 }
 
-export function buildBodyContent(
+export const buildBodyContent = (
   state: ContentSlots,
   options: VanillaDrawerOptions,
   resolvedContent = resolveRenderable(options.content)
-) {
+) => {
   if (!state.body) return
   const body = state.body
   // Clear only the consumer-content children, NOT the title

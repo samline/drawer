@@ -9,7 +9,7 @@ import { getNestedDragTransform, getNestedDrawerTransform } from './transforms'
  * element. Pure math lives here.
  */
 
-export function getParentNestedVisualState({
+export const getParentNestedVisualState = ({
   direction,
   viewportSize,
   hasOpenChild,
@@ -21,7 +21,7 @@ export function getParentNestedVisualState({
   hasOpenChild: boolean
   percentageDragged?: number
   displacement?: number
-}) {
+}) => {
   if (typeof percentageDragged === 'number' && hasOpenChild) {
     const { transform } = getNestedDragTransform({
       direction,

@@ -8,7 +8,7 @@
  * in a non-DOM jsdom setup).
  */
 
-export function isMobileFirefox(): boolean | undefined {
+export const isMobileFirefox = (): boolean | undefined => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return undefined
   }
@@ -19,22 +19,22 @@ export function isMobileFirefox(): boolean | undefined {
   )
 }
 
-export function isMac(): boolean | undefined {
+export const isMac = (): boolean | undefined => {
   return testPlatform(/^Mac/)
 }
 
-export function isIPhone(): boolean | undefined {
+export const isIPhone = (): boolean | undefined => {
   return testPlatform(/^iPhone/)
 }
 
-export function isSafari(): boolean | undefined {
+export const isSafari = (): boolean | undefined => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return undefined
   }
   return /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 }
 
-export function isIPad(): boolean | undefined {
+export const isIPad = (): boolean | undefined => {
   return (
     testPlatform(/^iPad/) ||
     // iPadOS 13 lies and says it's a Mac, but we can distinguish by detecting touch support.
@@ -42,11 +42,11 @@ export function isIPad(): boolean | undefined {
   )
 }
 
-export function isIOS(): boolean | undefined {
+export const isIOS = (): boolean | undefined => {
   return isIPhone() === true || isIPad() === true
 }
 
-export function testPlatform(re: RegExp): boolean | undefined {
+export const testPlatform = (re: RegExp): boolean | undefined => {
   if (typeof window === 'undefined' || window.navigator == null) {
     return undefined
   }

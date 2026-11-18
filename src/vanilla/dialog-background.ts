@@ -34,12 +34,12 @@ interface BackgroundScaleOwner {
 
 const WRAPPER_SELECTOR = '[data-drawer-wrapper]'
 
-export function getWrapperElement(): HTMLElement | null {
+export const getWrapperElement = (): HTMLElement | null => {
   if (typeof window === 'undefined' || typeof document === 'undefined') return null
   return document.querySelector(WRAPPER_SELECTOR)
 }
 
-function computeBaseScale(): number {
+const computeBaseScale = (): number => {
   if (typeof window === 'undefined') return 1
   // 1:1 with vaul upstream — `useScaleBackground#getScale()` always
   // uses `innerWidth` and `WINDOW_TOP_OFFSET` (= 26), regardless of
@@ -51,7 +51,7 @@ function computeBaseScale(): number {
   return (window.innerWidth - WINDOW_TOP_OFFSET) / window.innerWidth
 }
 
-function getTransformOrigin(direction: CommonDrawerDirection): string {
+const getTransformOrigin = (direction: CommonDrawerDirection): string => {
   return direction === 'top' || direction === 'bottom' ? 'top' : 'left'
 }
 
@@ -62,7 +62,7 @@ function getTransformOrigin(direction: CommonDrawerDirection): string {
  * change is instant — the CSS transition is only enabled on release
  * when the wrapper animates back to its rest / cleared state.
  */
-export function applyWrapperDragState({
+export const applyWrapperDragState = ({
   wrapper,
   baseScale,
   percentageDragged,
@@ -74,7 +74,7 @@ export function applyWrapperDragState({
   percentageDragged: number
   direction: CommonDrawerDirection
   setBackgroundColorOnScale: boolean
-}) {
+}) => {
   const { scaleValue, borderRadiusValue, translateValue } = getBackgroundDragState({
     baseScale,
     percentageDragged,
@@ -106,7 +106,7 @@ export function applyWrapperDragState({
  * The CSS transition properties are written so the browser animates
  * the property change from the drag state to this rest state.
  */
-function applyWrapperOpenState({
+const applyWrapperOpenState = ({
   wrapper,
   direction,
   baseScale,
@@ -114,7 +114,7 @@ function applyWrapperOpenState({
   wrapper: HTMLElement
   direction: CommonDrawerDirection
   baseScale: number
-}) {
+}) => {
   const resetState = getBackgroundResetState({ direction, baseScale })
   set(wrapper, {
     ...resetState,
@@ -124,7 +124,7 @@ function applyWrapperOpenState({
   })
 }
 
-function applyWrapperClosedState(wrapper: HTMLElement) {
+const applyWrapperClosedState = (wrapper: HTMLElement) => {
   set(wrapper, {
     transform: 'none',
     borderRadius: '0px',
@@ -137,17 +137,17 @@ function applyWrapperClosedState(wrapper: HTMLElement) {
 const backgroundScaleGroups = new Map<HTMLElement, BackgroundScaleGroup>()
 let backgroundScaleBodySnapshot: { value: string; priority: string } | null = null
 
-function restoreStyleProperty(
+const restoreStyleProperty = (
   element: HTMLElement,
   property: string,
   value: string,
   priority: string
-) {
+) => {
   if (value) element.style.setProperty(property, value, priority)
   else element.style.removeProperty(property)
 }
 
-export function applyBackgroundScaleOpen(owner: BackgroundScaleOwner) {
+export const applyBackgroundScaleOpen = (owner: BackgroundScaleOwner) => {
   applyWrapperOpenState({
     wrapper: owner.group.wrapper,
     direction: owner.direction,
@@ -161,7 +161,7 @@ export function applyBackgroundScaleOpen(owner: BackgroundScaleOwner) {
   )
 }
 
-function clearPendingBackgroundScaleStates(group: BackgroundScaleGroup) {
+const clearPendingBackgroundScaleStates = (group: BackgroundScaleGroup) => {
   for (const pendingState of group.pendingStates) {
     if (pendingState.pendingBackgroundScaleGroup === group) {
       pendingState.pendingBackgroundScaleGroup = null
@@ -170,7 +170,7 @@ function clearPendingBackgroundScaleStates(group: BackgroundScaleGroup) {
   group.pendingStates.clear()
 }
 
-function updateBackgroundScaleBody() {
+const updateBackgroundScaleBody = () => {
   const groups = Array.from(backgroundScaleGroups.values())
   const shouldSetBackground = groups.some(
     group =>
@@ -190,7 +190,7 @@ function updateBackgroundScaleBody() {
   if (groups.length === 0) backgroundScaleBodySnapshot = null
 }
 
-export function restoreBackgroundScaleGroup(group: BackgroundScaleGroup) {
+export const restoreBackgroundScaleGroup = (group: BackgroundScaleGroup) => {
   if (group.owners.length > 0) return
   if (backgroundScaleGroups.get(group.wrapper) !== group) {
     clearPendingBackgroundScaleStates(group)
@@ -204,13 +204,13 @@ export function restoreBackgroundScaleGroup(group: BackgroundScaleGroup) {
   updateBackgroundScaleBody()
 }
 
-export function acquireBackgroundScale(
+export const acquireBackgroundScale = (
   state: BackgroundScaleState,
   wrapper: HTMLElement,
   direction: CommonDrawerDirection,
   setBodyBackground: boolean,
   openOrder: number
-) {
+) => {
   const stalePendingGroup = state.pendingBackgroundScaleGroup
   if (stalePendingGroup && stalePendingGroup !== backgroundScaleGroups.get(wrapper)) {
     state.pendingBackgroundScaleGroup = null
@@ -257,11 +257,11 @@ export function acquireBackgroundScale(
   updateBackgroundScaleBody()
 }
 
-export function isActiveBackgroundScaleOwner(owner: BackgroundScaleOwner) {
+export const isActiveBackgroundScaleOwner = (owner: BackgroundScaleOwner) => {
   return owner.group.owners[owner.group.owners.length - 1] === owner
 }
 
-export function releaseBackgroundScale(state: BackgroundScaleState, animate: boolean) {
+export const releaseBackgroundScale = (state: BackgroundScaleState, animate: boolean) => {
   const owner = state.backgroundScale
   if (!owner) return
   state.backgroundScale = null
@@ -292,7 +292,7 @@ export function releaseBackgroundScale(state: BackgroundScaleState, animate: boo
   }, TRANSITIONS.DURATION * 1000)
 }
 
-export function restoreBackgroundScale(state: BackgroundScaleState) {
+export const restoreBackgroundScale = (state: BackgroundScaleState) => {
   releaseBackgroundScale(state, false)
   const pendingGroup = state.pendingBackgroundScaleGroup
   state.pendingBackgroundScaleGroup = null

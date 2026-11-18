@@ -10,7 +10,7 @@ interface Style {
  * Restoration is owned by each caller (scroll lock, background scale,
  * nested transforms), so this helper keeps no style cache.
  */
-export function set(el: Element | HTMLElement | null | undefined, styles: Style) {
+export const set = (el: Element | HTMLElement | null | undefined, styles: Style) => {
   if (!el || !(el instanceof HTMLElement)) return
 
   for (const [key, value] of Object.entries(styles)) {
@@ -42,7 +42,7 @@ export function set(el: Element | HTMLElement | null | undefined, styles: Style)
  *
  * Mirrors vaul upstream's `chain` helper in `src/helpers.ts`.
  */
-export function chain(...callbacks: Array<(() => void) | undefined | null>): () => void {
+export const chain = (...callbacks: Array<(() => void) | undefined | null>): (() => void) => {
   return () => {
     for (const callback of callbacks) {
       if (typeof callback === 'function') {
@@ -62,6 +62,6 @@ export function chain(...callbacks: Array<(() => void) | undefined | null>): () 
   }
 }
 
-export function isVertical(direction: CommonDrawerDirection): boolean {
+export const isVertical = (direction: CommonDrawerDirection): boolean => {
   return direction === 'top' || direction === 'bottom'
 }

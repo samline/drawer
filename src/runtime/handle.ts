@@ -8,7 +8,7 @@ import type { CommonDrawerSnapPoint } from '../core'
  * disables the click-to-cycle while keeping the handle draggable.
  */
 
-export function getNextHandleState({
+export const getNextHandleState = ({
   isDragging,
   preventCycle,
   shouldCancelInteraction,
@@ -22,7 +22,7 @@ export function getNextHandleState({
   snapPoints?: CommonDrawerSnapPoint[]
   activeSnapPoint?: CommonDrawerSnapPoint | null
   dismissible: boolean
-}) {
+}) => {
   if (isDragging || preventCycle || shouldCancelInteraction) {
     return { type: 'noop' as const }
   }

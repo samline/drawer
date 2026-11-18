@@ -194,7 +194,7 @@ export interface VanillaCloseButtonOptions {
  * Returns the mount context for cleanup; the registry does not
  * need to read the returned DOM but the host does.
  */
-export function mountVanillaDrawer(options: {
+export const mountVanillaDrawer = (options: {
   host: HTMLElement
   id: string
   options: VanillaDrawerOptions
@@ -206,7 +206,7 @@ export function mountVanillaDrawer(options: {
   onDragChange?: (percentageDragged: number) => void
   onReleaseChange?: (open: boolean) => void
   onActiveSnapPointChange?: (snapPoint: CommonDrawerSnapPoint | null) => void
-}): void {
+}): void => {
   mountVanillaDialog({
     host: options.host,
     id: options.id,

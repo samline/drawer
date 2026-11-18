@@ -22,11 +22,11 @@ import type { CommonDrawerDirection } from '../core'
  * the sign check used by the pointer pipeline.
  */
 
-export function getDragDirectionMultiplier(direction: CommonDrawerDirection) {
+export const getDragDirectionMultiplier = (direction: CommonDrawerDirection) => {
   return direction === 'bottom' || direction === 'right' ? 1 : -1
 }
 
-export function getDraggedDistance({
+export const getDraggedDistance = ({
   pointerStart,
   currentPointer,
   direction,
@@ -34,11 +34,11 @@ export function getDraggedDistance({
   pointerStart: number
   currentPointer: number
   direction: CommonDrawerDirection
-}) {
+}) => {
   return (pointerStart - currentPointer) * getDragDirectionMultiplier(direction)
 }
 
-export function isDraggingTowardExpandedState(draggedDistance: number) {
+export const isDraggingTowardExpandedState = (draggedDistance: number) => {
   return draggedDistance > 0
 }
 
@@ -51,7 +51,7 @@ export function isDraggingTowardExpandedState(draggedDistance: number) {
  * This keeps the drawer visibly "anchored" to its rest position
  * when the user tries to drag it away from the close direction.
  */
-export function dampenValue(distance: number): number {
+export const dampenValue = (distance: number): number => {
   return 8 * (Math.log(distance + 1) - 2)
 }
 
@@ -72,13 +72,13 @@ export function dampenValue(distance: number): number {
  * leftover that incorrectly resisted close-direction drags on
  * `top`/`left` drawers.
  */
-export function isDraggingInCloseDirection({
+export const isDraggingInCloseDirection = ({
   direction,
   draggedDistance,
 }: {
   direction: CommonDrawerDirection
   draggedDistance: number
-}) {
+}) => {
   void direction
   return draggedDistance < 0
 }
@@ -91,13 +91,13 @@ export function isDraggingInCloseDirection({
  * scaled by `dampenValue` (logarithmic, v2 vaul parity) to give the
  * elastic / rubber-band effect. 1:1 with vaul upstream's onDrag.
  */
-export function getDraggableOffset({
+export const getDraggableOffset = ({
   direction,
   draggedDistance,
 }: {
   direction: CommonDrawerDirection
   draggedDistance: number
-}) {
+}) => {
   const baseOffset =
     direction === 'bottom' || direction === 'right' ? -draggedDistance : draggedDistance
   const outOfBounds = !isDraggingInCloseDirection({ direction, draggedDistance })
@@ -110,7 +110,7 @@ export function getDraggableOffset({
   return Math.max(0, magnitude) * Math.sign(baseOffset)
 }
 
-export function getDragPercentage({
+export const getDragPercentage = ({
   draggedDistance,
   drawerDimension,
   snapPointPercentageDragged,
@@ -118,7 +118,7 @@ export function getDragPercentage({
   draggedDistance: number
   drawerDimension: number
   snapPointPercentageDragged: number | null
-}) {
+}) => {
   const absDraggedDistance = Math.abs(draggedDistance)
   let percentageDragged = drawerDimension > 0 ? absDraggedDistance / drawerDimension : 0
 
@@ -132,13 +132,13 @@ export function getDragPercentage({
   }
 }
 
-export function isReleaseTowardExpandedState({
+export const isReleaseTowardExpandedState = ({
   direction,
   distMoved,
 }: {
   direction: CommonDrawerDirection
   distMoved: number
-}) {
+}) => {
   // `getDraggedDistance` normalizes every direction: closing is
   // negative and expanding is positive. Release decisions must use
   // that normalized sign rather than interpreting it as a raw axis
@@ -147,7 +147,7 @@ export function isReleaseTowardExpandedState({
   return distMoved > 0
 }
 
-export function shouldCloseDrawerOnRelease({
+export const shouldCloseDrawerOnRelease = ({
   velocity,
   velocityThreshold,
   swipeAmount,
@@ -159,7 +159,7 @@ export function shouldCloseDrawerOnRelease({
   swipeAmount: number
   drawerDimension: number
   closeThreshold: number
-}) {
+}) => {
   if (velocity > velocityThreshold) {
     return true
   }

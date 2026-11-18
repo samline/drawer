@@ -14,7 +14,7 @@ export interface VanillaHostState {
   ownsElement: boolean
 }
 
-function canUseDOM() {
+const canUseDOM = () => {
   return typeof window !== 'undefined' && typeof document !== 'undefined'
 }
 
@@ -26,11 +26,11 @@ function canUseDOM() {
  * using the container itself as the host made two drawers share one
  * `DialogMountState`, so mounting either drawer destroyed the other.
  */
-function resolveVanillaContainer(
+const resolveVanillaContainer = (
   state: VanillaHostState,
   id: string,
   options: { container?: HTMLElement | null }
-): { container: HTMLElement; ownsElement: boolean } | null {
+): { container: HTMLElement; ownsElement: boolean } | null => {
   if (!canUseDOM()) return null
 
   const target = options.container ?? document.body
@@ -57,7 +57,7 @@ function resolveVanillaContainer(
  * Returns the updated host state plus the resolved container, or `null`
  * if no DOM is available (e.g. server-side import).
  */
-export function renderVanillaHost({
+export const renderVanillaHost = ({
   host,
   id,
   options,
@@ -85,7 +85,7 @@ export function renderVanillaHost({
   element: HTMLElement | null
   ownsElement: boolean
   container: HTMLElement
-} | null {
+} | null => {
   const nextContainer = resolveVanillaContainer(host, id, {
     ...(options.container !== undefined ? { container: options.container } : {}),
   })
@@ -148,7 +148,7 @@ export function renderVanillaHost({
  * `teardownMount` from the top of the next `mountVanillaDialog`
  * call.
  */
-export function destroyVanillaHost(host: VanillaHostState): VanillaHostState {
+export const destroyVanillaHost = (host: VanillaHostState): VanillaHostState => {
   if (host.element) {
     destroyVanillaDialog(host.element)
   }

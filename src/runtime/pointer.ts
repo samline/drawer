@@ -10,7 +10,7 @@ import type { CommonDrawerDirection } from '../core'
  * perpendicular page scroll before the runtime captures the pointer.
  */
 
-export function getSwipeIntent({
+export const getSwipeIntent = ({
   delta,
   direction,
   threshold = 0,
@@ -20,7 +20,7 @@ export function getSwipeIntent({
   direction: CommonDrawerDirection
   threshold?: number
   wasBeyondThePoint: boolean
-}) {
+}) => {
   if (wasBeyondThePoint) {
     return { isAllowed: true, reachedIntentBoundary: true }
   }
