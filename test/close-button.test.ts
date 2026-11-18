@@ -56,7 +56,11 @@ describe('closeButton option', () => {
     const iconSpan = btn!.querySelector('[data-drawer-close-icon]')
     expect(iconSpan).not.toBeNull()
     expect(iconSpan!.getAttribute('aria-hidden')).toBe('true')
-    expect(iconSpan!.textContent).toBe('xmark')
+    // The default icon is an inline SVG X, never the word "xmark".
+    expect(iconSpan!.textContent).toBe('')
+    const svg = iconSpan!.querySelector('svg')
+    expect(svg?.getAttribute('stroke')).toBe('currentColor')
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe('M6 6l12 12M18 6 6 18')
   })
 
   it('respects a custom className, icon string, and ariaLabel', () => {
@@ -174,5 +178,19 @@ describe('closeButton option', () => {
 
     getCloseButton()!.click()
     expect(contentClickCount).toBe(0)
+  })
+
+  it('appends an SVG element icon as-is', () => {
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    icon.setAttribute('data-test-icon', '')
+    createDrawer({
+      id: 'cb-svg-icon',
+      open: true,
+      closeButton: { icon, ariaLabel: 'Close' },
+      content: 'body',
+    })
+    const button = getCloseButton()!
+    expect(button.querySelector('[data-drawer-close-icon] > svg[data-test-icon]')).toBe(icon)
+    expect(button.textContent).toBe('')
   })
 })

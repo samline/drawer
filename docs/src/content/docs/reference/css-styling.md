@@ -23,8 +23,8 @@ import '@samline/drawer/style.css'
 With the 5.1.2 browser bundle, CSS and JavaScript are separate assets:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.0/dist/browser/drawer.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.1/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.1/dist/browser/drawer.global.js"></script>
 ```
 
 The IIFE does not inline CSS and never injects `<style data-drawer-runtime-styles>`.
@@ -72,7 +72,7 @@ Each registered id owns a dedicated host. Closed overlay/content are absent; onl
     </div>
     <button data-drawer-close>
       <!-- only if closeButton -->
-      <span data-drawer-close-icon aria-hidden="true">xmark</span>
+      <span data-drawer-close-icon aria-hidden="true"><svg …>…</svg></span>
     </button>
   </div>
 </div>

@@ -1,5 +1,7 @@
 ---
+import Icon from './Icon.astro'
 import Button from './Button.astro'
+import { demoIcon } from '../lib/demo-icons'
 interface Props {
   heading: string
   items: readonly { label: string; detail: string; icon: string; value?: string }[]
@@ -16,14 +18,12 @@ const { heading, items, kind = 'action' } = Astro.props
       data-demo-choice={kind === 'action' ? item.label : undefined}
       data-demo-delivery={kind === 'delivery' ? item.value : undefined}
     >
-      <span class:list={['demo-menu-icon']} aria-hidden="true">
-        {item.icon}
-      </span>
+      <span class:list={['demo-menu-icon']} aria-hidden="true" set:html={demoIcon(item.icon)} />
       <span class:list={['demo-menu-copy']}>
         <strong>{item.label}</strong>
         <span>{item.detail}</span>
       </span>
-      <span aria-hidden="true">↗</span>
+      <Icon name="arrow-right" size="1em" weight={2} />
     </Button>
   ))}
 </div>

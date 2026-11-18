@@ -230,7 +230,7 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
     | boolean
     | {
         className?: string
-        icon?: string | HTMLElement
+        icon?: string | Element
         ariaLabel?: string
       }
 }
@@ -288,15 +288,15 @@ type CloseButtonOptions = Exclude<NonNullable<VanillaDrawerOptions['closeButton'
 
 const closeButton: CloseButtonOptions = {
   className: 'absolute top-5 right-5',
-  icon: 'xmark',
+  icon: '✕',
   ariaLabel: 'Close filters',
 }
 ```
 
-Its equivalent shape is `{ className?: string; icon?: string | HTMLElement; ariaLabel?: string }`.
+Its equivalent shape is `{ className?: string; icon?: string | Element; ariaLabel?: string }`.
 
 - `className` — class applied to the button. The consumer can use it to position the button (e.g. `absolute top-5 right-5`).
-- `icon` — icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An `HTMLElement` is appended as-is. Defaults to the literal `xmark` text.
+- `icon` — icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An element, HTML or SVG, is appended as-is. Defaults to an inline SVG X drawn with `currentColor`.
 - `ariaLabel` — accessible label for the button. Defaults to `'Close'`.
 
 The full mount lifecycle of the button is in [Options → closeButton](../configuration/#vanilla-only-options) and the recipe in [Recipes → Built-in close button](../../guides/recipes/#built-in-close-button).

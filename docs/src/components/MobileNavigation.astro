@@ -38,6 +38,7 @@ const id = `docs-menu-${crypto.randomUUID()}`
 
 <script>
   import { mountElements } from '../../../shared/lib/mount-elements'
+  import { closeIcon } from '../../../shared/lib/close-icon'
 
   import { createDrawer } from '@samline/drawer'
   mountElements('package-site-docs-menu', element => {
@@ -58,7 +59,11 @@ const id = `docs-menu-${crypto.randomUUID()}`
       ariaLabel: element.dataset.label,
       contentClassName: 'docs-menu-panel',
       overlayClassName: 'docs-menu-overlay',
-      closeButton: { icon: '×', ariaLabel: element.dataset.close, className: 'docs-menu-close' },
+      closeButton: {
+        icon: closeIcon(),
+        ariaLabel: element.dataset.close,
+        className: 'docs-menu-close',
+      },
       onOpenChange: open => button.setAttribute('aria-expanded', String(open)),
     })
     element.addEventListener(

@@ -2,6 +2,16 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.1] - 2026-11-17
+
+### Changed
+
+- `closeButton.icon` accepts any `Element`, so an `<svg>` icon no longer needs a cast to `HTMLElement`. It was already appended as-is at runtime.
+
+### Fixed
+
+- `closeButton: true` (and an object without `icon`) rendered the literal word "xmark" inside the close button. The default icon is now an inline SVG X drawn with `currentColor` and sized with the button's font (`1em`). A custom `icon` string or element works as before.
+
 ## [6.0.0] - 2026-11-15
 
 The browser bundle and stylesheet take the family names. The 5.x file names still ship as aliases.

@@ -1,4 +1,5 @@
 ---
+import Icon from '../../../shared/components/Icon.astro'
 import { getI18n } from '../i18n/utils'
 import HeroBackdrop from '../components/HeroBackdrop.astro'
 import Heading from '../../../shared/components/Heading.astro'
@@ -34,11 +35,11 @@ const headingId = `section-heading-${crypto.randomUUID()}`
     <div class:list={['hero-actions']}>
       <Button context="hero" href="#how" variant="primary">
         {i18n.common.buttons.getStarted}
-        <span aria-hidden="true">↗</span>
+        <Icon name="arrow-right" size="1em" weight={2} />
       </Button>
       <Button context="hero" href="#demo" variant="secondary">
         {i18n.common.buttons.exploreDemo}
-        <span aria-hidden="true">↓</span>
+        <Icon name="arrow-down" size="1em" weight={2} />
       </Button>
     </div>
     <InstallCommand />

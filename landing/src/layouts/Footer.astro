@@ -1,4 +1,5 @@
 ---
+import Icon from '../../../shared/components/Icon.astro'
 import { format } from '../../../shared/i18n/format'
 import { docsHref } from '../lib/docs'
 import { getI18n } from '../i18n/utils'
@@ -35,7 +36,7 @@ const t = i18n.navigation.footer
           </a>
           <a href={project.repository} target="_blank" rel="noopener noreferrer">
             {i18n.common.links.github}
-            <span aria-hidden="true">↗</span>
+            <Icon name="arrow-up-right" size="1em" weight={2} />
             <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
           </a>
           <a href={`${project.docsBase}changelog/`}>{t.changelog}</a>
@@ -45,7 +46,7 @@ const t = i18n.navigation.footer
             rel="noopener noreferrer"
           >
             {i18n.common.links.npm}
-            <span aria-hidden="true">↗</span>
+            <Icon name="arrow-up-right" size="1em" weight={2} />
             <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
           </a>
           <a
@@ -54,7 +55,7 @@ const t = i18n.navigation.footer
             rel="noopener noreferrer"
           >
             {i18n.common.links.license}
-            <span aria-hidden="true">↗</span>
+            <Icon name="arrow-up-right" size="1em" weight={2} />
             <span class:list={['sr-only']}>{i18n.common.externalLinkHint}</span>
           </a>
         </div>
@@ -66,7 +67,7 @@ const t = i18n.navigation.footer
       </p>
       <a href="#top" class:list={['back-to-top']}>
         {t.backToTop}
-        <span aria-hidden="true">↑</span>
+        <Icon name="arrow-up" size="1em" weight={2} />
       </a>
     </div>
   </Box>
@@ -135,9 +136,10 @@ const t = i18n.navigation.footer
     line-height: 1.5;
     transition: color var(--duration-ui) var(--ease-ui);
   }
-  .footer-group a > span[aria-hidden] {
+  .footer-group a > svg {
     color: var(--color-text-subtle);
-    font-size: 0.75rem;
+    width: 0.75rem;
+    height: 0.75rem;
   }
   .footer-bottom {
     display: flex;

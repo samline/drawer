@@ -39,6 +39,16 @@ Apply these rules in every @samline repository. The repository's own `AGENTS.md`
 - A public API change updates source, tests, README, site docs and examples, and `skills/<name>/SKILL.md` in the same change.
 - CDN URLs pin an exact version on jsDelivr.
 
+## Website
+
+- Live examples with state the visitor can change offer Reset: previews start through `preview('<id>', root => cleanup)` from `shared/lib/preview.ts` (`forget(key)` clears stored state). Examples with nothing to undo skip it.
+- Icons and arrows are SVG (`shared/components/Icon.astro`, `shared/lib/close-icon.ts`, inline SVG in copyable code), never Unicode glyphs such as `↗ ↓ × ✓`.
+
+## Repository hygiene
+
+- The repository is public: no dated reports, audit write-ups, handoff notes, transcripts, client names or private paths. Private notes go in the ignored `.local/`.
+- `AGENTS.md` keeps durable rules and their reasons, not validation logs or release diaries.
+
 ## Releases
 
 - Add a Keep a Changelog entry under `## Unreleased` for every user-facing change, with the right semver impact.

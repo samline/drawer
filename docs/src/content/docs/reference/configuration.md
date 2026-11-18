@@ -179,7 +179,7 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
   content?: VanillaRenderable
   overlayClassName?: string
   contentClassName?: string
-  closeButton?: boolean | { className?: string; icon?: string | HTMLElement; ariaLabel?: string }
+  closeButton?: boolean | { className?: string; icon?: string | Element; ariaLabel?: string }
 }
 ```
 
@@ -201,7 +201,7 @@ interface VanillaDrawerOptions extends CommonDrawerOptions {
 | `content`                   | `VanillaRenderable`   | `undefined`                | Main body content. The open dialog skeleton and empty body slot still mount when this is omitted. See [Renderable content](#renderable-content).                                                                                                             | `content: formElement`                                    |
 | `overlayClassName`          | `string`              | `undefined`                | Class assigned to the overlay.                                                                                                                                                                                                                               | `overlayClassName: 'drawer-overlay'`                      |
 | `contentClassName`          | `string`              | `undefined`                | Class assigned to `[data-drawer]`.                                                                                                                                                                                                                           | `contentClassName: 'drawer-panel'`                        |
-| `closeButton`               | `boolean \| object`   | `false`                    | Renders `<button data-drawer-close>` after the body. `true` uses class `drawer-close-button`, text icon `xmark`, and label `Close`; an object overrides `className`, `icon`, and `ariaLabel`. Its click stops propagation and closes directly.               | `closeButton: { className: 'absolute top-5 right-5' }`    |
+| `closeButton`               | `boolean \| object`   | `false`                    | Renders `<button data-drawer-close>` after the body. `true` uses class `drawer-close-button`, an SVG X icon in `currentColor`, and label `Close`; an object overrides `className`, `icon`, and `ariaLabel`. Its click stops propagation and closes directly. | `closeButton: { className: 'absolute top-5 right-5' }`    |
 
 `VanillaRenderable` is `string | number | HTMLElement | (() => HTMLElement) | null | undefined`. Elements are moved into the dialog. A thunk is invoked once per dialog DOM build, so an option update that rebuilds the open subtree can invoke it again.
 
@@ -226,11 +226,11 @@ There is no typed generic “unset” operation for every shallow-merged optiona
 
 The object passed to `closeButton` has its own option surface, exported only via the `VanillaDrawerOptions` type (the source name `VanillaCloseButtonOptions` is not a root type export).
 
-| Field       | Type                    | Default                                                           | Example                               |
-| ----------- | ----------------------- | ----------------------------------------------------------------- | ------------------------------------- |
-| `className` | `string`                | `'drawer-close-button'`                                           | `className: 'absolute top-5 right-5'` |
-| `icon`      | `string \| HTMLElement` | `'xmark'` (rendered as text inside a `<span aria-hidden="true">`) | `icon: '✕'` or `icon: xmarkElement`   |
-| `ariaLabel` | `string`                | `'Close'`                                                         | `ariaLabel: 'Close filters'`          |
+| Field       | Type                | Default                                                          | Example                               |
+| ----------- | ------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| `className` | `string`            | `'drawer-close-button'`                                          | `className: 'absolute top-5 right-5'` |
+| `icon`      | `string \| Element` | An SVG X in `currentColor`, inside a `<span aria-hidden="true">` | `icon: '✕'` or `icon: xmarkElement`   |
+| `ariaLabel` | `string`            | `'Close'`                                                        | `ariaLabel: 'Close filters'`          |
 
 The button's `click` event `stopPropagation()`s so it does not bubble to the drawer's content. The button is removed on re-mount and on `drawer.destroy()`.
 

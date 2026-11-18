@@ -1,3 +1,4 @@
+import { demoIcon } from './demo-icons'
 import t, {
   presets,
   flow,
@@ -18,7 +19,7 @@ const choicesMarkup = (
   heading: string,
   delivery = false
 ) =>
-  `<div class="demo-menu" role="group" aria-label="${heading}" data-drawer-no-drag>${items.map(item => `<button type="button" class="demo-menu-item" ${delivery ? `data-demo-delivery="${item.value}"` : `data-demo-choice="${item.label}"`}><span class="demo-menu-icon" aria-hidden="true">${item.icon}</span><span class="demo-menu-copy"><strong>${item.label}</strong><span>${item.detail}</span></span><span aria-hidden="true">↗</span></button>`).join('')}</div>`
+  `<div class="demo-menu" role="group" aria-label="${heading}" data-drawer-no-drag>${items.map(item => `<button type="button" class="demo-menu-item" ${delivery ? `data-demo-delivery="${item.value}"` : `data-demo-choice="${item.label}"`}><span class="demo-menu-icon" aria-hidden="true">${demoIcon(item.icon)}</span><span class="demo-menu-copy"><strong>${item.label}</strong><span>${item.detail}</span></span>${demoIcon('arrow-right', '1em')}</button>`).join('')}</div>`
 
 const contentFor = (preset: DemoPreset) => {
   const custom = flowMarkup(preset)
@@ -40,7 +41,7 @@ const contentFor = (preset: DemoPreset) => {
       )
       .join('\n')
   return `${preset === 'controlled' ? `<div class="demo-actions" data-drawer-no-drag><button type="button" data-demo-compact>${t.compact}</button><button type="button" data-demo-expanded>${t.expanded}</button></div>` : ''}
-    ${scene ? `<p class="demo-kicker">${scene.eyebrow}</p><h3>${scene.heading}</h3><div class="demo-scene">${scene.items.map(item => `<div class="demo-scene-row"><div><strong>${item.title}</strong><p>${item.detail}</p></div><span>${item.value}</span></div>`).join('')}</div>${scene.action ? `<button type="button" data-demo-choice="${scene.action}" data-drawer-no-drag>${scene.action}</button>` : ''}` : `<p>${t.contentHeading}</p>`}
+    ${scene ? `<p class="demo-kicker">${scene.eyebrow}</p><h3>${scene.heading}</h3><div class="demo-scene">${scene.items.map(item => `<div class="demo-scene-row"><div><strong>${item.title}</strong><p>${item.detail}</p></div><span>${demoIcon(item.value)}</span></div>`).join('')}</div>${scene.action ? `<button type="button" data-demo-choice="${scene.action}" data-drawer-no-drag>${scene.action}</button>` : ''}` : `<p>${t.contentHeading}</p>`}
     ${preset === 'nonmodal' ? `<label class="demo-field-inline" data-drawer-no-drag><input type="checkbox" data-demo-grid>${t.gridLabel}</label>` : ''}
     ${preset === 'handle' ? `<label data-drawer-no-drag>${t.noteLabel}<textarea placeholder="${t.notePlaceholder}"></textarea></label>` : ''}
     ${preset === 'update' ? `<button type="button" data-demo-update data-drawer-no-drag>${t.loadNext}</button>` : ''}
@@ -164,7 +165,7 @@ const drawer = window.Drawer.createDrawer({
         title: ${JSON.stringify(t.childTitle)}, description: ${JSON.stringify(t.childDescription)},
         content: deliveryContent, autoFocus: true,
         contentClassName: 'demo-drawer', overlayClassName: 'demo-overlay',
-        showHandle: true, closeButton: { icon: '×', ariaLabel: ${JSON.stringify(t.closeChild)} },
+        showHandle: true, closeButton: { ariaLabel: ${JSON.stringify(t.closeChild)} },
       })
       child.setOpen(true)
     }, { signal: lifecycle.signal })`
@@ -204,7 +205,7 @@ const drawer = window.Drawer.createDrawer({
   contentClassName: 'demo-drawer${preset === 'styled' ? ' demo-floating demo-invitation' : preset === 'independent' ? ' demo-floating demo-independent-notes' : ''}',
   overlayClassName: 'demo-overlay',
   showHandle: true,
-  closeButton: { icon: '×', ariaLabel: ${JSON.stringify(t.close)} },
+  closeButton: { ariaLabel: ${JSON.stringify(t.close)} },
   onOpenChange: open => trigger.setAttribute('aria-expanded', String(open)),
   ${extraOptions}
 })

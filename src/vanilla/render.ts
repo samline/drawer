@@ -155,9 +155,10 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
    * Accepts:
    *
    * - `true` for default behavior: a button with
-   *   `className="drawer-close-button"`, an `xmark` icon
-   *   (rendered as a `<span aria-hidden="true">` so screen
-   *   readers ignore it), and `aria-label="Close"`.
+   *   `className="drawer-close-button"`, an X icon drawn as
+   *   an inline SVG with `currentColor` (inside a
+   *   `<span aria-hidden="true">` so screen readers ignore it),
+   *   and `aria-label="Close"`.
    * - An object to override the defaults. `icon` accepts a
    *   string (rendered as text inside a `<span>`) or a
    *   pre-built `HTMLElement`.
@@ -179,8 +180,8 @@ export interface VanillaDrawerOptions extends CommonDrawerOptions {
 export interface VanillaCloseButtonOptions {
   /** Class applied to the button. The consumer can use it to position the button (e.g. `absolute top-5 right-5`). */
   className?: string
-  /** Icon content. A string is rendered as text inside a `<span aria-hidden="true">`. An `HTMLElement` is appended as-is. */
-  icon?: string | HTMLElement
+  /** Icon content. Defaults to an SVG X. A string is rendered as text inside a `<span aria-hidden="true">`. An element (HTML or SVG) is appended as-is. */
+  icon?: string | Element
   /** Accessible label for the button. Defaults to `'Close'`. */
   ariaLabel?: string
 }

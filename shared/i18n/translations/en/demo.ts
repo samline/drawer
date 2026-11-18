@@ -170,9 +170,9 @@ export const menus = {
     heading: 'What would you like to do?',
     hint: 'Find a command by typing a project, document or teammate action.',
     items: [
-      { label: 'Create a project', detail: 'Start with a clean canvas', icon: '＋' },
-      { label: 'Find a document', detail: 'Search your workspace', icon: '⌕' },
-      { label: 'Invite a teammate', detail: 'Make room for collaboration', icon: '↗' },
+      { label: 'Create a project', detail: 'Start with a clean canvas', icon: 'plus' },
+      { label: 'Find a document', detail: 'Search your workspace', icon: 'search' },
+      { label: 'Invite a teammate', detail: 'Make room for collaboration', icon: 'user-plus' },
     ],
   },
   left: {
@@ -180,10 +180,10 @@ export const menus = {
     heading: 'A place for your next idea.',
     hint: 'Browse projects, invite your team or change workspace settings.',
     items: [
-      { label: 'Overview', detail: 'Your projects at a glance', icon: '◫' },
-      { label: 'Projects', detail: '12 active projects', icon: '▤' },
-      { label: 'Team', detail: 'People and permissions', icon: '♧' },
-      { label: 'Settings', detail: 'Make this space yours', icon: '⚙' },
+      { label: 'Overview', detail: 'Your projects at a glance', icon: 'layout' },
+      { label: 'Projects', detail: '12 active projects', icon: 'list' },
+      { label: 'Team', detail: 'People and permissions', icon: 'users' },
+      { label: 'Settings', detail: 'Make this space yours', icon: 'sliders' },
     ],
   },
   account: {
@@ -193,7 +193,7 @@ export const menus = {
     items: [
       { label: 'Personal workspace', detail: 'Your private projects', icon: 'A' },
       { label: 'Studio workspace', detail: 'Shared with 6 teammates', icon: 'S' },
-      { label: 'Account settings', detail: 'Profile and preferences', icon: '⚙' },
+      { label: 'Account settings', detail: 'Profile and preferences', icon: 'sliders' },
     ],
   },
   actions: {
@@ -201,9 +201,9 @@ export const menus = {
     heading: 'Keep the file. Open the possibilities.',
     hint: 'Choose what to do with Project brief.pdf.',
     items: [
-      { label: 'Add to favorites', detail: 'Keep it close for later', icon: '☆' },
-      { label: 'Make a copy', detail: 'Start another version', icon: '▣' },
-      { label: 'Move to a folder', detail: 'Put everything in its place', icon: '↗' },
+      { label: 'Add to favorites', detail: 'Keep it close for later', icon: 'star' },
+      { label: 'Make a copy', detail: 'Start another version', icon: 'copy' },
+      { label: 'Move to a folder', detail: 'Put everything in its place', icon: 'folder' },
     ],
   },
   confirm: {
@@ -211,9 +211,9 @@ export const menus = {
     heading: 'Keep what you have started?',
     hint: 'Your launch note has unsaved changes. Keep the draft, discard it, or return to editing.',
     items: [
-      { label: 'Save draft', detail: 'Keep your work for later', icon: '✓' },
-      { label: 'Discard draft', detail: 'Close without saving', icon: '×' },
-      { label: 'Continue editing', detail: 'Return to your page', icon: '↶' },
+      { label: 'Save draft', detail: 'Keep your work for later', icon: 'check' },
+      { label: 'Discard draft', detail: 'Close without saving', icon: 'x' },
+      { label: 'Continue editing', detail: 'Return to your page', icon: 'undo' },
     ],
   },
 } as const
@@ -280,7 +280,7 @@ export const scenes = {
       {
         title: 'Delivery options',
         detail: 'Choose a delivery option below.',
-        value: '→',
+        value: 'arrow-right',
       },
     ],
     action: '',
@@ -292,12 +292,12 @@ export const scenes = {
       {
         title: 'Selected: Hero section',
         detail: 'Editing the hero of a product landing page.',
-        value: '◫',
+        value: 'layout',
       },
       {
         title: 'Canvas layout',
         detail: 'Toggle the layout grid while the canvas stays interactive.',
-        value: '↗',
+        value: 'sliders',
       },
     ],
     action: '',
@@ -310,7 +310,7 @@ export const scenes = {
         title: 'Launch review checklist',
         detail:
           'Check keyboard navigation, narrow layouts and the installation snippet. Add your review notes below.',
-        value: '✎',
+        value: 'edit',
       },
     ],
     action: '',
@@ -322,7 +322,7 @@ export const scenes = {
       {
         title: 'Order confirmed',
         detail: 'Your tote and notebook are being prepared.',
-        value: '✓',
+        value: 'check',
       },
       {
         title: 'Next: packed for delivery',
@@ -354,13 +354,13 @@ export const deliveryOptions = [
   {
     label: 'Standard delivery',
     detail: 'Free · Arrives in 3–5 business days',
-    icon: '□',
+    icon: 'package',
     value: 'Standard delivery · $0 · 3–5 business days',
   },
   {
     label: 'Express delivery',
     detail: '$8 · Arrives in 1–2 business days',
-    icon: '↗',
+    icon: 'zap',
     value: 'Express delivery · $8 · 1–2 business days',
   },
 ] as const

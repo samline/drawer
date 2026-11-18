@@ -420,7 +420,7 @@ createDrawer({
 })
 ```
 
-The button's `click` event `stopPropagation()`s so it does not bubble to the content. The defaults are class `drawer-close-button`, icon text `xmark`, and label `Close`. See [TypeScript → Close-button option shape](../../reference/typescript/#close-button-option-shape) for the full object contract.
+The button's `click` event `stopPropagation()`s so it does not bubble to the content. The defaults are class `drawer-close-button`, an SVG X icon in `currentColor`, and label `Close`. See [TypeScript → Close-button option shape](../../reference/typescript/#close-button-option-shape) for the full object contract.
 
 ---
 

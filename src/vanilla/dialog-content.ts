@@ -124,16 +124,37 @@ export function buildDescriptionContent(state: ContentSlots, options: VanillaDra
  */
 export function normalizeCloseButtonOptions(
   options: boolean | VanillaCloseButtonOptions | undefined
-): false | { className: string; icon: string | HTMLElement; ariaLabel: string } {
+): false | { className: string; icon: string | Element | null; ariaLabel: string } {
   if (!options) return false
   if (options === true) {
-    return { className: 'drawer-close-button', icon: 'xmark', ariaLabel: 'Close' }
+    return { className: 'drawer-close-button', icon: null, ariaLabel: 'Close' }
   }
   return {
     className: options.className ?? 'drawer-close-button',
-    icon: options.icon ?? 'xmark',
+    icon: options.icon ?? null,
     ariaLabel: options.ariaLabel ?? 'Close',
   }
+}
+
+/** The default close icon: an X drawn with `currentColor`, sized with the button's font. */
+const createCloseIcon = (): SVGSVGElement => {
+  const ns = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(ns, 'svg')
+  for (const [name, value] of Object.entries({
+    width: '1em',
+    height: '1em',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '2',
+    'stroke-linecap': 'round',
+    focusable: 'false',
+  }))
+    svg.setAttribute(name, value)
+  const path = document.createElementNS(ns, 'path')
+  path.setAttribute('d', 'M6 6l12 12M18 6 6 18')
+  svg.appendChild(path)
+  return svg
 }
 
 /**
@@ -150,7 +171,7 @@ export function normalizeCloseButtonOptions(
  * screen readers only announce the button's `aria-label`.
  */
 export function buildCloseButton(
-  options: { className: string; icon: string | HTMLElement; ariaLabel: string },
+  options: { className: string; icon: string | Element | null; ariaLabel: string },
   callbacks: { onOpenChange: (open: boolean) => void }
 ): HTMLButtonElement {
   const button = createEl('button', {
@@ -159,9 +180,9 @@ export function buildCloseButton(
     'aria-label': options.ariaLabel,
   }) as HTMLButtonElement
   button.className = options.className
-  if (options.icon instanceof HTMLElement) {
+  if (options.icon === null || options.icon instanceof Element) {
     const iconSpan = createEl('span', { 'data-drawer-close-icon': '', 'aria-hidden': 'true' })
-    iconSpan.appendChild(options.icon)
+    iconSpan.appendChild(options.icon ?? createCloseIcon())
     button.appendChild(iconSpan)
   } else {
     button.appendChild(

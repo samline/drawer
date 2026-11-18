@@ -1,4 +1,5 @@
 ---
+import Icon from './Icon.astro'
 import type { HTMLAttributes } from 'astro/types'
 import DemoStyles from './DemoStyles.astro'
 import DemoStudio from './DemoStudio.astro'
@@ -83,7 +84,7 @@ const Frame = framed ? DemoStudio : 'div'
       >
         <Button data-open disabled aria-haspopup="dialog" aria-expanded="false">
           {t.increment}
-          <span aria-hidden="true">↗</span>
+          <Icon name="arrow-up-right" size="1em" weight={2} />
         </Button>
         <output aria-live="polite">{t.stateClosed}</output>
         {preset === 'nonmodal' && (
@@ -175,7 +176,7 @@ const Frame = framed ? DemoStudio : 'div'
             .content.firstElementChild!.cloneNode(true) as HTMLElement,
         contentClassName: 'site-demo-drawer demo-floating demo-independent-activity',
         showHandle: false,
-        closeButton: { icon: '×', ariaLabel: flow.closeActivity },
+        closeButton: { ariaLabel: flow.closeActivity },
         onOpenChange: open => companionTrigger?.setAttribute('aria-expanded', String(open)),
       })
       companion.setOpen(true)
@@ -224,7 +225,7 @@ const Frame = framed ? DemoStudio : 'div'
             overlayClassName: 'site-demo-overlay',
             autoFocus: true,
             showHandle: true,
-            closeButton: { icon: '×', ariaLabel: t.closeChild },
+            closeButton: { ariaLabel: t.closeChild },
           })
           child.setOpen(true)
         },
@@ -274,7 +275,7 @@ const Frame = framed ? DemoStudio : 'div'
       contentClassName: `site-demo-drawer${preset === 'styled' ? ' demo-floating demo-invitation' : preset === 'independent' ? ' demo-floating demo-independent-notes' : ''}`,
       overlayClassName: 'site-demo-overlay',
       showHandle: true,
-      closeButton: { icon: '×', ariaLabel: t.close },
+      closeButton: { ariaLabel: t.close },
       ...demoOptions(preset),
       onOpenChange: open => {
         if (!open) {

@@ -1,4 +1,6 @@
 ---
+import { demoIcon } from '../lib/demo-icons'
+import Icon from './Icon.astro'
 import Button from './Button.astro'
 import DemoFlowContent from './DemoFlowContent.astro'
 import DemoChoices from './DemoChoices.astro'
@@ -101,14 +103,14 @@ const fieldId = `category-${crypto.randomUUID()}`
                   <strong>{item.title}</strong>
                   <p>{item.detail}</p>
                 </div>
-                <span>{item.value}</span>
+                <span set:html={demoIcon(item.value)} />
               </div>
             ))}
           </div>
           {scene.action && (
             <Button data-demo-choice={scene.action} data-drawer-no-drag>
               {scene.action}
-              <span aria-hidden="true">↗</span>
+              <Icon name="arrow-up-right" size="1em" weight={2} />
             </Button>
           )}
         </>
@@ -149,7 +151,7 @@ const fieldId = `category-${crypto.randomUUID()}`
   {preset === 'nested' && (
     <Button data-child data-drawer-no-drag>
       {t.openChild}
-      <span aria-hidden="true">↗</span>
+      <Icon name="arrow-up-right" size="1em" weight={2} />
     </Button>
   )}
 </div>

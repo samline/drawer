@@ -46,7 +46,7 @@ const openActivity = () => {
     modal: false, overlay: false, autoFocus: false,
     content: () => template.content.querySelector('[data-companion-content]').content.firstElementChild.cloneNode(true),
     contentClassName: 'demo-drawer demo-floating demo-independent-activity',
-    showHandle: false, closeButton: { icon: '×', ariaLabel: ${JSON.stringify(flow.closeActivity)} },
+    showHandle: false, closeButton: { ariaLabel: ${JSON.stringify(flow.closeActivity)} },
     onOpenChange: open => activityTrigger.setAttribute('aria-expanded', String(open)),
   })
   companion.setOpen(true)

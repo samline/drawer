@@ -1,4 +1,5 @@
 ---
+import Icon from '../../../shared/components/Icon.astro'
 import Box from '../../../shared/components/Box.astro'
 import Section from '../../../shared/components/Section.astro'
 import PageTitle from '../../../shared/components/PageTitle.astro'
@@ -27,11 +28,11 @@ const t = getI18n(Astro).examples
     <div class:list={['gallery-actions']}>
       <Button context="hero" href="#interaction" variant="primary">
         {t.exploreAction}
-        <span aria-hidden="true">↓</span>
+        <Icon name="arrow-down" size="1em" weight={2} />
       </Button>
       <Button context="hero" href={`${project.docsBase}getting-started/`} variant="secondary">
         {t.installAction}
-        <span aria-hidden="true">↗</span>
+        <Icon name="arrow-right" size="1em" weight={2} />
       </Button>
     </div>
     <p class:list={['accessibility']}>{t.accessibility}</p>
@@ -47,7 +48,7 @@ const t = getI18n(Astro).examples
             class:list={['recipe-link']}
           >
             {item.title}
-            <span aria-hidden="true">↓</span>
+            <Icon name="arrow-down" size="1em" weight={2} />
           </Button>
         ))}
       </nav>

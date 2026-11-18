@@ -114,7 +114,7 @@
     {
       "path": "landing/src/layouts/Footer.astro",
       "sourcePath": "landing/src/layouts/Footer.astro",
-      "styleSha256": "ab32b9479c4516fbca5fe51d0d494307ad5463e7f994ab7055426414b0c012f2",
+      "styleSha256": "291fd2e4f2b4ca853b1f4b98cf7e6f292c671756c934ef7f13b8d1e55e8e8226",
       "exception": "Mobile footer columns adapt to font-relative content width at enlarged text. Normal mobile/desktop composition is unchanged."
     },
     {

@@ -1,30 +1,58 @@
 ---
 import type { HTMLAttributes } from 'astro/types'
+// One stroke icon set for the whole site. Arrows are drawn here instead of
+// typed as Unicode glyphs (↗ ↓ →), whose shape, weight and baseline change with
+// the visitor's fonts and can even render as emoji.
+export type IconName =
+  | 'search'
+  | 'menu'
+  | 'chevron'
+  | 'arrow-right'
+  | 'arrow-left'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'arrow-up-right'
+  | 'reset'
 interface Props extends HTMLAttributes<'svg'> {
-  name: 'search' | 'menu' | 'chevron'
+  name: IconName
   size?: string
+  /** Stroke width in viewBox units (24). Arrows inside text read better a little heavier. */
+  weight?: number
 }
-const { name, size = '1.125rem', class: className, ...attributes } = Astro.props
-const paths = {
+const { name, size = '1.125rem', weight = 1.6, class: className, ...attributes } = Astro.props
+const paths: Record<IconName, string> = {
   search: 'm16 16 4 4',
   chevron: 'M6 9l6 6 6-6',
   menu: 'M4 6h16M4 12h16M4 18h16',
+  'arrow-right': 'M5 12h14M13 5l7 7-7 7',
+  'arrow-left': 'M19 12H5M11 5l-7 7 7 7',
+  'arrow-up': 'M12 19V5M5 11l7-7 7 7',
+  'arrow-down': 'M12 5v14M5 13l7 7 7-7',
+  'arrow-up-right': 'M7 17 17 7M8 7h9v9',
+  reset: 'M4 12a8 8 0 1 0 2.34-5.66M4 4v4h4',
 }
 ---
 
 <svg
   {...attributes}
-  class:list={[className]}
+  class:list={['icon', className]}
   aria-hidden="true"
+  focusable="false"
   width={size}
   height={size}
   viewBox="0 0 24 24"
   fill="none"
   stroke="currentColor"
-  stroke-width="1.6"
+  stroke-width={weight}
   stroke-linecap="round"
   stroke-linejoin="round"
 >
   {name === 'search' && <circle cx="10.5" cy="10.5" r="6.5" />}
   <path d={paths[name]} />
 </svg>
+
+<style>
+  .icon {
+    flex-shrink: 0;
+  }
+</style>
