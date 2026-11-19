@@ -43,6 +43,7 @@ Apply these rules in every @samline repository. The repository's own `AGENTS.md`
 ## Website
 
 - Live examples with state the visitor can change offer Reset: previews start through `preview('<id>', root => cleanup)` from `shared/lib/preview.ts` (`forget(key)` clears stored state). Examples with nothing to undo skip it.
+- Preview layout: examples fill the stage width (no `max-width` on an example root); an example root and its forms are grids with a gap so buttons never touch fields; inline rows give the field `flex: 1; min-width: 0` and the button `flex: none; white-space: nowrap`; icon + label buttons are `inline-flex` with a gap (the site resets `svg` to block). Check desktop widths, not only mobile.
 - Icons and arrows are SVG (`shared/components/Icon.astro`, `shared/lib/close-icon.ts`, inline SVG in copyable code), never Unicode glyphs such as `↗ ↓ × ✓`.
 
 ## Repository hygiene
