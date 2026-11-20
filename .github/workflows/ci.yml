@@ -35,5 +35,14 @@ jobs:
       - run: bun run test:coverage
       - run: bun run build
       - run: bun run size
-      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      # The Azure apt mirror sometimes serves packages at ~40 kB/s and hangs this step
+      # for ten minutes: bound each attempt and retry instead of waiting it out.
+      - name: Install browsers
+        timeout-minutes: 10
+        run: |
+          for attempt in 1 2 3; do
+            timeout 180 pnpm exec playwright install --with-deps chromium firefox webkit && exit 0
+            echo "Browser install attempt $attempt failed or timed out"
+          done
+          exit 1
       - run: bun run test:e2e
