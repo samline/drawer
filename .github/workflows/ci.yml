@@ -18,7 +18,7 @@ concurrency:
 jobs:
   package:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -35,14 +35,20 @@ jobs:
       - run: bun run test:coverage
       - run: bun run build
       - run: bun run size
-      # The Azure apt mirror sometimes serves packages at ~40 kB/s and hangs this step
-      # for ten minutes: bound each attempt and retry instead of waiting it out.
+      # Browsers: apt (system libraries) is never killed mid-run, since a killed apt-get keeps
+      # the dpkg lock and every retry fails on it; apt retries and times out on its own instead.
+      # Only the browser download, which holds no lock, is bounded and retried.
+      - name: Install browser system dependencies
+        timeout-minutes: 12
+        run: |
+          printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-ci-retries > /dev/null
+          pnpm exec playwright install-deps chromium firefox webkit
       - name: Install browsers
         timeout-minutes: 10
         run: |
           for attempt in 1 2 3; do
-            timeout 180 pnpm exec playwright install --with-deps chromium firefox webkit && exit 0
-            echo "Browser install attempt $attempt failed or timed out"
+            timeout 180 pnpm exec playwright install chromium firefox webkit && exit 0
+            echo "Browser download attempt $attempt failed or timed out"
           done
           exit 1
       - run: bun run test:e2e
