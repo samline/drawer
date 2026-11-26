@@ -35,20 +35,42 @@ jobs:
       - run: bun run test:coverage
       - run: bun run build
       - run: bun run size
-      # Browsers: apt (system libraries) is never killed mid-run, since a killed apt-get keeps
-      # the dpkg lock and every retry fails on it; apt retries and times out on its own instead.
-      # Only the browser download, which holds no lock, is bounded and retried.
-      - name: Install browser system dependencies
-        timeout-minutes: 12
+
+  # Browsers: the official Playwright image ships the three engines and their system libraries,
+  # so e2e needs no apt (the runner mirror is slow and timed the old install out) and no download.
+  # The image tag must match the resolved @playwright/test version, or Playwright looks for
+  # browsers the image does not have.
+  playwright-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: resolve
         run: |
-          printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' | sudo tee /etc/apt/apt.conf.d/80-ci-retries > /dev/null
-          pnpm exec playwright install-deps chromium firefox webkit
-      - name: Install browsers
-        timeout-minutes: 10
-        run: |
-          for attempt in 1 2 3; do
-            timeout 180 pnpm exec playwright install chromium firefox webkit && exit 0
-            echo "Browser download attempt $attempt failed or timed out"
-          done
-          exit 1
-      - run: bun run test:e2e
+          version=$(sed -nE "s/^  '@playwright\/test@([0-9]+\.[0-9]+\.[0-9]+)':.*/\1/p" pnpm-lock.yaml | head -n 1)
+          test -n "$version" || { echo "@playwright/test not found in pnpm-lock.yaml" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    needs: playwright-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright-version.outputs.version }}-noble
+    env:
+      # Firefox refuses to start as root when HOME is not the root user's home.
+      HOME: /root
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      # No Bun here: setup-bun needs unzip, which the image lacks, and these two
+      # scripts (tsup, playwright test) run the same through pnpm.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run test:e2e
