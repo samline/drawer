@@ -49,8 +49,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: resolve
         run: |
-          version=$(sed -nE "s/^  '@playwright\/test@([0-9]+\.[0-9]+\.[0-9]+)':.*/\1/p" pnpm-lock.yaml | head -n 1)
-          test -n "$version" || { echo "@playwright/test not found in pnpm-lock.yaml" >&2; exit 1; }
+          # The package's own (root importer) version: the website workspaces may lock
+          # another @playwright/test, and the first match in the lockfile can be theirs.
+          version=$(awk '
+            /^[^ ]/ { imp = ($0 == "importers:"); root = 0; next }
+            imp && /^  [^ ]/ { root = ($0 == "  .:"); next }
+            root && /^      .@playwright\/test.:$/ { p = 1; next }
+            p && /^        version:/ { sub(/^ *version: */, ""); sub(/[^0-9.].*/, ""); print; exit }
+          ' pnpm-lock.yaml)
+          test -n "$version" || { echo "@playwright/test not found in the root importer of pnpm-lock.yaml" >&2; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   e2e:
