@@ -35,7 +35,16 @@ export default {
     descriptionContinuation: '',
     footnotes: ['Four directions', 'Drag & snap', 'Typed controllers'],
     compatibilityLabel: 'ONE SMALL SCRIPT. RIGHT AT HOME IN YOUR STACK.',
-    platforms: ['JavaScript', 'TypeScript', 'React', 'Vue', 'Svelte', 'Shopify', 'WordPress'],
+    platforms: [
+      'JavaScript',
+      'TypeScript',
+      'React',
+      'Vue',
+      'Svelte',
+      'Astro',
+      'Shopify',
+      'WordPress',
+    ],
   },
   features: {
     eyebrow: '01 / More than an open state',
