@@ -208,6 +208,7 @@ This block is synced from the template that owns the family conventions ([packag
 - Public repository: no dated reports, handoff notes, transcripts or client names; private notes go in the ignored `.local/`. Site examples with state offer Reset; icons are SVG, never Unicode glyphs.
 - Work skills: `npx autoskills -y -a universal`, tracked with `skills-lock.json`, minus the `bun` skill (it contradicts pnpm installs), plus `modern-web-guidance`, consulted before HTML, CSS or client-side JavaScript work.
 - Always explore code through the `codebase-memory` skill and graph when `codebase-memory-mcp` is installed; read source for gaps.
+- Delegation: the main session leads (plans, decides, owns quality and security) and delegates on its own judgment; the maintainer authorizes these subagents in advance, so never wait to be asked. Search and reading go to `Explore` (Haiku), planned implementation to `implementer` (Sonnet), review of every non-trivial diff to `reviewer` (Sonnet), defined in `.agents/agents/` (`.claude/agents` points there). Skip delegation only for questions and one-line edits. The lead steps in when an agent loops or is blocked, and verifies every agent report before calling work done.
 - Never add AI attribution to commits, tags or pull requests.
 
 <!-- samline:family:end -->
