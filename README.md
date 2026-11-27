@@ -111,8 +111,8 @@ drawer.destroy()
 Load matching versioned runtime CSS and JavaScript, then replace the import with `window.Drawer.createDrawer`. Keep the same panel stylesheet and controller lifecycle.
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.1/dist/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.0.1/dist/browser/drawer.global.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@samline/drawer@6.1.0/dist/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@samline/drawer@6.1.0/dist/browser/drawer.global.js"></script>
 ```
 
 Pin the version in production, or self-host the same matching files. ESM/CommonJS are module formats; CDN or self-hosted files are delivery choices. The optional `@samline/drawer/browser` module exports a `Drawer` namespace with the same functions and no global side effect.

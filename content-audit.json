@@ -1,10 +1,10 @@
 {
   "status": "verified",
-  "packageVersion": "6.0.1",
+  "packageVersion": "6.1.0",
   "sources": [
     {
       "source": "CHANGELOG.md",
-      "sha256": "418774eba5e3c4c8d99c666b782ab74cee1d14f924aede15caf3d52d53f3084a",
+      "sha256": "7e16af82533d1f70d6ae8444004f5cfd1d55c6176138d2362fedff5ce082aa97",
       "destination": "CHANGELOG.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -12,7 +12,7 @@
     },
     {
       "source": "README.md",
-      "sha256": "a591ffe2894824f02f6f6abd2b62911982413b17c0bd64b99ce0ed56a513280f",
+      "sha256": "20d31aa3bfdb71e12fb2c41ebd5da222e535944412352c7c84fffb4b3e7668e2",
       "destination": "docs/src/content/docs/index.mdx",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -271,7 +271,7 @@
     },
     {
       "source": "package.json",
-      "sha256": "a512f2fe4153415642d89a27fec2d4ff68c32e02d6aeb552897d8dd0b8114f59",
+      "sha256": "cb82c31c7fda2516069ef559fbeae288ea909d57847f34ee22112f604dcf0118",
       "destination": "docs/src/content/docs/reference/entrypoints.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -303,7 +303,7 @@
     },
     {
       "source": "src/core/index.ts",
-      "sha256": "e717cd6f7351d44433d1af57ca9ec83b3f21b524ae2076b6ac2b2b0d9f8a7403",
+      "sha256": "e2b45314c1a8db320f54d904cd6d4eb3fd85d28e9d496cb31e3b12caf97fce52",
       "destination": "docs/src/content/docs/reference/typescript.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -311,7 +311,7 @@
     },
     {
       "source": "src/helpers.ts",
-      "sha256": "be0608b5992cc6de7d55ec8ab9f7d3d2f4eb3af9d62487273946690b498ddf2d",
+      "sha256": "e726a92195304c26154c94af6f7e2a1a93ef8b04387c77ced11b2c37b5f95d94",
       "destination": "docs/src/content/docs/guides/lifecycle-and-state.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -327,7 +327,7 @@
     },
     {
       "source": "src/runtime/browser.ts",
-      "sha256": "06b9b9abf5518c890c1658df0682b58558e072cf2d348ff3d8461c13df0e6511",
+      "sha256": "3ed3c6988cd70c48477e4d9d7147e113b49fc183d391a28b2781631ea7bdd18f",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -335,7 +335,7 @@
     },
     {
       "source": "src/runtime/drag-policy.ts",
-      "sha256": "26e3aa02a40d7c7918751b383e29c874c5c38e97e7b97d26def86b6a39957525",
+      "sha256": "a643e9e7e0815e96dded2a430085f2a956b4d741afdd2c13deb4057509dabb08",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -343,7 +343,7 @@
     },
     {
       "source": "src/runtime/drag.ts",
-      "sha256": "f45ac8e466bd3d0031d2fccc501d9fb16954ef85be27e7b07a3c97b8904fe993",
+      "sha256": "f69cc5ee283bfdb89ce647bfa159ed32ee34d90eab9a0388587713022c030a87",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -351,7 +351,7 @@
     },
     {
       "source": "src/runtime/handle.ts",
-      "sha256": "31cdfc6f5cee130f0da9e88142b881faef49f14a9e60bb465d26715c8613918d",
+      "sha256": "0b1a5e0f833acb2eb5cd7093935c07b6855a710f0381ece3030734ed796db6c5",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -359,7 +359,7 @@
     },
     {
       "source": "src/runtime/nested.ts",
-      "sha256": "2aedad56bc5d9d7f1a531c5849ebf9e9d6950500a633dafdce5e6f7c3cf8eed4",
+      "sha256": "38615142620fe69ec4134ff0c04d9fe1a0154cffc067350c4e4742ee229d609f",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -367,7 +367,7 @@
     },
     {
       "source": "src/runtime/pointer.ts",
-      "sha256": "1101f2c2be76aca31b184a01f7581762ccee5c5a34dcdb444fdf8fdb83e2ef6e",
+      "sha256": "79a8320f003dde63feb23dbd6a25baf12b09bd11a94abf2bb94e4035b9610d86",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -375,7 +375,7 @@
     },
     {
       "source": "src/runtime/registry.ts",
-      "sha256": "c6b235f87f3362d8956b0970f600ba546420f138c0c18d5de5ffe0d66c320ccf",
+      "sha256": "c6d9b6b6776fd739250524c61bdd3d664b44ca1f3b220af3ac6861ec56215a49",
       "destination": "docs/src/content/docs/guides/lifecycle-and-state.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -383,7 +383,7 @@
     },
     {
       "source": "src/runtime/release.ts",
-      "sha256": "f5166d6c99417149df05e21211c21e766fa5a65b234d47021d95cc1203ca60cf",
+      "sha256": "e4c2f12c1233dfc9942776659603baa66f698a6d534916e64d8ae1910fd58de0",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -391,7 +391,7 @@
     },
     {
       "source": "src/runtime/scroll-lock.ts",
-      "sha256": "3e3fa4fe8c8541f7172a31f6d01750132a4faf2358bed7b1b5787fec2dab5427",
+      "sha256": "3ac93675fc9b8a7b4813c9023a9c4f8de7e5c37e3336a34e4d74b944a56606e0",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -399,7 +399,7 @@
     },
     {
       "source": "src/runtime/snap-points.ts",
-      "sha256": "bed061dd8e45895a27090f6f0a29a6dc6bd2bfaa4bd337f7cec14dae85374568",
+      "sha256": "6b9c63bbbc91fb935680c077515c24dc09f247c7587406fdb2701e9106865e31",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -407,7 +407,7 @@
     },
     {
       "source": "src/runtime/transforms.ts",
-      "sha256": "5704facf1f2f9b566b6503ff6f047093e443c618681b183a8bbaadadee50247c",
+      "sha256": "132d9e1ef2d190836de19557027b1355a833b74fd26b523d4de0abbabbbe0158",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -415,7 +415,7 @@
     },
     {
       "source": "src/runtime/viewport.ts",
-      "sha256": "15b780a490d6f5725687a174965f54c2c7aabee0456a2d45bf1daa6bf2f370ed",
+      "sha256": "c4df436c438cd6fb8159be4840e88c2698c148427b04733e45d0cd8800abd89b",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -423,7 +423,7 @@
     },
     {
       "source": "src/style.css",
-      "sha256": "b043edabb8bc462a650c1d5d5fcf62559eef33b243ffaf6ff6fabcc5f7f9c610",
+      "sha256": "9e4e76da754ef0a6498239f2517d130a25d44c1a9b88c7c59ff09c8537fd0a65",
       "destination": "docs/src/content/docs/reference/css-styling.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -431,7 +431,7 @@
     },
     {
       "source": "src/vanilla/dialog.ts",
-      "sha256": "d1f3b6e470643e2138ddc7483aeb3faa91942dd325bb963e2c4c396cbb1cd990",
+      "sha256": "390ba5c3064f0532d32895a07fe223abf37b7f856b2b6e9533c1b3bae7744024",
       "destination": "docs/src/content/docs/guides/gestures-and-snap-points.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -439,7 +439,7 @@
     },
     {
       "source": "src/vanilla/host.ts",
-      "sha256": "aff7d75e178dcc1ab5d828964a69495b09852c47a0bbce6f87d1cdb37e8bd566",
+      "sha256": "c69abb178065d33a4a0c549ffaf70ef18bf85cd0cfb6a2115e8e5348b9cc6b14",
       "destination": "docs/src/content/docs/guides/lifecycle-and-state.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
@@ -447,7 +447,7 @@
     },
     {
       "source": "src/vanilla/render.ts",
-      "sha256": "e973f1d10fe09f82ebae6db5e9d840d076070cfb2e4bac1cc4358a13e75452ff",
+      "sha256": "f3a3fe203c66c3a93fce6050f3c34198249fc3533ae0c941fa902f8e8d15c3e9",
       "destination": "docs/src/content/docs/reference/configuration.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",
