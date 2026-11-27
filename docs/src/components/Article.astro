@@ -118,14 +118,18 @@ const t = getI18n(Astro)
   .article :global(.code-frame) {
     margin: var(--space-lg) 0;
   }
-  .article :global(table:not([data-ui], [data-ui] *)) {
-    display: block;
+  .article :global(.table-scroll) {
+    max-width: 100%;
     overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  .article :global(.table-scroll:focus-visible:not([data-ui] *)) {
+    outline-offset: -0.1875rem;
+  }
+  .article :global(table:not([data-ui], [data-ui] *)) {
     width: max-content;
     min-width: 100%;
-    max-width: 100%;
     border-collapse: collapse;
-    margin: 1.5rem 0;
     font-size: 0.8125rem;
     line-height: 1.7;
     /* Article's overflow-wrap:anywhere shrinks min-content to one character, so columns

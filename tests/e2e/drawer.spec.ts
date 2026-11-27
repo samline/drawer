@@ -70,3 +70,35 @@ test('the controller opens, updates, closes and destroys idempotently', async ({
   })
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
+
+test('reduced motion keeps only a short overlay fade and still closes', async ({ load }) => {
+  const page = await load(markup, bundle)
+  await page.addStyleTag({ path: styles })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.evaluate(() => {
+    ;(window as any).drawer = (window as any).Drawer.createDrawer({
+      title: 'Calm',
+      content: 'No movement',
+      contentClassName: 'drawer-panel',
+      overlayClassName: 'drawer-overlay',
+      closeButton: { icon: '×', ariaLabel: 'Close calm' },
+    })
+    ;(window as any).drawer.setOpen(true)
+  })
+  const dialog = page.getByRole('dialog', { name: 'Calm' })
+  await expect(dialog).toBeVisible()
+  const overlay = page.locator('[data-drawer-overlay]')
+  await expect(overlay).toHaveCSS('transition-duration', '0.15s')
+  await expect(overlay).toHaveCSS('transition-property', 'opacity')
+  await expect(dialog).toHaveCSS('transition-property', 'none')
+  await expect(dialog).toHaveCSS('animation-name', 'none')
+  // A drag writes inline `transition: none` so the fade tracks the finger;
+  // the reduced-motion fade must not override it.
+  await overlay.evaluate(element => ((element as HTMLElement).style.transition = 'none'))
+  await expect(overlay).toHaveCSS('transition-property', 'none')
+  await overlay.evaluate(element => ((element as HTMLElement).style.transition = ''))
+
+  await page.evaluate(() => (window as any).drawer.setOpen(false))
+  await expect(dialog).toBeHidden()
+  await expect(page.locator('[data-drawer-overlay]')).toHaveCount(0)
+})

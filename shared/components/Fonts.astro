@@ -21,6 +21,38 @@ import instrumentSerif from '../assets/fonts/instrument-serif-latin-400-italic.w
     font-display: swap;
     src: url('../assets/fonts/instrument-serif-latin-400-italic.woff2') format('woff2');
   }
+  /* Metric-matched fallbacks: local system fonts scaled to the web font's average glyph width and
+     vertical metrics (computed from the bundled files), so the swap does not move the layout. */
+  @font-face {
+    font-family: 'Inter Fallback';
+    font-style: normal;
+    font-weight: 400 599;
+    src: local('Arial'), local('ArialMT');
+    size-adjust: 107.47%;
+    ascent-override: 90.14%;
+    descent-override: 22.44%;
+    line-gap-override: 0%;
+  }
+  @font-face {
+    font-family: 'Inter Fallback';
+    font-style: normal;
+    font-weight: 600 700;
+    src: local('Arial Bold'), local('Arial-BoldMT');
+    size-adjust: 102.34%;
+    ascent-override: 94.66%;
+    descent-override: 23.57%;
+    line-gap-override: 0%;
+  }
+  @font-face {
+    font-family: 'Instrument Serif Fallback';
+    font-style: italic;
+    font-weight: 400;
+    src: local('Times New Roman Italic'), local('TimesNewRomanPS-ItalicMT');
+    size-adjust: 89.04%;
+    ascent-override: 111.18%;
+    descent-override: 34.82%;
+    line-gap-override: 0%;
+  }
   @font-face {
     font-family: 'JetBrains Mono';
     font-style: normal;

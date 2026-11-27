@@ -86,7 +86,7 @@ The mobile viewport pipeline is enabled by default through `repositionInputs`. I
 - Verify Escape and the close button match the intended dismissal policy.
 - Verify focus returns to the trigger after close.
 - Test controls inside scrollable and `data-drawer-no-drag` regions with mouse, touch, and keyboard.
-- Respect reduced-motion preferences. The package stylesheet removes drawer, overlay and scaled-wrapper animation under `prefers-reduced-motion: reduce`; apply the same preference to any motion your own overrides add.
+- Respect reduced-motion preferences. Under `prefers-reduced-motion: reduce` the package stylesheet removes drawer and scaled-wrapper movement and keeps only a short (150 ms) overlay opacity fade; apply the same preference to any motion your own overrides add.
 - Destroy drawers when their owning view unmounts so hidden hosts and triggers do not remain in the accessibility tree.
 
 ## Related

@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types'
 import { getI18n } from '../i18n/utils'
+import Icon from './Icon.astro'
 interface Props extends HTMLAttributes<'div'> {
   text?: string
   ariaLabel: string
@@ -22,7 +23,7 @@ const t = getI18n(Astro).controls.copy
 >
   <button type="button" aria-label={ariaLabel} inert>
     <span data-copy-label="">{t.label}</span>
-    <span aria-hidden="true">⧉</span>
+    <Icon name="copy" size="0.875rem" />
   </button>
   <span
     class:list={['sr-only']}

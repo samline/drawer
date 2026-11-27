@@ -2,6 +2,13 @@
 
 All notable changes to `@samline/drawer` are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Under `prefers-reduced-motion: reduce`, the overlay keeps a short 150 ms opacity fade instead of appearing and disappearing instantly; the drawer and the scaled page wrapper still skip all movement and reach their final state at once. Close removal and `onAnimationEnd` timers are unchanged and still run after the fade.
+- Internal: the stylesheet merges two duplicated `[data-drawer-snap-points='true']` overlay rules and drops a redundant `background-color: inherit`. No visual change.
+
 ## [6.0.1] - 2026-11-17
 
 ### Changed

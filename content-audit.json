@@ -4,7 +4,7 @@
   "sources": [
     {
       "source": "CHANGELOG.md",
-      "sha256": "ac1d45d028649449508e921eb02268331dcefd90201bf0a37822ea63f7112ec2",
+      "sha256": "418774eba5e3c4c8d99c666b782ab74cee1d14f924aede15caf3d52d53f3084a",
       "destination": "CHANGELOG.md",
       "reviewed": true,
       "reviewScope": "Reconciled with the v5 owned-controller API. Historical repository guides point to the maintained docs collection; removed helpers retain migration pages.",

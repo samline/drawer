@@ -141,19 +141,14 @@
 }
 
 [data-drawer-overlay][data-drawer-snap-points='true'] {
-  opacity: 0;
-  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-[data-drawer-overlay][data-drawer-snap-points='true'] {
   opacity: 1;
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-drawer]:not([data-drawer-custom-container='true'])::after {
   content: '';
   position: absolute;
   background: inherit;
-  background-color: inherit;
 }
 
 [data-drawer][data-drawer-direction='top']::after {
@@ -323,15 +318,27 @@
   }
 }
 
-/* Respect the user's reduced-motion preference. Opening and closing
-   still change state, but without slide, fade, snap or page-scale
-   motion. The !important flags also override the inline transitions
-   the runtime writes for snap points and the scaled page wrapper. */
+/* Respect the user's reduced-motion preference. The drawer and the
+   scaled page wrapper stop moving (no slide, snap or page-scale
+   motion) and reach their final state at once. The overlay keeps a
+   short opacity fade, which is not spatial movement. The !important
+   flags also override the inline transitions the runtime writes for
+   snap points, drag release and the scaled page wrapper. Runtime timers
+   (close removal at 600ms, onAnimationEnd) are time based, so they
+   still fire after the 150ms fade. */
 @media (prefers-reduced-motion: reduce) {
   [data-drawer],
-  [data-drawer-overlay],
   [data-drawer-wrapper] {
     animation: none !important;
     transition: none !important;
+  }
+
+  [data-drawer-overlay] {
+    animation-duration: 150ms !important;
+    animation-timing-function: ease !important;
+    /* Longhands only: the runtime's inline `transition: none` during drag
+       sets transition-property, which this block leaves alone. */
+    transition-duration: 150ms !important;
+    transition-timing-function: ease !important;
   }
 }

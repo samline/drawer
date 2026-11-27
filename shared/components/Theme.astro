@@ -13,9 +13,13 @@
           ? 'dark'
           : 'light'
     document.documentElement.dataset.theme = theme
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme === 'dark' ? '#1d1c23' : '#faf9fc')
+    // Every theme-color meta follows the resolved theme, so a manual override or a
+    // dark system with a light page never leaves the toolbar on the other scheme.
+    const color = document.querySelector(`meta[name="theme-color"][data-scheme="${theme}"]`)
+      ?.dataset.color
+    if (color)
+      for (const meta of document.querySelectorAll('meta[name="theme-color"]'))
+        meta.setAttribute('content', color)
   })()
 </script>
 
@@ -31,20 +35,24 @@
   } catch {}
   const apply = (theme: 'light' | 'dark') => {
     root.dataset.theme = theme
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme === 'dark' ? '#1d1c23' : '#faf9fc')
+    const color = document.querySelector<HTMLMetaElement>(
+      `meta[name="theme-color"][data-scheme="${theme}"]`
+    )?.dataset.color
+    if (color)
+      for (const meta of document.querySelectorAll('meta[name="theme-color"]'))
+        meta.setAttribute('content', color)
     document.dispatchEvent(new CustomEvent('package-site:theme-change', { detail: theme }))
   }
   document.addEventListener('package-site:theme-request', event => {
     const theme = (event as CustomEvent<'light' | 'dark'>).detail
     if (theme !== 'light' && theme !== 'dark') return
-    manual = true
+    const key = document.documentElement.dataset.themeStorage ?? 'package-site-theme'
+    // Choosing the scheme the system already has undoes the override: drop the stored
+    // value so the page follows the OS again. Only a different scheme is pinned.
+    manual = theme !== (system.matches ? 'dark' : 'light')
     try {
-      localStorage.setItem(
-        document.documentElement.dataset.themeStorage ?? 'package-site-theme',
-        theme
-      )
+      if (manual) localStorage.setItem(key, theme)
+      else localStorage.removeItem(key)
     } catch {}
     apply(theme)
   })

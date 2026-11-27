@@ -184,4 +184,4 @@ Since 5.1.0 the handle is a named, focusable button only when it can cycle
 snap points; without snap points or with `preventCycle` it is a pointer-only
 affordance (`tabindex="-1"`, `aria-hidden="true"`). Theme its color with
 `--drawer-handle-color` and keep 3:1 contrast. The package stylesheet already
-removes drawer, overlay and wrapper motion under `prefers-reduced-motion`.
+removes drawer and wrapper movement under `prefers-reduced-motion` and keeps a 150 ms overlay opacity fade.

@@ -2,6 +2,8 @@
 import { project } from '../lib/project.mjs'
 import { documentTitle } from '../lib/site-identity.mjs'
 import { serializeJsonLd } from '../lib/serialize'
+// Page backgrounds from shared/styles/theme.css (--theme-bg).
+const themeBackground = { light: '#faf9fc', dark: '#1d1c23' }
 interface Props {
   title: string
   description: string
@@ -54,6 +56,7 @@ const schema = serializeJsonLd({
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="text-scale" content="scale" />
 <title>{metaTitle}</title>
 <meta name="description" content={description} />
 <meta name="author" content={project.author} />
@@ -66,8 +69,21 @@ const schema = serializeJsonLd({
       : 'index, follow, max-image-preview:large'
   }
 />
-<meta name="theme-color" media="(prefers-color-scheme: light)" content={project.accentLight} />
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content={project.accentDark} />
+<!-- The toolbar matches the page background per scheme (--theme-bg); Theme.astro sets every meta to the resolved theme's data-color. -->
+<meta
+  name="theme-color"
+  media="(prefers-color-scheme: light)"
+  content={themeBackground.light}
+  data-scheme="light"
+  data-color={themeBackground.light}
+/>
+<meta
+  name="theme-color"
+  media="(prefers-color-scheme: dark)"
+  content={themeBackground.dark}
+  data-scheme="dark"
+  data-color={themeBackground.dark}
+/>
 <meta name="color-scheme" content="light dark" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <link rel="canonical" href={canonical} />
